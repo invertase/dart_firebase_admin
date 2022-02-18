@@ -40,11 +40,23 @@ class FirebaseAdminAuth {
     throw UnimplementedError();
   }
 
-  Future<String> createSessionCookie(
-    String idToken,
-    Object sessionCookieOptions,
-  ) async {
-    throw UnimplementedError();
+  Future<String> createSessionCookie(String idToken, {int? expiresIn}) async {
+    return guard(
+      () async {
+        final request = firebase_auth_v1
+            .GoogleCloudIdentitytoolkitV1CreateSessionCookieRequest(
+          idToken: idToken,
+          validDuration: expiresIn?.toString(),
+        );
+
+        final response = await (await _v1()).projects.createSessionCookie(
+              request,
+              app._projectId,
+            );
+
+        return response.sessionCookie ?? "";
+      },
+    );
   }
 
   Future<Object> createUser(
@@ -62,19 +74,36 @@ class FirebaseAdminAuth {
   Future<void> deleteUser(
     String uid,
   ) async {
-    return guard(
-      () async => (await _v3()).relyingparty.deleteAccount(
-            firebase_auth_v3.IdentitytoolkitRelyingpartyDeleteAccountRequest(
-              localId: uid,
-            ),
-          ),
-    );
+    return guard(() async {
+      final request =
+          firebase_auth_v3.IdentitytoolkitRelyingpartyDeleteAccountRequest(
+        localId: uid,
+      );
+
+      await (await _v3()).relyingparty.deleteAccount(request);
+    });
   }
 
-  Future<Object> deleteUsers(
+  Future<DeleteUsersResult> deleteUsers(
     List<String> uids,
   ) async {
-    throw UnimplementedError();
+    return guard(
+      () async {
+        final localIds = uids.where((element) => element.isUid).toList();
+
+        final request = firebase_auth_v1
+            .GoogleCloudIdentitytoolkitV1BatchDeleteAccountsRequest(
+          localIds: localIds,
+        );
+
+        final response = await (await _v1()).projects.accounts_1.batchDelete(
+              request,
+              app._projectId,
+            );
+
+        return DeleteUsersResult._(localIds, response);
+      },
+    );
   }
 
   Future<String> generateEmailVerificationLink(String email,

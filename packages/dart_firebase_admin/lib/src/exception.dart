@@ -1,6 +1,9 @@
 part of dart_firebase_admin;
 
-// https://firebase.google.com/docs/reference/admin/error-handling#platform-error-codes
+/// A set of platform level error codes.
+///
+/// See https://firebase.google.com/docs/reference/admin/error-handling#platform-error-codes
+/// for more information.
 String _platformErrorCodeMessage(String code) {
   switch (code) {
     case 'INVALID_ARGUMENT':
@@ -40,29 +43,29 @@ String _platformErrorCodeMessage(String code) {
 }
 
 /// Base interface for all Firebase Admin related errors.
-abstract class FirebaseAdminException {}
+abstract class FirebaseAdminException {
+  FirebaseAdminException(this.service, this._code, [this._message]);
 
-class AuthException extends FirebaseAdminException implements Exception {
-  AuthException(this._original);
+  final String service;
+  final String _code;
+  final String? _message;
 
-  final firebase_auth_v1.DetailedApiRequestError _original;
+  String get code => '$service/${_code.replaceAll('_', '-').toLowerCase()}';
 
-  String get code => _original.message ?? 'UNKNOWN';
-
-  String get message => _platformErrorCodeMessage(code);
-
-  @override
-  String toString() => '$runtimeType: $message ($code)';
+  String get message => _message ?? _platformErrorCodeMessage(_code);
 }
 
+/// Converts a Exception to a FirebaseAdminException.
 Never _handleException(Object exception, StackTrace stackTrace) {
   if (exception is firebase_auth_v1.DetailedApiRequestError) {
-    Error.throwWithStackTrace(AuthException(exception), stackTrace);
+    Error.throwWithStackTrace(
+        FirebaseAuthAdminException.fromServerError(exception), stackTrace);
   }
 
   Error.throwWithStackTrace(exception, stackTrace);
 }
 
+/// A generic guard wrapper for API calls to handle exceptions.
 R guard<R>(R Function() cb) {
   try {
     final value = cb();
@@ -77,4 +80,15 @@ R guard<R>(R Function() cb) {
   } catch (error, stackTrace) {
     _handleException(error, stackTrace);
   }
+}
+
+class FirebaseArrayIndexException implements Exception {
+  FirebaseArrayIndexException(this.index, this.message);
+
+  final int index;
+
+  final String message;
+
+  @override
+  String toString() => '$runtimeType: $message';
 }
