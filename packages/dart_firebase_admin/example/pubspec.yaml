@@ -1,0 +1,8 @@
+name: dart_firebase_admin_example
+
+dependencies:
+  dart_firebase_admin:
+    path: ../
+
+environment:
+  sdk: ">=2.16.0 <3.0.0"

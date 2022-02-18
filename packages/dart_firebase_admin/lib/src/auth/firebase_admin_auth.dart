@@ -10,13 +10,29 @@ class FirebaseAdminAuth {
     return {};
   }
 
-  Future<firebase_auth.IdentityToolkitApi> _getApi() async {
-    final client = _client ??= await app._credential._getAuthClient([]);
-    return firebase_auth.IdentityToolkitApi(client);
+  Future<auth.AuthClient> _getClient() async {
+    return _client ??= await app._credential._getAuthClient([
+      firebase_auth_v3.IdentityToolkitApi.cloudPlatformScope,
+      firebase_auth_v3.IdentityToolkitApi.firebaseScope,
+    ]);
   }
 
-  Future<String> createCustomToken(String uid,
-      [Map<String, String>? developerClaims]) async {
+  Future<firebase_auth_v1.IdentityToolkitApi> _v1() async {
+    return firebase_auth_v1.IdentityToolkitApi(await _getClient());
+  }
+
+  Future<firebase_auth_v2.IdentityToolkitApi> _v2() async {
+    return firebase_auth_v2.IdentityToolkitApi(await _getClient());
+  }
+
+  Future<firebase_auth_v3.IdentityToolkitApi> _v3() async {
+    return firebase_auth_v3.IdentityToolkitApi(await _getClient());
+  }
+
+  Future<String> createCustomToken(
+    String uid, [
+    Map<String, String>? developerClaims,
+  ]) async {
     throw UnimplementedError();
   }
 
@@ -43,10 +59,16 @@ class FirebaseAdminAuth {
     return;
   }
 
-  Future<Object> deleteUser(
+  Future<void> deleteUser(
     String uid,
   ) async {
-    throw UnimplementedError();
+    return guard(
+      () async => (await _v3()).relyingparty.deleteAccount(
+            firebase_auth_v3.IdentitytoolkitRelyingpartyDeleteAccountRequest(
+              localId: uid,
+            ),
+          ),
+    );
   }
 
   Future<Object> deleteUsers(

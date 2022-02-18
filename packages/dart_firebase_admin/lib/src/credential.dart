@@ -14,6 +14,10 @@ class Credential {
     return Credential._(serviceAccountFile.readAsStringSync());
   }
 
+  factory Credential.fromApplicationDefaultCredentials() {
+    return Credential._(null);
+  }
+
   Future<auth.AuthClient> _getAuthClient(List<String> scopes) {
     if (_json == null) {
       return auth.clientViaApplicationDefaultCredentials(scopes: scopes);
