@@ -125,31 +125,75 @@ class FirebaseAdminAuth {
     throw UnimplementedError();
   }
 
+  Future<UserRecord> _getUserRecord(
+    firebase_auth_v1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest request,
+  ) async {
+    final response = await (await _v1()).projects.accounts_1.lookup(
+          request,
+          app._projectId,
+        );
+
+    if (response.users == null || response.users!.isEmpty) {
+      throw FirebaseAuthAdminException.fromAuthClientErrorCode(
+        AuthClientErrorCode.USER_NOT_FOUND,
+      );
+    }
+
+    return UserRecord._(response.users!.first);
+  }
+
   Future<UserRecord> getUser(String uid) async {
     return guard(
       () async {
-        final request =
-            firebase_auth_v1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest(
-          localId: [uid],
+        if (!uid.isUid) {
+          throw FirebaseAuthAdminException.fromAuthClientErrorCode(
+            AuthClientErrorCode.INVALID_UID,
+          );
+        }
+
+        return _getUserRecord(
+          firebase_auth_v1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest(
+            localId: [uid],
+          ),
         );
-
-        final response = await (await _v1()).projects.accounts_1.lookup(
-              request,
-              app._projectId,
-            );
-
-        // TODO what happens if user not found? Does it throw before here?
-        return UserRecord._(response.users!.first);
       },
     );
   }
 
   Future<Object> getUserByEmail(String email) async {
-    throw UnimplementedError();
+    return guard(
+      () async {
+        if (!email.isEmail) {
+          throw FirebaseAuthAdminException.fromAuthClientErrorCode(
+            AuthClientErrorCode.INVALID_EMAIL,
+          );
+        }
+
+        return _getUserRecord(
+          firebase_auth_v1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest(
+            email: [email],
+          ),
+        );
+      },
+    );
   }
 
   Future<Object> getUserByPhoneNumber(String phoneNumber) async {
-    throw UnimplementedError();
+    return guard(
+      () async {
+        if (!phoneNumber.isPhoneNumber) {
+          throw FirebaseAuthAdminException.fromAuthClientErrorCode(
+            AuthClientErrorCode.INVALID_PHONE_NUMBER,
+          );
+        }
+
+        return _getUserRecord(
+          firebase_auth_v1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest(
+            phoneNumber: [phoneNumber],
+          ),
+        );
+      },
+    );
   }
 
   Future<Object> getUserByProviderUid(String providerId, String uid) async {

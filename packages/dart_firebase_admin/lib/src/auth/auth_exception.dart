@@ -6,9 +6,112 @@ class FirebaseAuthAdminException extends FirebaseAdminException {
 
   factory FirebaseAuthAdminException.fromServerError(
       firebase_auth_v1.DetailedApiRequestError error) {
-    final code = _authServerToClientCode(error.message) ?? 'UNKNOWN';
-    return FirebaseAuthAdminException._(code, _authClientCodeMessage(code));
+    final code =
+        _authServerToClientCode(error.message) ?? AuthClientErrorCode.UNKNOWN;
+    return FirebaseAuthAdminException._(code.name, code.message);
   }
+
+  factory FirebaseAuthAdminException.fromAuthClientErrorCode(
+      AuthClientErrorCode code) {
+    return FirebaseAuthAdminException._(code.name, code.message);
+  }
+}
+
+extension AuthClientErrorCodeExtension on AuthClientErrorCode {
+  String? get message => _authClientCodeMessage(this.name);
+}
+
+enum AuthClientErrorCode {
+  UNKNOWN,
+  BILLING_NOT_ENABLED,
+  CLAIMS_TOO_LARGE,
+  CONFIGURATION_EXISTS,
+  CONFIGURATION_NOT_FOUND,
+  ID_TOKEN_EXPIRED,
+  INVALID_ARGUMENT,
+  INVALID_CONFIG,
+  EMAIL_ALREADY_EXISTS,
+  EMAIL_NOT_FOUND,
+  FORBIDDEN_CLAIM,
+  INVALID_ID_TOKEN,
+  ID_TOKEN_REVOKED,
+  INTERNAL_ERROR,
+  INVALID_CLAIMS,
+  INVALID_CONTINUE_URI,
+  INVALID_CREATION_TIME,
+  INVALID_CREDENTIAL,
+  INVALID_DISABLED_FIELD,
+  INVALID_DISPLAY_NAME,
+  INVALID_DYNAMIC_LINK_DOMAIN,
+  INVALID_EMAIL_VERIFIED,
+  INVALID_EMAIL,
+  INVALID_ENROLLED_FACTORS,
+  INVALID_ENROLLMENT_TIME,
+  INVALID_HASH_ALGORITHM,
+  INVALID_HASH_BLOCK_SIZE,
+  INVALID_HASH_DERIVED_KEY_LENGTH,
+  INVALID_HASH_KEY,
+  INVALID_HASH_MEMORY_COST,
+  INVALID_HASH_PARALLELIZATION,
+  INVALID_HASH_ROUNDS,
+  INVALID_HASH_SALT_SEPARATOR,
+  INVALID_LAST_SIGN_IN_TIME,
+  INVALID_NAME,
+  INVALID_OAUTH_CLIENT_ID,
+  INVALID_PAGE_TOKEN,
+  INVALID_PASSWORD,
+  INVALID_PASSWORD_HASH,
+  INVALID_PASSWORD_SALT,
+  INVALID_PHONE_NUMBER,
+  INVALID_PHOTO_URL,
+  INVALID_PROJECT_ID,
+  INVALID_PROVIDER_DATA,
+  INVALID_PROVIDER_ID,
+  INVALID_PROVIDER_UID,
+  INVALID_OAUTH_RESPONSETYPE,
+  INVALID_SESSION_COOKIE_DURATION,
+  INVALID_TENANT_ID,
+  INVALID_TENANT_TYPE,
+  INVALID_TESTING_PHONE_NUMBER,
+  INVALID_UID,
+  INVALID_USER_IMPORT,
+  INVALID_TOKENS_VALID_AFTER_TIME,
+  MISMATCHING_TENANT_ID,
+  MISSING_ANDROID_PACKAGE_NAME,
+  MISSING_CONFIG,
+  MISSING_CONTINUE_URI,
+  MISSING_DISPLAY_NAME,
+  MISSING_EMAIL,
+  MISSING_IOS_BUNDLE_ID,
+  MISSING_ISSUER,
+  MISSING_HASH_ALGORITHM,
+  MISSING_OAUTH_CLIENT_ID,
+  MISSING_OAUTH_CLIENT_SECRET,
+  MISSING_PROVIDER_ID,
+  MISSING_SAML_RELYING_PARTY_CONFIG,
+  MAXIMUM_TEST_PHONE_NUMBER_EXCEEDED,
+  MAXIMUM_USER_COUNT_EXCEEDED,
+  MISSING_UID,
+  OPERATION_NOT_ALLOWED,
+  PHONE_NUMBER_ALREADY_EXISTS,
+  PROJECT_NOT_FOUND,
+  INSUFFICIENT_PERMISSION,
+  QUOTA_EXCEEDED,
+  SECOND_FACTOR_LIMIT_EXCEEDED,
+  SECOND_FACTOR_UID_ALREADY_EXISTS,
+  SESSION_COOKIE_EXPIRED,
+  SESSION_COOKIE_REVOKED,
+  TENANT_NOT_FOUND,
+  UID_ALREADY_EXISTS,
+  UNAUTHORIZED_DOMAIN,
+  UNSUPPORTED_FIRST_FACTOR,
+  UNSUPPORTED_SECOND_FACTOR,
+  UNSUPPORTED_TENANT_OPERATION,
+  UNVERIFIED_EMAIL,
+  USER_NOT_FOUND,
+  NOT_FOUND,
+  USER_DISABLED,
+  USER_NOT_DISABLED,
 }
 
 String? _authClientCodeMessage(String clientCode) {
@@ -282,239 +385,239 @@ String? _authClientCodeMessage(String clientCode) {
   }
 }
 
-String? _authServerToClientCode(String? serverCode) {
+AuthClientErrorCode? _authServerToClientCode(String? serverCode) {
   switch (serverCode) {
     case 'BILLING_NOT_ENABLED':
-      return 'BILLING_NOT_ENABLED';
+      return AuthClientErrorCode.BILLING_NOT_ENABLED;
 
     /// Claims payload is too large.
     case 'CLAIMS_TOO_LARGE':
-      return 'CLAIMS_TOO_LARGE';
+      return AuthClientErrorCode.CLAIMS_TOO_LARGE;
 
     /// Configuration being added already exists.
     case 'CONFIGURATION_EXISTS':
-      return 'CONFIGURATION_EXISTS';
+      return AuthClientErrorCode.CONFIGURATION_EXISTS;
 
     /// Configuration not found.
     case 'CONFIGURATION_NOT_FOUND':
-      return 'CONFIGURATION_NOT_FOUND';
+      return AuthClientErrorCode.CONFIGURATION_NOT_FOUND;
 
     /// Provided credential has insufficient permissions.
     case 'INSUFFICIENT_PERMISSION':
-      return 'INSUFFICIENT_PERMISSION';
+      return AuthClientErrorCode.INSUFFICIENT_PERMISSION;
 
     /// Provided configuration has invalid fields.
     case 'INVALID_CONFIG':
-      return 'INVALID_CONFIG';
+      return AuthClientErrorCode.INVALID_CONFIG;
 
     /// Provided configuration identifier is invalid.
     case 'INVALID_CONFIG_ID':
-      return 'INVALID_PROVIDER_ID';
+      return AuthClientErrorCode.INVALID_PROVIDER_ID;
 
     /// ActionCodeSettings missing continue URL.
     case 'INVALID_CONTINUE_URI':
-      return 'INVALID_CONTINUE_URI';
+      return AuthClientErrorCode.INVALID_CONTINUE_URI;
 
     /// Dynamic link domain in provided ActionCodeSettings is not authorized.
     case 'INVALID_DYNAMIC_LINK_DOMAIN':
-      return 'INVALID_DYNAMIC_LINK_DOMAIN';
+      return AuthClientErrorCode.INVALID_DYNAMIC_LINK_DOMAIN;
 
     /// uploadAccount provides an email that already exists.
     case 'DUPLICATE_EMAIL':
-      return 'EMAIL_ALREADY_EXISTS';
+      return AuthClientErrorCode.EMAIL_ALREADY_EXISTS;
 
     /// uploadAccount provides a localId that already exists.
     case 'DUPLICATE_LOCAL_ID':
-      return 'UID_ALREADY_EXISTS';
+      return AuthClientErrorCode.UID_ALREADY_EXISTS;
 
     /// Request specified a multi-factor enrollment ID that already exists.
     case 'DUPLICATE_MFA_ENROLLMENT_ID':
-      return 'SECOND_FACTOR_UID_ALREADY_EXISTS';
+      return AuthClientErrorCode.SECOND_FACTOR_UID_ALREADY_EXISTS;
 
     /// setAccountInfo email already exists.
     case 'EMAIL_EXISTS':
-      return 'EMAIL_ALREADY_EXISTS';
+      return AuthClientErrorCode.EMAIL_ALREADY_EXISTS;
 
     /// accounts:sendOobCode for password reset when user is not found.
     case 'EMAIL_NOT_FOUND':
-      return 'EMAIL_NOT_FOUND';
+      return AuthClientErrorCode.EMAIL_NOT_FOUND;
 
     /// Reserved claim name.
     case 'FORBIDDEN_CLAIM':
-      return 'FORBIDDEN_CLAIM';
+      return AuthClientErrorCode.FORBIDDEN_CLAIM;
 
     /// Invalid claims provided.
     case 'INVALID_CLAIMS':
-      return 'INVALID_CLAIMS';
+      return AuthClientErrorCode.INVALID_CLAIMS;
 
     /// Invalid session cookie duration.
     case 'INVALID_DURATION':
-      return 'INVALID_SESSION_COOKIE_DURATION';
+      return AuthClientErrorCode.INVALID_SESSION_COOKIE_DURATION;
 
     /// Invalid email provided.
     case 'INVALID_EMAIL':
-      return 'INVALID_EMAIL';
+      return AuthClientErrorCode.INVALID_EMAIL;
 
     /// Invalid tenant display name. This can be thrown on CreateTenant and UpdateTenant.
     case 'INVALID_DISPLAY_NAME':
-      return 'INVALID_DISPLAY_NAME';
+      return AuthClientErrorCode.INVALID_DISPLAY_NAME;
 
     /// Invalid ID token provided.
     case 'INVALID_ID_TOKEN':
-      return 'INVALID_ID_TOKEN';
+      return AuthClientErrorCode.INVALID_ID_TOKEN;
 
     /// Invalid tenant/parent resource name.
     case 'INVALID_NAME':
-      return 'INVALID_NAME';
+      return AuthClientErrorCode.INVALID_NAME;
 
     /// OIDC configuration has an invalid OAuth client ID.
     case 'INVALID_OAUTH_CLIENT_ID':
-      return 'INVALID_OAUTH_CLIENT_ID';
+      return AuthClientErrorCode.INVALID_OAUTH_CLIENT_ID;
 
     /// Invalid page token.
     case 'INVALID_PAGE_SELECTION':
-      return 'INVALID_PAGE_TOKEN';
+      return AuthClientErrorCode.INVALID_PAGE_TOKEN;
 
     /// Invalid phone number.
     case 'INVALID_PHONE_NUMBER':
-      return 'INVALID_PHONE_NUMBER';
+      return AuthClientErrorCode.INVALID_PHONE_NUMBER;
 
     /// Invalid agent project. Either agent project doesn't exist or didn't enable multi-tenancy.
     case 'INVALID_PROJECT_ID':
-      return 'INVALID_PROJECT_ID';
+      return AuthClientErrorCode.INVALID_PROJECT_ID;
 
     /// Invalid provider ID.
     case 'INVALID_PROVIDER_ID':
-      return 'INVALID_PROVIDER_ID';
+      return AuthClientErrorCode.INVALID_PROVIDER_ID;
 
     /// Invalid service account.
     case 'INVALID_SERVICE_ACCOUNT':
-      return 'INVALID_SERVICE_ACCOUNT';
+      return AuthClientErrorCode.UNKNOWN;
 
     /// Invalid testing phone number.
     case 'INVALID_TESTING_PHONE_NUMBER':
-      return 'INVALID_TESTING_PHONE_NUMBER';
+      return AuthClientErrorCode.INVALID_TESTING_PHONE_NUMBER;
 
     /// Invalid tenant type.
     case 'INVALID_TENANT_TYPE':
-      return 'INVALID_TENANT_TYPE';
+      return AuthClientErrorCode.INVALID_TENANT_TYPE;
 
     /// Missing Android package name.
     case 'MISSING_ANDROID_PACKAGE_NAME':
-      return 'MISSING_ANDROID_PACKAGE_NAME';
+      return AuthClientErrorCode.MISSING_ANDROID_PACKAGE_NAME;
 
     /// Missing configuration.
     case 'MISSING_CONFIG':
-      return 'MISSING_CONFIG';
+      return AuthClientErrorCode.MISSING_CONFIG;
 
     /// Missing configuration identifier.
     case 'MISSING_CONFIG_ID':
-      return 'MISSING_PROVIDER_ID';
+      return AuthClientErrorCode.MISSING_PROVIDER_ID;
 
     /// Missing tenant display name: This can be thrown on CreateTenant and UpdateTenant.
     case 'MISSING_DISPLAY_NAME':
-      return 'MISSING_DISPLAY_NAME';
+      return AuthClientErrorCode.MISSING_DISPLAY_NAME;
 
     /// Email is required for the specified action. For example a multi-factor user requires
     /// a verified email.
     case 'MISSING_EMAIL':
-      return 'MISSING_EMAIL';
+      return AuthClientErrorCode.MISSING_EMAIL;
 
     /// Missing iOS bundle ID.
     case 'MISSING_IOS_BUNDLE_ID':
-      return 'MISSING_IOS_BUNDLE_ID';
+      return AuthClientErrorCode.MISSING_IOS_BUNDLE_ID;
 
     /// Missing OIDC issuer.
     case 'MISSING_ISSUER':
-      return 'MISSING_ISSUER';
+      return AuthClientErrorCode.MISSING_ISSUER;
 
     /// No localId provided (deleteAccount missing localId).
     case 'MISSING_LOCAL_ID':
-      return 'MISSING_UID';
+      return AuthClientErrorCode.MISSING_UID;
 
     /// OIDC configuration is missing an OAuth client ID.
     case 'MISSING_OAUTH_CLIENT_ID':
-      return 'MISSING_OAUTH_CLIENT_ID';
+      return AuthClientErrorCode.MISSING_OAUTH_CLIENT_ID;
 
     /// Missing provider ID.
     case 'MISSING_PROVIDER_ID':
-      return 'MISSING_PROVIDER_ID';
+      return AuthClientErrorCode.MISSING_PROVIDER_ID;
 
     /// Missing SAML RP config.
     case 'MISSING_SAML_RELYING_PARTY_CONFIG':
-      return 'MISSING_SAML_RELYING_PARTY_CONFIG';
+      return AuthClientErrorCode.MISSING_SAML_RELYING_PARTY_CONFIG;
 
     /// Empty user list in uploadAccount.
     case 'MISSING_USER_ACCOUNT':
-      return 'MISSING_UID';
+      return AuthClientErrorCode.MISSING_UID;
 
     /// Password auth disabled in console.
     case 'OPERATION_NOT_ALLOWED':
-      return 'OPERATION_NOT_ALLOWED';
+      return AuthClientErrorCode.OPERATION_NOT_ALLOWED;
 
     /// Provided credential has insufficient permissions.
     case 'PERMISSION_DENIED':
-      return 'INSUFFICIENT_PERMISSION';
+      return AuthClientErrorCode.INSUFFICIENT_PERMISSION;
 
     /// Phone number already exists.
     case 'PHONE_NUMBER_EXISTS':
-      return 'PHONE_NUMBER_ALREADY_EXISTS';
+      return AuthClientErrorCode.PHONE_NUMBER_ALREADY_EXISTS;
 
     /// Project not found.
     case 'PROJECT_NOT_FOUND':
-      return 'PROJECT_NOT_FOUND';
+      return AuthClientErrorCode.PROJECT_NOT_FOUND;
 
     /// In multi-tenancy context: project creation quota exceeded.
     case 'QUOTA_EXCEEDED':
-      return 'QUOTA_EXCEEDED';
+      return AuthClientErrorCode.QUOTA_EXCEEDED;
 
     /// Currently only 5 second factors can be set on the same user.
     case 'SECOND_FACTOR_LIMIT_EXCEEDED':
-      return 'SECOND_FACTOR_LIMIT_EXCEEDED';
+      return AuthClientErrorCode.SECOND_FACTOR_LIMIT_EXCEEDED;
 
     /// Tenant not found.
     case 'TENANT_NOT_FOUND':
-      return 'TENANT_NOT_FOUND';
+      return AuthClientErrorCode.TENANT_NOT_FOUND;
 
     /// Tenant ID mismatch.
     case 'TENANT_ID_MISMATCH':
-      return 'MISMATCHING_TENANT_ID';
+      return AuthClientErrorCode.MISMATCHING_TENANT_ID;
 
     /// Token expired error.
     case 'TOKEN_EXPIRED':
-      return 'ID_TOKEN_EXPIRED';
+      return AuthClientErrorCode.ID_TOKEN_EXPIRED;
 
     /// Continue URL provided in ActionCodeSettings has a domain that is not whitelisted.
     case 'UNAUTHORIZED_DOMAIN':
-      return 'UNAUTHORIZED_DOMAIN';
+      return AuthClientErrorCode.UNAUTHORIZED_DOMAIN;
 
     /// A multi-factor user requires a supported first factor.
     case 'UNSUPPORTED_FIRST_FACTOR':
-      return 'UNSUPPORTED_FIRST_FACTOR';
+      return AuthClientErrorCode.UNSUPPORTED_FIRST_FACTOR;
 
     /// The request specified an unsupported type of second factor.
     case 'UNSUPPORTED_SECOND_FACTOR':
-      return 'UNSUPPORTED_SECOND_FACTOR';
+      return AuthClientErrorCode.UNSUPPORTED_SECOND_FACTOR;
 
     /// Operation is not supported in a multi-tenant context.
     case 'UNSUPPORTED_TENANT_OPERATION':
-      return 'UNSUPPORTED_TENANT_OPERATION';
+      return AuthClientErrorCode.UNSUPPORTED_TENANT_OPERATION;
 
     /// A verified email is required for the specified action. For example a multi-factor user
     /// requires a verified email.
     case 'UNVERIFIED_EMAIL':
-      return 'UNVERIFIED_EMAIL';
+      return AuthClientErrorCode.UNVERIFIED_EMAIL;
 
     /// User on which action is to be performed is not found.
     case 'USER_NOT_FOUND':
-      return 'USER_NOT_FOUND';
+      return AuthClientErrorCode.USER_NOT_FOUND;
 
     /// User record is disabled.
     case 'USER_DISABLED':
-      return 'USER_DISABLED';
+      return AuthClientErrorCode.USER_DISABLED;
 
     /// Password provided is too weak.
     case 'WEAK_PASSWORD':
-      return 'INVALID_PASSWORD';
+      return AuthClientErrorCode.INVALID_PASSWORD;
   }
 }
