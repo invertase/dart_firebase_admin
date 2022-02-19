@@ -1,5 +1,6 @@
 library dart_firebase_admin;
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:firebaseapis/identitytoolkit/v1.dart' as firebase_auth_v1;
@@ -13,3 +14,8 @@ part 'src/credential.dart';
 part 'src/auth/firebase_admin_auth.dart';
 part 'src/auth/auth_exception.dart';
 part 'src/auth/delete_users_result.dart';
+part 'src/auth/create_request.dart';
+part 'src/auth/update_request.dart';
+part 'src/auth/user_record.dart';
+part 'src/auth/user_metadata.dart';
+part 'src/auth/user_info.dart';

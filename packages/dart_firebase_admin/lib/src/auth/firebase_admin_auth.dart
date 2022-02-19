@@ -60,7 +60,7 @@ class FirebaseAdminAuth {
   }
 
   Future<Object> createUser(
-    Object properties,
+    CreateRequest properties,
   ) async {
     throw UnimplementedError();
   }
@@ -125,8 +125,23 @@ class FirebaseAdminAuth {
     throw UnimplementedError();
   }
 
-  Future<Object> getUser(String uid) async {
-    throw UnimplementedError();
+  Future<UserRecord> getUser(String uid) async {
+    return guard(
+      () async {
+        final request =
+            firebase_auth_v1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest(
+          localId: [uid],
+        );
+
+        final response = await (await _v1()).projects.accounts_1.lookup(
+              request,
+              app._projectId,
+            );
+
+        // TODO what happens if user not found? Does it throw before here?
+        return UserRecord._(response.users!.first);
+      },
+    );
   }
 
   Future<Object> getUserByEmail(String email) async {
