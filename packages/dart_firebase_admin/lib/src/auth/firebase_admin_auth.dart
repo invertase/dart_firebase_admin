@@ -141,7 +141,7 @@ class FirebaseAdminAuth {
 
     if (response.users == null || response.users!.isEmpty) {
       throw FirebaseAuthAdminException.fromAuthClientErrorCode(
-        AuthClientErrorCode.USER_NOT_FOUND,
+        AuthClientErrorCode.userNotFound,
       );
     }
 
@@ -153,7 +153,7 @@ class FirebaseAdminAuth {
       () async {
         if (!uid.isUid) {
           throw FirebaseAuthAdminException.fromAuthClientErrorCode(
-            AuthClientErrorCode.INVALID_UID,
+            AuthClientErrorCode.invalidUid,
           );
         }
 
@@ -171,7 +171,7 @@ class FirebaseAdminAuth {
       () async {
         if (!email.isEmail) {
           throw FirebaseAuthAdminException.fromAuthClientErrorCode(
-            AuthClientErrorCode.INVALID_EMAIL,
+            AuthClientErrorCode.invalidEmail,
           );
         }
 
@@ -189,7 +189,7 @@ class FirebaseAdminAuth {
       () async {
         if (!phoneNumber.isPhoneNumber) {
           throw FirebaseAuthAdminException.fromAuthClientErrorCode(
-            AuthClientErrorCode.INVALID_PHONE_NUMBER,
+            AuthClientErrorCode.invalidPhoneNumber,
           );
         }
 
