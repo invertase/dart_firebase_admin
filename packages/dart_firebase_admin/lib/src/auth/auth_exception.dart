@@ -15,6 +15,11 @@ class FirebaseAuthAdminException extends FirebaseAdminException {
       AuthClientErrorCode code) {
     return FirebaseAuthAdminException._(code.name, code.message);
   }
+
+  @override
+  String toString() {
+    return '$runtimeType: $code: $message';
+  }
 }
 
 extension AuthClientErrorCodeExtension on AuthClientErrorCode {
@@ -624,4 +629,6 @@ AuthClientErrorCode? _authServerToClientCode(String? serverCode) {
     case 'WEAK_PASSWORD':
       return AuthClientErrorCode.INVALID_PASSWORD;
   }
+
+  return null;
 }

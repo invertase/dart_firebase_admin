@@ -12,7 +12,8 @@ Future<void> main() async {
 
   // await auth.deleteUser('867gK70vkJNjOzlj4uQoMcg7a1d2');
   // await auth.createSessionCookie('867gK70vkJNjOzlj4uQoMcg7a1d2');
-  final d = await auth.deleteUsers(['snd72bdbd']);
+  final d = await auth.deleteUsers(['jQ8RIsaXXigZ279pnLO3MHu4D1Y2']);
+  print(d.errors);
   print(d.failureCount);
   print('Deleted!');
 }
