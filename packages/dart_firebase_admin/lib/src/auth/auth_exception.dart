@@ -1,24 +1,26 @@
-part of dart_firebase_admin;
+part of '../../dart_firebase_admin.dart';
 
 class FirebaseAuthAdminException extends FirebaseAdminException {
   FirebaseAuthAdminException._(String code, [String? message])
       : super('auth', code, message);
 
   factory FirebaseAuthAdminException.fromServerError(
-      firebase_auth_v1.DetailedApiRequestError error) {
+    firebase_auth_v1.DetailedApiRequestError error,
+  ) {
     final code =
         _authServerToClientCode(error.message) ?? AuthClientErrorCode.UNKNOWN;
     return FirebaseAuthAdminException._(code.name, code.message);
   }
 
   factory FirebaseAuthAdminException.fromAuthClientErrorCode(
-      AuthClientErrorCode code) {
+    AuthClientErrorCode code,
+  ) {
     return FirebaseAuthAdminException._(code.name, code.message);
   }
 
   @override
   String toString() {
-    return '$runtimeType: $code: $message';
+    return 'FirebaseAuthAdminException: $code: $message';
   }
 }
 
@@ -245,7 +247,7 @@ String? _authClientCodeMessage(AuthClientErrorCode code) {
       return 'The photoURL field must be a valid URL.';
 
     case AuthClientErrorCode.INVALID_PROJECT_ID:
-      return 'Invalid parent project. Either parent project doesn\'t exist or didn\'t enable multi-tenancy.';
+      return "Invalid parent project. Either parent project doesn't exist or didn't enable multi-tenancy.";
 
     case AuthClientErrorCode.INVALID_PROVIDER_DATA:
       return 'The providerData must be a valid array of UserInfo objects.';

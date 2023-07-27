@@ -1,4 +1,4 @@
-part of dart_firebase_admin;
+part of '../../dart_firebase_admin.dart';
 
 class FirebaseAdminAuth {
   FirebaseAdminAuth(this.app);
@@ -54,7 +54,7 @@ class FirebaseAdminAuth {
               app._projectId,
             );
 
-        return response.sessionCookie ?? "";
+        return response.sessionCookie ?? '';
       },
     );
   }
@@ -106,18 +106,24 @@ class FirebaseAdminAuth {
     );
   }
 
-  Future<String> generateEmailVerificationLink(String email,
-      [Object? actionCodeSettings]) async {
+  Future<String> generateEmailVerificationLink(
+    String email, [
+    Object? actionCodeSettings,
+  ]) async {
     throw UnimplementedError();
   }
 
-  Future<String> generatePasswordResetLink(String email,
-      [Object? actionCodeSettings]) async {
+  Future<String> generatePasswordResetLink(
+    String email, [
+    Object? actionCodeSettings,
+  ]) async {
     throw UnimplementedError();
   }
 
   Future<String> generateSignInWithEmailLink(
-      String email, Object actionCodeSettings) async {
+    String email,
+    Object actionCodeSettings,
+  ) async {
     throw UnimplementedError();
   }
 
@@ -225,7 +231,9 @@ class FirebaseAdminAuth {
   }
 
   Future<Object> updateProviderConfig(
-      String providerId, Object updatedConfig) async {
+    String providerId,
+    Object updatedConfig,
+  ) async {
     throw UnimplementedError();
   }
 
@@ -233,12 +241,14 @@ class FirebaseAdminAuth {
     throw UnimplementedError();
   }
 
-  Future<Object> verifyIdToken(String idToken, [bool? checkRevoked]) async {
+  Future<Object> verifyIdToken(String idToken, {bool? checkRevoked}) async {
     throw UnimplementedError();
   }
 
-  Future<Object> verifySessionCookie(String sessionCookie,
-      [bool? checkRevoked]) async {
+  Future<Object> verifySessionCookie(
+    String sessionCookie, {
+    bool? checkRevoked,
+  }) async {
     throw UnimplementedError();
   }
 }

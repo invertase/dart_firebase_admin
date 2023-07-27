@@ -1,4 +1,4 @@
-part of dart_firebase_admin;
+part of '../../dart_firebase_admin.dart';
 
 class DeleteUsersResult {
   DeleteUsersResult._(this.localIds, this._delegate);
@@ -13,8 +13,8 @@ class DeleteUsersResult {
 
   /// The number of users that were deleted successfully (possibly zero).
   ///
-  /// Users that did not exist prior to calling [deleteUsers] are considered
-  /// to be successfully deleted.
+  /// Users that did not exist prior to calling [FirebaseAdminAuth.deleteUsers]
+  /// are considered to be successfully deleted.
   int get successCount => localIds.length - failureCount;
 
   /// A list of FirebaseArrayIndexError instances describing the errors that

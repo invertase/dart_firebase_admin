@@ -1,4 +1,4 @@
-part of dart_firebase_admin;
+part of '../dart_firebase_admin.dart';
 
 /// A set of platform level error codes.
 ///
@@ -43,7 +43,7 @@ String _platformErrorCodeMessage(String code) {
 }
 
 /// Base interface for all Firebase Admin related errors.
-abstract class FirebaseAdminException {
+abstract class FirebaseAdminException implements Exception {
   FirebaseAdminException(this.service, this._code, [this._message]);
 
   final String service;
@@ -59,7 +59,9 @@ abstract class FirebaseAdminException {
 Never _handleException(Object exception, StackTrace stackTrace) {
   if (exception is firebase_auth_v1.DetailedApiRequestError) {
     Error.throwWithStackTrace(
-        FirebaseAuthAdminException.fromServerError(exception), stackTrace);
+      FirebaseAuthAdminException.fromServerError(exception),
+      stackTrace,
+    );
   }
 
   Error.throwWithStackTrace(exception, stackTrace);
@@ -71,9 +73,7 @@ R guard<R>(R Function() cb) {
     final value = cb();
 
     if (value is Future) {
-      return value.catchError(
-        (error, stackTrace) => _handleException(error, stackTrace),
-      ) as R;
+      return value.catchError(_handleException) as R;
     }
 
     return value;
@@ -90,5 +90,5 @@ class FirebaseArrayIndexException implements Exception {
   final String message;
 
   @override
-  String toString() => '$runtimeType: $message';
+  String toString() => 'FirebaseArrayIndexException: $message';
 }

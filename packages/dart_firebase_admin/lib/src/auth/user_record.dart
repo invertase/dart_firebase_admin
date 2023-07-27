@@ -1,13 +1,13 @@
-part of dart_firebase_admin;
+part of '../../dart_firebase_admin.dart';
 
 class UserRecord {
   UserRecord._(this._delegate);
 
   final firebase_auth_v1.GoogleCloudIdentitytoolkitV1UserInfo _delegate;
 
-  Map<String, Object>? get customClaims => _delegate.customAttributes == null
+  Map<String, Object?>? get customClaims => _delegate.customAttributes == null
       ? null
-      : jsonDecode(_delegate.customAttributes!);
+      : jsonDecode(_delegate.customAttributes!) as Map<String, Object?>;
 
   bool get disabled => _delegate.disabled ?? false;
 
@@ -28,7 +28,7 @@ class UserRecord {
   String? get photoURL => _delegate.photoUrl;
 
   List<UserInfo> get providerData =>
-      _delegate.providerUserInfo?.map((p) => UserInfo._(p)).toList() ?? [];
+      _delegate.providerUserInfo?.map(UserInfo._).toList() ?? [];
 
   String? get tenantId => _delegate.tenantId;
 

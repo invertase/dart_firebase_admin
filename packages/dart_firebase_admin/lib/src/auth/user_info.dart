@@ -1,4 +1,4 @@
-part of dart_firebase_admin;
+part of '../../dart_firebase_admin.dart';
 
 class UserInfo {
   UserInfo._(this._delegate);

@@ -1,8 +1,10 @@
-part of dart_firebase_admin;
+part of '../dart_firebase_admin.dart';
 
 class FirebaseAdminApp {
   factory FirebaseAdminApp.initializeApp(
-      String projectId, Credential credential) {
+    String projectId,
+    Credential credential,
+  ) {
     return FirebaseAdminApp._(projectId, credential);
   }
 
@@ -12,10 +14,10 @@ class FirebaseAdminApp {
 }
 
 extension FirebaseAdminStringExtension on String {
-  bool get isUid => this.isNotEmpty && this.length <= 128;
+  bool get isUid => isNotEmpty && length <= 128;
   // TODO check these are correct
   // https://github.com/firebase/firebase-admin-node/blob/aea280d325c202fedc3890850d8c04f2f7e9cd54/src/utils/validator.ts#L160
   bool get isEmail => RegExp(r'/^[^@]+@[^@]+$/').hasMatch(this);
   bool get isPhoneNumber =>
-      this.startsWith('+') && RegExp(r'/[\da-zA-Z]+/').hasMatch(this);
+      startsWith('+') && RegExp(r'/[\da-zA-Z]+/').hasMatch(this);
 }
