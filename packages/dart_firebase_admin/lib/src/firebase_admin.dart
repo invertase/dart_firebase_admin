@@ -1,6 +1,8 @@
 part of '../dart_firebase_admin.dart';
 
 class FirebaseAdminApp {
+  FirebaseAdminApp._(this._projectId, this._credential);
+
   factory FirebaseAdminApp.initializeApp(
     String projectId,
     Credential credential,
@@ -8,7 +10,6 @@ class FirebaseAdminApp {
     return FirebaseAdminApp._(projectId, credential);
   }
 
-  FirebaseAdminApp._(this._projectId, this._credential);
   final String _projectId;
   final Credential _credential;
 }

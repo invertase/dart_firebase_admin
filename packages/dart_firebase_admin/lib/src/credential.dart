@@ -1,32 +1,32 @@
 part of '../dart_firebase_admin.dart';
 
 class Credential {
-  Credential._(this._json);
+  Credential._(this._serviceAccountCredentials);
 
   factory Credential.fromServiceAccount(File serviceAccountFile) {
-    if (!serviceAccountFile.existsSync()) {
-      throw ArgumentError.value(
-        serviceAccountFile,
-        'serviceAccountFile',
-        'File does not exist',
-      );
+    final content = serviceAccountFile.readAsStringSync();
+
+    final json = jsonDecode(content);
+    if (json is! Map<String, Object?>) {
+      throw const FormatException('Invalid service account file');
     }
 
-    return Credential._(serviceAccountFile.readAsStringSync());
+    final serviceAccountCredentials =
+        auth.ServiceAccountCredentials.fromJson(json);
+
+    return Credential._(serviceAccountCredentials);
   }
 
   Credential.fromApplicationDefaultCredentials() : this._(null);
 
-  final String? _json;
+  final auth.ServiceAccountCredentials? _serviceAccountCredentials;
 
   Future<auth.AuthClient> _getAuthClient(List<String> scopes) {
-    if (_json == null) {
+    final serviceAccountCredentials = _serviceAccountCredentials;
+    if (serviceAccountCredentials == null) {
       return auth.clientViaApplicationDefaultCredentials(scopes: scopes);
     }
 
-    return auth.clientViaServiceAccount(
-      auth.ServiceAccountCredentials.fromJson(_json),
-      scopes,
-    );
+    return auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
   }
 }

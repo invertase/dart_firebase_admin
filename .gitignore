@@ -1,3 +1,6 @@
+build
+coverage
+
 .DS_Store
 .atom/
 .idea/
