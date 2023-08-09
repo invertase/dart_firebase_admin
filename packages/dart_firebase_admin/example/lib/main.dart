@@ -6,11 +6,13 @@ Future<void> main() async {
     Credential.fromApplicationDefaultCredentials(),
   );
 
+  admin.useEmulator();
+
   final auth = FirebaseAdminAuth(admin);
 
   // await auth.deleteUser('867gK70vkJNjOzlj4uQoMcg7a1d2');
   // await auth.createSessionCookie('867gK70vkJNjOzlj4uQoMcg7a1d2');
-  final d = await auth.deleteUsers(['p9bj9If2i4eQlr7NxnaxWGZsmgq1']);
+  final d = await auth.deleteUsers(['Tza8ZJNkQ4XA4fIjlbjcGNGz5gdH']);
   print(d.errors);
   print(d.failureCount);
   print('Deleted!');

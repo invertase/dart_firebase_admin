@@ -43,15 +43,17 @@ String _platformErrorCodeMessage(String code) {
 }
 
 /// Base interface for all Firebase Admin related errors.
-abstract class FirebaseAdminException implements Exception {
+abstract class FirebaseAdminException extends FirebaseException {
   FirebaseAdminException(this.service, this._code, [this._message]);
 
   final String service;
   final String _code;
   final String? _message;
 
+  @override
   String get code => '$service/${_code.replaceAll('_', '-').toLowerCase()}';
 
+  @override
   String get message => _message ?? _platformErrorCodeMessage(_code);
 }
 
@@ -80,15 +82,4 @@ R guard<R>(R Function() cb) {
   } catch (error, stackTrace) {
     _handleException(error, stackTrace);
   }
-}
-
-class FirebaseArrayIndexException implements Exception {
-  FirebaseArrayIndexException(this.index, this.message);
-
-  final int index;
-
-  final String message;
-
-  @override
-  String toString() => 'FirebaseArrayIndexException: $message';
 }

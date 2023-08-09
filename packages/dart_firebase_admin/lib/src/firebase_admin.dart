@@ -1,17 +1,17 @@
 part of '../dart_firebase_admin.dart';
 
 class FirebaseAdminApp {
-  FirebaseAdminApp._(this._projectId, this._credential);
+  FirebaseAdminApp.initializeApp(this.projectId, this.credential);
 
-  factory FirebaseAdminApp.initializeApp(
-    String projectId,
-    Credential credential,
-  ) {
-    return FirebaseAdminApp._(projectId, credential);
+  final String projectId;
+  final Credential credential;
+
+  @internal
+  Uri apiHost = Uri.https('identitytoolkit.googleapis.com', '/');
+
+  void useEmulator() {
+    apiHost = Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/');
   }
-
-  final String _projectId;
-  final Credential _credential;
 }
 
 extension FirebaseAdminStringExtension on String {

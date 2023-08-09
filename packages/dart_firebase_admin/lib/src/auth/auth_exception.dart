@@ -1,27 +1,23 @@
 part of '../../dart_firebase_admin.dart';
 
 class FirebaseAuthAdminException extends FirebaseAdminException {
-  FirebaseAuthAdminException._(String code, [String? message])
-      : super('auth', code, message);
+  FirebaseAuthAdminException(
+    this.errorCode, [
+    String? message,
+  ]) : super('auth', errorCode.name, errorCode.message ?? message);
 
   factory FirebaseAuthAdminException.fromServerError(
     firebase_auth_v1.DetailedApiRequestError error,
   ) {
     final code =
         _authServerToClientCode(error.message) ?? AuthClientErrorCode.unknown;
-    return FirebaseAuthAdminException._(code.name, code.message);
+    return FirebaseAuthAdminException(code);
   }
 
-  factory FirebaseAuthAdminException.fromAuthClientErrorCode(
-    AuthClientErrorCode code,
-  ) {
-    return FirebaseAuthAdminException._(code.name, code.message);
-  }
+  final AuthClientErrorCode errorCode;
 
   @override
-  String toString() {
-    return 'FirebaseAuthAdminException: $code: $message';
-  }
+  String toString() => 'FirebaseAuthAdminException: $code: $message';
 }
 
 extension AuthClientErrorCodeExtension on AuthClientErrorCode {
@@ -118,7 +114,7 @@ enum AuthClientErrorCode {
   userNotFound,
   notFound,
   userDisabled,
-  userNotDisabled,
+  userNotDisabled;
 }
 
 String? _authClientCodeMessage(AuthClientErrorCode code) {
@@ -391,7 +387,6 @@ String? _authClientCodeMessage(AuthClientErrorCode code) {
       return 'The user must be disabled in order to bulk delete it (or you must pass force=true).';
 
     case AuthClientErrorCode.unknown:
-    default:
       return null;
   }
 }

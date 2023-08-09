@@ -21,7 +21,8 @@ class Credential {
 
   final auth.ServiceAccountCredentials? _serviceAccountCredentials;
 
-  Future<auth.AuthClient> _getAuthClient(List<String> scopes) {
+  @internal
+  Future<auth.AuthClient> getAuthClient(List<String> scopes) {
     final serviceAccountCredentials = _serviceAccountCredentials;
     if (serviceAccountCredentials == null) {
       return auth.clientViaApplicationDefaultCredentials(scopes: scopes);
