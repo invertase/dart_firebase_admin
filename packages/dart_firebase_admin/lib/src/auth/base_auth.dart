@@ -8,6 +8,7 @@ import '../utils/validator.dart';
 import 'auth_api_request.dart';
 import 'auth_config.dart';
 import 'identifier.dart';
+import 'token_verifier.dart';
 import 'user.dart';
 import 'user_import_builder.dart';
 
@@ -15,6 +16,7 @@ abstract class BaseAuth {
   FirebaseAdminApp get app;
   @visibleForOverriding
   AbstractAuthRequestHandler get authRequestHandler;
+  FirebaseTokenVerifier get _sessionCookieVerifier;
 
   // TODO createCustomToken
   // TODO verifyIdToken
@@ -35,7 +37,9 @@ abstract class BaseAuth {
   Future<DecodedIdToken> verifySessionCookie(
     String sessionCookie, {
     bool checkRevoked = false,
-  }) async {}
+  }) async {
+    final isEmulator = app.isUsingEmulator;
+  }
 
   /// Imports the provided list of users into Firebase Auth.
   /// A maximum of 1000 users are allowed to be imported one at a time.
@@ -57,7 +61,7 @@ abstract class BaseAuth {
     List<UserImportRecord> users, [
     UserImportOptions? options,
   ]) async {
-    return await authRequestHandler.uploadAccount(users, options);
+    return authRequestHandler.uploadAccount(users, options);
   }
 
   /// Retrieves a list of users (single batch only) with a size of `maxResults`

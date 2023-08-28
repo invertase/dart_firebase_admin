@@ -6,10 +6,14 @@ class FirebaseAdminApp {
   final String projectId;
   final Credential credential;
 
+  bool get isUsingEmulator => _isUsingEmulator;
+  var _isUsingEmulator = false;
+
   @internal
   Uri apiHost = Uri.https('identitytoolkit.googleapis.com', '/');
 
   void useEmulator() {
+    _isUsingEmulator = true;
     apiHost = Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/');
   }
 }
