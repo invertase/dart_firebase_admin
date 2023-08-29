@@ -303,6 +303,10 @@ class FieldPath extends _Path<FieldPath> {
     };
   }
 
+  /// A special [FieldPath] value to refer to the ID of a document. It can be used
+  /// in queries to sort or filter by the document ID.
+  static final documentId = FieldPath(const <String>['__name__']);
+
   /// Returns the number of segments of this field path.
   int get _length => segments.length;
 

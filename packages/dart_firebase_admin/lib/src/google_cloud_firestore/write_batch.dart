@@ -137,6 +137,9 @@ class WriteBatch {
       final write = firestore1.Write(
         delete: documentRef._formattedName,
       );
+      if (precondition != null && !precondition._isEmpty) {
+        write.currentDocument = precondition._toProto();
+      }
       return write;
     }
 
@@ -182,13 +185,8 @@ class WriteBatch {
   void update(
     DocumentReference<Object?> documentRef,
     UpdateMap data, {
-    Timestamp? lastUpdateTime,
+    Precondition? precondition,
   }) {
-    Precondition? precondition;
-    if (lastUpdateTime != null) {
-      precondition = Precondition.timestamp(lastUpdateTime);
-    }
-
     _update(
       data: data,
       documentRef: documentRef,

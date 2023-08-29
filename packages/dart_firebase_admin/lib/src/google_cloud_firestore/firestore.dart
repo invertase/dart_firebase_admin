@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:firebaseapis/firestore/v1.dart' as firestore1;
@@ -13,7 +12,6 @@ import 'package:intl/intl.dart';
 
 import '../../dart_firebase_admin.dart';
 import '../object_utils.dart';
-import 'status_code.dart';
 import 'util.dart';
 import 'validate.dart';
 
@@ -30,6 +28,8 @@ part 'timestamp.dart';
 part 'transaction.dart';
 part 'types.dart';
 part 'write_batch.dart';
+part 'document_change.dart';
+part 'filter.dart';
 
 const _defaultMaxIdleChannels = 1;
 

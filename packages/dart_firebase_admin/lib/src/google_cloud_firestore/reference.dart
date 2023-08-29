@@ -20,7 +20,7 @@ class CollectionReference<T> extends Query<T> {
   /// ```dart
   /// final collectionRef = firestore.collection('col/doc/subcollection');
   /// final documentRef = collectionRef.parent;
-  /// console.log(`Parent name: ${documentRef.path}`);
+  /// print('Parent name: ${documentRef.path}');
   /// ```
   DocumentReference<T>? get parent {
     if (!_queryOptions.parentPath.isDocument) return null;
@@ -36,10 +36,97 @@ class CollectionReference<T> extends Query<T> {
   /// to the root of the database).
   String get path => _resourcePath.relativeName;
 
-  // TODO listDocuments
-  // TODO doc
-  // TODO add
-  // TODO ==
+  /// Gets a [DocumentReference] instance that refers to the document at
+  /// the specified path.
+  ///
+  /// If no path is specified, an automatically-generated unique ID will be
+  /// used for the returned [DocumentReference].
+  ///
+  /// If using [withConverter], the [path] must not contain any slash.
+  DocumentReference<T> doc([String? documentPath]) {
+    if (documentPath != null) {
+      _validateResourcePath('documentPath', documentPath);
+    } else {
+      documentPath = autoId();
+    }
+
+    final path = _resourcePath._append(documentPath);
+    if (!path.isDocument) {
+      throw ArgumentError.value(
+        documentPath,
+        'documentPath',
+        'Value for argument "documentPath" must point to a document, but was '
+            '"$documentPath". Your path does not contain an even number of components.',
+      );
+    }
+
+    // TODO test
+    if (_queryOptions.converter != FirestoreDataConverter.jsonConverter &&
+        path._parent() != _resourcePath) {
+      throw ArgumentError.value(
+        documentPath,
+        'documentPath',
+        'Value for argument "documentPath" must not contain a slash (/) if '
+            'the parent collection has a custom converter.',
+      );
+    }
+
+    return DocumentReference<T>._(
+      firestore: firestore,
+      path: path,
+      converter: _queryOptions.converter,
+    );
+  }
+
+  /// Retrieves the list of documents in this collection.
+  ///
+  /// The document references returned may include references to "missing
+  /// documents", i.e. document locations that have no document present but
+  /// which contain subcollections with documents. Attempting to read such a
+  /// document reference (e.g. via [DocumentReference.get]) will return a
+  /// [DocumentSnapshot] whose [DocumentSnapshot.exists] property is `false`.
+  Future<List<DocumentReference<T>>> listDocuments() async {
+    final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
+      firestore.app.projectId,
+      firestore._databaseId,
+    );
+
+    final response = await firestore._client.v1((client) {
+      return client.projects.databases.documents.list(
+        parentPath._formattedName,
+        id,
+        showMissing: true,
+        // Setting `pageSize` to an arbitrarily large value lets the backend cap
+        // the page size (currently to 300). Note that the backend rejects
+        // MAX_INT32 (b/146883794).
+        pageSize: 2 ^ 16 - 1,
+        mask_fieldPaths: [],
+      );
+    });
+
+    return [
+      for (final document
+          in response.documents ?? const <firestore1.Document>[])
+        doc(
+          // ignore: unnecessary_null_checks, we don't want to inadvertedly obtain a new document
+          _QualifiedResourcePath.fromSlashSeparatedString(document.name!).id!,
+        ),
+    ];
+  }
+
+  /// Add a new document to this collection with the specified data, assigning
+  /// it a document ID automatically.
+  Future<DocumentReference<T>> add(T data) async {
+    final firestoreData = _queryOptions.converter.toFirestore(data);
+    _validateDocumentData(
+      'data',
+      firestoreData,
+      allowDeletes: false,
+    );
+
+    final documentRef = doc();
+    return documentRef.create(firestoreData).then((_) => documentRef);
+  }
 
   @override
   CollectionReference<U> withConverter<U>({
@@ -158,6 +245,48 @@ class DocumentReference<T> implements _Serializable {
     return results.single;
   }
 
+  /// Deletes the document referred to by this [DocumentReference].
+  ///
+  /// A delete for a non-existing document is treated as a success (unless
+  /// [precondition] is specified).
+  Future<WriteResult> delete([Precondition? precondition]) async {
+    final writeBatch = WriteBatch._(this.firestore)
+      ..delete(this, precondition: precondition);
+
+    final results = await writeBatch.commit();
+    return results.single;
+  }
+
+  /// Writes to the document referred to by this DocumentReference. If the
+  /// document does not yet exist, it will be created.
+  Future<WriteResult> set(T data) async {
+    final writeBatch = WriteBatch._(this.firestore)..set(this, data);
+
+    final results = await writeBatch.commit();
+    return results.single;
+  }
+
+  /// Updates fields in the document referred to by this DocumentReference.
+  /// If the document doesn't yet exist, the update fails and the returned
+  /// Promise will be rejected.
+  ///
+  /// The update() method accepts either an object with field paths encoded as
+  /// keys and field values encoded as values, or a variable number of arguments
+  /// that alternate between field paths and field values.
+  ///
+  /// A [Precondition] restricting this update can be specified as the last
+  /// argument.
+  Future<WriteResult> update(
+    UpdateMap data, [
+    Precondition? precondition,
+  ]) async {
+    final writeBatch = WriteBatch._(this.firestore)
+      ..update(this, data, precondition: precondition);
+
+    final results = await writeBatch.commit();
+    return results.single;
+  }
+
   /// Gets a [CollectionReference] instance
   /// that refers to the collection at the specified path.
   ///
@@ -191,11 +320,7 @@ class DocumentReference<T> implements _Serializable {
   }
 
   // TODO listCollections
-  // TODO create
-  // TODO delete
-  // TODO set
-  // TODO update
-  // TODO onSnapshot
+  // TODO snapshots
 
   @override
   firestore1.Value _toProto() {
@@ -219,7 +344,7 @@ class _QueryCursor {
   _QueryCursor({required this.before, required this.values});
 
   final bool before;
-  final List<firestore1.Value?> values;
+  final List<firestore1.Value> values;
 }
 
 /*
@@ -230,9 +355,6 @@ enum LimitType {
   first,
   last,
 }
-
-// TODO
-abstract class _FilterInternal {}
 
 enum _Direction {
   ascending('ASCENDING'),
@@ -260,30 +382,39 @@ class _FieldOrder {
   }
 }
 
-class _QueryOptions<T> {
-  _QueryOptions._({
-    required this.parentPath,
-    required this.collectionId,
-    required this.converter,
-    required this.allDescendants,
-    required this.filters,
-    required this.fieldOrders,
-    this.startAt,
-    this.endAt,
-    this.limit,
-    this.projection,
-    this.limitType,
-    this.offset,
-    this.kindless = false,
-    this.requireConsistency = true,
-  });
+@freezed
+class _QueryOptions<T> with _$_QueryOptions<T> {
+  _QueryOptions._();
+
+  factory _QueryOptions({
+    required _ResourcePath parentPath,
+    required String collectionId,
+    required FirestoreDataConverter<T> converter,
+    required bool allDescendants,
+    required List<_FilterInternal> filters,
+    required List<_FieldOrder> fieldOrders,
+    _QueryCursor? startAt,
+    _QueryCursor? endAt,
+    int? limit,
+    firestore1.Projection? projection,
+    LimitType? limitType,
+    int? offset,
+    // Whether to select all documents under `parentPath`. By default, only
+    // collections that match `collectionId` are selected.
+
+    @Default(false) bool kindless,
+    // Whether to require consistent documents when restarting the query. By
+    // default, restarting the query uses the readTime offset of the original
+    // query to provide consistent results.
+    @Default(true) bool requireConsistency,
+  }) = __QueryOptions<T>;
 
   /// Returns query options for a single-collection query.
   factory _QueryOptions.forCollectionQuery(
     _ResourcePath collectionRef,
     FirestoreDataConverter<T> converter,
   ) {
-    return _QueryOptions<T>._(
+    return _QueryOptions<T>(
       parentPath: collectionRef._parent()!,
       collectionId: collectionRef.id!,
       converter: converter,
@@ -293,49 +424,176 @@ class _QueryOptions<T> {
     );
   }
 
-  // TODO
-
-  final _ResourcePath parentPath;
-  final String collectionId;
-  final FirestoreDataConverter<T> converter;
-  final bool allDescendants;
-  final List<_FilterInternal> filters;
-  final List<_FieldOrder> fieldOrders;
-  final _QueryCursor? startAt;
-  final _QueryCursor? endAt;
-  final int? limit;
-  final LimitType? limitType;
-  final int? offset;
-  final firestore1.Projection? projection;
-
-  // Whether to select all documents under `parentPath`. By default, only
-  // collections that match `collectionId` are selected.
-  final bool kindless;
-  // Whether to require consistent documents when restarting the query. By
-  // default, restarting the query uses the readTime offset of the original
-  // query to provide consistent results.
-  final bool requireConsistency;
+  bool get hasFieldOrders => fieldOrders.isNotEmpty;
 
   _QueryOptions<U> withConverter<U>(
     FirestoreDataConverter<U> converter,
   ) {
-    return _QueryOptions<U>._(
+    return _QueryOptions<U>(
       converter: converter,
-      parentPath: this.parentPath,
-      collectionId: this.collectionId,
-      allDescendants: this.allDescendants,
-      filters: this.filters,
-      fieldOrders: this.fieldOrders,
-      startAt: this.startAt,
-      endAt: this.endAt,
-      limit: this.limit,
-      limitType: this.limitType,
-      offset: this.offset,
-      projection: this.projection,
+      parentPath: parentPath,
+      collectionId: collectionId,
+      allDescendants: allDescendants,
+      filters: filters,
+      fieldOrders: fieldOrders,
+      startAt: startAt,
+      endAt: endAt,
+      limit: limit,
+      limitType: limitType,
+      offset: offset,
+      projection: projection,
     );
   }
 
-  // TODO ==
+  // TODO == fieldOrders, startAt, endAt, projection & double check that we're not checking properties we shouldn't
+}
+
+@immutable
+sealed class _FilterInternal {
+  /// Returns a list of all field filters that are contained within this filter
+  List<_FieldFilterInternal> get flattenedFilters;
+
+  /// Returns a list of all filters that are contained within this filter
+  List<_FilterInternal> get filters;
+
+  /// Returns the field of the first filter that's an inequality, or null if none.
+  FieldPath? get firstInequalityField;
+
+  /// Returns the proto representation of this filter
+  firestore1.Filter toProto();
+
+  @mustBeOverridden
+  @override
+  bool operator ==(Object other);
+
+  @mustBeOverridden
+  @override
+  int get hashCode;
+}
+
+class _CompositeFilterInternal implements _FilterInternal {
+  _CompositeFilterInternal({required this.op, required this.filters});
+
+  final _CompositeOperator op;
+  @override
+  final List<_FilterInternal> filters;
+
+  bool get isConjunction => op == _CompositeOperator.and;
+
+  @override
+  late final flattenedFilters = filters.fold<List<_FieldFilterInternal>>(
+    [],
+    (allFilters, subfilter) {
+      return allFilters..addAll(subfilter.flattenedFilters);
+    },
+  );
+
+  @override
+  FieldPath? get firstInequalityField {
+    return flattenedFilters
+        .firstWhereOrNull((filter) => filter.isInequalityFilter)
+        ?.field;
+  }
+
+  @override
+  firestore1.Filter toProto() {
+    if (filters.length == 1) return filters.single.toProto();
+
+    return firestore1.Filter(
+      compositeFilter: firestore1.CompositeFilter(
+        op: op.proto,
+        filters: filters.map((e) => e.toProto()).toList(),
+      ),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is _CompositeFilterInternal &&
+        runtimeType == other.runtimeType &&
+        op == other.op &&
+        const ListEquality<_FilterInternal>().equals(filters, other.filters);
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, op, filters);
+}
+
+class _FieldFilterInternal implements _FilterInternal {
+  _FieldFilterInternal({
+    required this.field,
+    required this.op,
+    required this.value,
+    required this.serializer,
+  });
+
+  final FieldPath field;
+  final WhereFilter op;
+  final Object? value;
+  final Serializer serializer;
+
+  @override
+  List<_FieldFilterInternal> get flattenedFilters => [this];
+
+  @override
+  List<_FieldFilterInternal> get filters => [this];
+
+  @override
+  FieldPath? get firstInequalityField => isInequalityFilter ? field : null;
+
+  bool get isInequalityFilter {
+    return op == WhereFilter.lessThan ||
+        op == WhereFilter.lessThanOrEqual ||
+        op == WhereFilter.greaterThan ||
+        op == WhereFilter.greaterThanOrEqual;
+  }
+
+  @override
+  firestore1.Filter toProto() {
+    final value = this.value;
+    if (value is num && value.isNaN) {
+      return firestore1.Filter(
+        unaryFilter: firestore1.UnaryFilter(
+          field: firestore1.FieldReference(
+            fieldPath: field._formattedName,
+          ),
+          op: op == WhereFilter.equal ? 'IS_NAN' : 'IS_NOT_NAN',
+        ),
+      );
+    }
+
+    if (value == null) {
+      return firestore1.Filter(
+        unaryFilter: firestore1.UnaryFilter(
+          field: firestore1.FieldReference(
+            fieldPath: field._formattedName,
+          ),
+          op: op == WhereFilter.equal ? 'IS_NULL' : 'IS_NOT_NULL',
+        ),
+      );
+    }
+
+    return firestore1.Filter(
+      fieldFilter: firestore1.FieldFilter(
+        field: firestore1.FieldReference(
+          fieldPath: field._formattedName,
+        ),
+        op: op.proto,
+        value: serializer.encodeValue(value),
+      ),
+    );
+  }
+
+  @override
+  bool operator ==(Object? other) {
+    return other is _FieldFilterInternal &&
+        field == other.field &&
+        op == other.op &&
+        value == other.value;
+  }
+
+  @override
+  int get hashCode => Object.hash(field, op, value);
 }
 
 @immutable
@@ -371,22 +629,689 @@ class Query<T> {
     );
   }
 
-  // TODO where
-  // TODO whereFilter
-  // TODO select
-  // TODO orderBy
-  // TODO limit
-  // TODO limitToLast
-  // TODO offset
-  // TODO count
-  // TODO ==
-  // TODO startAt
-  // TODO startAfter
-  // TODO endBefore
-  // TODO endAt
-  // TODO get
-  // TODO stream
+  /// Creates and returns a new [Query] that starts at the provided
+  /// set of field values relative to the order of the query. The order of the
+  /// provided values must match the order of the order by clauses of the query.
+  ///
+  /// - [fieldValuesOrDocumentSnapshot] The snapshot
+  ///   of the document the query results should start at or the field values to
+  ///   start this query at, in order of the query's order by.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col');
+  ///
+  /// query.orderBy('foo').startAt(42).get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> startAt(List<Object?> fieldValuesOrDocumentSnapshot) {
+    if (fieldValuesOrDocumentSnapshot.isEmpty) {
+      throw ArgumentError.value(
+        fieldValuesOrDocumentSnapshot,
+        'fieldValuesOrDocumentSnapshot',
+        'Value must not be an empty List.',
+      );
+    }
+
+    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
+    final startAt = _createCursor(
+      fieldOrders,
+      fieldValuesOrDocumentSnapshot,
+      before: true,
+    );
+
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      startAt: startAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that starts after the
+  /// provided set of field values relative to the order of the query. The order
+  /// of the provided values must match the order of the order by clauses of the
+  /// query.
+  ///
+  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
+  ///   of the document the query results should start after or the field values to
+  ///   start this query after, in order of the query's order by.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col');
+  ///
+  /// query.orderBy('foo').startAfter(42).get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> startAfter(List<Object?> fieldValuesOrDocumentSnapshot) {
+    if (fieldValuesOrDocumentSnapshot.isEmpty) {
+      throw ArgumentError.value(
+        fieldValuesOrDocumentSnapshot,
+        'fieldValuesOrDocumentSnapshot',
+        'Value must not be an empty List.',
+      );
+    }
+
+    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
+    final startAt = _createCursor(
+      fieldOrders,
+      fieldValuesOrDocumentSnapshot,
+      before: false,
+    );
+
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      startAt: startAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that ends before the set of
+  /// field values relative to the order of the query. The order of the provided
+  /// values must match the order of the order by clauses of the query.
+  ///
+  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
+  ///   of the document the query results should end before or the field values to
+  ///   end this query before, in order of the query's order by.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col');
+  ///
+  /// query.orderBy('foo').endBefore(42).get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> endBefore(List<Object?> fieldValuesOrDocumentSnapshot) {
+    if (fieldValuesOrDocumentSnapshot.isEmpty) {
+      throw ArgumentError.value(
+        fieldValuesOrDocumentSnapshot,
+        'fieldValuesOrDocumentSnapshot',
+        'Value must not be an empty List.',
+      );
+    }
+
+    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
+    final endAt = _createCursor(
+      fieldOrders,
+      fieldValuesOrDocumentSnapshot,
+      before: true,
+    );
+
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      endAt: endAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that ends at the provided
+  /// set of field values relative to the order of the query. The order of the
+  /// provided values must match the order of the order by clauses of the query.
+  ///
+  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
+  ///   of the document the query results should end at or the field values to end
+  ///   this query at, in order of the query's order by.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col');
+  ///
+  /// query.orderBy('foo').endAt(42).get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> endAt(List<Object?> fieldValuesOrDocumentSnapshot) {
+    if (fieldValuesOrDocumentSnapshot.isEmpty) {
+      throw ArgumentError.value(
+        fieldValuesOrDocumentSnapshot,
+        'fieldValuesOrDocumentSnapshot',
+        'Value must not be an empty List.',
+      );
+    }
+
+    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
+    final endAt = _createCursor(
+      fieldOrders,
+      fieldValuesOrDocumentSnapshot,
+      before: false,
+    );
+
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      endAt: endAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Executes the query and returns the results as a [QuerySnapshot].
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col').where('foo', '==', 'bar');
+  ///
+  /// query.get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Future<QuerySnapshot<T>> get() => _get(transactionId: null);
+
+  Future<QuerySnapshot<T>> _get({required String? transactionId}) async {
+    final docs = <QueryDocumentSnapshot<T>>[];
+    final response = await firestore._client.v1((client) async {
+      return client.projects.databases.documents.runQuery(
+        _toProto(
+          transactionId: transactionId,
+          readTime: null,
+        ),
+        _buildProtoParentPath(),
+      );
+    });
+  }
+
+  String _buildProtoParentPath() {
+    return _queryOptions.parentPath
+        ._toQualifiedResourcePath(
+          firestore.app.projectId,
+          firestore._databaseId,
+        )
+        ._formattedName;
+  }
+
+  firestore1.RunQueryRequest _toProto({
+    required String? transactionId,
+    required Timestamp? readTime,
+  }) {
+    if (readTime != null && transactionId != null) {
+      throw ArgumentError(
+        'readTime and transactionId cannot both be set.',
+      );
+    }
+
+    final structuredQuery = _toStructuredQuery();
+
+    // For limitToLast queries, the structured query has to be translated to a version with
+    // reversed ordered, and flipped startAt/endAt to work properly.
+    if (this._queryOptions.limitType == LimitType.last) {
+      if (!this._queryOptions.hasFieldOrders) {
+        throw ArgumentError(
+          'limitToLast() queries require specifying at least one orderBy() clause.',
+        );
+      }
+
+      structuredQuery.orderBy = _queryOptions.fieldOrders.map((order) {
+        // Flip the orderBy directions since we want the last results
+        final dir = order.direction == _Direction.descending
+            ? _Direction.ascending
+            : _Direction.descending;
+        return _FieldOrder(fieldPath: order.fieldPath, direction: dir)
+            ._toProto();
+      }).toList();
+
+      // Swap the cursors to match the now-flipped query ordering.
+      structuredQuery.startAt = _queryOptions.endAt != null
+          ? _toCursor(
+              _QueryCursor(
+                values: _queryOptions.endAt!.values,
+                before: !_queryOptions.endAt!.before,
+              ),
+            )
+          : null;
+      structuredQuery.endAt = _queryOptions.startAt != null
+          ? _toCursor(
+              _QueryCursor(
+                values: _queryOptions.startAt!.values,
+                before: !_queryOptions.startAt!.before,
+              ),
+            )
+          : null;
+    }
+
+    final runQueryRequest = firestore1.RunQueryRequest(
+      structuredQuery: structuredQuery,
+    );
+
+    if (transactionId != null) {
+      runQueryRequest.transaction = transactionId;
+    } else if (readTime != null) {
+      runQueryRequest.readTime = readTime._toProto().timestampValue;
+    }
+
+    return runQueryRequest;
+  }
+
+  firestore1.StructuredQuery _toStructuredQuery() {
+    final structuredQuery = firestore1.StructuredQuery(
+      from: [firestore1.CollectionSelector()],
+    );
+
+    if (_queryOptions.allDescendants) {
+      structuredQuery.from![0].allDescendants = true;
+    }
+
+    // Kindless queries select all descendant documents, so we remove the
+    // collectionId field.
+    if (!_queryOptions.kindless) {
+      structuredQuery.from![0].collectionId = this._queryOptions.collectionId;
+    }
+
+    if (_queryOptions.filters.isNotEmpty) {
+      structuredQuery.where = _CompositeFilterInternal(
+        filters: this._queryOptions.filters,
+        op: _CompositeOperator.and,
+      ).toProto();
+    }
+
+    if (this._queryOptions.hasFieldOrders) {
+      structuredQuery.orderBy =
+          _queryOptions.fieldOrders.map((o) => o._toProto()).toList();
+    }
+
+    structuredQuery.startAt = _toCursor(_queryOptions.startAt);
+    structuredQuery.endAt = _toCursor(_queryOptions.endAt);
+
+    final limit = _queryOptions.limit;
+    if (limit != null) structuredQuery.limit = limit;
+
+    structuredQuery.offset = _queryOptions.offset;
+    structuredQuery.select = _queryOptions.projection;
+
+    return structuredQuery;
+  }
+
+  /// Converts a QueryCursor to its proto representation.
+  firestore1.Cursor? _toCursor(_QueryCursor? cursor) {
+    if (cursor == null) return null;
+
+    return cursor.before
+        ? firestore1.Cursor(before: true, values: cursor.values)
+        : firestore1.Cursor(values: cursor.values);
+  }
+
   // TODO onSnapshot
+  // TODO stream
+
+  // /// {@macro collection_reference.where}
+  // Query<T> where(String path, WhereFilterOp op, Object? value) {
+  //   final fieldPath = FieldPath.fromArgument(FieldMask.field(path));
+  //   return whereFieldPath(fieldPath, op, value);
+  // }
+
+  // /// {@template collection_reference.where}
+  // /// Creates and returns a new [Query] with the additional filter
+  // /// that documents must contain the specified field and that its value should
+  // /// satisfy the relation constraint provided.
+  // ///
+  // /// This function returns a new (immutable) instance of the Query (rather than
+  // /// modify the existing instance) to impose the filter.
+  // ///
+  // /// - [fieldPath]: The name of a property value to compare.
+  // /// - [op]: A comparison operation in the form of a string.
+  // ///   Acceptable operator strings are "<", "<=", "==", "!=", ">=", ">", "array-contains",
+  // ///   "in", "not-in", and "array-contains-any".
+  // /// - [value]: The value to which to compare the field for inclusion in
+  // ///   a query.
+  // ///
+  // /// ```dart
+  // /// final collectionRef = firestore.collection('col');
+  // ///
+  // /// collectionRef.where('foo', WhereFilter.equal, 'bar').get().then((querySnapshot) {
+  // ///   querySnapshot.forEach((documentSnapshot) {
+  // ///     print('Found document at ${documentSnapshot.ref.path}');
+  // ///   });
+  // /// });
+  // /// ```
+  // /// {@endtemplate}
+  // Query<T> whereFieldPath(
+  //   FieldPath fieldPath,
+  //   WhereFilterOp op,
+  //   Object? value,
+  // ) {
+  //   return whereFilter(Filter.where(fieldPath, op, value));
+  // }
+
+  /// Creates and returns a new [Query] with the additional filter
+  /// that documents should satisfy the relation constraint(s) provided.
+  ///
+  /// This function returns a new (immutable) instance of the Query (rather than
+  /// modify the existing instance) to impose the filter.
+  ///
+  /// - [filter] A unary or composite filter to apply to the Query.
+  ///
+  /// ```dart
+  /// final collectionRef = firestore.collection('col');
+  ///
+  /// collectionRef.where(Filter.and(Filter.where('foo', WhereFilter.equal, 'bar'), Filter.where('foo', '!=', 'baz'))).get()
+  ///   .then((querySnapshot) {
+  ///     querySnapshot.forEach((documentSnapshot) {
+  ///       print('Found document at ${documentSnapshot.ref.path}');
+  ///     });
+  /// });
+  /// ```
+  Query<T> whereFilter(Filter filter) {
+    // TODO review all (where) snippets
+
+    if (_queryOptions.startAt != null || _queryOptions.endAt != null) {
+      throw ArgumentError(
+        'Cannot specify a where() filter after calling '
+        'startAt(), startAfter(), endBefore() or endAt().',
+      );
+    }
+
+    final parsedFilter = _parseFilter(filter);
+    if (parsedFilter.filters.isEmpty) {
+      // Return the existing query if not adding any more filters (e.g. an empty composite filter).
+      return this;
+    }
+
+    final options = _queryOptions.copyWith(
+      filters: [..._queryOptions.filters, parsedFilter],
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  _FilterInternal _parseFilter(Filter filter) {
+    switch (filter) {
+      case _UnaryFilter():
+        return _parseFieldFilter(filter);
+      case _CompositeFilter():
+        return _parseCompositeFilter(filter);
+    }
+  }
+
+  _FieldFilterInternal _parseFieldFilter(_UnaryFilter fieldFilterData) {
+    final value = fieldFilterData.value;
+    final operator = fieldFilterData.op;
+    final fieldPath = fieldFilterData.fieldPath;
+
+    _validateQueryValue('value', value);
+
+    if (fieldPath == FieldPath.documentId) {
+      switch (operator) {
+        case WhereFilter.arrayContains:
+        case WhereFilter.arrayContainsAny:
+          throw ArgumentError.value(
+            operator,
+            'op',
+            "Invalid query. You can't perform '$operator' queries on FieldPath.documentId().",
+          );
+        case WhereFilter.isIn:
+        case WhereFilter.notIn:
+          if (value is! List || value.isEmpty) {
+            throw ArgumentError.value(
+              value,
+              'value',
+              "Invalid query. A non-empty array is required for '$operator' filters.",
+            );
+          }
+          for (final item in value) {
+            if (item is! DocumentReference) {
+              throw ArgumentError.value(
+                value,
+                'value',
+                "Invalid query. When querying with '$operator', "
+                    'you must provide a List of non-empty DocumentReference instances as the argument.',
+              );
+            }
+          }
+        default:
+          if (value is! DocumentReference) {
+            throw ArgumentError.value(
+              value,
+              'value',
+              'Invalid query. When querying by document ID you must provide a '
+                  'DocumentReference instance.',
+            );
+          }
+      }
+    }
+
+    return _FieldFilterInternal(
+      serializer: firestore._serializer,
+      field: fieldPath,
+      op: operator,
+      value: value,
+    );
+  }
+
+  _FilterInternal _parseCompositeFilter(_CompositeFilter compositeFilterData) {
+    final parsedFilters = compositeFilterData.filters
+        .map(_parseFilter)
+        .where((filter) => filter.filters.isNotEmpty)
+        .toList();
+
+    // For composite filters containing 1 filter, return the only filter.
+    // For example: AND(FieldFilter1) == FieldFilter1
+    if (parsedFilters.length == 1) {
+      return parsedFilters.single;
+    }
+    return _CompositeFilterInternal(
+      filters: parsedFilters,
+      op: compositeFilterData.operator == _CompositeOperator.and
+          ? _CompositeOperator.and
+          : _CompositeOperator.or,
+    );
+  }
+
+  /// Creates and returns a new [Query] instance that applies a
+  /// field mask to the result and returns only the specified subset of fields.
+  /// You can specify a list of field paths to return, or use an empty list to
+  /// only return the references of matching documents.
+  ///
+  /// Queries that contain field masks cannot be listened to via `onSnapshot()`
+  /// listeners.
+  ///
+  /// This function returns a new (immutable) instance of the Query (rather than
+  /// modify the existing instance) to impose the field mask.
+  ///
+  /// - [fieldPaths] The field paths to return.
+  ///
+  /// ```dart
+  /// final collectionRef = firestore.collection('col');
+  /// final documentRef = collectionRef.doc('doc');
+  ///
+  /// return documentRef.set({x:10, y:5}).then(() {
+  ///   return collectionRef.where('x', '>', 5).select('y').get();
+  /// }).then((res) {
+  ///   print('y is ${res.docs[0].get('y')}.');
+  /// });
+  /// ```
+  Query<DocumentData> select([List<FieldPath> fieldPaths = const []]) {
+    final fields = <firestore1.FieldReference>[
+      if (fieldPaths.isEmpty)
+        firestore1.FieldReference(
+          fieldPath: FieldPath.documentId._formattedName,
+        )
+      else
+        for (final fieldPath in fieldPaths)
+          firestore1.FieldReference(fieldPath: fieldPath._formattedName),
+    ];
+
+    return Query<DocumentData>._(
+      firestore: firestore,
+      queryOptions: _queryOptions
+          .copyWith(projection: firestore1.Projection(fields: fields))
+          .withConverter(
+            // By specifying a field mask, the query result no longer conforms to type
+            // `T`. We there return `Query<DocumentData>`.
+            FirestoreDataConverter.jsonConverter,
+          ),
+    );
+  }
+
+  /// Creates and returns a new [Query] that's additionally sorted
+  /// by the specified field, optionally in descending order instead of
+  /// ascending.
+  ///
+  /// This function returns a new (immutable) instance of the Query (rather than
+  /// modify the existing instance) to impose the field mask.
+  ///
+  /// - [fieldPath]: The field to sort by.
+  /// - [descending] (false by default) Whether to obtain documents in descending order.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col').where('foo', '>', 42);
+  ///
+  /// query.orderaBy('foo', 'desc').get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> orderByFieldPath(
+    FieldPath fieldPath, {
+    bool descending = false,
+  }) {
+    if (_queryOptions.startAt != null || _queryOptions.endAt != null) {
+      throw ArgumentError(
+        'Cannot specify an orderBy() constraint after calling '
+        'startAt(), startAfter(), endBefore() or endAt().',
+      );
+    }
+
+    final newOrder = _FieldOrder(
+      fieldPath: fieldPath,
+      direction: descending ? _Direction.descending : _Direction.ascending,
+    );
+
+    final options = _queryOptions.copyWith(
+      fieldOrders: [..._queryOptions.fieldOrders, newOrder],
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that's additionally sorted
+  /// by the specified field, optionally in descending order instead of
+  /// ascending.
+  ///
+  /// This function returns a new (immutable) instance of the Query (rather than
+  /// modify the existing instance) to impose the field mask.
+  ///
+  /// - [fieldPath]: The field to sort by.
+  /// - [descending] (false by default) Whether to obtain documents in descending order.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col').where('foo', '>', 42);
+  ///
+  /// query.orderBy('foo', 'desc').get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> orderBy(
+    String path, {
+    bool descending = false,
+  }) {
+    return orderByFieldPath(
+      FieldPath.fromArgument(FieldMask.field(path)),
+      descending: descending,
+    );
+  }
+
+  /// Creates and returns a new [Query] that only returns the first matching documents.
+  ///
+  /// This function returns a new (immutable) instance of the Query (rather than
+  /// modify the existing instance) to impose the limit.
+  ///
+  /// - [limit] The maximum number of items to return.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col').where('foo', '>', 42);
+  ///
+  /// query.limit(1).get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> limit(int limit) {
+    final options = _queryOptions.copyWith(
+      limit: limit,
+      limitType: LimitType.first,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that only returns the last matching
+  /// documents.
+  ///
+  /// You must specify at least one [orderBy] clause for limitToLast queries,
+  /// otherwise an exception will be thrown during execution.
+  ///
+  /// Results for limitToLast queries cannot be streamed.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col').where('foo', '>', 42);
+  ///
+  /// query.limitToLast(1).get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Last matching document is ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> limitToLast(int limit) {
+    final options = _queryOptions.copyWith(
+      limit: limit,
+      limitType: LimitType.last,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Specifies the offset of the returned results.
+  ///
+  /// This function returns a new (immutable) instance of the [Query]
+  /// (rather than modify the existing instance) to impose the offset.
+  ///
+  /// - [offset] The offset to apply to the Query results
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col').where('foo', '>', 42);
+  ///
+  /// query.limit(10).offset(20).get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  Query<T> offset(int offset) {
+    final options = _queryOptions.copyWith(offset: offset);
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
 
   @mustBeOverridden
   @override
@@ -398,4 +1323,73 @@ class Query<T> {
 
   @override
   int get hashCode => Object.hash(runtimeType, _queryOptions);
+}
+
+/// A QuerySnapshot contains zero or more [QueryDocumentSnapshot] objects
+/// representing the results of a query.
+///
+/// The documents can be accessed as an array via the [docs] property.
+@immutable
+class QuerySnapshot<T> {
+  QuerySnapshot._(
+    this._docs,
+    this._changes, {
+    required this.query,
+    required this.readTime,
+  });
+
+  /// The query used in order to get this [QuerySnapshot].
+  final Query<T> query;
+
+  /// The time this query snapshot was obtained.
+  final Timestamp readTime;
+
+// TODO when is this set?
+// TODO set to null after read
+  final List<QueryDocumentSnapshot<T>> Function()? _docs;
+  final List<DocumentChange<T>> Function()? _changes;
+
+  /// A list of all the documents in this QuerySnapshot.
+  late final List<QueryDocumentSnapshot<T>> docs = _docs!();
+
+  /// Returns a list of the documents changes since the last snapshot.
+  ///
+  /// If this is the first snapshot, all documents will be in the list as added
+  /// changes.
+  late final List<DocumentChange<T>> docChanges = _changes!();
+
+  @override
+  bool operator ==(Object other) {
+    return other is QuerySnapshot<T> &&
+        runtimeType == other.runtimeType &&
+        query == other.query &&
+        const ListEquality<QueryDocumentSnapshot<Object?>>()
+            .equals(docs, other.docs) &&
+        const ListEquality<DocumentChange<Object?>>()
+            .equals(docChanges, other.docChanges);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        runtimeType,
+        query,
+        const ListEquality<QueryDocumentSnapshot<Object?>>().hash(docs),
+        const ListEquality<DocumentChange<Object?>>().hash(docChanges),
+      );
+}
+
+/// Validates that 'value' can be used as a query value.
+void _validateQueryValue(
+  String arg,
+  Object? value,
+) {
+  _validateUserInput(
+    arg,
+    value,
+    description: 'query constraint',
+    options: const _ValidateUserInputOptions(
+      allowDeletes: _AllowDeletes.none,
+      allowTransform: false,
+    ),
+  );
 }
