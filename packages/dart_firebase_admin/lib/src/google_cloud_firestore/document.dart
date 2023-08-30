@@ -1,5 +1,10 @@
 part of 'firestore.dart';
 
+class Optional<T> {
+  const Optional(this.value);
+  final T? value;
+}
+
 /// A DocumentSnapshot is an immutable representation for a document in a
 /// Firestore database. The data can be extracted with [data].
 ///
@@ -224,6 +229,39 @@ class DocumentSnapshot<T> {
 
       return object as T;
     }
+  }
+
+  /// Retrieves the field specified by [field].
+  ///
+  /// Will return `null` if the field does not exists.
+  /// Will return `Optional(null)` if the field exists but is `null`.
+  Optional<Object?>? get(FieldPath field) {
+    final protoField = _protoField(field);
+
+    if (protoField == null) return null;
+
+    return Optional(
+      ref.firestore._serializer.decodeValue(protoField),
+    );
+  }
+
+  firestore1.Value? _protoField(FieldPath field) {
+    final fieldsProto = this._fieldsProto?.fields;
+    if (fieldsProto == null) return null;
+    var fields = fieldsProto;
+
+    final components = field._toList();
+    for (var i = 0; i < components.length - 1; i++) {
+      final component = components[i];
+
+      final newFields = fields[component]?.mapValue;
+      // The field component is not present.
+      if (newFields == null) return null;
+
+      fields = newFields.fields!;
+    }
+
+    return fields[components.last];
   }
 
   firestore1.Write _toWriteProto() {

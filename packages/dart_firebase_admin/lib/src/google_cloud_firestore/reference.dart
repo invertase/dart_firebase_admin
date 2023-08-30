@@ -367,7 +367,10 @@ enum _Direction {
 
 /// A Query order-by field.
 class _FieldOrder {
-  _FieldOrder({required this.fieldPath, required this.direction});
+  _FieldOrder({
+    required this.fieldPath,
+    this.direction = _Direction.ascending,
+  });
 
   final FieldPath fieldPath;
   final _Direction direction;
@@ -603,6 +606,27 @@ class Query<T> {
     required _QueryOptions<T> queryOptions,
   }) : _queryOptions = queryOptions;
 
+  static List<Object?> _extractFieldValues(
+    DocumentSnapshot<Object?> documentSnapshot,
+    List<_FieldOrder> fieldOrders,
+  ) {
+    return fieldOrders.map((fieldOrder) {
+      if (fieldOrder.fieldPath == FieldPath.documentId) {
+        return documentSnapshot.ref;
+      }
+
+      final fieldValue = documentSnapshot.get(fieldOrder.fieldPath);
+      if (fieldValue == null) {
+        throw StateError(
+          'Field "${fieldOrder.fieldPath}" is missing in the provided DocumentSnapshot. '
+          'Please provide a document that contains values for all specified orderBy() '
+          'and where() constraints.',
+        );
+      }
+      return fieldValue.value;
+    }).toList();
+  }
+
   final Firestore firestore;
   final _QueryOptions<T> _queryOptions;
 
@@ -629,13 +653,123 @@ class Query<T> {
     );
   }
 
+  _QueryCursor _createCursor(
+    List<_FieldOrder> fieldOrders, {
+    List<Object?>? fieldValues,
+    DocumentSnapshot<Object?>? snapshot,
+    required bool before,
+  }) {
+    if (fieldValues != null && snapshot != null) {
+      throw ArgumentError(
+        'You cannot specify both "fieldValues" and "snapshot".',
+      );
+    }
+
+    if (snapshot != null) {
+      fieldValues = Query._extractFieldValues(snapshot, fieldOrders);
+    }
+
+    if (fieldValues == null) {
+      throw ArgumentError(
+        'You must specify "fieldValues" or "snapshot".',
+      );
+    }
+
+    if (fieldValues.length > fieldOrders.length) {
+      throw ArgumentError(
+        'Too many cursor values specified. The specified '
+        'values must match the orderBy() constraints of the query.',
+      );
+    }
+
+    final cursor = _QueryCursor(before: before, values: []);
+
+    for (var i = 0; i < fieldValues.length; ++i) {
+      final fieldValue = fieldValues[i];
+
+      if (fieldOrders[i].fieldPath == FieldPath.documentId &&
+          fieldValue is! DocumentReference) {
+        throw ArgumentError(
+          'When ordering with FieldPath.documentId(), '
+          'the cursor must be a DocumentReference.',
+        );
+      }
+
+      _validateQueryValue('$i', fieldValue);
+      cursor.values.add(this.firestore._serializer.encodeValue(fieldValue)!);
+    }
+
+    return cursor;
+  }
+
+  (_QueryCursor, List<_FieldOrder>) _cursorFromValues({
+    List<Object?>? fieldValues,
+    DocumentSnapshot<Object?>? snapshot,
+    required bool before,
+  }) {
+    if (fieldValues != null && fieldValues.isEmpty) {
+      throw ArgumentError.value(
+        fieldValues,
+        'fieldValues',
+        'Value must not be an empty List.',
+      );
+    }
+
+    final fieldOrders = _createImplicitOrderBy(snapshot);
+    final startAt = _createCursor(
+      fieldOrders,
+      fieldValues: fieldValues,
+      snapshot: snapshot,
+      before: before,
+    );
+    return (startAt, fieldOrders);
+  }
+
+  /// Computes the backend ordering semantics for DocumentSnapshot cursors.
+  List<_FieldOrder> _createImplicitOrderBy(
+    DocumentSnapshot<Object?>? snapshot,
+  ) {
+    // Add an implicit orderBy if the only cursor value is a DocumentSnapshot
+    // or a DocumentReference.
+    if (snapshot == null) return _queryOptions.fieldOrders;
+
+    final fieldOrders = _queryOptions.fieldOrders.toList();
+
+    // If no explicit ordering is specified, use the first inequality to
+    // define an implicit order.
+    if (fieldOrders.isEmpty) {
+      for (final filter in _queryOptions.filters) {
+        final fieldReference = filter.firstInequalityField;
+        if (fieldReference != null) {
+          fieldOrders.add(_FieldOrder(fieldPath: fieldReference));
+          break;
+        }
+      }
+    }
+
+    final hasDocumentId = fieldOrders.any(
+      (fieldOrder) => fieldOrder.fieldPath == FieldPath.documentId,
+    );
+    if (!hasDocumentId) {
+      // Add implicit sorting by name, using the last specified direction.
+      final lastDirection = fieldOrders.isEmpty
+          ? _Direction.ascending
+          : fieldOrders.last.direction;
+
+      fieldOrders.add(
+        _FieldOrder(fieldPath: FieldPath.documentId, direction: lastDirection),
+      );
+    }
+
+    return fieldOrders;
+  }
+
   /// Creates and returns a new [Query] that starts at the provided
   /// set of field values relative to the order of the query. The order of the
   /// provided values must match the order of the order by clauses of the query.
   ///
-  /// - [fieldValuesOrDocumentSnapshot] The snapshot
-  ///   of the document the query results should start at or the field values to
-  ///   start this query at, in order of the query's order by.
+  /// - [fieldValues] The field values to start this query at,
+  ///   in order of the query's order by.
   ///
   /// ```dart
   /// final query = firestore.collection('col');
@@ -646,19 +780,31 @@ class Query<T> {
   ///   });
   /// });
   /// ```
-  Query<T> startAt(List<Object?> fieldValuesOrDocumentSnapshot) {
-    if (fieldValuesOrDocumentSnapshot.isEmpty) {
-      throw ArgumentError.value(
-        fieldValuesOrDocumentSnapshot,
-        'fieldValuesOrDocumentSnapshot',
-        'Value must not be an empty List.',
-      );
-    }
+  Query<T> startAt(List<Object?> fieldValues) {
+    final (startAt, fieldOrders) = _cursorFromValues(
+      fieldValues: fieldValues,
+      before: true,
+    );
 
-    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
-    final startAt = _createCursor(
-      fieldOrders,
-      fieldValuesOrDocumentSnapshot,
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      startAt: startAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that starts at the provided
+  /// set of field values relative to the order of the query. The order of the
+  /// provided values must match the order of the order by clauses of the query.
+  ///
+  /// - [documentSnapshot] The snapshot of the document the query results
+  ///   should start at, in order of the query's order by.
+  Query<T> startAtDocument(DocumentSnapshot<Object?> documentSnapshot) {
+    final (startAt, fieldOrders) = _cursorFromValues(
+      snapshot: documentSnapshot,
       before: true,
     );
 
@@ -677,8 +823,7 @@ class Query<T> {
   /// of the provided values must match the order of the order by clauses of the
   /// query.
   ///
-  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
-  ///   of the document the query results should start after or the field values to
+  /// - [fieldValues]: The field values to
   ///   start this query after, in order of the query's order by.
   ///
   /// ```dart
@@ -690,19 +835,32 @@ class Query<T> {
   ///   });
   /// });
   /// ```
-  Query<T> startAfter(List<Object?> fieldValuesOrDocumentSnapshot) {
-    if (fieldValuesOrDocumentSnapshot.isEmpty) {
-      throw ArgumentError.value(
-        fieldValuesOrDocumentSnapshot,
-        'fieldValuesOrDocumentSnapshot',
-        'Value must not be an empty List.',
-      );
-    }
+  Query<T> startAfter(List<Object?> fieldValues) {
+    final (startAt, fieldOrders) = _cursorFromValues(
+      fieldValues: fieldValues,
+      before: false,
+    );
 
-    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
-    final startAt = _createCursor(
-      fieldOrders,
-      fieldValuesOrDocumentSnapshot,
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      startAt: startAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that starts after the
+  /// provided set of field values relative to the order of the query. The order
+  /// of the provided values must match the order of the order by clauses of the
+  /// query.
+  ///
+  /// - [snapshot]: The snapshot of the document the query results
+  ///   should start at, in order of the query's order by.
+  Query<T> startAfterDocument(DocumentSnapshot<Object?> snapshot) {
+    final (startAt, fieldOrders) = _cursorFromValues(
+      snapshot: snapshot,
       before: false,
     );
 
@@ -720,8 +878,7 @@ class Query<T> {
   /// field values relative to the order of the query. The order of the provided
   /// values must match the order of the order by clauses of the query.
   ///
-  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
-  ///   of the document the query results should end before or the field values to
+  /// - [fieldValues]: The field values to
   ///   end this query before, in order of the query's order by.
   ///
   /// ```dart
@@ -733,19 +890,31 @@ class Query<T> {
   ///   });
   /// });
   /// ```
-  Query<T> endBefore(List<Object?> fieldValuesOrDocumentSnapshot) {
-    if (fieldValuesOrDocumentSnapshot.isEmpty) {
-      throw ArgumentError.value(
-        fieldValuesOrDocumentSnapshot,
-        'fieldValuesOrDocumentSnapshot',
-        'Value must not be an empty List.',
-      );
-    }
+  Query<T> endBefore(List<Object?> fieldValues) {
+    final (endAt, fieldOrders) = _cursorFromValues(
+      fieldValues: fieldValues,
+      before: true,
+    );
 
-    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
-    final endAt = _createCursor(
-      fieldOrders,
-      fieldValuesOrDocumentSnapshot,
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      endAt: endAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that ends before the set of
+  /// field values relative to the order of the query. The order of the provided
+  /// values must match the order of the order by clauses of the query.
+  ///
+  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
+  ///   of the document the query results should end before.
+  Query<T> endBeforeDocument(DocumentSnapshot<Object?> snapshot) {
+    final (endAt, fieldOrders) = _cursorFromValues(
+      snapshot: snapshot,
       before: true,
     );
 
@@ -763,8 +932,7 @@ class Query<T> {
   /// set of field values relative to the order of the query. The order of the
   /// provided values must match the order of the order by clauses of the query.
   ///
-  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
-  ///   of the document the query results should end at or the field values to end
+  /// - [fieldValues]: The field values to end
   ///   this query at, in order of the query's order by.
   ///
   /// ```dart
@@ -776,19 +944,32 @@ class Query<T> {
   ///   });
   /// });
   /// ```
-  Query<T> endAt(List<Object?> fieldValuesOrDocumentSnapshot) {
-    if (fieldValuesOrDocumentSnapshot.isEmpty) {
-      throw ArgumentError.value(
-        fieldValuesOrDocumentSnapshot,
-        'fieldValuesOrDocumentSnapshot',
-        'Value must not be an empty List.',
-      );
-    }
+  Query<T> endAt(List<Object?> fieldValues) {
+    final (endAt, fieldOrders) = _cursorFromValues(
+      fieldValues: fieldValues,
+      before: false,
+    );
 
-    final fieldOrders = _createImplicitOrderBy(fieldValuesOrDocumentSnapshot);
-    final endAt = _createCursor(
-      fieldOrders,
-      fieldValuesOrDocumentSnapshot,
+    final options = _queryOptions.copyWith(
+      fieldOrders: fieldOrders,
+      endAt: endAt,
+    );
+    return Query<T>._(
+      firestore: firestore,
+      queryOptions: options,
+    );
+  }
+
+  /// Creates and returns a new [Query] that ends at the provided
+  /// set of field values relative to the order of the query. The order of the
+  /// provided values must match the order of the order by clauses of the query.
+  ///
+  /// - [snapshot]: The snapshot
+  ///   of the document the query results should end at, in order of the query's order by.
+  /// ```
+  Query<T> endAtDocument(DocumentSnapshot<Object?> snapshot) {
+    final (endAt, fieldOrders) = _cursorFromValues(
+      snapshot: snapshot,
       before: false,
     );
 
@@ -816,7 +997,6 @@ class Query<T> {
   Future<QuerySnapshot<T>> get() => _get(transactionId: null);
 
   Future<QuerySnapshot<T>> _get({required String? transactionId}) async {
-    final docs = <QueryDocumentSnapshot<T>>[];
     final response = await firestore._client.v1((client) async {
       return client.projects.databases.documents.runQuery(
         _toProto(
@@ -826,6 +1006,42 @@ class Query<T> {
         _buildProtoParentPath(),
       );
     });
+
+    final snapshots = response
+        .map((e) {
+          final document = e.document;
+          if (document == null) return null;
+
+          final snapshot = DocumentSnapshot._fromDocument(
+            document,
+            e.readTime,
+            firestore,
+          );
+          final finalDoc = _DocumentSnapshotBuilder(
+            snapshot.ref.withConverter(
+              fromFirestore: _queryOptions.converter.fromFirestore,
+              toFirestore: _queryOptions.converter.toFirestore,
+            ),
+          )
+            // Recreate the QueryDocumentSnapshot with the DocumentReference
+            // containing the original converter.
+            ..fieldsProto = firestore1.MapValue(fields: document.fields)
+            ..readTime = snapshot.readTime
+            ..createTime = snapshot.createTime
+            ..updateTime = snapshot.updateTime;
+
+          return finalDoc.build();
+        })
+        .whereNotNull()
+        // Specifying fieldsProto should cause the builder to create a query snapshot.
+        .cast<QueryDocumentSnapshot<T>>()
+        .toList();
+
+    return QuerySnapshot<T>._(
+      query: this,
+      readTime: snapshots.firstOrNull?.readTime,
+      docs: snapshots,
+    );
   }
 
   String _buildProtoParentPath() {
@@ -1331,9 +1547,8 @@ class Query<T> {
 /// The documents can be accessed as an array via the [docs] property.
 @immutable
 class QuerySnapshot<T> {
-  QuerySnapshot._(
-    this._docs,
-    this._changes, {
+  QuerySnapshot._({
+    required this.docs,
     required this.query,
     required this.readTime,
   });
@@ -1342,21 +1557,24 @@ class QuerySnapshot<T> {
   final Query<T> query;
 
   /// The time this query snapshot was obtained.
-  final Timestamp readTime;
-
-// TODO when is this set?
-// TODO set to null after read
-  final List<QueryDocumentSnapshot<T>> Function()? _docs;
-  final List<DocumentChange<T>> Function()? _changes;
+  final Timestamp? readTime;
 
   /// A list of all the documents in this QuerySnapshot.
-  late final List<QueryDocumentSnapshot<T>> docs = _docs!();
+  final List<QueryDocumentSnapshot<T>> docs;
 
   /// Returns a list of the documents changes since the last snapshot.
   ///
   /// If this is the first snapshot, all documents will be in the list as added
   /// changes.
-  late final List<DocumentChange<T>> docChanges = _changes!();
+  late final List<DocumentChange<T>> docChanges = [
+    for (final (index, doc) in docs.indexed)
+      DocumentChange<T>._(
+        type: DocumentChangeType.added,
+        oldIndex: -1,
+        newIndex: index,
+        doc: doc,
+      ),
+  ];
 
   @override
   bool operator ==(Object other) {
