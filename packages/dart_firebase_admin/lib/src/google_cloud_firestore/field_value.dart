@@ -1,11 +1,111 @@
 part of 'firestore.dart';
 
+abstract class FieldValue {
+  /// Returns a special value that can be used with set(), create() or update()
+  /// that tells the server to increment the the field's current value by the
+  /// given value.
+  ///
+  /// If either current field value or the operand uses floating point
+  /// precision, both values will be interpreted as floating point numbers and
+  /// all arithmetic will follow IEEE 754 semantics. Otherwise, integer
+  /// precision is kept and the result is capped between -2^63 and 2^63-1.
+  ///
+  /// If the current field value is not of type 'number', or if the field does
+  /// not yet exist, the transformation will set the field to the given value.
+  ///
+  /// ```dart
+  /// final documentRef = firestore.doc('col/doc');
+  ///
+  /// documentRef.update({
+  ///   'counter', Firestore.FieldValue.increment(1),
+  /// }).then(() {
+  ///   return documentRef.get();
+  /// }).then((doc) {
+  ///   // doc.get('counter') was incremented
+  /// });
+  /// ```
+  const factory FieldValue.increment(num n) = _NumericIncrementTransform;
+
+  /// Returns a special value that can be used with set(), create() or update()
+  /// that tells the server to union the given elements with any array value that
+  /// already exists on the server. Each specified element that doesn't already
+  /// exist in the array will be added to the end. If the field being modified is
+  /// not already an array it will be overwritten with an array containing
+  /// exactly the specified elements.
+  ///
+  /// ```dart
+  /// final documentRef = firestore.doc('col/doc');
+  ///
+  /// documentRef.update({
+  ///   'array': Firestore.FieldValue.arrayUnion('foo'),
+  /// }).then(() {
+  ///   return documentRef.get();
+  /// }).then((doc) {
+  ///   // doc.get('array') contains field 'foo'
+  /// });
+  /// ```
+  const factory FieldValue.arrayUnion(List<Object?> elements) =
+      _ArrayUnionTransform;
+
+  /// Returns a special value that can be used with set(), create() or update()
+  /// that tells the server to remove the given elements from any array value
+  /// that already exists on the server. All instances of each element specified
+  /// will be removed from the array. If the field being modified is not already
+  /// an array it will be overwritten with an empty array.
+  ///
+  /// ```dart
+  /// final documentRef = firestore.doc('col/doc');
+  ///
+  /// documentRef.update({
+  ///   'array': Firestore.FieldValue.arrayRemove('foo'),
+  /// }).then(() {
+  ///   return documentRef.get();
+  /// }).then((doc) {
+  ///   // doc.get('array') no longer contains field 'foo'
+  /// });
+  /// ```
+  const factory FieldValue.arrayRemove(List<Object?> elements) =
+      _ArrayRemoveTransform;
+
+  /// Returns a sentinel for use with update() or set() with {merge:true} to mark
+  /// a field for deletion.
+  ///
+  /// ```dart
+  /// final documentRef = firestore.doc('col/doc');
+  /// final data = { a: 'b', c: 'd' };
+  ///
+  /// documentRef.set(data).then(() {
+  ///   return documentRef.update({a: Firestore.FieldValue.delete()});
+  /// }).then(() {
+  ///   // Document now only contains { c: 'd' }
+  /// });
+  /// ```
+  static const FieldValue delete = _DeleteTransform.deleteSentinel;
+
+  /// Returns a sentinel used with set(), create() or update() to include a
+  /// server-generated timestamp in the written data.
+  ///
+  /// ```dart
+  /// final documentRef = firestore.doc('col/doc');
+  ///
+  /// documentRef.set({
+  ///   'time': Firestore.FieldValue.serverTimestamp()
+  /// }).then(() {
+  ///   return documentRef.get();
+  /// }).then((doc) {
+  ///   print('Server time set to ${doc.get('time')}');
+  /// });
+  /// ```
+  static const FieldValue serverTimestamp =
+      _ServerTimestampTransform.serverTimestampSentinel;
+}
+
 /// An internal interface shared by all field transforms.
 //
 /// A [_FieldTransform] subclass should implement [includeInDocumentMask],
 /// [includeInDocumentTransform] and 'toProto' (if [includeInDocumentTransform]
 /// is `true`).
-abstract class _FieldTransform {
+abstract class _FieldTransform implements FieldValue {
   /// Whether this field transform should be included in the document mask.
   bool get includeInDocumentMask;
 
@@ -18,7 +118,7 @@ abstract class _FieldTransform {
   /// Performs input validation on the values of this field transform.
   ///
   /// - [allowUndefined]: Whether to allow nested properties that are undefined
-  void validate({bool allowUndefined});
+  void validate();
 
   /// The proto representation for this field transform.
   firestore1.FieldTransform _toProto(
@@ -46,7 +146,7 @@ class _DeleteTransform implements _FieldTransform {
   String get methodName => 'FieldValue.delete';
 
   @override
-  void validate({bool? allowUndefined}) {}
+  void validate() {}
 
   @override
   firestore1.FieldTransform _toProto(
@@ -77,7 +177,7 @@ class _NumericIncrementTransform implements _FieldTransform {
   String get methodName => 'FieldValue.increment';
 
   @override
-  void validate({bool? allowUndefined}) {
+  void validate() {
     if (value.isNaN) {
       throw ArgumentError.value(
         value,
@@ -124,7 +224,7 @@ class _ArrayUnionTransform implements _FieldTransform {
   String get methodName => 'FieldValue.arrayUnion';
 
   @override
-  void validate({bool? allowUndefined}) {
+  void validate() {
     elements.forEachIndexed(_validateArrayElement);
   }
 
@@ -166,7 +266,7 @@ class _ArrayRemoveTransform implements _FieldTransform {
   String get methodName => 'FieldValue.arrayRemove';
 
   @override
-  void validate({bool? allowUndefined}) {
+  void validate() {
     elements.forEachIndexed(_validateArrayElement);
   }
 
@@ -189,6 +289,36 @@ class _ArrayRemoveTransform implements _FieldTransform {
 
   @override
   int get hashCode => const DeepCollectionEquality().hash(elements);
+}
+
+/// A transform that sets a field to the Firestore server time.
+class _ServerTimestampTransform implements _FieldTransform {
+  const _ServerTimestampTransform();
+
+  static const serverTimestampSentinel = _ServerTimestampTransform();
+
+  @override
+  bool get includeInDocumentMask => false;
+
+  @override
+  bool get includeInDocumentTransform => true;
+
+  @override
+  String get methodName => 'FieldValue.serverTimestamp';
+
+  @override
+  firestore1.FieldTransform _toProto(
+    Serializer serializer,
+    FieldPath fieldPath,
+  ) {
+    return firestore1.FieldTransform(
+      fieldPath: fieldPath._formattedName,
+      setToServerValue: 'REQUEST_TIME',
+    );
+  }
+
+  @override
+  void validate() {}
 }
 
 enum _AllowDeletes {

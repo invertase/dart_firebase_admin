@@ -1,9 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
-
-import '../../dart_firebase_admin.dart';
 
 abstract class SignatureVerifier {
   Future<void> verify(String token);
