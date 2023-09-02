@@ -99,7 +99,7 @@ class CollectionReference<T> extends Query<T> {
         // Setting `pageSize` to an arbitrarily large value lets the backend cap
         // the page size (currently to 300). Note that the backend rejects
         // MAX_INT32 (b/146883794).
-        pageSize: 2 ^ 16 - 1,
+        pageSize: math.pow(2, 16 - 1).toInt(),
         mask_fieldPaths: [],
       );
     });

@@ -95,7 +95,7 @@ class Timestamp implements _Serializable {
         timestampValue.length - 1,
       );
       final trailingZeroes = 9 - nanoString.length;
-      nanos = int.parse(nanoString) * (10 ^ trailingZeroes);
+      nanos = int.parse(nanoString) * (math.pow(10, trailingZeroes).toInt());
     }
 
     if (nanos.isNaN || date.second.isNaN) {
