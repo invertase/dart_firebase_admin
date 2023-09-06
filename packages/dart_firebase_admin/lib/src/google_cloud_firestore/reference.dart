@@ -4,7 +4,7 @@ class CollectionReference<T> extends Query<T> {
   CollectionReference._({
     required super.firestore,
     required _ResourcePath path,
-    required FirestoreDataConverter<T> converter,
+    required _FirestoreDataConverter<T> converter,
   }) : super._(
           queryOptions: _QueryOptions.forCollectionQuery(path, converter),
         );
@@ -61,7 +61,7 @@ class CollectionReference<T> extends Query<T> {
     }
 
     // TODO test
-    if (_queryOptions.converter != FirestoreDataConverter.jsonConverter &&
+    if (_queryOptions.converter != _FirestoreDataConverter.jsonConverter &&
         path._parent() != _resourcePath) {
       throw ArgumentError.value(
         documentPath,
@@ -136,7 +136,7 @@ class CollectionReference<T> extends Query<T> {
     return CollectionReference<U>._(
       firestore: firestore,
       path: _queryOptions.parentPath._append(id),
-      converter: FirestoreDataConverter<U>(
+      converter: _FirestoreDataConverter<U>(
         fromFirestore: fromFirestore,
         toFirestore: toFirestore,
       ),
@@ -155,12 +155,12 @@ class DocumentReference<T> implements _Serializable {
   const DocumentReference._({
     required this.firestore,
     required _ResourcePath path,
-    required FirestoreDataConverter<T> converter,
+    required _FirestoreDataConverter<T> converter,
   })  : _converter = converter,
         _path = path;
 
   final _ResourcePath _path;
-  final FirestoreDataConverter<T> _converter;
+  final _FirestoreDataConverter<T> _converter;
   final Firestore firestore;
 
   /// A string representing the path of the referenced document (relative
@@ -207,7 +207,7 @@ class DocumentReference<T> implements _Serializable {
     return DocumentReference<R>._(
       firestore: firestore,
       path: _path,
-      converter: FirestoreDataConverter<R>(
+      converter: _FirestoreDataConverter<R>(
         fromFirestore: fromFirestore,
         toFirestore: toFirestore,
       ),
@@ -277,11 +277,18 @@ class DocumentReference<T> implements _Serializable {
   /// A [Precondition] restricting this update can be specified as the last
   /// argument.
   Future<WriteResult> update(
-    UpdateMap data, [
+    Map<Object?, Object?> data, [
     Precondition? precondition,
   ]) async {
     final writeBatch = WriteBatch._(this.firestore)
-      ..update(this, data, precondition: precondition);
+      ..update(
+        this,
+        {
+          for (final entry in data.entries)
+            FieldPath.from(entry.key): entry.value,
+        },
+        precondition: precondition,
+      );
 
     final results = await writeBatch.commit();
     return results.single;
@@ -315,7 +322,7 @@ class DocumentReference<T> implements _Serializable {
     return CollectionReference<DocumentData>._(
       firestore: firestore,
       path: path,
-      converter: FirestoreDataConverter.jsonConverter,
+      converter: _FirestoreDataConverter.jsonConverter,
     );
   }
 
@@ -387,12 +394,10 @@ class _FieldOrder {
 
 @freezed
 class _QueryOptions<T> with _$_QueryOptions<T> {
-  _QueryOptions._();
-
   factory _QueryOptions({
     required _ResourcePath parentPath,
     required String collectionId,
-    required FirestoreDataConverter<T> converter,
+    required _FirestoreDataConverter<T> converter,
     required bool allDescendants,
     required List<_FilterInternal> filters,
     required List<_FieldOrder> fieldOrders,
@@ -411,11 +416,12 @@ class _QueryOptions<T> with _$_QueryOptions<T> {
     // query to provide consistent results.
     @Default(true) bool requireConsistency,
   }) = __QueryOptions<T>;
+  _QueryOptions._();
 
   /// Returns query options for a single-collection query.
   factory _QueryOptions.forCollectionQuery(
     _ResourcePath collectionRef,
-    FirestoreDataConverter<T> converter,
+    _FirestoreDataConverter<T> converter,
   ) {
     return _QueryOptions<T>(
       parentPath: collectionRef._parent()!,
@@ -430,7 +436,7 @@ class _QueryOptions<T> with _$_QueryOptions<T> {
   bool get hasFieldOrders => fieldOrders.isNotEmpty;
 
   _QueryOptions<U> withConverter<U>(
-    FirestoreDataConverter<U> converter,
+    _FirestoreDataConverter<U> converter,
   ) {
     return _QueryOptions<U>(
       converter: converter,
@@ -533,7 +539,7 @@ class _FieldFilterInternal implements _FilterInternal {
   final FieldPath field;
   final WhereFilter op;
   final Object? value;
-  final Serializer serializer;
+  final _Serializer serializer;
 
   @override
   List<_FieldFilterInternal> get flattenedFilters => [this];
@@ -645,7 +651,7 @@ class Query<T> {
     return Query<U>._(
       firestore: firestore,
       queryOptions: _queryOptions.withConverter(
-        FirestoreDataConverter(
+        _FirestoreDataConverter(
           fromFirestore: fromFirestore,
           toFirestore: toFirestore,
         ),
@@ -1372,7 +1378,7 @@ class Query<T> {
           .withConverter(
             // By specifying a field mask, the query result no longer conforms to type
             // `T`. We there return `Query<DocumentData>`.
-            FirestoreDataConverter.jsonConverter,
+            _FirestoreDataConverter.jsonConverter,
           ),
     );
   }

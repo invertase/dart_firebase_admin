@@ -10,11 +10,17 @@ class FirebaseAdminApp {
   var _isUsingEmulator = false;
 
   @internal
-  Uri apiHost = Uri.https('identitytoolkit.googleapis.com', '/');
+  Uri authApiHost = Uri.https('identitytoolkit.googleapis.com', '/');
+  @internal
+  Uri firestoreApiHost = Uri.https('identitytoolkit.googleapis.com', '/');
 
   void useEmulator() {
     _isUsingEmulator = true;
-    apiHost = Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/');
+    // TODO use different apiHost for every service
+    authApiHost = Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/');
+    firestoreApiHost = Uri.http('127.0.0.1:8080', '/'
+        // 'identitytoolkit.googleapis.com/',
+        );
   }
 }
 

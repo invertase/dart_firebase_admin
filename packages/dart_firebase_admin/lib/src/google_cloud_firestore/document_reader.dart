@@ -52,17 +52,33 @@ class DocumentReader<T> {
       return client.projects.databases.documents.batchGet(
         firestore1.BatchGetDocumentsRequest(
           documents: _outstandingDocuments.toList(),
-          mask: firestore1.DocumentMask(
-            fieldPaths: fieldMask?.map((e) => e._formattedName).toList(),
-          ),
+          mask: fieldMask.let((fieldMask) {
+            return firestore1.DocumentMask(
+              fieldPaths: fieldMask.map((e) => e._formattedName).toList(),
+            );
+          }),
           // TODO
           newTransaction: null,
           // TODO
           readTime: null,
           transaction: transactionId,
         ),
-        firestore._databaseId,
+        firestore._formattedDatabaseName,
       );
+      // return client.projects.databases.documents.batchGet(
+      //   firestore1.BatchGetDocumentsRequest(
+      //     documents: _outstandingDocuments.toList(),
+      //     mask: firestore1.DocumentMask(
+      //       fieldPaths: fieldMask?.map((e) => e._formattedName).toList(),
+      //     ),
+      //     // TODO
+      //     newTransaction: null,
+      //     // TODO
+      //     readTime: null,
+      //     transaction: transactionId,
+      //   ),
+      //   firestore._formattedDatabaseName,
+      // );
     });
 
     for (final response in documents) {

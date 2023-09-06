@@ -67,8 +67,7 @@ abstract class FieldValue {
   const factory FieldValue.arrayRemove(List<Object?> elements) =
       _ArrayRemoveTransform;
 
-  /// Returns a sentinel for use with update() or set() with {merge:true} to mark
-  /// a field for deletion.
+  /// Returns a sentinel for use with update() to mark a field for deletion.
   ///
   /// ```dart
   /// final documentRef = firestore.doc('col/doc');
@@ -122,7 +121,7 @@ abstract class _FieldTransform implements FieldValue {
 
   /// The proto representation for this field transform.
   firestore1.FieldTransform _toProto(
-    Serializer serializer,
+    _Serializer serializer,
     FieldPath fieldPath,
   );
 }
@@ -150,7 +149,7 @@ class _DeleteTransform implements _FieldTransform {
 
   @override
   firestore1.FieldTransform _toProto(
-    Serializer serializer,
+    _Serializer serializer,
     FieldPath fieldPath,
   ) {
     throw UnsupportedError(
@@ -189,7 +188,7 @@ class _NumericIncrementTransform implements _FieldTransform {
 
   @override
   firestore1.FieldTransform _toProto(
-    Serializer serializer,
+    _Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore1.FieldTransform(
@@ -230,7 +229,7 @@ class _ArrayUnionTransform implements _FieldTransform {
 
   @override
   firestore1.FieldTransform _toProto(
-    Serializer serializer,
+    _Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore1.FieldTransform(
@@ -272,7 +271,7 @@ class _ArrayRemoveTransform implements _FieldTransform {
 
   @override
   firestore1.FieldTransform _toProto(
-    Serializer serializer,
+    _Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore1.FieldTransform(
@@ -308,7 +307,7 @@ class _ServerTimestampTransform implements _FieldTransform {
 
   @override
   firestore1.FieldTransform _toProto(
-    Serializer serializer,
+    _Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore1.FieldTransform(
@@ -406,22 +405,18 @@ void _validateUserInput(
         throw ArgumentError.value(
           value,
           value.methodName,
-          'must appear at the top-level and can only be used in update() '
-          'or set() with {merge:true}$fieldPathMessage.',
+          'must appear at the top-level and can only be used in update()$fieldPathMessage.',
         );
       } else if (options.allowDeletes == _AllowDeletes.root) {
         switch (level) {
-          case 0:
-          // Ok (update() with UpdateData).
-          case 1 when path?._length == 1:
-            // Ok (update with varargs).
+          case 1:
+            // Ok, at the root of update({})
             break;
           default:
             throw ArgumentError.value(
               value,
               value.methodName,
-              'must appear at the top-level and can only be used in update() '
-              'or set() with {merge:true}$fieldPathMessage.',
+              'must appear at the top-level and can only be used in update()$fieldPathMessage.',
             );
         }
       }
@@ -445,7 +440,7 @@ void _validateUserInput(
       throw ArgumentError.value(
         value,
         description,
-        'Cannot use object of type "FieldPath" as a Firestore value$fieldPathMessage',
+        'Cannot use object of type "FieldPath" as a Firestore value$fieldPathMessage.',
       );
 
     case DocumentReference():
@@ -453,13 +448,18 @@ void _validateUserInput(
     case Timestamp() || DateTime():
     // TODO case Buffer || Uint8Array:
     case null:
-    // Ok.
+    case num():
+    case BigInt():
+    case String():
+    case bool():
+      // Ok.
+      break;
 
     default:
       throw ArgumentError.value(
         value,
         description,
-        'Unsupported value type: ${value.runtimeType}$fieldPathMessage',
+        'Unsupported value type: ${value.runtimeType}$fieldPathMessage.',
       );
   }
 }

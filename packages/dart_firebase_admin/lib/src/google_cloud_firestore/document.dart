@@ -127,7 +127,7 @@ class DocumentSnapshot<T> {
     final ref = DocumentReference<DocumentData>._(
       firestore: firestore,
       path: _QualifiedResourcePath.fromSlashSeparatedString(document.name!),
-      converter: FirestoreDataConverter.jsonConverter,
+      converter: _FirestoreDataConverter.jsonConverter,
     );
 
     final builder = _DocumentSnapshotBuilder(ref)
@@ -147,7 +147,7 @@ class DocumentSnapshot<T> {
     final ref = DocumentReference<DocumentData>._(
       firestore: firestore,
       path: _QualifiedResourcePath.fromSlashSeparatedString(document),
-      converter: FirestoreDataConverter.jsonConverter,
+      converter: _FirestoreDataConverter.jsonConverter,
     );
 
     final builder = _DocumentSnapshotBuilder(ref)
@@ -205,11 +205,11 @@ class DocumentSnapshot<T> {
     final converter = ref._converter;
     // We only want to use the converter and create a new QueryDocumentSnapshot
     // if a converter has been provided.
-    if (converter != FirestoreDataConverter.jsonConverter) {
+    if (converter != _FirestoreDataConverter.jsonConverter) {
       final untypedReference = DocumentReference._(
         firestore: ref.firestore,
         path: ref._path,
-        converter: FirestoreDataConverter.jsonConverter,
+        converter: _FirestoreDataConverter.jsonConverter,
       );
 
       return converter.fromFirestore(
@@ -235,8 +235,9 @@ class DocumentSnapshot<T> {
   ///
   /// Will return `null` if the field does not exists.
   /// Will return `Optional(null)` if the field exists but is `null`.
-  Optional<Object?>? get(FieldPath field) {
-    final protoField = _protoField(field);
+  Optional<Object?>? get(Object field) {
+    final fieldPath = FieldPath.from(field);
+    final protoField = _protoField(fieldPath);
 
     if (protoField == null) return null;
 
@@ -434,7 +435,7 @@ class _DocumentTransform<T> {
   }
 
   /// Converts a document transform to the Firestore 'FieldTransform' Proto.
-  List<firestore1.FieldTransform> toProto(Serializer serializer) {
+  List<firestore1.FieldTransform> toProto(_Serializer serializer) {
     return [
       for (final entry in transforms.entries)
         entry.value._toProto(serializer, entry.key),

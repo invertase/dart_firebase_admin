@@ -46,17 +46,22 @@ class Firestore {
   }
 
   final FirebaseAdminApp app;
-  late final _client = FirestoreHttpClient(app);
+  late final _client = _FirestoreHttpClient(app);
 
   // TODO do we need a `setSettings` method like in node?
   // If we don't, remove this frozen settings
   var _settingsFrozen = false;
   late Settings _settings;
 
-  late final _serializer = Serializer(this);
+  late final _serializer = _Serializer(this);
 
   /// Returns the Database ID for this Firestore instance.
   String get _databaseId => _settings.databaseId ?? '(default)';
+
+  /// The Database ID, using the format 'projects/${app.projectId}/databases/$_databaseId'
+  String get _formattedDatabaseName {
+    return 'projects/${app.projectId}/databases/$_databaseId';
+  }
 
   void _validateAndApplySettings(Settings settingsArg) {
     var settings = settingsArg;
@@ -137,7 +142,7 @@ class Firestore {
     return DocumentReference._(
       firestore: this,
       path: path,
-      converter: FirestoreDataConverter.jsonConverter,
+      converter: _FirestoreDataConverter.jsonConverter,
     );
   }
 
@@ -171,7 +176,7 @@ class Firestore {
     return CollectionReference._(
       firestore: this,
       path: path,
-      converter: FirestoreDataConverter.jsonConverter,
+      converter: _FirestoreDataConverter.jsonConverter,
     );
   }
 
@@ -188,7 +193,7 @@ class Firestore {
       );
     }
 
-    final fieldMask = parseFieldMask(readOptions);
+    final fieldMask = _parseFieldMask(readOptions);
     final tag = requestTag();
 
     final reader = DocumentReader(
@@ -309,9 +314,8 @@ class Settings with _$Settings {
   }
 }
 
-@internal
-class FirestoreHttpClient {
-  FirestoreHttpClient(this.app);
+class _FirestoreHttpClient {
+  _FirestoreHttpClient(this.app);
 
   // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
@@ -333,7 +337,7 @@ class FirestoreHttpClient {
       () async => fn(
         firestore1.FirestoreApi(
           await _getClient(),
-          rootUrl: app.apiHost.toString(),
+          rootUrl: app.firestoreApiHost.toString(),
         ),
       ),
     );
@@ -346,7 +350,7 @@ class FirestoreHttpClient {
       () async => fn(
         firestore1beta1.FirestoreApi(
           await _getClient(),
-          rootUrl: app.apiHost.toString(),
+          rootUrl: app.firestoreApiHost.toString(),
         ),
       ),
     );
@@ -359,7 +363,7 @@ class FirestoreHttpClient {
       () async => fn(
         firestore1beta2.FirestoreApi(
           await _getClient(),
-          rootUrl: app.apiHost.toString(),
+          rootUrl: app.firestoreApiHost.toString(),
         ),
       ),
     );

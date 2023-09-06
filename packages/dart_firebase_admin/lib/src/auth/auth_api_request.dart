@@ -470,7 +470,7 @@ class _AuthHttpClient {
       () async => fn(
         auth1.IdentityToolkitApi(
           await _getClient(),
-          rootUrl: app.apiHost.toString(),
+          rootUrl: app.authApiHost.toString(),
         ),
       ),
     );
@@ -483,7 +483,7 @@ class _AuthHttpClient {
       () async => fn(
         auth2.IdentityToolkitApi(
           await _getClient(),
-          rootUrl: app.apiHost.toString(),
+          rootUrl: app.authApiHost.toString(),
         ),
       ),
     );
@@ -496,7 +496,7 @@ class _AuthHttpClient {
       () async => fn(
         auth3.IdentityToolkitApi(
           await _getClient(),
-          rootUrl: app.apiHost.toString(),
+          rootUrl: app.authApiHost.toString(),
         ),
       ),
     );

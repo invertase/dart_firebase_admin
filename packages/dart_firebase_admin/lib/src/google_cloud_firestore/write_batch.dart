@@ -118,9 +118,9 @@ class WriteBatch {
     );
 
     return firestore._client.v1((client) async {
-      return client.projects.databases.documents.commit(
+      return await client.projects.databases.documents.commit(
         request,
-        firestore._databaseId,
+        firestore._formattedDatabaseName,
       );
     });
   }
@@ -242,7 +242,7 @@ void _validateNoConflictingFields(String arg, Map<FieldPath, Object?> data) {
       throw ArgumentError.value(
         data,
         arg,
-        'Field "$fields[i]" was specified multiple times.',
+        'Field "${fields[i - 1]._formattedName}" was specified multiple times.',
       );
     }
   }
@@ -258,17 +258,9 @@ void _validateUpdateMap(String arg, UpdateMap obj) {
 
 void _validateFieldValue(
   String arg,
-  Object? obj, {
+  UpdateMap obj, {
   FieldPath? path,
 }) {
-  if (obj is! Map<String, Object?>) {
-    throw ArgumentError.value(
-      obj,
-      arg,
-      'Input is not a plain JavaScript object.',
-    );
-  }
-
   _validateUserInput(
     arg,
     obj,
@@ -298,7 +290,7 @@ void _validateDocumentData(
   _validateUserInput(
     arg,
     obj,
-    description: 'Firestoe document',
+    description: 'Firestore document',
     options: _ValidateUserInputOptions(
       allowDeletes: allowDeletes ? _AllowDeletes.all : _AllowDeletes.none,
       allowTransform: true,

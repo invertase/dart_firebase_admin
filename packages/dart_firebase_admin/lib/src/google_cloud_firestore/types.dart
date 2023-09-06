@@ -19,13 +19,13 @@ enum _FirestoreStreamingMethod {
   batchGetDocuments;
 }
 
-abstract class FirestoreDataConverter<T> {
-  factory FirestoreDataConverter({
+abstract class _FirestoreDataConverter<T> {
+  factory _FirestoreDataConverter({
     required FromFirestore<T> fromFirestore,
     required ToFirestore<T> toFirestore,
   }) = _DelegateDataConverter<T>;
 
-  static const FirestoreDataConverter<DocumentData> jsonConverter =
+  static const _FirestoreDataConverter<DocumentData> jsonConverter =
       _DocumentDataConverter();
 
   DocumentData toFirestore(T value);
@@ -33,7 +33,7 @@ abstract class FirestoreDataConverter<T> {
   T fromFirestore(QueryDocumentSnapshot<DocumentData> value);
 }
 
-class _DocumentDataConverter implements FirestoreDataConverter<DocumentData> {
+class _DocumentDataConverter implements _FirestoreDataConverter<DocumentData> {
   const _DocumentDataConverter();
   @override
   DocumentData fromFirestore(QueryDocumentSnapshot<DocumentData> value) {
@@ -49,7 +49,7 @@ typedef FromFirestore<T> = T Function(
 );
 typedef ToFirestore<T> = DocumentData Function(T value);
 
-class _DelegateDataConverter<T> implements FirestoreDataConverter<T> {
+class _DelegateDataConverter<T> implements _FirestoreDataConverter<T> {
   _DelegateDataConverter({
     required FromFirestore<T> fromFirestore,
     required ToFirestore<T> toFirestore,

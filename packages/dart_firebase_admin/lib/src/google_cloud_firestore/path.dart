@@ -172,7 +172,7 @@ class _QualifiedResourcePath extends _ResourcePath {
   /// if available.
   static final _resourcePathRe = RegExp(
     // Note: [\s\S] matches all characters including newlines.
-    r'^projects\/([^/]*)\/databases\/([^/]*)(?:\/documents\/)?([\s\S]*)$/;',
+    r'^projects\/([^/]*)\/databases\/([^/]*)(?:\/documents\/)?([\s\S]*)$',
   );
 
   final String _projectId;

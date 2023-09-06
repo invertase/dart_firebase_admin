@@ -12,6 +12,6 @@ class ReadOptions {
   final List<FieldMask>? fieldMask;
 }
 
-List<FieldPath>? parseFieldMask(ReadOptions? readOptions) {
+List<FieldPath>? _parseFieldMask(ReadOptions? readOptions) {
   return readOptions?.fieldMask?.map(FieldPath.fromArgument).toList();
 }

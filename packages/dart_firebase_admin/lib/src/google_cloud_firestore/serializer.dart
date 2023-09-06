@@ -1,17 +1,18 @@
 part of 'firestore.dart';
 
 // TODO double check
+@internal
 typedef DocumentData = Map<String, Object?>;
 // TODO double check
+@internal
 typedef ApiMapValue = Map<String, firestore1.Value>;
 
 abstract class _Serializable {
   firestore1.Value _toProto();
 }
 
-@internal
-class Serializer {
-  Serializer(this.firestore);
+class _Serializer {
+  _Serializer(this.firestore);
 
   final Firestore firestore;
 
@@ -26,9 +27,9 @@ class Serializer {
   /// Encodes a Dart object into the Firestore 'Fields' representation.
   firestore1.MapValue encodeFields(DocumentData obj) {
     return firestore1.MapValue(
-      fields: obj
-          .map((key, value) => MapEntry(key, encodeValue(value)))
-          .whereValueNotNull(),
+      fields: obj.map((key, value) {
+        return MapEntry(key, encodeValue(value));
+      }).whereValueNotNull(),
     );
   }
 
@@ -65,21 +66,21 @@ class Serializer {
       case _Serializable():
         return value._toProto();
 
-      case List<Object?>():
+      case List():
         return firestore1.Value(
           arrayValue: firestore1.ArrayValue(
             values: value.map(encodeValue).whereNotNull().toList(),
           ),
         );
 
-      case DocumentData():
+      case Map():
         if (value.isEmpty) {
           return firestore1.Value(
             mapValue: firestore1.MapValue(fields: {}),
           );
         }
 
-        final fields = encodeFields(value);
+        final fields = encodeFields(Map.from(value));
         if (fields.fields!.isEmpty) return null;
 
         return firestore1.Value(mapValue: fields);

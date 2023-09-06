@@ -8,6 +8,21 @@ class GeoPoint implements _Serializable {
     required this.latitude,
     required this.longitude,
   }) {
+    if (latitude.isNaN) {
+      throw ArgumentError.value(
+        latitude,
+        'latitude',
+        'Value for argument "latitude" is not a valid number',
+      );
+    }
+    if (longitude.isNaN) {
+      throw ArgumentError.value(
+        longitude,
+        'longitude',
+        'Value for argument "longitude" is not a valid number',
+      );
+    }
+
     if (latitude < -90 || latitude > 90) {
       throw ArgumentError.value(
         latitude,

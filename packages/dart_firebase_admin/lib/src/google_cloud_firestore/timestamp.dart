@@ -17,7 +17,7 @@ String _toGoogleDateTime({required int seconds, required int nanoseconds}) {
 @immutable
 class Timestamp implements _Serializable {
   Timestamp._({required this.seconds, required this.nanoseconds}) {
-    const minSeconds = 62135596800;
+    const minSeconds = -62135596800;
     const maxSeconds = 253402300799;
 
     if (seconds < minSeconds || seconds > maxSeconds) {
@@ -107,7 +107,7 @@ class Timestamp implements _Serializable {
     }
 
     return Timestamp._(
-      seconds: date.second,
+      seconds: date.millisecondsSinceEpoch ~/ 1000,
       nanoseconds: nanos,
     );
   }
@@ -136,4 +136,9 @@ class Timestamp implements _Serializable {
 
   @override
   int get hashCode => Object.hash(seconds, nanoseconds);
+
+  @override
+  String toString() {
+    return 'Timestamp(seconds=$seconds, nanoseconds=$nanoseconds)';
+  }
 }

@@ -561,7 +561,8 @@ abstract class _Settings extends Settings {
 mixin _$_QueryOptions<T> {
   _ResourcePath get parentPath => throw _privateConstructorUsedError;
   String get collectionId => throw _privateConstructorUsedError;
-  FirestoreDataConverter<T> get converter => throw _privateConstructorUsedError;
+  _FirestoreDataConverter<T> get converter =>
+      throw _privateConstructorUsedError;
   bool get allDescendants => throw _privateConstructorUsedError;
   List<_FilterInternal> get filters => throw _privateConstructorUsedError;
   List<_FieldOrder> get fieldOrders => throw _privateConstructorUsedError;
@@ -593,7 +594,7 @@ abstract class _$QueryOptionsCopyWith<T, $Res> {
   $Res call(
       {_ResourcePath parentPath,
       String collectionId,
-      FirestoreDataConverter<T> converter,
+      _FirestoreDataConverter<T> converter,
       bool allDescendants,
       List<_FilterInternal> filters,
       List<_FieldOrder> fieldOrders,
@@ -647,7 +648,7 @@ class __$QueryOptionsCopyWithImpl<T, $Res, $Val extends _QueryOptions<T>>
       converter: null == converter
           ? _value.converter
           : converter // ignore: cast_nullable_to_non_nullable
-              as FirestoreDataConverter<T>,
+              as _FirestoreDataConverter<T>,
       allDescendants: null == allDescendants
           ? _value.allDescendants
           : allDescendants // ignore: cast_nullable_to_non_nullable
@@ -707,7 +708,7 @@ abstract class _$$__QueryOptionsCopyWith<T, $Res>
   $Res call(
       {_ResourcePath parentPath,
       String collectionId,
-      FirestoreDataConverter<T> converter,
+      _FirestoreDataConverter<T> converter,
       bool allDescendants,
       List<_FilterInternal> filters,
       List<_FieldOrder> fieldOrders,
@@ -759,7 +760,7 @@ class __$$__QueryOptionsCopyWithImpl<T, $Res>
       converter: null == converter
           ? _value.converter
           : converter // ignore: cast_nullable_to_non_nullable
-              as FirestoreDataConverter<T>,
+              as _FirestoreDataConverter<T>,
       allDescendants: null == allDescendants
           ? _value.allDescendants
           : allDescendants // ignore: cast_nullable_to_non_nullable
@@ -835,7 +836,7 @@ class _$__QueryOptions<T> extends __QueryOptions<T> {
   @override
   final String collectionId;
   @override
-  final FirestoreDataConverter<T> converter;
+  final _FirestoreDataConverter<T> converter;
   @override
   final bool allDescendants;
   final List<_FilterInternal> _filters;
@@ -942,7 +943,7 @@ abstract class __QueryOptions<T> extends _QueryOptions<T> {
   factory __QueryOptions(
       {required final _ResourcePath parentPath,
       required final String collectionId,
-      required final FirestoreDataConverter<T> converter,
+      required final _FirestoreDataConverter<T> converter,
       required final bool allDescendants,
       required final List<_FilterInternal> filters,
       required final List<_FieldOrder> fieldOrders,
@@ -961,7 +962,7 @@ abstract class __QueryOptions<T> extends _QueryOptions<T> {
   @override
   String get collectionId;
   @override
-  FirestoreDataConverter<T> get converter;
+  _FirestoreDataConverter<T> get converter;
   @override
   bool get allDescendants;
   @override
