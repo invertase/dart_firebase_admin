@@ -49,7 +49,7 @@ class WriteBatch {
   ///   print('Successfully executed batch.');
   /// });
   /// ```
-  void create(DocumentReference<Object?> ref, Object? data) {
+  void create<T>(DocumentReference<T> ref, T data) {
     final firestoreData = ref._converter.toFirestore(data);
     _validateDocumentData('data', firestoreData, allowDeletes: false);
 

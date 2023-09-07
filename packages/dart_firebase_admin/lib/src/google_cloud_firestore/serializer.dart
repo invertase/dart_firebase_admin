@@ -1,8 +1,8 @@
 part of 'firestore.dart';
 
-// TODO double check
-@internal
+/// A type representing the raw Firestore document data.
 typedef DocumentData = Map<String, Object?>;
+
 // TODO double check
 @internal
 typedef ApiMapValue = Map<String, firestore1.Value>;

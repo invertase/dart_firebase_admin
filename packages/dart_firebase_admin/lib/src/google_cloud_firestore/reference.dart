@@ -125,7 +125,12 @@ class CollectionReference<T> extends Query<T> {
     );
 
     final documentRef = doc();
-    return documentRef.create(firestoreData).then((_) => documentRef);
+    final jsonDocumentRef = documentRef.withConverter<DocumentData>(
+      fromFirestore: _FirestoreDataConverter.jsonConverter.fromFirestore,
+      toFirestore: _FirestoreDataConverter.jsonConverter.toFirestore,
+    );
+
+    return jsonDocumentRef.create(firestoreData).then((_) => documentRef);
   }
 
   @override
@@ -238,8 +243,8 @@ class DocumentReference<T> implements _Serializable {
   ///   print('Failed to create document: ${err}');
   /// });
   /// ```
-  Future<WriteResult> create(DocumentData data) async {
-    final writeBatch = WriteBatch._(this.firestore)..create(this, data);
+  Future<WriteResult> create(T data) async {
+    final writeBatch = WriteBatch._(this.firestore)..create<T>(this, data);
 
     final results = await writeBatch.commit();
     return results.single;
