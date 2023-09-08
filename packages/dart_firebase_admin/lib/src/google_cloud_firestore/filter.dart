@@ -44,7 +44,7 @@ sealed class Filter {
   /// });
   /// ```
   factory Filter.where(
-    String fieldPath,
+    Object fieldPath,
     WhereFilter op,
     Object? value,
   ) = _UnaryFilter.fromString;
@@ -136,10 +136,10 @@ class _UnaryFilter implements Filter {
   );
 
   _UnaryFilter.fromString(
-    String field,
+    Object field,
     this.op,
     this.value,
-  ) : fieldPath = FieldPath.fromArgument(FieldMask.field(field));
+  ) : fieldPath = FieldPath.from(field);
 
   final FieldPath fieldPath;
   final WhereFilter op;
