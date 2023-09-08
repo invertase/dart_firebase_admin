@@ -352,11 +352,85 @@ class DocumentReference<T> implements _Serializable {
   int get hashCode => Object.hash(runtimeType, firestore, _path, _converter);
 }
 
+bool _valuesEqual(
+  List<firestore1.Value>? a,
+  List<firestore1.Value>? b,
+) {
+  if (a == null) return b == null;
+  if (b == null) return false;
+
+  if (a.length != b.length) return false;
+
+  for (final (index, value) in a.indexed) {
+    if (!_valueEqual(value, b[index])) return false;
+  }
+
+  return true;
+}
+
+bool _valueEqual(firestore1.Value a, firestore1.Value b) {
+  switch (a) {
+    case firestore1.Value(:final arrayValue?):
+      return _valuesEqual(arrayValue.values, b.arrayValue?.values);
+    case firestore1.Value(:final booleanValue?):
+      return booleanValue == b.booleanValue;
+    case firestore1.Value(:final bytesValue?):
+      return bytesValue == b.bytesValue;
+    case firestore1.Value(:final doubleValue?):
+      return doubleValue == b.doubleValue;
+    case firestore1.Value(:final geoPointValue?):
+      return geoPointValue.latitude == b.geoPointValue?.latitude &&
+          geoPointValue.longitude == b.geoPointValue?.longitude;
+    case firestore1.Value(:final integerValue?):
+      return integerValue == b.integerValue;
+    case firestore1.Value(:final mapValue?):
+      final bMap = b.mapValue;
+      if (bMap == null || bMap.fields?.length != mapValue.fields?.length) {
+        return false;
+      }
+
+      for (final MapEntry(:key, :value) in mapValue.fields?.entries ??
+          const <MapEntry<String, firestore1.Value>>[]) {
+        final bValue = bMap.fields?[key];
+        if (bValue == null) return false;
+        if (!_valueEqual(value, bValue)) return false;
+      }
+    case firestore1.Value(:final nullValue?):
+      return nullValue == b.nullValue;
+    case firestore1.Value(:final referenceValue?):
+      return referenceValue == b.referenceValue;
+    case firestore1.Value(:final stringValue?):
+      return stringValue == b.stringValue;
+    case firestore1.Value(:final timestampValue?):
+      return timestampValue == b.timestampValue;
+  }
+  return false;
+}
+
+@immutable
 class _QueryCursor {
-  _QueryCursor({required this.before, required this.values});
+  const _QueryCursor({required this.before, required this.values});
 
   final bool before;
   final List<firestore1.Value> values;
+
+  @override
+  bool operator ==(Object other) {
+    // if (other is! _QueryCursor) return false;
+
+    // print(_valuesEqual(values, other.values));
+
+    return other is _QueryCursor &&
+        runtimeType == other.runtimeType &&
+        before == other.before &&
+        _valuesEqual(values, other.values);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        before,
+        const ListEquality<firestore1.Value>().hash(values),
+      );
 }
 
 /*
@@ -378,8 +452,9 @@ enum _Direction {
 }
 
 /// A Query order-by field.
+@immutable
 class _FieldOrder {
-  _FieldOrder({
+  const _FieldOrder({
     required this.fieldPath,
     this.direction = _Direction.ascending,
   });
@@ -395,6 +470,16 @@ class _FieldOrder {
       direction: direction.value,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is _FieldOrder &&
+        fieldPath == other.fieldPath &&
+        direction == other.direction;
+  }
+
+  @override
+  int get hashCode => Object.hash(fieldPath, direction);
 }
 
 @freezed
@@ -693,7 +778,8 @@ class Query<T> {
       );
     }
 
-    final cursor = _QueryCursor(before: before, values: []);
+    final cursorValues = <firestore1.Value>[];
+    final cursor = _QueryCursor(before: before, values: cursorValues);
 
     for (var i = 0; i < fieldValues.length; ++i) {
       final fieldValue = fieldValues[i];
@@ -727,13 +813,13 @@ class Query<T> {
     }
 
     final fieldOrders = _createImplicitOrderBy(snapshot);
-    final startAt = _createCursor(
+    final cursor = _createCursor(
       fieldOrders,
       fieldValues: fieldValues,
       snapshot: snapshot,
       before: before,
     );
-    return (startAt, fieldOrders);
+    return (cursor, fieldOrders);
   }
 
   /// Computes the backend ordering semantics for DocumentSnapshot cursors.
@@ -1177,44 +1263,44 @@ class Query<T> {
   // TODO onSnapshot
   // TODO stream
 
-  // /// {@macro collection_reference.where}
-  // Query<T> where(String path, WhereFilterOp op, Object? value) {
-  //   final fieldPath = FieldPath.fromArgument(FieldMask.field(path));
-  //   return whereFieldPath(fieldPath, op, value);
-  // }
+  /// {@macro collection_reference.where}
+  Query<T> where(String path, WhereFilter op, Object? value) {
+    final fieldPath = FieldPath.fromArgument(FieldMask.field(path));
+    return whereFieldPath(fieldPath, op, value);
+  }
 
-  // /// {@template collection_reference.where}
-  // /// Creates and returns a new [Query] with the additional filter
-  // /// that documents must contain the specified field and that its value should
-  // /// satisfy the relation constraint provided.
-  // ///
-  // /// This function returns a new (immutable) instance of the Query (rather than
-  // /// modify the existing instance) to impose the filter.
-  // ///
-  // /// - [fieldPath]: The name of a property value to compare.
-  // /// - [op]: A comparison operation in the form of a string.
-  // ///   Acceptable operator strings are "<", "<=", "==", "!=", ">=", ">", "array-contains",
-  // ///   "in", "not-in", and "array-contains-any".
-  // /// - [value]: The value to which to compare the field for inclusion in
-  // ///   a query.
-  // ///
-  // /// ```dart
-  // /// final collectionRef = firestore.collection('col');
-  // ///
-  // /// collectionRef.where('foo', WhereFilter.equal, 'bar').get().then((querySnapshot) {
-  // ///   querySnapshot.forEach((documentSnapshot) {
-  // ///     print('Found document at ${documentSnapshot.ref.path}');
-  // ///   });
-  // /// });
-  // /// ```
-  // /// {@endtemplate}
-  // Query<T> whereFieldPath(
-  //   FieldPath fieldPath,
-  //   WhereFilterOp op,
-  //   Object? value,
-  // ) {
-  //   return whereFilter(Filter.where(fieldPath, op, value));
-  // }
+  /// {@template collection_reference.where}
+  /// Creates and returns a new [Query] with the additional filter
+  /// that documents must contain the specified field and that its value should
+  /// satisfy the relation constraint provided.
+  ///
+  /// This function returns a new (immutable) instance of the Query (rather than
+  /// modify the existing instance) to impose the filter.
+  ///
+  /// - [fieldPath]: The name of a property value to compare.
+  /// - [op]: A comparison operation in the form of a string.
+  ///   Acceptable operator strings are "<", "<=", "==", "!=", ">=", ">", "array-contains",
+  ///   "in", "not-in", and "array-contains-any".
+  /// - [value]: The value to which to compare the field for inclusion in
+  ///   a query.
+  ///
+  /// ```dart
+  /// final collectionRef = firestore.collection('col');
+  ///
+  /// collectionRef.where('foo', WhereFilter.equal, 'bar').get().then((querySnapshot) {
+  ///   querySnapshot.forEach((documentSnapshot) {
+  ///     print('Found document at ${documentSnapshot.ref.path}');
+  ///   });
+  /// });
+  /// ```
+  /// {@endtemplate}
+  Query<T> whereFieldPath(
+    FieldPath fieldPath,
+    WhereFilter op,
+    Object? value,
+  ) {
+    return whereFilter(Filter.where(fieldPath, op, value));
+  }
 
   /// Creates and returns a new [Query] with the additional filter
   /// that documents should satisfy the relation constraint(s) provided.
@@ -1452,11 +1538,11 @@ class Query<T> {
   /// });
   /// ```
   Query<T> orderBy(
-    String path, {
+    Object path, {
     bool descending = false,
   }) {
     return orderByFieldPath(
-      FieldPath.fromArgument(FieldMask.field(path)),
+      FieldPath.from(path),
       descending: descending,
     );
   }
