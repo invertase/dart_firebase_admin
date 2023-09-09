@@ -39,6 +39,7 @@ abstract class BaseAuth {
     bool checkRevoked = false,
   }) async {
     final isEmulator = app.isUsingEmulator;
+    throw UnimplementedError();
   }
 
   /// Imports the provided list of users into Firebase Auth.

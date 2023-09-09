@@ -69,7 +69,8 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
 
   @override
   Future<bool> verify(String token) {
-    verifyJwtSignature(token);
+    throw UnimplementedError();
+    // verifyJwtSignature(token);
   }
 }
 
@@ -80,4 +81,6 @@ Future<void> verifyJwtSignature(
   SecretOrPublicKey secretOrPublicKey, [
   // TODO what about options?
   Object? options,
-]) {}
+]) {
+  throw UnimplementedError();
+}

@@ -466,7 +466,7 @@ class _AuthHttpClient {
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client) fn,
   ) {
-    return guard(
+    return authGuard(
       () async => fn(
         auth1.IdentityToolkitApi(
           await _getClient(),
@@ -479,7 +479,7 @@ class _AuthHttpClient {
   Future<R> v2<R>(
     Future<R> Function(auth2.IdentityToolkitApi client) fn,
   ) async {
-    return guard(
+    return authGuard(
       () async => fn(
         auth2.IdentityToolkitApi(
           await _getClient(),
@@ -492,7 +492,7 @@ class _AuthHttpClient {
   Future<R> v3<R>(
     Future<R> Function(auth3.IdentityToolkitApi client) fn,
   ) async {
-    return guard(
+    return authGuard(
       () async => fn(
         auth3.IdentityToolkitApi(
           await _getClient(),
