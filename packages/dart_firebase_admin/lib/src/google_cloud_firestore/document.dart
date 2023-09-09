@@ -127,7 +127,7 @@ class DocumentSnapshot<T> {
     final ref = DocumentReference<DocumentData>._(
       firestore: firestore,
       path: _QualifiedResourcePath.fromSlashSeparatedString(document.name!),
-      converter: _FirestoreDataConverter.jsonConverter,
+      converter: _jsonConverter,
     );
 
     final builder = _DocumentSnapshotBuilder(ref)
@@ -147,7 +147,7 @@ class DocumentSnapshot<T> {
     final ref = DocumentReference<DocumentData>._(
       firestore: firestore,
       path: _QualifiedResourcePath.fromSlashSeparatedString(document),
-      converter: _FirestoreDataConverter.jsonConverter,
+      converter: _jsonConverter,
     );
 
     final builder = _DocumentSnapshotBuilder(ref)
@@ -205,11 +205,11 @@ class DocumentSnapshot<T> {
     final converter = ref._converter;
     // We only want to use the converter and create a new QueryDocumentSnapshot
     // if a converter has been provided.
-    if (converter != _FirestoreDataConverter.jsonConverter) {
+    if (identical(converter, _jsonConverter)) {
       final untypedReference = DocumentReference._(
         firestore: ref.firestore,
         path: ref._path,
-        converter: _FirestoreDataConverter.jsonConverter,
+        converter: _jsonConverter,
       );
 
       return converter.fromFirestore(

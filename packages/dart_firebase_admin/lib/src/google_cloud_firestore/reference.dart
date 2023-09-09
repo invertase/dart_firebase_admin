@@ -3,13 +3,14 @@ part of 'firestore.dart';
 class CollectionReference<T> extends Query<T> {
   CollectionReference._({
     required super.firestore,
-    required _ResourcePath path,
+    required _QualifiedResourcePath path,
     required _FirestoreDataConverter<T> converter,
   }) : super._(
           queryOptions: _QueryOptions.forCollectionQuery(path, converter),
         );
 
-  _ResourcePath get _resourcePath => _queryOptions.parentPath._append(id);
+  _QualifiedResourcePath get _resourcePath =>
+      _queryOptions.parentPath._append(id);
 
   /// The last path element of the referenced collection.
   String get id => _queryOptions.collectionId;
@@ -61,7 +62,7 @@ class CollectionReference<T> extends Query<T> {
     }
 
     // TODO test
-    if (_queryOptions.converter != _FirestoreDataConverter.jsonConverter &&
+    if (_queryOptions.converter != _jsonConverter &&
         path._parent() != _resourcePath) {
       throw ArgumentError.value(
         documentPath,
@@ -126,8 +127,8 @@ class CollectionReference<T> extends Query<T> {
 
     final documentRef = doc();
     final jsonDocumentRef = documentRef.withConverter<DocumentData>(
-      fromFirestore: _FirestoreDataConverter.jsonConverter.fromFirestore,
-      toFirestore: _FirestoreDataConverter.jsonConverter.toFirestore,
+      fromFirestore: _jsonConverter.fromFirestore,
+      toFirestore: _jsonConverter.toFirestore,
     );
 
     return jsonDocumentRef.create(firestoreData).then((_) => documentRef);
@@ -141,7 +142,7 @@ class CollectionReference<T> extends Query<T> {
     return CollectionReference<U>._(
       firestore: firestore,
       path: _queryOptions.parentPath._append(id),
-      converter: _FirestoreDataConverter<U>(
+      converter: (
         fromFirestore: fromFirestore,
         toFirestore: toFirestore,
       ),
@@ -159,12 +160,12 @@ class CollectionReference<T> extends Query<T> {
 class DocumentReference<T> implements _Serializable {
   const DocumentReference._({
     required this.firestore,
-    required _ResourcePath path,
+    required _QualifiedResourcePath path,
     required _FirestoreDataConverter<T> converter,
   })  : _converter = converter,
         _path = path;
 
-  final _ResourcePath _path;
+  final _QualifiedResourcePath _path;
   final _FirestoreDataConverter<T> _converter;
   final Firestore firestore;
 
@@ -212,7 +213,7 @@ class DocumentReference<T> implements _Serializable {
     return DocumentReference<R>._(
       firestore: firestore,
       path: _path,
-      converter: _FirestoreDataConverter<R>(
+      converter: (
         fromFirestore: fromFirestore,
         toFirestore: toFirestore,
       ),
@@ -327,7 +328,7 @@ class DocumentReference<T> implements _Serializable {
     return CollectionReference<DocumentData>._(
       firestore: firestore,
       path: path,
-      converter: _FirestoreDataConverter.jsonConverter,
+      converter: _jsonConverter,
     );
   }
 
@@ -485,7 +486,7 @@ class _FieldOrder {
 @freezed
 class _QueryOptions<T> with _$_QueryOptions<T> {
   factory _QueryOptions({
-    required _ResourcePath parentPath,
+    required _QualifiedResourcePath parentPath,
     required String collectionId,
     required _FirestoreDataConverter<T> converter,
     required bool allDescendants,
@@ -510,7 +511,7 @@ class _QueryOptions<T> with _$_QueryOptions<T> {
 
   /// Returns query options for a single-collection query.
   factory _QueryOptions.forCollectionQuery(
-    _ResourcePath collectionRef,
+    _QualifiedResourcePath collectionRef,
     _FirestoreDataConverter<T> converter,
   ) {
     return _QueryOptions<T>(
@@ -741,7 +742,7 @@ class Query<T> {
     return Query<U>._(
       firestore: firestore,
       queryOptions: _queryOptions.withConverter(
-        _FirestoreDataConverter(
+        (
           fromFirestore: fromFirestore,
           toFirestore: toFirestore,
         ),
@@ -1104,10 +1105,14 @@ class Query<T> {
       );
     });
 
+    Timestamp? readTime;
     final snapshots = response
         .map((e) {
           final document = e.document;
-          if (document == null) return null;
+          if (document == null) {
+            readTime = e.readTime.let(Timestamp._fromString);
+            return null;
+          }
 
           final snapshot = DocumentSnapshot._fromDocument(
             document,
@@ -1115,7 +1120,7 @@ class Query<T> {
             firestore,
           );
           final finalDoc = _DocumentSnapshotBuilder(
-            snapshot.ref.withConverter(
+            snapshot.ref.withConverter<T>(
               fromFirestore: _queryOptions.converter.fromFirestore,
               toFirestore: _queryOptions.converter.toFirestore,
             ),
@@ -1136,7 +1141,7 @@ class Query<T> {
 
     return QuerySnapshot<T>._(
       query: this,
-      readTime: snapshots.firstOrNull?.readTime,
+      readTime: readTime,
       docs: snapshots,
     );
   }
@@ -1469,7 +1474,7 @@ class Query<T> {
           .withConverter(
             // By specifying a field mask, the query result no longer conforms to type
             // `T`. We there return `Query<DocumentData>`.
-            _FirestoreDataConverter.jsonConverter,
+            _jsonConverter,
           ),
     );
   }

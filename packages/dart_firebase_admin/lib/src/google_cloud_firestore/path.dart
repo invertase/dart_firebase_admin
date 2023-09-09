@@ -178,6 +178,10 @@ class _QualifiedResourcePath extends _ResourcePath {
   final String _projectId;
   final String _databaseId;
 
+  @override
+  _QualifiedResourcePath? _parent() =>
+      super._parent() as _QualifiedResourcePath?;
+
   /// String representation of a ResourcePath as expected by the API.
   String get _formattedName {
     final components = [

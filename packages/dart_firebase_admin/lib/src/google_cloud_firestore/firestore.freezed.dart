@@ -559,10 +559,12 @@ abstract class _Settings extends Settings {
 
 /// @nodoc
 mixin _$_QueryOptions<T> {
-  _ResourcePath get parentPath => throw _privateConstructorUsedError;
+  _QualifiedResourcePath get parentPath => throw _privateConstructorUsedError;
   String get collectionId => throw _privateConstructorUsedError;
-  _FirestoreDataConverter<T> get converter =>
-      throw _privateConstructorUsedError;
+  ({
+    T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+    Map<String, Object?> Function(T) toFirestore
+  }) get converter => throw _privateConstructorUsedError;
   bool get allDescendants => throw _privateConstructorUsedError;
   List<_FilterInternal> get filters => throw _privateConstructorUsedError;
   List<_FieldOrder> get fieldOrders => throw _privateConstructorUsedError;
@@ -592,9 +594,12 @@ abstract class _$QueryOptionsCopyWith<T, $Res> {
       __$QueryOptionsCopyWithImpl<T, $Res, _QueryOptions<T>>;
   @useResult
   $Res call(
-      {_ResourcePath parentPath,
+      {_QualifiedResourcePath parentPath,
       String collectionId,
-      _FirestoreDataConverter<T> converter,
+      ({
+        T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+        Map<String, Object?> Function(T) toFirestore
+      }) converter,
       bool allDescendants,
       List<_FilterInternal> filters,
       List<_FieldOrder> fieldOrders,
@@ -640,7 +645,7 @@ class __$QueryOptionsCopyWithImpl<T, $Res, $Val extends _QueryOptions<T>>
       parentPath: null == parentPath
           ? _value.parentPath
           : parentPath // ignore: cast_nullable_to_non_nullable
-              as _ResourcePath,
+              as _QualifiedResourcePath,
       collectionId: null == collectionId
           ? _value.collectionId
           : collectionId // ignore: cast_nullable_to_non_nullable
@@ -648,7 +653,11 @@ class __$QueryOptionsCopyWithImpl<T, $Res, $Val extends _QueryOptions<T>>
       converter: null == converter
           ? _value.converter
           : converter // ignore: cast_nullable_to_non_nullable
-              as _FirestoreDataConverter<T>,
+              as ({
+              T Function(
+                  QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+              Map<String, Object?> Function(T) toFirestore
+            }),
       allDescendants: null == allDescendants
           ? _value.allDescendants
           : allDescendants // ignore: cast_nullable_to_non_nullable
@@ -706,9 +715,12 @@ abstract class _$$__QueryOptionsCopyWith<T, $Res>
   @override
   @useResult
   $Res call(
-      {_ResourcePath parentPath,
+      {_QualifiedResourcePath parentPath,
       String collectionId,
-      _FirestoreDataConverter<T> converter,
+      ({
+        T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+        Map<String, Object?> Function(T) toFirestore
+      }) converter,
       bool allDescendants,
       List<_FilterInternal> filters,
       List<_FieldOrder> fieldOrders,
@@ -752,7 +764,7 @@ class __$$__QueryOptionsCopyWithImpl<T, $Res>
       parentPath: null == parentPath
           ? _value.parentPath
           : parentPath // ignore: cast_nullable_to_non_nullable
-              as _ResourcePath,
+              as _QualifiedResourcePath,
       collectionId: null == collectionId
           ? _value.collectionId
           : collectionId // ignore: cast_nullable_to_non_nullable
@@ -760,7 +772,11 @@ class __$$__QueryOptionsCopyWithImpl<T, $Res>
       converter: null == converter
           ? _value.converter
           : converter // ignore: cast_nullable_to_non_nullable
-              as _FirestoreDataConverter<T>,
+              as ({
+              T Function(
+                  QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+              Map<String, Object?> Function(T) toFirestore
+            }),
       allDescendants: null == allDescendants
           ? _value.allDescendants
           : allDescendants // ignore: cast_nullable_to_non_nullable
@@ -832,11 +848,14 @@ class _$__QueryOptions<T> extends __QueryOptions<T> {
         super._();
 
   @override
-  final _ResourcePath parentPath;
+  final _QualifiedResourcePath parentPath;
   @override
   final String collectionId;
   @override
-  final _FirestoreDataConverter<T> converter;
+  final ({
+    T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+    Map<String, Object?> Function(T) toFirestore
+  }) converter;
   @override
   final bool allDescendants;
   final List<_FilterInternal> _filters;
@@ -941,9 +960,12 @@ class _$__QueryOptions<T> extends __QueryOptions<T> {
 
 abstract class __QueryOptions<T> extends _QueryOptions<T> {
   factory __QueryOptions(
-      {required final _ResourcePath parentPath,
+      {required final _QualifiedResourcePath parentPath,
       required final String collectionId,
-      required final _FirestoreDataConverter<T> converter,
+      required final ({
+        T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+        Map<String, Object?> Function(T) toFirestore
+      }) converter,
       required final bool allDescendants,
       required final List<_FilterInternal> filters,
       required final List<_FieldOrder> fieldOrders,
@@ -958,11 +980,14 @@ abstract class __QueryOptions<T> extends _QueryOptions<T> {
   __QueryOptions._() : super._();
 
   @override
-  _ResourcePath get parentPath;
+  _QualifiedResourcePath get parentPath;
   @override
   String get collectionId;
   @override
-  _FirestoreDataConverter<T> get converter;
+  ({
+    T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+    Map<String, Object?> Function(T) toFirestore
+  }) get converter;
   @override
   bool get allDescendants;
   @override
