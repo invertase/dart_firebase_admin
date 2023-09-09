@@ -1,15 +1,15 @@
 part of 'firestore.dart';
 
 enum WhereFilter {
-  lessThan('<'),
-  lessThanOrEqual('<='),
-  equal('=='),
-  greaterThanOrEqual('>='),
-  greaterThan('>'),
-  isIn('in'),
-  notIn('not-in'),
-  arrayContains('array-contains'),
-  arrayContainsAny('array-contains-any');
+  lessThan('LESS_THAN'),
+  lessThanOrEqual('LESS_THAN_OR_EQUAL'),
+  equal('EQUAL'),
+  greaterThanOrEqual('GREATER_THAN_OR_EQUAL'),
+  greaterThan('GREATER_THAN'),
+  isIn('IN'),
+  notIn('NOT_IN'),
+  arrayContains('ARRAY_CONTAINS'),
+  arrayContainsAny('ARRAY_CONTAINS_ANY');
 
   const WhereFilter(this.proto);
 
