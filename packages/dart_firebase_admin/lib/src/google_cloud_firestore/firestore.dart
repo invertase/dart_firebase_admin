@@ -30,6 +30,7 @@ part 'types.dart';
 part 'write_batch.dart';
 part 'document_change.dart';
 part 'filter.dart';
+part 'firestore_exception.dart';
 
 const _defaultMaxIdleChannels = 1;
 
@@ -333,7 +334,7 @@ class _FirestoreHttpClient {
   Future<R> v1<R>(
     Future<R> Function(firestore1.FirestoreApi client) fn,
   ) {
-    return guard(
+    return _firestoreGuard(
       () async => fn(
         firestore1.FirestoreApi(
           await _getClient(),
@@ -346,7 +347,7 @@ class _FirestoreHttpClient {
   Future<R> v1Beta1<R>(
     Future<R> Function(firestore1beta1.FirestoreApi client) fn,
   ) async {
-    return guard(
+    return _firestoreGuard(
       () async => fn(
         firestore1beta1.FirestoreApi(
           await _getClient(),
@@ -359,7 +360,7 @@ class _FirestoreHttpClient {
   Future<R> v1Beta2<R>(
     Future<R> Function(firestore1beta2.FirestoreApi client) fn,
   ) async {
-    return guard(
+    return _firestoreGuard(
       () async => fn(
         firestore1beta2.FirestoreApi(
           await _getClient(),

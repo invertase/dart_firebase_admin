@@ -56,30 +56,3 @@ abstract class FirebaseAdminException extends FirebaseException {
   @override
   String get message => _message ?? _platformErrorCodeMessage(_code);
 }
-
-/// Converts a Exception to a FirebaseAdminException.
-Never _handleException(Object exception, StackTrace stackTrace) {
-  if (exception is firebase_auth_v1.DetailedApiRequestError) {
-    Error.throwWithStackTrace(
-      FirebaseAuthAdminException.fromServerError(exception),
-      stackTrace,
-    );
-  }
-
-  Error.throwWithStackTrace(exception, stackTrace);
-}
-
-/// A generic guard wrapper for API calls to handle exceptions.
-R guard<R>(R Function() cb) {
-  try {
-    final value = cb();
-
-    if (value is Future) {
-      return value.catchError(_handleException) as R;
-    }
-
-    return value;
-  } catch (error, stackTrace) {
-    _handleException(error, stackTrace);
-  }
-}

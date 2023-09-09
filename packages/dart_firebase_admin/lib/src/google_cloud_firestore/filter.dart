@@ -4,6 +4,7 @@ enum WhereFilter {
   lessThan('LESS_THAN'),
   lessThanOrEqual('LESS_THAN_OR_EQUAL'),
   equal('EQUAL'),
+  notEqual('NOT_EQUAL'),
   greaterThanOrEqual('GREATER_THAN_OR_EQUAL'),
   greaterThan('GREATER_THAN'),
   isIn('IN'),
@@ -21,6 +22,7 @@ enum WhereFilter {
 /// `Filters`s are created by invoking [Filter.where], [Filter.or],
 /// or [Filter.and] and can then be passed to {@link Query#where}
 /// to create a new [Query] instance that also contains this `Filter`.
+@immutable
 sealed class Filter {
   /// Creates and returns a new [Filter], which can be applied to [Query.where],
   /// [Filter.or] or [Filter.and]. When applied to a [Query] it requires that
@@ -133,13 +135,21 @@ class _UnaryFilter implements Filter {
     this.fieldPath,
     this.op,
     this.value,
-  );
+  ) {
+    if (value == null || identical(value, double.nan)) {
+      if (op != WhereFilter.equal && op != WhereFilter.notEqual) {
+        throw ArgumentError(
+          'Invalid query for value $value. Only == and != are supported.',
+        );
+      }
+    }
+  }
 
   _UnaryFilter.fromString(
     Object field,
-    this.op,
-    this.value,
-  ) : fieldPath = FieldPath.from(field);
+    WhereFilter op,
+    Object? value,
+  ) : this(FieldPath.from(field), op, value);
 
   final FieldPath fieldPath;
   final WhereFilter op;

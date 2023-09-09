@@ -1269,8 +1269,8 @@ class Query<T> {
   // TODO stream
 
   /// {@macro collection_reference.where}
-  Query<T> where(String path, WhereFilter op, Object? value) {
-    final fieldPath = FieldPath.fromArgument(FieldMask.field(path));
+  Query<T> where(Object path, WhereFilter op, Object? value) {
+    final fieldPath = FieldPath.from(path);
     return whereFieldPath(fieldPath, op, value);
   }
 
