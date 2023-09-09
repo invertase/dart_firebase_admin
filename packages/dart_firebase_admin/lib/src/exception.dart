@@ -1,4 +1,4 @@
-part of '../dart_firebase_admin.dart';
+part of 'dart_firebase_admin.dart';
 
 /// A set of platform level error codes.
 ///

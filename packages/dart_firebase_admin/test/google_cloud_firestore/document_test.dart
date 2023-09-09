@@ -316,7 +316,7 @@ void main() {
       final now = DateTime.now().toUtc().millisecondsSinceEpoch - 5000;
       await firestore.doc('collectionId/setdoctransform').set({
         'a': FieldValue.serverTimestamp,
-        'b': {'c': FieldValue.serverTimestamp}
+        'b': {'c': FieldValue.serverTimestamp},
       });
 
       final writes = await firestore
@@ -483,7 +483,7 @@ void main() {
         firestore.doc('collectionId/updatenesteddeleteinvalid').update({
           'foo': {
             'bar': FieldValue.delete,
-          }
+          },
         }),
         throwsArgumentError(
           message:

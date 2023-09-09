@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/identitytoolkit/v1.dart' as auth1;
 import 'package:meta/meta.dart';
 
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 import '../app/core.dart';
 import '../utils/validator.dart';
 import 'auth_api_request.dart';

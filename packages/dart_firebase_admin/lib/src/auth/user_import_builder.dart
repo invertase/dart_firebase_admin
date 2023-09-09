@@ -7,7 +7,7 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/identitytoolkit/v1.dart' as v1;
 import 'package:meta/meta.dart';
 
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 import '../app/core.dart';
 import '../object_utils.dart';
 import 'auth_config.dart';

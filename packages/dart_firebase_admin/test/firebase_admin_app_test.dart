@@ -1,4 +1,4 @@
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/src/dart_firebase_admin.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -10,7 +10,11 @@ void main() {
       );
 
       expect(app, isA<FirebaseAdminApp>());
-      expect(app.apiHost, Uri.https('identitytoolkit.googleapis.com', '/'));
+      expect(app.authApiHost, Uri.https('identitytoolkit.googleapis.com', '/'));
+      expect(
+        app.firestoreApiHost,
+        Uri.https('identitytoolkit.googleapis.com', '/'),
+      );
     });
 
     test('useEmulator() sets the apiHost to the emulator', () {
@@ -22,8 +26,12 @@ void main() {
       app.useEmulator();
 
       expect(
-        app.apiHost,
+        app.authApiHost,
         Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/'),
+      );
+      expect(
+        app.authApiHost,
+        Uri.http('127.0.0.1:8080', 'identitytoolkit.googleapis.com/'),
       );
     });
   });

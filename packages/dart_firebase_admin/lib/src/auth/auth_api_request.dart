@@ -3,7 +3,7 @@ import 'package:firebaseapis/identitytoolkit/v2.dart' as auth2;
 import 'package:firebaseapis/identitytoolkit/v3.dart' as auth3;
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 import '../utils/validator.dart';
 import 'auth_config.dart';
 import 'base_auth.dart';

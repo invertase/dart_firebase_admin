@@ -1,4 +1,4 @@
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 import '../utils/validator.dart';
 import 'base_auth.dart';
 

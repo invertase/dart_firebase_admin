@@ -10,7 +10,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:intl/intl.dart';
 
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 import '../object_utils.dart';
 import 'util.dart';
 import 'validate.dart';
@@ -309,10 +309,6 @@ class Settings with _$Settings {
   // TODO automate this version to be picked up from pubspec.yaml?
   // TODO include firebaseVersion if present?
   String get libVersion => '0.0.1';
-
-  toJson() {
-    // TODO set privateKey & clientEmail to ***
-  }
 }
 
 class _FirestoreHttpClient {

@@ -42,10 +42,8 @@ class DocumentSnapshot<T> {
   ) {
     final serializer = ref.firestore._serializer;
 
-    /**
-     * Merges 'value' at the field path specified by the path array into
-     * 'target'.
-     */
+    /// Merges 'value' at the field path specified by the path array into
+    /// 'target'.
     ApiMapValue? merge({
       required ApiMapValue target,
       required Object? value,

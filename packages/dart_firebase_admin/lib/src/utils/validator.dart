@@ -1,4 +1,4 @@
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 
 /// Validates that a string is a valid phone number.
 bool isPhoneNumber(String phoneNumber) {

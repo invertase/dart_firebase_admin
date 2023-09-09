@@ -1,6 +1,6 @@
 import 'package:firebaseapis/identitytoolkit/v1.dart' as v1;
 
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 
 const _sentinel = _Sentinel();
 

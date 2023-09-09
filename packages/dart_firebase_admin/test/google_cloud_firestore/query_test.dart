@@ -213,7 +213,7 @@ void main() {
       final doc = collection.doc('doc');
 
       await doc.set({
-        'a': {'b': 1}
+        'a': {'b': 1},
       });
 
       final snapshot = await collection.where(
@@ -230,7 +230,7 @@ void main() {
       final doc = collection.doc('doc');
 
       await doc.set({
-        'a': {'b': 1}
+        'a': {'b': 1},
       });
 
       final snapshot = await collection

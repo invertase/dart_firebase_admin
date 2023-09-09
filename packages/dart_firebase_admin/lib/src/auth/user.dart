@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/identitytoolkit/v1.dart' as firebase_auth_v1;
 import 'package:meta/meta.dart';
 
-import '../../dart_firebase_admin.dart';
+import '../dart_firebase_admin.dart';
 import '../object_utils.dart';
 
 /// 'REDACTED', encoded as a base64 string.

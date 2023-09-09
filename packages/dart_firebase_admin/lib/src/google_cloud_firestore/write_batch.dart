@@ -118,7 +118,7 @@ class WriteBatch {
     );
 
     return firestore._client.v1((client) async {
-      return await client.projects.databases.documents.commit(
+      return client.projects.databases.documents.commit(
         request,
         firestore._formattedDatabaseName,
       );

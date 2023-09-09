@@ -62,7 +62,7 @@ class CollectionReference<T> extends Query<T> {
     }
 
     // TODO test
-    if (_queryOptions.converter != _jsonConverter &&
+    if (!identical(_queryOptions.converter, _jsonConverter) &&
         path._parent() != _resourcePath) {
       throw ArgumentError.value(
         documentPath,
