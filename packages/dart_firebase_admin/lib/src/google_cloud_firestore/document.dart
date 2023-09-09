@@ -205,7 +205,7 @@ class DocumentSnapshot<T> {
     final converter = ref._converter;
     // We only want to use the converter and create a new QueryDocumentSnapshot
     // if a converter has been provided.
-    if (identical(converter, _jsonConverter)) {
+    if (!identical(converter, _jsonConverter)) {
       final untypedReference = DocumentReference._(
         firestore: ref.firestore,
         path: ref._path,
