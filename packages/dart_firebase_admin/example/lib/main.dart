@@ -12,6 +12,12 @@ Future<void> main() async {
   final firestore = Firestore(admin);
 
   final collection = firestore.collection('users');
+
+  await collection.doc('123').set({
+    'name': 'John Doe',
+    'age': 30,
+  });
+
   final snapshot = await collection.get();
 
   for (final doc in snapshot.docs) {
