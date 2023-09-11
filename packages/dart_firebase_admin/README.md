@@ -9,7 +9,7 @@ Currently, only Firestore is available, with more to come (auth next).
 - [Usage](#usage)
   - [Connecting to the SDK](#connecting-to-the-sdk)
     - [Connecting using the environment](#connecting-using-the-environment)
-    - [Connecting using a \`service-account.json\`\` file](#connecting-using-a-service-accountjson-file)
+    - [Connecting using a `service-account.json` file](#connecting-using-a-service-accountjson-file)
   - [Using Firestore](#using-firestore)
 
 ## Usage
@@ -55,7 +55,7 @@ void main() {
 }
 ```
 
-#### Connecting using a `service-account.json`` file
+#### Connecting using a `service-account.json` file
 
 Alternatively, you can choose to use a `service-account.json` file.  
 This file can be obtained in your firebase console by going to:
