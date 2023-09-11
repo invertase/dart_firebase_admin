@@ -53,37 +53,3 @@ String autoId() {
 /// Used for the creation of request tags.
 @internal
 String requestTag() => autoId().substring(0, 5);
-
-/// Parses the value of the environment variable FIRESTORE_PREFER_REST, and
-/// returns a value indicating if the environment variable enables or disables
-/// preferRest.
-///
-/// This function will warn to the console if the environment variable is set
-/// to an unsupported value.
-///
-/// Return `true` if the environment variable enables `preferRest`,
-/// `false` if the environment variable disables `preferRest`, or `null`
-/// if the environment variable is not set or is set to an unsupported value.
-@internal
-bool? tryGetPreferRestEnvironmentVariable() {
-  final rawValue =
-      Platform.environment['FIRESTORE_PREFER_REST']?.trim().toLowerCase();
-
-  if (rawValue == null) {
-    return null;
-  } else if (rawValue == '1' || rawValue == 'true') {
-    return true;
-  } else if (rawValue == '0' || rawValue == 'false') {
-    return false;
-  } else {
-    stderr.writeln(
-      'An unsupported value was specified for the environment variable FIRESTORE_PREFER_REST. '
-      'Value $rawValue is unsupported.',
-    );
-    return null;
-  }
-}
-
-@internal
-String? get firebaseEmulatorHostEnv =>
-    Platform.environment['FIRESTORE_EMULATOR_HOST'];

@@ -1,8 +1,10 @@
 part of 'dart_firebase_admin.dart';
 
+/// Authentication informations for Firebase Admin SDK.
 class Credential {
   Credential._(this._serviceAccountCredentials);
 
+  /// Log in to firebase from a service account file.
   factory Credential.fromServiceAccount(File serviceAccountFile) {
     final content = serviceAccountFile.readAsStringSync();
 
@@ -17,6 +19,7 @@ class Credential {
     return Credential._(serviceAccountCredentials);
   }
 
+  /// Log in to firebase using the environment variable.
   Credential.fromApplicationDefaultCredentials() : this._(null);
 
   final auth.ServiceAccountCredentials? _serviceAccountCredentials;
