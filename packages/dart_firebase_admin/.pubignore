@@ -1,0 +1,2 @@
+## Make dry-run happy due to fake private key
+test/credential_test.dart
