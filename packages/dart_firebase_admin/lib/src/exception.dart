@@ -1,4 +1,4 @@
-part of '../dart_firebase_admin.dart';
+part of 'dart_firebase_admin.dart';
 
 /// A set of platform level error codes.
 ///
@@ -43,52 +43,16 @@ String _platformErrorCodeMessage(String code) {
 }
 
 /// Base interface for all Firebase Admin related errors.
-abstract class FirebaseAdminException implements Exception {
+abstract class FirebaseAdminException extends FirebaseException {
   FirebaseAdminException(this.service, this._code, [this._message]);
 
   final String service;
   final String _code;
   final String? _message;
 
+  @override
   String get code => '$service/${_code.replaceAll('_', '-').toLowerCase()}';
 
-  String get message => _message ?? _platformErrorCodeMessage(_code);
-}
-
-/// Converts a Exception to a FirebaseAdminException.
-Never _handleException(Object exception, StackTrace stackTrace) {
-  if (exception is firebase_auth_v1.DetailedApiRequestError) {
-    Error.throwWithStackTrace(
-      FirebaseAuthAdminException.fromServerError(exception),
-      stackTrace,
-    );
-  }
-
-  Error.throwWithStackTrace(exception, stackTrace);
-}
-
-/// A generic guard wrapper for API calls to handle exceptions.
-R guard<R>(R Function() cb) {
-  try {
-    final value = cb();
-
-    if (value is Future) {
-      return value.catchError(_handleException) as R;
-    }
-
-    return value;
-  } catch (error, stackTrace) {
-    _handleException(error, stackTrace);
-  }
-}
-
-class FirebaseArrayIndexException implements Exception {
-  FirebaseArrayIndexException(this.index, this.message);
-
-  final int index;
-
-  final String message;
-
   @override
-  String toString() => 'FirebaseArrayIndexException: $message';
+  String get message => _message ?? _platformErrorCodeMessage(_code);
 }

@@ -1,4 +1,5 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/firestore.dart';
 
 Future<void> main() async {
   final admin = FirebaseAdminApp.initializeApp(
@@ -6,12 +7,20 @@ Future<void> main() async {
     Credential.fromApplicationDefaultCredentials(),
   );
 
-  final auth = FirebaseAdminAuth(admin);
+  admin.useEmulator();
 
-  // await auth.deleteUser('867gK70vkJNjOzlj4uQoMcg7a1d2');
-  // await auth.createSessionCookie('867gK70vkJNjOzlj4uQoMcg7a1d2');
-  final d = await auth.deleteUsers(['p9bj9If2i4eQlr7NxnaxWGZsmgq1']);
-  print(d.errors);
-  print(d.failureCount);
-  print('Deleted!');
+  final firestore = Firestore(admin);
+
+  final collection = firestore.collection('users');
+
+  await collection.doc('123').set({
+    'name': 'John Doe',
+    'age': 30,
+  });
+
+  final snapshot = await collection.get();
+
+  for (final doc in snapshot.docs) {
+    print(doc.data());
+  }
 }

@@ -1,3 +1,1 @@
-# Dart Firebase Admin
-
-A Firebase Admin SDK implementation for Dart.
+packages/dart_firebase_admin/README.md
