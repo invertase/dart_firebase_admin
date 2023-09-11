@@ -89,9 +89,6 @@ class WriteBatch {
   /// });
   /// ```
   Future<List<WriteResult>> commit() async {
-    // TODO what about retryCodes/tag?
-    // final retryCodes = [StatusCode.aborted, ...StatusCode.commitRetryCodes];
-
     final response = await _commit(transactionId: null);
 
     return [
@@ -108,8 +105,6 @@ class WriteBatch {
   Future<firestore1.CommitResponse> _commit({
     required String? transactionId,
   }) async {
-    // TODO what about retryCodes/tag?
-    // Note: We don't call `verifyNotCommitted()` to allow for retries.
     _commited = true;
 
     final request = firestore1.CommitRequest(
@@ -126,7 +121,9 @@ class WriteBatch {
   }
 
   /// Deletes a document from the database.
-  // TODO support delete(ref, precondition)
+  ///
+  /// - [precondition] can be passed to specify custom requirements for the
+  ///   request (e.g. only delete if it was last updated at a given time).
   void delete(
     DocumentReference<Object?> documentRef, {
     Precondition? precondition,

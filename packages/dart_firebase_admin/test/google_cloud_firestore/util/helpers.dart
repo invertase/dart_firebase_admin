@@ -9,7 +9,9 @@ FirebaseAdminApp createApp() {
   return FirebaseAdminApp.initializeApp(projectId, credential)..useEmulator();
 }
 
-Firestore createInstance() => Firestore(createApp());
+Firestore createInstance([Settings? settings]) {
+  return Firestore(createApp(), settings: settings);
+}
 
 Matcher isArgumentError({String? message}) {
   var matcher = isA<ArgumentError>();

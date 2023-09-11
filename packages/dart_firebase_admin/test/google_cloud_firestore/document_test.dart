@@ -98,7 +98,8 @@ void main() {
     });
 
     test('Supports BigInt', () async {
-      // TODO it appears that going above int64 causes grpc to fail?
+      final firestore = createInstance(Settings(useBigInt: true));
+
       await firestore.doc('collectionId/bigInt').set({
         'foo': BigInt.from(9223372036854775807),
       });
@@ -108,7 +109,7 @@ void main() {
           .get()
           .then((snapshot) => snapshot.data()!['foo']);
 
-      expect(data, 9223372036854775807);
+      expect(data, BigInt.from(9223372036854775807));
     });
 
     test('serializes unicode keys', () async {
@@ -303,7 +304,30 @@ void main() {
       );
     });
 
-    // TODO test last update time precondition
+    test('Supports preconditions', () async {
+      final result = await firestore.doc('collectionId/precondition').set({});
+
+      await firestore
+          .doc('collectionId/precondition')
+          .delete(Precondition.timestamp(result.writeTime));
+
+      expect(
+        await firestore
+            .doc('collectionId/precondition')
+            .get()
+            .then((s) => s.exists),
+        isFalse,
+      );
+
+      await firestore.doc('collectionId/precondition').set({});
+
+      expect(
+        () => firestore
+            .doc('collectionId/precondition')
+            .delete(Precondition.timestamp(result.writeTime)),
+        throwsA(isA<Exception>()),
+      );
+    });
   });
 
   group('set documents', () {

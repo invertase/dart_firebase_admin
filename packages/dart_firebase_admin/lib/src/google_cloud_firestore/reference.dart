@@ -61,7 +61,6 @@ class CollectionReference<T> extends Query<T> {
       );
     }
 
-    // TODO test
     if (!identical(_queryOptions.converter, _jsonConverter) &&
         path._parent() != _resourcePath) {
       throw ArgumentError.value(
@@ -544,8 +543,6 @@ class _QueryOptions<T> with _$_QueryOptions<T> {
       projection: projection,
     );
   }
-
-  // TODO == fieldOrders, startAt, endAt, projection & double check that we're not checking properties we shouldn't
 }
 
 @immutable
@@ -1084,7 +1081,7 @@ class Query<T> {
   /// Executes the query and returns the results as a [QuerySnapshot].
   ///
   /// ```dart
-  /// final query = firestore.collection('col').where('foo', '==', 'bar');
+  /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 'bar');
   ///
   /// query.get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
@@ -1318,7 +1315,7 @@ class Query<T> {
   /// ```dart
   /// final collectionRef = firestore.collection('col');
   ///
-  /// collectionRef.where(Filter.and(Filter.where('foo', WhereFilter.equal, 'bar'), Filter.where('foo', '!=', 'baz'))).get()
+  /// collectionRef.where(Filter.and(Filter.where('foo', WhereFilter.equal, 'bar'), Filter.where('foo', WhereFilter.notEqual, 'baz'))).get()
   ///   .then((querySnapshot) {
   ///     querySnapshot.forEach((documentSnapshot) {
   ///       print('Found document at ${documentSnapshot.ref.path}');
@@ -1326,8 +1323,6 @@ class Query<T> {
   /// });
   /// ```
   Query<T> whereFilter(Filter filter) {
-    // TODO review all (where) snippets
-
     if (_queryOptions.startAt != null || _queryOptions.endAt != null) {
       throw ArgumentError(
         'Cannot specify a where() filter after calling '
@@ -1490,7 +1485,7 @@ class Query<T> {
   /// - [descending] (false by default) Whether to obtain documents in descending order.
   ///
   /// ```dart
-  /// final query = firestore.collection('col').where('foo', '>', 42);
+  /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
   /// query.orderaBy('foo', 'desc').get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
@@ -1534,7 +1529,7 @@ class Query<T> {
   /// - [descending] (false by default) Whether to obtain documents in descending order.
   ///
   /// ```dart
-  /// final query = firestore.collection('col').where('foo', '>', 42);
+  /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
   /// query.orderBy('foo', 'desc').get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
@@ -1560,7 +1555,7 @@ class Query<T> {
   /// - [limit] The maximum number of items to return.
   ///
   /// ```dart
-  /// final query = firestore.collection('col').where('foo', '>', 42);
+  /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
   /// query.limit(1).get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
@@ -1615,7 +1610,7 @@ class Query<T> {
   /// - [offset] The offset to apply to the Query results
   ///
   /// ```dart
-  /// final query = firestore.collection('col').where('foo', '>', 42);
+  /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
   /// query.limit(10).offset(20).get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {

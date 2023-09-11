@@ -48,7 +48,6 @@ class DocumentReader<T> {
     if (_outstandingDocuments.isEmpty) return;
 
     final documents = await firestore._client.v1((client) async {
-      // TODO is it possible to stream the result to preserve the retry logic from the node variant?
       return client.projects.databases.documents.batchGet(
         firestore1.BatchGetDocumentsRequest(
           documents: _outstandingDocuments.toList(),
@@ -57,28 +56,10 @@ class DocumentReader<T> {
               fieldPaths: fieldMask.map((e) => e._formattedName).toList(),
             );
           }),
-          // TODO
-          newTransaction: null,
-          // TODO
-          readTime: null,
           transaction: transactionId,
         ),
         firestore._formattedDatabaseName,
       );
-      // return client.projects.databases.documents.batchGet(
-      //   firestore1.BatchGetDocumentsRequest(
-      //     documents: _outstandingDocuments.toList(),
-      //     mask: firestore1.DocumentMask(
-      //       fieldPaths: fieldMask?.map((e) => e._formattedName).toList(),
-      //     ),
-      //     // TODO
-      //     newTransaction: null,
-      //     // TODO
-      //     readTime: null,
-      //     transaction: transactionId,
-      //   ),
-      //   firestore._formattedDatabaseName,
-      // );
     });
 
     for (final response in documents) {

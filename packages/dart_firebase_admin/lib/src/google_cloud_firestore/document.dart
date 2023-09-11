@@ -487,56 +487,6 @@ class _DocumentMask {
     return _DocumentMask(fieldPaths);
   }
 
-  factory _DocumentMask.fromFieldMask(
-    List<FieldMask> fieldMask,
-  ) {
-    final fieldPaths = <FieldPath>[];
-
-    for (final mask in fieldMask) {
-      fieldPaths.add(FieldPath.fromArgument(mask));
-    }
-
-    return _DocumentMask(fieldPaths);
-  }
-
-  factory _DocumentMask.fromObject(DocumentData data) {
-    final fieldPaths = <FieldPath>[];
-
-    void extractFieldPaths(
-      DocumentData currentData,
-      FieldPath? currentPath,
-    ) {
-      for (final entry in currentData.entries) {
-        // We don't split on dots since fromObject is called with
-        // DocumentData.
-        final childSegment = FieldPath([entry.key]);
-        final childPath = currentPath == null
-            ? childSegment
-            : currentPath._appendPath(childSegment);
-
-        final value = entry.value;
-        if (value is _FieldTransform) {
-          if (value.includeInDocumentMask) {
-            fieldPaths.add(childPath);
-          }
-        } else if (value is DocumentData) {
-          extractFieldPaths(value, childPath);
-        } else {
-          fieldPaths.add(childPath);
-        }
-      }
-
-      // Add a field path for an explicitly updated empty map.
-      if (currentPath != null && currentData.isEmpty) {
-        fieldPaths.add(currentPath);
-      }
-    }
-
-    extractFieldPaths(data, null);
-
-    return _DocumentMask(fieldPaths);
-  }
-
   final List<FieldPath> _sortedPaths;
 
   firestore1.DocumentMask toProto() {

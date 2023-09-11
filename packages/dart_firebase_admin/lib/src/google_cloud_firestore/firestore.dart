@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -13,7 +12,6 @@ import 'package:intl/intl.dart';
 import '../dart_firebase_admin.dart';
 import '../object_utils.dart';
 import 'util.dart';
-import 'validate.dart';
 
 part 'convert.dart';
 part 'document.dart';

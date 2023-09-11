@@ -3,7 +3,6 @@ part of 'firestore.dart';
 /// A type representing the raw Firestore document data.
 typedef DocumentData = Map<String, Object?>;
 
-// TODO double check
 @internal
 typedef ApiMapValue = Map<String, firestore1.Value>;
 
@@ -60,8 +59,6 @@ class _Serializer {
         return firestore1.Value(
           nullValue: 'NULL_VALUE',
         );
-
-      // TODO case Buffer || U8intList
 
       case _Serializable():
         return value._toProto();
@@ -138,8 +135,6 @@ class _Serializer {
         };
       case firestore1.Value(:final geoPointValue?):
         return GeoPoint._fromProto(geoPointValue);
-
-      // TODO handle bytes
 
       default:
         throw ArgumentError.value(

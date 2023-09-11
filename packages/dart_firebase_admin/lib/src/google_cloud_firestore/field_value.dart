@@ -446,7 +446,6 @@ void _validateUserInput(
     case DocumentReference():
     case GeoPoint():
     case Timestamp() || DateTime():
-    // TODO case Buffer || Uint8Array:
     case null:
     case num():
     case BigInt():
