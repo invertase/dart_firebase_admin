@@ -1,6 +1,6 @@
 ## Dart Firebase Admin
 
-Welcome! This project is a port of [Node's Fireabse Admin SDK](https://github.com/firebase/firebase-admin-node) to Dart.
+Welcome! This project is a port of [Node's Firebase Admin SDK](https://github.com/firebase/firebase-admin-node) to Dart.
 
 ⚠️ This project is still in its early stages, and some features may be missing or bugged.
 Currently, only Firestore is available, with more to come (auth next).
