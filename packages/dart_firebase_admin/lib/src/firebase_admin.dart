@@ -12,7 +12,7 @@ class FirebaseAdminApp {
   @internal
   Uri authApiHost = Uri.https('identitytoolkit.googleapis.com', '/');
   @internal
-  Uri firestoreApiHost = Uri.https('identitytoolkit.googleapis.com', '/');
+  Uri firestoreApiHost = Uri.https('firestore.googleapis.com', '/');
 
   void useEmulator() {
     _isUsingEmulator = true;
