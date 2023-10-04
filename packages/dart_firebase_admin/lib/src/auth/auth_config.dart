@@ -1,6 +1,674 @@
+import 'package:collection/collection.dart';
 import 'package:firebaseapis/identitytoolkit/v1.dart' as v1;
+import 'package:firebaseapis/identitytoolkit/v2.dart' as v2;
+import 'package:meta/meta.dart';
 
 import '../dart_firebase_admin.dart';
+import '../object_utils.dart';
+
+/// The possible types for [AuthProviderConfigFilter.type].
+enum AuthProviderConfigFilterType {
+  saml,
+  oidc,
+}
+
+/// The filter interface used for listing provider configurations. This is used
+/// when specifying how to list configured identity providers via
+/// {@link BaseAuth.listProviderConfigs}.
+class AuthProviderConfigFilter {
+  AuthProviderConfigFilter.oidc({
+    this.maxResults,
+    this.pageToken,
+  }) : type = AuthProviderConfigFilterType.oidc;
+
+  AuthProviderConfigFilter.saml({
+    this.maxResults,
+    this.pageToken,
+  }) : type = AuthProviderConfigFilterType.saml;
+
+  /// The Auth provider configuration filter. This can be either `saml` or `oidc`.
+  /// The former is used to look up SAML providers only, while the latter is used
+  /// for OIDC providers.
+  final AuthProviderConfigFilterType type;
+
+  /// The maximum number of results to return per page. The default and maximum is
+  /// 100.
+  final int? maxResults;
+
+  /// The next page token. When not specified, the lookup starts from the beginning
+  /// of the list.
+  final String? pageToken;
+}
+
+/// The response interface for listing provider configs. This is only available
+/// when listing all identity providers' configurations via
+/// [BaseAuth.listProviderConfigs].
+class ListProviderConfigResults {
+  ListProviderConfigResults({
+    required this.providerConfigs,
+    required this.pageToken,
+  });
+
+  /// The list of providers for the specified project in the current page.
+  final List<AuthProviderConfig> providerConfigs;
+
+  /// The next page token, if available.
+  final String? pageToken;
+}
+
+abstract class UpdateAuthProviderRequest {}
+
+@internal
+class SAMLAuthProviderRequestBase implements UpdateAuthProviderRequest {
+  SAMLAuthProviderRequestBase({
+    this.providerId,
+    this.displayName,
+    this.enabled,
+    this.idpEntityId,
+    this.ssoURL,
+    this.x509Certificates,
+    this.rpEntityId,
+    this.callbackURL,
+    this.enableRequestSigning,
+    this.issuer,
+  });
+
+  final bool? enableRequestSigning;
+
+  final String? issuer;
+
+  /// The SAML provider's updated provider ID. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? providerId;
+
+  /// The SAML provider's updated display name. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? displayName;
+
+  /// Whether the SAML provider is enabled or not. If not provided, the existing
+  /// configuration's setting is not modified.
+  final bool? enabled;
+
+  /// The SAML provider's updated IdP entity ID. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? idpEntityId;
+
+  /// The SAML provider's updated SSO URL. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? ssoURL;
+
+  /// The SAML provider's updated list of X.509 certificated. If not provided, the
+  /// existing configuration list is not modified.
+  final List<String>? x509Certificates;
+
+  /// The SAML provider's updated RP entity ID. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? rpEntityId;
+
+  /// The SAML provider's callback URL. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? callbackURL;
+}
+
+/// The request interface for updating a SAML Auth provider. This is used
+/// when updating a SAML provider's configuration via
+/// [BaseAuth.updateProviderConfig].
+class SAMLUpdateAuthProviderRequest extends SAMLAuthProviderRequestBase
+    implements UpdateAuthProviderRequest {
+  SAMLUpdateAuthProviderRequest({
+    super.displayName,
+    super.enabled,
+    super.idpEntityId,
+    super.ssoURL,
+    super.x509Certificates,
+    super.rpEntityId,
+    super.callbackURL,
+  });
+}
+
+@internal
+abstract class OIDCAuthProviderRequestBase {
+  OIDCAuthProviderRequestBase({
+    this.providerId,
+    this.displayName,
+    this.enabled,
+    this.clientId,
+    this.issuer,
+    this.clientSecret,
+    this.responseType,
+  });
+
+  /// The OIDC provider's updated provider ID. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? providerId;
+
+  /// The OIDC provider's updated display name. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? displayName;
+
+  /// Whether the OIDC provider is enabled or not. If not provided, the existing
+  /// configuration's setting is not modified.
+  final bool? enabled;
+
+  /// The OIDC provider's updated client ID. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? clientId;
+
+  /// The OIDC provider's updated issuer. If not provided, the existing
+  /// configuration's value is not modified.
+  final String? issuer;
+
+  /// The OIDC provider's client secret to enable OIDC code flow.
+  /// If not provided, the existing configuration's value is not modified.
+  final String? clientSecret;
+
+  /// The OIDC provider's response object for OAuth authorization flow.
+  final OAuthResponseType? responseType;
+}
+
+/// The request interface for updating an OIDC Auth provider. This is used
+/// when updating an OIDC provider's configuration via
+/// [BaseAuth.updateProviderConfig].
+class OIDCUpdateAuthProviderRequest extends OIDCAuthProviderRequestBase
+    implements UpdateAuthProviderRequest {
+  OIDCUpdateAuthProviderRequest({
+    super.displayName,
+    super.enabled,
+    super.clientId,
+    super.issuer,
+    super.clientSecret,
+    super.responseType,
+  });
+}
+
+sealed class AuthProviderConfig {
+  @internal
+  AuthProviderConfig({
+    required this.providerId,
+    required this.displayName,
+    required this.enabled,
+  });
+
+  /// The provider ID defined by the developer.
+  /// For a SAML provider, this is always prefixed by `saml.`.
+  /// For an OIDC provider, this is always prefixed by `oidc.`.
+  final String providerId;
+
+  /// The user-friendly display name to the current configuration. This name is
+  /// also used as the provider label in the Cloud Console.
+  final String? displayName;
+
+  /// Whether the provider configuration is enabled or disabled. A user
+  /// cannot sign in using a disabled provider.
+  final bool enabled;
+}
+
+/// The
+/// [SAML](http://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-tech-overview-2.0.html)
+/// Auth provider configuration interface. A SAML provider can be created via
+/// [BaseAuth.createProviderConfig].
+class SAMLAuthProviderConfig extends AuthProviderConfig
+    implements SAMLAuthProviderRequestBase {
+  SAMLAuthProviderConfig({
+    required this.idpEntityId,
+    required this.ssoURL,
+    required this.x509Certificates,
+    required this.rpEntityId,
+    this.callbackURL,
+    required super.providerId,
+    super.displayName,
+    required super.enabled,
+    this.issuer,
+    this.enableRequestSigning,
+  });
+
+  /// The SAML IdP entity identifier.
+  @override
+  final String idpEntityId;
+
+  /// The SAML IdP SSO URL. This must be a valid URL.
+  @override
+  final String ssoURL;
+
+  /// The list of SAML IdP X.509 certificates issued by CA for this provider.
+  /// Multiple certificates are accepted to prevent outages during
+  /// IdP key rotation (for example ADFS rotates every 10 days). When the Auth
+  /// server receives a SAML response, it will match the SAML response with the
+  /// certificate on record. Otherwise the response is rejected.
+  /// Developers are expected to manage the certificate updates as keys are
+  /// rotated.
+  @override
+  final List<String> x509Certificates;
+
+  /// The SAML relying party (service provider) entity ID.
+  /// This is defined by the developer but needs to be provided to the SAML IdP.
+  @override
+  final String rpEntityId;
+
+  /// This is fixed and must always be the same as the OAuth redirect URL
+  /// provisioned by Firebase Auth,
+  /// `https://project-id.firebaseapp.com/__/auth/handler` unless a custom
+  /// `authDomain` is used.
+  /// The callback URL should also be provided to the SAML IdP during
+  /// configuration.
+  @override
+  final String? callbackURL;
+
+  @override
+  final bool? enableRequestSigning;
+
+  @override
+  final String? issuer;
+}
+
+/// The [OIDC](https://openid.net/specs/openid-connect-core-1_0-final.html) Auth
+/// provider configuration interface. An OIDC provider can be created via
+/// [BaseAuth.createProviderConfig].
+class OIDCAuthProviderConfig extends AuthProviderConfig
+    implements OIDCAuthProviderRequestBase {
+  OIDCAuthProviderConfig({
+    required super.providerId,
+    super.displayName,
+    required super.enabled,
+    required this.clientId,
+    required this.issuer,
+    this.clientSecret,
+    this.responseType,
+  });
+
+  /// This is the required client ID used to confirm the audience of an OIDC
+  /// provider's
+  /// [ID token](https://openid.net/specs/openid-connect-core-1_0-final.html#IDToken).
+  @override
+  final String clientId;
+
+  /// This is the required provider issuer used to match the provider issuer of
+  /// the ID token and to determine the corresponding OIDC discovery document, eg.
+  /// [`/.well-known/openid-configuration`](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig).
+  /// This is needed for the following:
+  /// <ul>
+  /// <li>To verify the provided issuer.</li>
+  /// <li>Determine the authentication/authorization endpoint during the OAuth
+  ///     `id_token` authentication flow.</li>
+  /// <li>To retrieve the public signing keys via `jwks_uri` to verify the OIDC
+  ///     provider's ID token's signature.</li>
+  /// <li>To determine the claims_supported to construct the user attributes to be
+  ///     returned in the additional user info response.</li>
+  /// </ul>
+  /// ID token validation will be performed as defined in the
+  /// [spec](https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation).
+  @override
+  final String issuer;
+
+  /// The OIDC provider's client secret to enable OIDC code flow.
+  @override
+  final String? clientSecret;
+
+  /// The OIDC provider's response object for OAuth authorization flow.
+  @override
+  final OAuthResponseType? responseType;
+}
+
+/// The interface representing OIDC provider's response object for OAuth
+/// authorization flow.
+/// One of the following settings is required:
+/// <ul>
+/// <li>Set <code>code</code> to <code>true</code> for the code flow.</li>
+/// <li>Set <code>idToken</code> to <code>true</code> for the ID token flow.</li>
+/// </ul>
+class OAuthResponseType {
+  @internal
+  OAuthResponseType({required this.idToken, required this.code});
+
+  /// Whether ID token is returned from IdP's authorization endpoint.
+  final bool? idToken;
+
+  /// Whether authorization code is returned from IdP's authorization endpoint.
+  final bool? code;
+}
+
+@internal
+class OIDCConfig extends OIDCAuthProviderConfig {
+  OIDCConfig({
+    required super.providerId,
+    required super.displayName,
+    required super.enabled,
+    required super.clientId,
+    required super.issuer,
+    required super.clientSecret,
+    required super.responseType,
+  });
+
+  factory OIDCConfig.fromResponse(
+    v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig response,
+  ) {
+    final issuer = response.issuer;
+    final clientID = response.clientId;
+    final name = response.name;
+    if (issuer == null || clientID == null || name == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidArgument,
+        'INTERNAL ASSERT FAILED: Invalid OIDC configuration response',
+      );
+    }
+
+    final providerId = OIDCConfig.getProviderIdFromResourceName(name);
+    if (providerId == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.internalError,
+        'INTERNAL ASSERT FAILED: Invalid OIDC configuration response',
+      );
+    }
+
+    return OIDCConfig(
+      providerId: providerId,
+      displayName: response.displayName,
+      enabled: response.enabled ?? false,
+      clientId: clientID,
+      issuer: issuer,
+      clientSecret: response.clientSecret,
+      responseType: response.responseType.let((responseType) {
+        return OAuthResponseType(
+          idToken: responseType.idToken,
+          code: responseType.code,
+        );
+      }),
+    );
+  }
+
+  static void validate(OIDCAuthProviderRequestBase options,
+      {required bool ignoreMissingFields}) {
+    if (options.providerId case final providerId? when providerId.isNotEmpty) {
+      if (!providerId.startsWith('oidc.')) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidArgument,
+          '"OIDCAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "oidc.".',
+        );
+      }
+    } else if (!ignoreMissingFields) {
+      throw FirebaseAuthAdminException(
+        options.providerId == null
+            ? AuthClientErrorCode.missingProviderId
+            : AuthClientErrorCode.invalidProviderId,
+        '"OIDCAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "oidc.".',
+      );
+    }
+
+    final clientId = options.clientId;
+    if (!(ignoreMissingFields && clientId == null) &&
+        (clientId == null || clientId.isEmpty)) {
+      throw FirebaseAuthAdminException(
+        clientId == null
+            ? AuthClientErrorCode.missingOauthClientId
+            : AuthClientErrorCode.invalidOauthClientId,
+        '"OIDCAuthProviderConfig.clientId" must be a valid non-empty string.',
+      );
+    }
+
+    final issuer = options.issuer;
+    if (!(ignoreMissingFields && issuer == null) &&
+        (issuer == null || Uri.tryParse(issuer) == null)) {
+      throw FirebaseAuthAdminException(
+        issuer == null
+            ? AuthClientErrorCode.missingIssuer
+            : AuthClientErrorCode.invalidConfig,
+        '"OIDCAuthProviderConfig.issuer" must be a valid URL string.',
+      );
+    }
+
+    final clientSecret = options.clientSecret;
+    if (!(ignoreMissingFields && clientSecret == null) &&
+        (clientSecret == null || clientSecret.isEmpty)) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"OIDCAuthProviderConfig.clientSecret" must be a valid non-empty string.',
+      );
+    }
+
+    final responseType = options.responseType;
+    if (responseType != null) {
+      final code = responseType.code;
+
+      // If code flow is enabled, client secret must be provided.
+      if (code != null && options.clientSecret == null) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.missingOauthClientSecret,
+          'The OAuth configuration client secret is required to enable OIDC code flow.',
+        );
+      }
+
+      if ((responseType.code ?? false) && (responseType.idToken ?? false)) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidOauthResponsetype,
+          'Only exactly one OAuth responseType should be set to true.',
+        );
+      }
+    }
+  }
+
+  static v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig? buildServerRequest(
+    OIDCAuthProviderRequestBase options, {
+    bool ignoreMissingFields = false,
+  }) {
+    final makeRequest = options.providerId != null || ignoreMissingFields;
+    if (!makeRequest) return null;
+
+    OIDCConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
+
+    return v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig(
+      enabled: options.enabled,
+      displayName: options.displayName,
+      issuer: options.issuer,
+      clientId: options.clientId,
+      clientSecret: options.clientSecret,
+      responseType: options.responseType.let((responseType) {
+        return v2.GoogleCloudIdentitytoolkitAdminV2OAuthResponseType(
+          idToken: responseType.idToken,
+          code: responseType.code,
+        );
+      }),
+    );
+  }
+
+  /// Returns the provider ID corresponding to the resource name if available.
+  static String? getProviderIdFromResourceName(String resourceName) {
+    // name is of form projects/project1/oauthIdpConfigs/providerId1
+    final matchProviderRes =
+        RegExp(r'\/oauthIdpConfigs\/(oidc\..*)$').firstMatch(resourceName);
+    if (matchProviderRes == null || matchProviderRes.groupCount < 2) {
+      return null;
+    }
+    return matchProviderRes[1];
+  }
+
+  static bool isProviderId(String providerId) {
+    return providerId.isNotEmpty && providerId.startsWith('oidc.');
+  }
+}
+
+@internal
+class SAMLConfig extends SAMLAuthProviderConfig {
+  SAMLConfig({
+    required super.idpEntityId,
+    required super.ssoURL,
+    required super.x509Certificates,
+    required super.rpEntityId,
+    required super.callbackURL,
+    required super.providerId,
+    required super.displayName,
+    required super.enabled,
+  });
+
+  factory SAMLConfig.fromResponse(
+    v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig response,
+  ) {
+    final idpConfig = response.idpConfig;
+    final idpEntityId = idpConfig?.idpEntityId;
+    final ssoURL = idpConfig?.ssoUrl;
+    final spConfig = response.spConfig;
+    final spEntityId = spConfig?.spEntityId;
+    final providerId =
+        response.name.let(SAMLConfig.getProviderIdFromResourceName);
+
+    if (idpConfig == null ||
+        idpEntityId == null ||
+        ssoURL == null ||
+        spConfig == null ||
+        spEntityId == null ||
+        providerId == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.internalError,
+        'INTERNAL ASSERT FAILED: Invalid SAML configuration response',
+      );
+    }
+
+    return SAMLConfig(
+      idpEntityId: idpEntityId,
+      ssoURL: ssoURL,
+      x509Certificates: [
+        ...?idpConfig.idpCertificates
+            ?.map((c) => c.x509Certificate)
+            .whereNotNull(),
+      ],
+      rpEntityId: spEntityId,
+      callbackURL: spConfig.callbackUri,
+      providerId: providerId,
+      displayName: response.displayName,
+      enabled: response.enabled ?? false,
+    );
+  }
+
+  static v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig?
+      buildServerRequest(
+    SAMLAuthProviderRequestBase options, {
+    bool ignoreMissingFields = false,
+  }) {
+    final makeRequest = options.providerId != null || ignoreMissingFields;
+    if (!makeRequest) return null;
+
+    SAMLConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
+
+    return v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig(
+      enabled: options.enabled,
+      displayName: options.displayName,
+      spConfig: options.callbackURL == null && options.rpEntityId == null
+          ? null
+          : v2.GoogleCloudIdentitytoolkitAdminV2SpConfig(
+              callbackUri: options.callbackURL,
+              spEntityId: options.rpEntityId,
+            ),
+      idpConfig: options.idpEntityId == null &&
+              options.ssoURL == null &&
+              options.x509Certificates == null
+          ? null
+          : v2.GoogleCloudIdentitytoolkitAdminV2IdpConfig(
+              idpEntityId: options.idpEntityId,
+              ssoUrl: options.ssoURL,
+              signRequest: options.enableRequestSigning,
+              idpCertificates: options.x509Certificates
+                  ?.map(
+                    (c) => v2.GoogleCloudIdentitytoolkitAdminV2IdpCertificate(
+                      x509Certificate: c,
+                    ),
+                  )
+                  .toList(),
+            ),
+    );
+  }
+
+  static String? getProviderIdFromResourceName(String resourceName) {
+    // name is of form projects/project1/inboundSamlConfigs/providerId1
+    final matchProviderRes =
+        RegExp(r'\/inboundSamlConfigs\/(saml\..*)$').firstMatch(resourceName);
+    if (matchProviderRes == null || matchProviderRes.groupCount < 2) {
+      return null;
+    }
+    return matchProviderRes[1];
+  }
+
+  static bool isProviderId(String providerId) {
+    return providerId.isNotEmpty && providerId.startsWith('saml.');
+  }
+
+  static void validate(
+    SAMLAuthProviderRequestBase options, {
+    required bool ignoreMissingFields,
+  }) {
+    // Required fields.
+    final providerId = options.providerId;
+    if (providerId != null && providerId.isNotEmpty) {
+      if (providerId.startsWith('saml.')) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidProviderId,
+          '"SAMLAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "saml.".',
+        );
+      }
+    } else if (!ignoreMissingFields) {
+      // providerId is required and not provided correctly.
+      throw FirebaseAuthAdminException(
+        providerId == null
+            ? AuthClientErrorCode.missingProviderId
+            : AuthClientErrorCode.invalidProviderId,
+        '"SAMLAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "saml.".',
+      );
+    }
+
+    final idpEntityId = options.idpEntityId;
+    if (!(ignoreMissingFields && idpEntityId == null) &&
+        !(idpEntityId != null && idpEntityId.isNotEmpty)) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.idpEntityId" must be a valid non-empty string.',
+      );
+    }
+
+    final ssoURL = options.ssoURL;
+    if (!(ignoreMissingFields && ssoURL == null) &&
+        Uri.tryParse(ssoURL ?? '') == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.ssoURL" must be a valid URL string.',
+      );
+    }
+
+    final rpEntityId = options.rpEntityId;
+    if (!(ignoreMissingFields && rpEntityId == null) &&
+        !(rpEntityId != null && rpEntityId.isNotEmpty)) {
+      throw FirebaseAuthAdminException(
+        rpEntityId != null
+            ? AuthClientErrorCode.missingSamlRelyingPartyConfig
+            : AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.rpEntityId" must be a valid non-empty string.',
+      );
+    }
+
+    final callbackURL = options.callbackURL;
+    if (!(ignoreMissingFields && callbackURL == null) &&
+        (callbackURL != null && Uri.tryParse(callbackURL) == null)) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.callbackURL" must be a valid URL string.',
+      );
+    }
+
+    final x509Certificates = options.x509Certificates;
+    if (!(ignoreMissingFields && x509Certificates == null) &&
+        x509Certificates == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.x509Certificates" must be a valid array of X509 certificate strings.',
+      );
+    }
+    for (final cert in x509Certificates ?? const <String>[]) {
+      if (cert.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidConfig,
+          '"SAMLAuthProviderConfig.x509Certificates" must be a valid array of X509 certificate strings.',
+        );
+      }
+    }
+  }
+}
 
 const _sentinel = _Sentinel();
 

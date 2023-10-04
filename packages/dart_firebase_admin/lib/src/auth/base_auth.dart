@@ -2,12 +2,14 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/identitytoolkit/v1.dart' as auth1;
 import 'package:meta/meta.dart';
 
-import '../dart_firebase_admin.dart';
 import '../app/core.dart';
+import '../dart_firebase_admin.dart';
 import '../utils/validator.dart';
+import 'action_code_settings_builder.dart';
 import 'auth_api_request.dart';
 import 'auth_config.dart';
 import 'identifier.dart';
+import 'token_generator.dart';
 import 'token_verifier.dart';
 import 'user.dart';
 import 'user_import_builder.dart';
@@ -17,29 +19,425 @@ abstract class BaseAuth {
   @visibleForOverriding
   AbstractAuthRequestHandler get authRequestHandler;
   FirebaseTokenVerifier get _sessionCookieVerifier;
+  FirebaseTokenGenerator get _tokenGenerator;
 
-  // TODO createCustomToken
-  // TODO verifyIdToken
-  // TODO setCustomUserClaims
-  // TODO revokeRefreshTokens
-  // TODO createSessionCookie
-  // TODO verifySessionCookie
-  // TODO generatePasswordResetLink
-  // TODO generateEmailVerificationLink
-  // TODO generateVerifyAndChangeEmailLink
-  // TODO generateSignInWithEmailLink
-  // TODO listProviderConfigs
-  // TODO getProviderConfig
-  // TODO deleteProviderConfig
-  // TODO updateProviderConfig
-  // TODO createProviderConfig
+  late final _idTokenVerifier = createIdTokenVerifier(app);
+
+  /// Generates the out of band email action link to reset a user's password.
+  /// The link is generated for the user with the specified email address. The
+  /// optional [ActionCodeSettings] object
+  /// defines whether the link is to be handled by a mobile app or browser and the
+  /// additional state information to be passed in the deep link, etc.
+  ///
+
+  /// - [email] - The email address of the user whose password is to be
+  ///   reset.
+  /// - [actionCodeSettings] - The action
+  ///     code settings. If specified, the state/continue URL is set as the
+  ///     "continueUrl" parameter in the password reset link. The default password
+  ///     reset landing page will use this to display a link to go back to the app
+  ///     if it is installed.
+  ///     If the actionCodeSettings is not specified, no URL is appended to the
+  ///     action URL.
+  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     developer in the console. Otherwise an error is thrown.
+  ///     Mobile app redirects are only applicable if the developer configures
+  ///     and accepts the Firebase Dynamic Links terms of service.
+  ///     The Android package name and iOS bundle ID are respected only if they
+  ///     are configured in the same Firebase Auth project.
+  Future<String> generatePasswordResetLink(
+    String email, {
+    ActionCodeSettings? actionCodeSettings,
+  }) {
+    return authRequestHandler.getEmailActionLink(
+      'PASSWORD_RESET',
+      email,
+      actionCodeSettings,
+    );
+  }
+
+  /// Generates the out of band email action link to verify the user's ownership
+  /// of the specified email. The [ActionCodeSettings] object provided
+  /// as an argument to this method defines whether the link is to be handled by a
+  /// mobile app or browser along with additional state information to be passed in
+  /// the deep link, etc.
+  ///
+  /// - [email] - The email account to verify.
+  /// - [actionCodeSettings] - The action
+  ///     code settings. If specified, the state/continue URL is set as the
+  ///     "continueUrl" parameter in the email verification link. The default email
+  ///     verification landing page will use this to display a link to go back to
+  ///     the app if it is installed.
+  ///     If the actionCodeSettings is not specified, no URL is appended to the
+  ///     action URL.
+  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     developer in the console. Otherwise an error is thrown.
+  ///     Mobile app redirects are only applicable if the developer configures
+  ///     and accepts the Firebase Dynamic Links terms of service.
+  ///     The Android package name and iOS bundle ID are respected only if they
+  ///     are configured in the same Firebase Auth project.
+  Future<String> generateEmailVerificationLink(
+    String email, {
+    ActionCodeSettings? actionCodeSettings,
+  }) {
+    return authRequestHandler.getEmailActionLink(
+      'VERIFY_EMAIL',
+      email,
+      actionCodeSettings,
+    );
+  }
+
+  /// Generates an out-of-band email action link to verify the user's ownership
+  /// of the specified email. The [ActionCodeSettings] object provided
+  /// as an argument to this method defines whether the link is to be handled by a
+  /// mobile app or browser along with additional state information to be passed in
+  /// the deep link, etc.
+  ///
+  /// - [email] - The current email account.
+  /// - [newEmail] - The email address the account is being updated to.
+  /// - [actionCodeSettings] - The action
+  ///     code settings. If specified, the state/continue URL is set as the
+  ///     "continueUrl" parameter in the email verification link. The default email
+  ///     verification landing page will use this to display a link to go back to
+  ///     the app if it is installed.
+  ///     If the actionCodeSettings is not specified, no URL is appended to the
+  ///     action URL.
+  ///     The state URL provided must belong to a domain that is authorized
+  ///     in the console, or an error will be thrown.
+  ///     Mobile app redirects are only applicable if the developer configures
+  ///     and accepts the Firebase Dynamic Links terms of service.
+  ///     The Android package name and iOS bundle ID are respected only if they
+  ///     are configured in the same Firebase Auth project.
+  Future<String> generateVerifyAndChangeEmailLink(
+    String email,
+    String newEmail, {
+    ActionCodeSettings? actionCodeSettings,
+  }) {
+    return authRequestHandler.getEmailActionLink(
+      'VERIFY_AND_CHANGE_EMAIL',
+      email,
+      actionCodeSettings,
+      newEmail,
+    );
+  }
+
+  /// Generates the out of band email action link to verify the user's ownership
+  /// of the specified email. The [ActionCodeSettings] object provided
+  /// as an argument to this method defines whether the link is to be handled by a
+  /// mobile app or browser along with additional state information to be passed in
+  /// the deep link, etc.
+  ///
+  /// - [email] - The email account to verify.
+  /// - [actionCodeSettings] - The action
+  ///     code settings. If specified, the state/continue URL is set as the
+  ///     "continueUrl" parameter in the email verification link. The default email
+  ///     verification landing page will use this to display a link to go back to
+  ///     the app if it is installed.
+  ///     If the actionCodeSettings is not specified, no URL is appended to the
+  ///     action URL.
+  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     developer in the console. Otherwise an error is thrown.
+  ///     Mobile app redirects are only applicable if the developer configures
+  ///     and accepts the Firebase Dynamic Links terms of service.
+  ///     The Android package name and iOS bundle ID are respected only if they
+  ///     are configured in the same Firebase Auth project.
+  Future<String> generateSignInWithEmailLink(
+    String email,
+    ActionCodeSettings actionCodeSettings,
+  ) {
+    return authRequestHandler.getEmailActionLink(
+      'EMAIL_SIGNIN',
+      email,
+      actionCodeSettings,
+    );
+  }
+
+  /// Returns the list of existing provider configurations matching the filter
+  /// provided. At most, 100 provider configs can be listed at a time.
+  ///
+  /// SAML and OIDC provider support requires Google Cloud's Identity Platform
+  /// (GCIP). To learn more about GCIP, including pricing and features,
+  /// see the https://cloud.google.com/identity-platform.
+  Future<ListProviderConfigResults> listProviderConfigs(
+    AuthProviderConfigFilter options,
+  ) async {
+    if (options.type == AuthProviderConfigFilterType.oidc) {
+      final response = await authRequestHandler.listOAuthIdpConfigs(
+        maxResults: options.maxResults,
+        pageToken: options.pageToken,
+      );
+      return ListProviderConfigResults(
+        providerConfigs: [
+          // Convert each provider config response to a OIDCConfig.
+          ...?response.oauthIdpConfigs?.map(OIDCConfig.fromResponse),
+        ],
+        pageToken: response.nextPageToken,
+      );
+    } else if (options.type == AuthProviderConfigFilterType.saml) {
+      final response = await authRequestHandler.listInboundSamlConfigs(
+        maxResults: options.maxResults,
+        pageToken: options.pageToken,
+      );
+      return ListProviderConfigResults(
+        providerConfigs: [
+          // Convert each provider config response to a SAMLConfig.
+          ...?response.inboundSamlConfigs?.map(SAMLConfig.fromResponse),
+        ],
+        pageToken: response.nextPageToken,
+      );
+    }
+
+    throw FirebaseAuthAdminException(
+      AuthClientErrorCode.invalidArgument,
+      '"AuthProviderConfigFilter.type" must be either "saml" or "oidc"',
+    );
+  }
+
+  /// Returns a promise that resolves with the newly created `AuthProviderConfig`
+  /// when the new provider configuration is created.
+  ///
+  /// SAML and OIDC provider support requires Google Cloud's Identity Platform
+  /// (GCIP). To learn more about GCIP, including pricing and features,
+  /// see the https://cloud.google.com/identity-platform.
+  Future<AuthProviderConfig> createProviderConfig(
+    AuthProviderConfig config,
+  ) async {
+    if (OIDCConfig.isProviderId(config.providerId)) {
+      final response = await authRequestHandler.createOAuthIdpConfig(
+        config as OIDCConfig,
+      );
+      return OIDCConfig.fromResponse(response);
+    } else if (SAMLConfig.isProviderId(config.providerId)) {
+      final response = await authRequestHandler.createInboundSamlConfig(
+        config as SAMLConfig,
+      );
+      return SAMLConfig.fromResponse(response);
+    }
+
+    throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
+  }
+
+  /// Returns a promise that resolves with the updated `AuthProviderConfig`
+  /// corresponding to the provider ID specified.
+  /// If the specified ID does not exist, an `auth/configuration-not-found` error
+  /// is thrown.
+  ///
+  /// SAML and OIDC provider support requires Google Cloud's Identity Platform
+  /// (GCIP). To learn more about GCIP, including pricing and features,
+  /// see the {@link https://cloud.google.com/identity-platform | GCIP documentation}.
+  Future<AuthProviderConfig> updateProviderConfig(
+    String providerId,
+    UpdateAuthProviderRequest updatedConfig,
+  ) async {
+    if (OIDCConfig.isProviderId(providerId)) {
+      final response = await authRequestHandler.updateOAuthIdpConfig(
+        providerId,
+        updatedConfig as OIDCUpdateAuthProviderRequest,
+      );
+      return OIDCConfig.fromResponse(response);
+    } else if (SAMLConfig.isProviderId(providerId)) {
+      final response = await authRequestHandler.updateInboundSamlConfig(
+        providerId,
+        updatedConfig as SAMLUpdateAuthProviderRequest,
+      );
+      return SAMLConfig.fromResponse(response);
+    }
+
+    throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
+  }
+
+  /// Looks up an Auth provider configuration by the provided ID.
+  /// Returns a promise that resolves with the provider configuration
+  /// corresponding to the provider ID specified. If the specified ID does not
+  /// exist, an `auth/configuration-not-found` error is thrown.
+  ///
+  /// SAML and OIDC provider support requires Google Cloud's Identity Platform
+  /// (GCIP). To learn more about GCIP, including pricing and features,
+  /// see the https://cloud.google.com/identity-platform.
+  ///
+  /// - [providerId] - The provider ID corresponding to the provider
+  ///     config to return.
+  Future<AuthProviderConfig> getProviderConfig(String providerId) async {
+    if (OIDCConfig.isProviderId(providerId)) {
+      final response = await authRequestHandler.getOAuthIdpConfig(providerId);
+      return OIDCConfig.fromResponse(response);
+    } else if (SAMLConfig.isProviderId(providerId)) {
+      final response = await authRequestHandler.getInboundSamlConfig(
+        providerId,
+      );
+      return SAMLConfig.fromResponse(response);
+    } else {
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
+    }
+  }
+
+  /// Deletes the provider configuration corresponding to the provider ID passed.
+  /// If the specified ID does not exist, an `auth/configuration-not-found` error
+  /// is thrown.
+  ///
+  /// SAML and OIDC provider support requires Google Cloud's Identity Platform
+  /// (GCIP). To learn more about GCIP, including pricing and features,
+  /// see the {@link https://cloud.google.com/identity-platform | GCIP documentation}.
+  Future<void> deleteProviderConfig(String providerId) {
+    if (OIDCConfig.isProviderId(providerId)) {
+      return authRequestHandler.deleteOAuthIdpConfig(providerId);
+    } else if (SAMLConfig.isProviderId(providerId)) {
+      return authRequestHandler.deleteInboundSamlConfig(providerId);
+    }
+    throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
+  }
+
+  /// Creates a new Firebase custom token (JWT) that can be sent back to a client
+  /// device to use to sign in with the client SDKs' `signInWithCustomToken()`
+  /// methods. (Tenant-aware instances will also embed the tenant ID in the
+  /// token.)
+  ///
+  /// See https://firebase.google.com/docs/auth/admin/create-custom-tokens
+  /// for code samples and detailed documentation.
+  Future<String> createCustomToken(
+    String uid, {
+    Map<String, Object?>? developerClaims,
+  }) {
+    return _tokenGenerator.createCustomToken(
+      uid,
+      developerClaims: developerClaims,
+    );
+  }
+
+  /// Sets additional developer claims on an existing user identified by the
+  /// provided `uid`, typically used to define user roles and levels of
+  /// access. These claims should propagate to all devices where the user is
+  /// already signed in (after token expiration or when token refresh is forced)
+  /// and the next time the user signs in. If a reserved OIDC claim name
+  /// is used (sub, iat, iss, etc), an error is thrown. They are set on the
+  /// authenticated user's ID token JWT.
+  ///
+  /// See https://firebase.google.com/docs/auth/admin/custom-claims
+  /// for code samples and detailed documentation.
+  ///
+  /// - [uid] - The `uid` of the user to edit.
+  /// - [customUserClaims] - The developer claims to set. If null is
+  ///   passed, existing custom claims are deleted. Passing a custom claims payload
+  ///   larger than 1000 bytes will throw an error. Custom claims are added to the
+  ///   user's ID token which is transmitted on every authenticated request.
+  ///   For profile non-access related user attributes, use database or other
+  ///   separate storage systems.
+  Future<void> setCustomUserClaims(
+    String uid, {
+    Map<String, Object?>? customUserClaims,
+  }) async {
+    await authRequestHandler.setCustomUserClaims(uid, customUserClaims);
+  }
+
+  /// Verifies a Firebase ID token (JWT). If the token is valid, the promise is
+  /// fulfilled with the token's decoded claims; otherwise, the promise is
+  /// rejected.
+  ///
+  /// If `checkRevoked` is set to true, first verifies whether the corresponding
+  /// user is disabled. If yes, an `auth/user-disabled` error is thrown. If no,
+  /// verifies if the session corresponding to the ID token was revoked. If the
+  /// corresponding user's session was invalidated, an `auth/id-token-revoked`
+  /// error is thrown. If not specified the check is not applied.
+  ///
+  /// See https://firebase.google.com/docs/auth/admin/verify-id-tokens
+  /// for code samples and detailed documentation.
+  ///
+  /// - [checkRevoked] - Whether to check if the ID token was revoked.
+  ///   This requires an extra request to the Firebase Auth backend to check
+  ///   the `tokensValidAfterTime` time for the corresponding user.
+  ///   When not specified, this additional check is not applied.
+  Future<DecodedIdToken> verifyIdToken(
+    String idToken, {
+    bool checkRevoked = false,
+  }) async {
+    final isEmulator = app.isUsingEmulator;
+    final decodedIdToken = await _idTokenVerifier.verifyJWT(
+      idToken,
+      isEmulator: isEmulator,
+    );
+    // Whether to check if the token was revoked.
+    if (checkRevoked || isEmulator) {
+      return _verifyDecodedJWTNotRevokedOrDisabled(
+        decodedIdToken,
+        AuthClientErrorCode.idTokenRevoked,
+      );
+    }
+    return decodedIdToken;
+  }
+
+  /// Revokes all refresh tokens for an existing user.
+  ///
+  /// This API will update the user's [UserRecord.tokensValidAfterTime] to
+  /// the current UTC. It is important that the server on which this is called has
+  /// its clock set correctly and synchronized.
+  ///
+  /// While this will revoke all sessions for a specified user and disable any
+  /// new ID tokens for existing sessions from getting minted, existing ID tokens
+  /// may remain active until their natural expiration (one hour). To verify that
+  /// ID tokens are revoked, use [BaseAuth.verifyIdToken]
+  /// where `checkRevoked` is set to true.
+  Future<void> revokeRefreshTokens(String uid) async {
+    await authRequestHandler.revokeRefreshTokens(uid);
+  }
+
+  /// Creates a new Firebase session cookie with the specified options. The created
+  /// JWT string can be set as a server-side session cookie with a custom cookie
+  /// policy, and be used for session management. The session cookie JWT will have
+  /// the same payload claims as the provided ID token.
+  ///
+  /// See https://firebase.google.com/docs/auth/admin/manage-cookies
+  /// for code samples and detailed documentation.
+  ///
+  Future<String> createSessionCookie(
+    String idToken, {
+    required int expiresIn,
+  }) async {
+    return authRequestHandler.createSessionCookie(
+      idToken,
+      expiresIn: expiresIn,
+    );
+  }
 
   Future<DecodedIdToken> verifySessionCookie(
     String sessionCookie, {
     bool checkRevoked = false,
   }) async {
     final isEmulator = app.isUsingEmulator;
-    throw UnimplementedError();
+    final decodedIdToken = await _sessionCookieVerifier.verifyJWT(
+      sessionCookie,
+      isEmulator: isEmulator,
+    );
+
+    if (checkRevoked || isEmulator) {
+      return _verifyDecodedJWTNotRevokedOrDisabled(
+        decodedIdToken,
+        AuthClientErrorCode.sessionCookieRevoked,
+      );
+    }
+
+    return decodedIdToken;
+  }
+
+  Future<DecodedIdToken> _verifyDecodedJWTNotRevokedOrDisabled(
+    DecodedIdToken decodedIdToken,
+    AuthClientErrorCode revocationErrorInfo,
+  ) async {
+    final user = await getUser(decodedIdToken.sub);
+    if (user.disabled) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.userDisabled,
+        'The user record is disabled.',
+      );
+    }
+
+    if (user.tokensValidAfterTime case final tokensValidAfterTime?) {
+      // Check if authentication time is older than valid since time.
+      if (decodedIdToken.authTime.isBefore(tokensValidAfterTime)) {
+        throw FirebaseAuthAdminException(revocationErrorInfo);
+      }
+    }
+    // All checks above passed. Return the decoded token.
+    return decodedIdToken;
   }
 
   /// Imports the provided list of users into Firebase Auth.
