@@ -230,7 +230,7 @@ abstract class _BaseAuth {
   ///
   /// SAML and OIDC provider support requires Google Cloud's Identity Platform
   /// (GCIP). To learn more about GCIP, including pricing and features,
-  /// see the {@link https://cloud.google.com/identity-platform | GCIP documentation}.
+  /// see the https://cloud.google.com/identity-platform.
   Future<AuthProviderConfig> updateProviderConfig(
     String providerId,
     UpdateAuthProviderRequest updatedConfig,
@@ -283,7 +283,7 @@ abstract class _BaseAuth {
   ///
   /// SAML and OIDC provider support requires Google Cloud's Identity Platform
   /// (GCIP). To learn more about GCIP, including pricing and features,
-  /// see the {@link https://cloud.google.com/identity-platform | GCIP documentation}.
+  /// see the https://cloud.google.com/identity-platform.
   Future<void> deleteProviderConfig(String providerId) {
     if (_OIDCConfig.isProviderId(providerId)) {
       return _authRequestHandler.deleteOAuthIdpConfig(providerId);
@@ -780,7 +780,7 @@ abstract class _BaseAuth {
 class ListUsersResult {
   ListUsersResult._({required this.users, required this.pageToken});
 
-  /// The list of {@link UserRecord} objects for the
+  /// The list of [UserRecord] objects for the
   /// current downloaded batch.
   final List<UserRecord> users;
 
@@ -788,7 +788,7 @@ class ListUsersResult {
   final String? pageToken;
 }
 
-/// Represents the result of the {@link BaseAuth.getUsers} API.
+/// Represents the result of the [_BaseAuth.getUsers] API.
 class GetUsersResult {
   GetUsersResult._({required this.users, required this.notFound});
 
@@ -801,7 +801,7 @@ class GetUsersResult {
   final List<UserIdentifier> notFound;
 }
 
-/// Represents the result of the {@link BaseAuth.deleteUsers}.
+/// Represents the result of the [_BaseAuth.deleteUsers].
 /// API.
 class DeleteUsersResult {
   DeleteUsersResult._({
@@ -820,7 +820,7 @@ class DeleteUsersResult {
 
   /// A list of `FirebaseArrayIndexError` instances describing the errors that
   /// were encountered during the deletion. Length of this list is equal to
-  /// the return value of {@link DeleteUsersResult.failureCount}.
+  /// the return value of [DeleteUsersResult.failureCount].
   final List<FirebaseArrayIndexError> errors;
 }
 

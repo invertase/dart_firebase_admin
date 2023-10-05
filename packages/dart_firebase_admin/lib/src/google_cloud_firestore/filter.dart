@@ -20,7 +20,7 @@ enum WhereFilter {
 /// A `Filter` represents a restriction on one or more field values and can
 /// be used to refine the results of a [Query].
 /// `Filters`s are created by invoking [Filter.where], [Filter.or],
-/// or [Filter.and] and can then be passed to {@link Query#where}
+/// or [Filter.and] and can then be passed to [Query.where].
 /// to create a new [Query] instance that also contains this `Filter`.
 @immutable
 sealed class Filter {
@@ -103,9 +103,9 @@ sealed class Filter {
   /// ```
   factory Filter.or(List<Filter> filters) = _CompositeFilter.or;
 
-  /// Creates and returns a new [Filter]{@link Filter} that is a
-  /// conjunction of the given {@link Filter}s. A conjunction filter includes
-  /// a document if it satisfies all of the given {@link Filter}s.
+  /// Creates and returns a new [Filter] that is a
+  /// conjunction of the given [Filter]s. A conjunction filter includes
+  /// a document if it satisfies all of the given [Filter]s.
   ///
   /// The returned Filter can be applied to [Query.where()], [Filter.or], or
   /// [Filter.and]. When applied to a [Query] it requires that documents must satisfy

@@ -48,7 +48,7 @@ class Firestore {
   late final _client = _FirestoreHttpClient(app);
   late final _serializer = _Serializer(this);
 
-  /// Gets a [DocumentReference]{@link DocumentReference} instance that
+  /// Gets a [DocumentReference] instance that
   /// refers to the document at the specified path.
   ///
   /// - [documentPath]: A slash-separated path to a document.

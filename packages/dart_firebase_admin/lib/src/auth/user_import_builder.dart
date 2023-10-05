@@ -71,7 +71,7 @@ class UserImportHashOptions {
 }
 
 /// Interface representing the user import options needed for
-/// {@link BaseAuth.importUsers} method. This is used to
+/// [_BaseAuth.importUsers] method. This is used to
 /// provide the password hashing algorithm information.
 class UserImportOptions {
   UserImportOptions({required this.hash});
@@ -135,7 +135,7 @@ class UserProviderRequest {
 }
 
 /// Interface representing a user to import to Firebase Auth via the
-/// {@link BaseAuth.importUsers} method.
+/// [_BaseAuth.importUsers] method.
 class UserImportRecord {
   UserImportRecord({
     required this.uid,
@@ -188,7 +188,7 @@ class UserImportRecord {
 
   /// The buffer of bytes representing the user's hashed password.
   /// When a user is to be imported with a password hash,
-  /// {@link UserImportOptions} are required to be
+  /// [UserImportOptions] are required to be
   /// specified to identify the hashing algorithm used to generate this hash.
   final Uint8List? passwordHash;
 

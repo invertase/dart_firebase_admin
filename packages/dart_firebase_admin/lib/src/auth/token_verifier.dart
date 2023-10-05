@@ -280,7 +280,7 @@ class TokenProvider {
 }
 
 /// Interface representing a decoded Firebase ID token, returned from the
-/// {@link BaseAuth.verifyIdToken} method.
+/// [_BaseAuth.verifyIdToken] method.
 ///
 /// Firebase ID tokens are OpenID Connect spec-compliant JSON Web Tokens (JWTs).
 /// See the

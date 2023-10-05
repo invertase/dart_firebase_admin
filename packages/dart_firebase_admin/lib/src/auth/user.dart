@@ -138,19 +138,19 @@ class UserRecord {
   /// when uploading this user, as is typical when migrating from another Auth
   /// system, this will be an empty string. If no password is set, this is
   /// null. This is only available when the user is obtained from
-  /// {@link BaseAuth.listUsers}.
+  /// [_BaseAuth.listUsers].
   final String? passwordHash;
 
   /// The user's password salt (base64-encoded), only if Firebase Auth hashing
   /// algorithm (SCRYPT) is used. If a different hashing algorithm had been used to
   /// upload this user, typical when migrating from another Auth system, this will
   /// be an empty string. If no password is set, this is null. This is only
-  /// available when the user is obtained from {@link BaseAuth.listUsers}.
+  /// available when the user is obtained from [_BaseAuth.listUsers].
   final String? passwordSalt;
 
   /// The user's custom claims object if available, typically used to define
   /// user roles and propagated to an authenticated user's ID token.
-  /// This is set via {@link BaseAuth.setCustomUserClaims}
+  /// This is set via [_BaseAuth.setCustomUserClaims].
   final Map<String, Object?>? customClaims;
 
   /// The ID of the tenant the user belongs to, if available.
@@ -158,8 +158,7 @@ class UserRecord {
 
   /// The date the user's tokens are valid after, formatted as a UTC string.
   /// This is updated every time the user's refresh token are revoked either
-// TODO review {@link}
-  /// from the {@link BaseAuth.revokeRefreshTokens}
+  /// from the [_BaseAuth.revokeRefreshTokens].
   /// API or from the Firebase Auth backend on big account changes (password
   /// resets, password or email updates, etc).
   final DateTime? tokensValidAfterTime;

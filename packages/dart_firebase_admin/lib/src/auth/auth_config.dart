@@ -8,7 +8,7 @@ enum _AuthProviderConfigFilterType {
 
 /// The filter interface used for listing provider configurations. This is used
 /// when specifying how to list configured identity providers via
-/// {@link BaseAuth.listProviderConfigs}.
+/// [_BaseAuth.listProviderConfigs].
 class AuthProviderConfigFilter {
   AuthProviderConfigFilter.oidc({
     this.maxResults,
