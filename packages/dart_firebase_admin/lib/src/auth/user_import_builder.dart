@@ -1,17 +1,4 @@
-// TODO remove redundant "required"
-
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:collection/collection.dart';
-import 'package:firebaseapis/identitytoolkit/v1.dart' as v1;
-import 'package:meta/meta.dart';
-
-import '../dart_firebase_admin.dart';
-import '../app/core.dart';
-import '../object_utils.dart';
-import 'auth_config.dart';
-import 'base_auth.dart';
+part of '../auth.dart';
 
 enum HashAlgorithmType {
   scrypt('SCRYPT'),
@@ -219,42 +206,8 @@ class UserImportRecord {
   final MultiFactorUpdateSettings? multiFactor;
 }
 
-/// Interface representing an Auth second factor in Auth server format.
-class AuthFactorInfo {
-  AuthFactorInfo({
-    required this.mfaEnrollmentId,
-    required this.displayName,
-    required this.phoneInfo,
-    required this.enrolledAt,
-  });
-
-  // TODO allow any key
-
-  // Not required for signupNewUser endpoint.
-  final String? mfaEnrollmentId;
-  final String? displayName;
-  final String? phoneInfo;
-  final String? enrolledAt;
-}
-
-class UploadProviderUserInfo {
-  UploadProviderUserInfo({
-    required this.rawId,
-    required this.providerId,
-    required this.email,
-    required this.displayName,
-    required this.photoUrl,
-  });
-
-  final String rawId;
-  final String providerId;
-  final String? email;
-  final String? displayName;
-  final String? photoUrl;
-}
-
 /// Callback function to validate an UploadAccountUser object.
-typedef ValidatorFunction = void Function(
+typedef _ValidatorFunction = void Function(
   v1.GoogleCloudIdentitytoolkitV1UserInfo data,
 );
 
@@ -272,9 +225,8 @@ class UserMetadataRequest {
   final DateTime? creationTime;
 }
 
-@internal
-class UserImportBuilder {
-  UserImportBuilder({
+class _UserImportBuilder {
+  _UserImportBuilder({
     required this.users,
     required this.options,
     required this.userRequestValidator,
@@ -288,7 +240,7 @@ class UserImportBuilder {
 
   final List<UserImportRecord> users;
   final UserImportOptions? options;
-  final ValidatorFunction? userRequestValidator;
+  final _ValidatorFunction? userRequestValidator;
 
   var _requiresHashOptions = false;
   var _validatedUsers = <v1.GoogleCloudIdentitytoolkitV1UserInfo>[];
@@ -500,7 +452,7 @@ class UserImportBuilder {
   /// @returns {UploadAccountUser[]} The populated uploadAccount users.
   List<v1.GoogleCloudIdentitytoolkitV1UserInfo> _populateUsers(
     List<UserImportRecord> users,
-    ValidatorFunction? userValidator,
+    _ValidatorFunction? userValidator,
   ) {
     final populatedUsers = <v1.GoogleCloudIdentitytoolkitV1UserInfo>[];
     users.forEachIndexed((index, user) {
@@ -514,7 +466,7 @@ class UserImportBuilder {
         populatedUsers.add(result);
         // Map user's index (the one to be sent to backend) to original developer provided array.
         _indexMap[populatedUsers.length - 1] = index;
-      } on FirebaseException catch (err) {
+      } on FirebaseAdminException catch (err) {
         _userImportResultErrors.add(
           FirebaseArrayIndexError(index: index, error: err),
         );
@@ -532,7 +484,7 @@ class UserImportBuilder {
 /// @returns {UploadAccountUser} The corresponding UploadAccountUser to return.
 v1.GoogleCloudIdentitytoolkitV1UserInfo _populateUploadAccountUser(
   UserImportRecord user,
-  ValidatorFunction? userValidator,
+  _ValidatorFunction? userValidator,
 ) {
   final mfaInfo = user.multiFactor?.enrolledFactors
       ?.map(

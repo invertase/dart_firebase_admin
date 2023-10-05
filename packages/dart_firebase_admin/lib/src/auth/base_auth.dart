@@ -1,27 +1,33 @@
-import 'package:collection/collection.dart';
-import 'package:firebaseapis/identitytoolkit/v1.dart' as auth1;
-import 'package:meta/meta.dart';
+part of '../auth.dart';
 
-import '../app/core.dart';
-import '../dart_firebase_admin.dart';
-import '../utils/validator.dart';
-import 'action_code_settings_builder.dart';
-import 'auth_api_request.dart';
-import 'auth_config.dart';
-import 'identifier.dart';
-import 'token_generator.dart';
-import 'token_verifier.dart';
-import 'user.dart';
-import 'user_import_builder.dart';
+_FirebaseTokenGenerator _createFirebaseTokenGenerator(
+  FirebaseAdminApp app, {
+  String? tenantId,
+}) {
+  try {
+    final signer =
+        app.isUsingEmulator ? _EmulatedSigner() : cryptoSignerFromApp(app);
+    return _FirebaseTokenGenerator(signer, tenantId: tenantId);
+  } on CryptoSignerException catch (err, stackTrace) {
+    Error.throwWithStackTrace(_handleCryptoSignerError(err), stackTrace);
+  }
+}
 
-abstract class BaseAuth {
-  FirebaseAdminApp get app;
-  @visibleForOverriding
-  AbstractAuthRequestHandler get authRequestHandler;
-  FirebaseTokenVerifier get _sessionCookieVerifier;
-  FirebaseTokenGenerator get _tokenGenerator;
+abstract class _BaseAuth {
+  _BaseAuth({
+    required this.app,
+    required _AbstractAuthRequestHandler authRequestHandler,
+    _FirebaseTokenGenerator? tokenGenerator,
+  })  : _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
+        _sessionCookieVerifier = _createSessionCookieVerifier(app),
+        _authRequestHandler = authRequestHandler;
 
-  late final _idTokenVerifier = createIdTokenVerifier(app);
+  final FirebaseAdminApp app;
+  final _AbstractAuthRequestHandler _authRequestHandler;
+  final FirebaseTokenVerifier _sessionCookieVerifier;
+  final _FirebaseTokenGenerator _tokenGenerator;
+
+  late final _idTokenVerifier = _createIdTokenVerifier(app);
 
   /// Generates the out of band email action link to reset a user's password.
   /// The link is generated for the user with the specified email address. The
@@ -49,7 +55,7 @@ abstract class BaseAuth {
     String email, {
     ActionCodeSettings? actionCodeSettings,
   }) {
-    return authRequestHandler.getEmailActionLink(
+    return _authRequestHandler.getEmailActionLink(
       'PASSWORD_RESET',
       email,
       actionCodeSettings,
@@ -80,7 +86,7 @@ abstract class BaseAuth {
     String email, {
     ActionCodeSettings? actionCodeSettings,
   }) {
-    return authRequestHandler.getEmailActionLink(
+    return _authRequestHandler.getEmailActionLink(
       'VERIFY_EMAIL',
       email,
       actionCodeSettings,
@@ -113,7 +119,7 @@ abstract class BaseAuth {
     String newEmail, {
     ActionCodeSettings? actionCodeSettings,
   }) {
-    return authRequestHandler.getEmailActionLink(
+    return _authRequestHandler.getEmailActionLink(
       'VERIFY_AND_CHANGE_EMAIL',
       email,
       actionCodeSettings,
@@ -145,7 +151,7 @@ abstract class BaseAuth {
     String email,
     ActionCodeSettings actionCodeSettings,
   ) {
-    return authRequestHandler.getEmailActionLink(
+    return _authRequestHandler.getEmailActionLink(
       'EMAIL_SIGNIN',
       email,
       actionCodeSettings,
@@ -161,27 +167,27 @@ abstract class BaseAuth {
   Future<ListProviderConfigResults> listProviderConfigs(
     AuthProviderConfigFilter options,
   ) async {
-    if (options.type == AuthProviderConfigFilterType.oidc) {
-      final response = await authRequestHandler.listOAuthIdpConfigs(
+    if (options._type == _AuthProviderConfigFilterType.oidc) {
+      final response = await _authRequestHandler.listOAuthIdpConfigs(
         maxResults: options.maxResults,
         pageToken: options.pageToken,
       );
       return ListProviderConfigResults(
         providerConfigs: [
           // Convert each provider config response to a OIDCConfig.
-          ...?response.oauthIdpConfigs?.map(OIDCConfig.fromResponse),
+          ...?response.oauthIdpConfigs?.map(_OIDCConfig.fromResponse),
         ],
         pageToken: response.nextPageToken,
       );
-    } else if (options.type == AuthProviderConfigFilterType.saml) {
-      final response = await authRequestHandler.listInboundSamlConfigs(
+    } else if (options._type == _AuthProviderConfigFilterType.saml) {
+      final response = await _authRequestHandler.listInboundSamlConfigs(
         maxResults: options.maxResults,
         pageToken: options.pageToken,
       );
       return ListProviderConfigResults(
         providerConfigs: [
           // Convert each provider config response to a SAMLConfig.
-          ...?response.inboundSamlConfigs?.map(SAMLConfig.fromResponse),
+          ...?response.inboundSamlConfigs?.map(_SAMLConfig.fromResponse),
         ],
         pageToken: response.nextPageToken,
       );
@@ -202,16 +208,16 @@ abstract class BaseAuth {
   Future<AuthProviderConfig> createProviderConfig(
     AuthProviderConfig config,
   ) async {
-    if (OIDCConfig.isProviderId(config.providerId)) {
-      final response = await authRequestHandler.createOAuthIdpConfig(
-        config as OIDCConfig,
+    if (_OIDCConfig.isProviderId(config.providerId)) {
+      final response = await _authRequestHandler.createOAuthIdpConfig(
+        config as _OIDCConfig,
       );
-      return OIDCConfig.fromResponse(response);
-    } else if (SAMLConfig.isProviderId(config.providerId)) {
-      final response = await authRequestHandler.createInboundSamlConfig(
-        config as SAMLConfig,
+      return _OIDCConfig.fromResponse(response);
+    } else if (_SAMLConfig.isProviderId(config.providerId)) {
+      final response = await _authRequestHandler.createInboundSamlConfig(
+        config as _SAMLConfig,
       );
-      return SAMLConfig.fromResponse(response);
+      return _SAMLConfig.fromResponse(response);
     }
 
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
@@ -229,18 +235,18 @@ abstract class BaseAuth {
     String providerId,
     UpdateAuthProviderRequest updatedConfig,
   ) async {
-    if (OIDCConfig.isProviderId(providerId)) {
-      final response = await authRequestHandler.updateOAuthIdpConfig(
+    if (_OIDCConfig.isProviderId(providerId)) {
+      final response = await _authRequestHandler.updateOAuthIdpConfig(
         providerId,
         updatedConfig as OIDCUpdateAuthProviderRequest,
       );
-      return OIDCConfig.fromResponse(response);
-    } else if (SAMLConfig.isProviderId(providerId)) {
-      final response = await authRequestHandler.updateInboundSamlConfig(
+      return _OIDCConfig.fromResponse(response);
+    } else if (_SAMLConfig.isProviderId(providerId)) {
+      final response = await _authRequestHandler.updateInboundSamlConfig(
         providerId,
         updatedConfig as SAMLUpdateAuthProviderRequest,
       );
-      return SAMLConfig.fromResponse(response);
+      return _SAMLConfig.fromResponse(response);
     }
 
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
@@ -258,14 +264,14 @@ abstract class BaseAuth {
   /// - [providerId] - The provider ID corresponding to the provider
   ///     config to return.
   Future<AuthProviderConfig> getProviderConfig(String providerId) async {
-    if (OIDCConfig.isProviderId(providerId)) {
-      final response = await authRequestHandler.getOAuthIdpConfig(providerId);
-      return OIDCConfig.fromResponse(response);
-    } else if (SAMLConfig.isProviderId(providerId)) {
-      final response = await authRequestHandler.getInboundSamlConfig(
+    if (_OIDCConfig.isProviderId(providerId)) {
+      final response = await _authRequestHandler.getOAuthIdpConfig(providerId);
+      return _OIDCConfig.fromResponse(response);
+    } else if (_SAMLConfig.isProviderId(providerId)) {
+      final response = await _authRequestHandler.getInboundSamlConfig(
         providerId,
       );
-      return SAMLConfig.fromResponse(response);
+      return _SAMLConfig.fromResponse(response);
     } else {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
@@ -279,10 +285,10 @@ abstract class BaseAuth {
   /// (GCIP). To learn more about GCIP, including pricing and features,
   /// see the {@link https://cloud.google.com/identity-platform | GCIP documentation}.
   Future<void> deleteProviderConfig(String providerId) {
-    if (OIDCConfig.isProviderId(providerId)) {
-      return authRequestHandler.deleteOAuthIdpConfig(providerId);
-    } else if (SAMLConfig.isProviderId(providerId)) {
-      return authRequestHandler.deleteInboundSamlConfig(providerId);
+    if (_OIDCConfig.isProviderId(providerId)) {
+      return _authRequestHandler.deleteOAuthIdpConfig(providerId);
+    } else if (_SAMLConfig.isProviderId(providerId)) {
+      return _authRequestHandler.deleteInboundSamlConfig(providerId);
     }
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
   }
@@ -326,7 +332,7 @@ abstract class BaseAuth {
     String uid, {
     Map<String, Object?>? customUserClaims,
   }) async {
-    await authRequestHandler.setCustomUserClaims(uid, customUserClaims);
+    await _authRequestHandler.setCustomUserClaims(uid, customUserClaims);
   }
 
   /// Verifies a Firebase ID token (JWT). If the token is valid, the promise is
@@ -374,10 +380,10 @@ abstract class BaseAuth {
   /// While this will revoke all sessions for a specified user and disable any
   /// new ID tokens for existing sessions from getting minted, existing ID tokens
   /// may remain active until their natural expiration (one hour). To verify that
-  /// ID tokens are revoked, use [BaseAuth.verifyIdToken]
+  /// ID tokens are revoked, use [_BaseAuth.verifyIdToken]
   /// where `checkRevoked` is set to true.
   Future<void> revokeRefreshTokens(String uid) async {
-    await authRequestHandler.revokeRefreshTokens(uid);
+    await _authRequestHandler.revokeRefreshTokens(uid);
   }
 
   /// Creates a new Firebase session cookie with the specified options. The created
@@ -392,7 +398,7 @@ abstract class BaseAuth {
     String idToken, {
     required int expiresIn,
   }) async {
-    return authRequestHandler.createSessionCookie(
+    return _authRequestHandler.createSessionCookie(
       idToken,
       expiresIn: expiresIn,
     );
@@ -460,7 +466,7 @@ abstract class BaseAuth {
     List<UserImportRecord> users, [
     UserImportOptions? options,
   ]) async {
-    return authRequestHandler.uploadAccount(users, options);
+    return _authRequestHandler.uploadAccount(users, options);
   }
 
   /// Retrieves a list of users (single batch only) with a size of `maxResults`
@@ -481,7 +487,7 @@ abstract class BaseAuth {
     int? maxResults,
     String? pageToken,
   }) async {
-    final response = await authRequestHandler.downloadAccount(
+    final response = await _authRequestHandler.downloadAccount(
       maxResults: maxResults,
       pageToken: pageToken,
     );
@@ -503,7 +509,7 @@ abstract class BaseAuth {
   /// Returns an empty promise fulfilled once the user has been
   /// deleted.
   Future<void> deleteUser(String uid) async {
-    await authRequestHandler.deleteAccount(uid);
+    await _authRequestHandler.deleteAccount(uid);
   }
 
   /// Deletes the users specified by the given uids.
@@ -527,7 +533,8 @@ abstract class BaseAuth {
   Future<DeleteUsersResult> deleteUsers(List<String> uids) async {
     uids.forEach(assertIsUid);
 
-    final response = await authRequestHandler.deleteAccounts(uids, force: true);
+    final response =
+        await _authRequestHandler.deleteAccounts(uids, force: true);
     final errors = response.errors ??
         <auth1.GoogleCloudIdentitytoolkitV1BatchDeleteErrorInfo>[];
 
@@ -568,7 +575,7 @@ abstract class BaseAuth {
   ///
   /// Returns a Future fulfilled with the use data corresponding to the provided `uid`.
   Future<UserRecord> getUser(String uid) async {
-    final response = await authRequestHandler.getAccountInfoByUid(uid);
+    final response = await _authRequestHandler.getAccountInfoByUid(uid);
     // Returns the user record populated with server response.
     return UserRecord.fromResponse(response);
   }
@@ -586,7 +593,7 @@ abstract class BaseAuth {
   /// data corresponding to the provided phone number.
   Future<UserRecord> getUserByPhoneNumber(String phoneNumber) async {
     final response =
-        await authRequestHandler.getAccountInfoByPhoneNumber(phoneNumber);
+        await _authRequestHandler.getAccountInfoByPhoneNumber(phoneNumber);
     // Returns the user record populated with server response.
     return UserRecord.fromResponse(response);
   }
@@ -601,7 +608,7 @@ abstract class BaseAuth {
   /// Returns a promise fulfilled with the user
   /// data corresponding to the provided email.
   Future<UserRecord> getUserByEmail(String email) async {
-    final response = await authRequestHandler.getAccountInfoByEmail(email);
+    final response = await _authRequestHandler.getAccountInfoByEmail(email);
     // Returns the user record populated with server response.
     return UserRecord.fromResponse(response);
   }
@@ -630,7 +637,7 @@ abstract class BaseAuth {
       return getUserByEmail(uid);
     }
 
-    final response = await authRequestHandler.getAccountInfoByFederatedUid(
+    final response = await _authRequestHandler.getAccountInfoByFederatedUid(
       providerId: providerId,
       rawId: uid,
     );
@@ -655,7 +662,7 @@ abstract class BaseAuth {
   ///  identifiers are specified.
   Future<GetUsersResult> getUsers(List<UserIdentifier> identifiers) async {
     final response =
-        await authRequestHandler.getAccountInfoByIdentifiers(identifiers);
+        await _authRequestHandler.getAccountInfoByIdentifiers(identifiers);
 
     final userRecords = response.users?.map(UserRecord.fromResponse).toList() ??
         const <UserRecord>[];
@@ -692,7 +699,7 @@ abstract class BaseAuth {
   /// Returns A Future fulfilled with the user
   /// data corresponding to the newly created user.
   Future<UserRecord> createUser(CreateRequest properties) async {
-    return authRequestHandler
+    return _authRequestHandler
         .createNewAccount(properties)
         // Return the corresponding user record.
         .then(getUser)
@@ -762,13 +769,13 @@ abstract class BaseAuth {
     }
 
     final existingUid =
-        await authRequestHandler.updateExistingAccount(uid, request);
+        await _authRequestHandler.updateExistingAccount(uid, request);
     return getUser(existingUid);
   }
 }
 
 /// Interface representing the object returned from a
-/// [BaseAuth.listUsers] operation. Contains the list
+/// [_BaseAuth.listUsers] operation. Contains the list
 /// of users for the current batch and the next page token if available.
 class ListUsersResult {
   ListUsersResult._({required this.users, required this.pageToken});
@@ -818,7 +825,7 @@ class DeleteUsersResult {
 }
 
 /// Interface representing the response from the
-/// [BaseAuth.importUsers] method for batch
+/// [_BaseAuth.importUsers] method for batch
 /// importing users to Firebase Auth.
 class UserImportResult {
   @internal

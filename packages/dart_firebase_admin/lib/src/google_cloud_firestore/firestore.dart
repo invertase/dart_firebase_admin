@@ -9,7 +9,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:intl/intl.dart';
 
-import '../dart_firebase_admin.dart';
+import '../app.dart';
 import '../object_utils.dart';
 import 'util.dart';
 
@@ -129,7 +129,7 @@ class Firestore {
     final fieldMask = _parseFieldMask(readOptions);
     final tag = requestTag();
 
-    final reader = DocumentReader(
+    final reader = _DocumentReader(
       firestore: this,
       documents: documents,
       transactionId: null,

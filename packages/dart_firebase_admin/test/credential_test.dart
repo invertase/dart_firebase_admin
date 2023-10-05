@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:dart_firebase_admin/src/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
 

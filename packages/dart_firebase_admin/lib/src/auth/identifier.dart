@@ -1,6 +1,4 @@
-import '../dart_firebase_admin.dart';
-import '../utils/validator.dart';
-import 'base_auth.dart';
+part of '../auth.dart';
 
 /// Identifies a user to be looked up.
 ///
@@ -13,7 +11,7 @@ sealed class UserIdentifier {}
 
 /// Used for looking up an account by federated provider.
 ///
-/// See [BaseAuth.getUsers].
+/// See [_BaseAuth.getUsers].
 class ProviderIdentifier extends UserIdentifier {
   ProviderIdentifier({required this.providerId, required this.providerUid}) {
     if (providerId.isEmpty) {
@@ -30,7 +28,7 @@ class ProviderIdentifier extends UserIdentifier {
 
 /// Used for looking up an account by phone number.
 ///
-/// See [BaseAuth.getUsers].
+/// See [_BaseAuth.getUsers].
 class PhoneIdentifier extends UserIdentifier {
   PhoneIdentifier({required this.phoneNumber}) {
     assertIsPhoneNumber(phoneNumber);
@@ -41,7 +39,7 @@ class PhoneIdentifier extends UserIdentifier {
 
 /// Used for looking up an account by email.
 ///
-/// See [BaseAuth.getUsers].
+/// See [_BaseAuth.getUsers].
 class EmailIdentifier extends UserIdentifier {
   EmailIdentifier({required this.email}) {
     assertIsEmail(email);
@@ -52,7 +50,7 @@ class EmailIdentifier extends UserIdentifier {
 
 /// Used for looking up an account by uid.
 ///
-/// See [BaseAuth.getUsers].
+/// See [_BaseAuth.getUsers].
 class UidIdentifier extends UserIdentifier {
   UidIdentifier({required this.uid}) {
     assertIsUid(uid);

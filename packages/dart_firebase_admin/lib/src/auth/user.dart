@@ -1,14 +1,7 @@
-import 'dart:convert';
-
-import 'package:collection/collection.dart';
-import 'package:firebaseapis/identitytoolkit/v1.dart' as firebase_auth_v1;
-import 'package:meta/meta.dart';
-
-import '../dart_firebase_admin.dart';
-import '../object_utils.dart';
+part of '../auth.dart';
 
 /// 'REDACTED', encoded as a base64 string.
-final b64Redacted = base64Encode('REDACTED'.codeUnits);
+final _b64Redacted = base64Encode('REDACTED'.codeUnits);
 
 enum MultiFactorId {
   phone._('phone'),
@@ -41,7 +34,7 @@ class UserRecord {
 
   @internal
   factory UserRecord.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1UserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
   ) {
     final localId = response.localId;
     // The Firebase user id is required.
@@ -67,7 +60,7 @@ class UserRecord {
     // then clear it out, similar to how the salt is returned. (Otherwise, it
     // *looks* like a b64-encoded hash is present, which is confusing.)
     final passwordHash =
-        response.passwordHash == b64Redacted ? null : response.passwordHash;
+        response.passwordHash == _b64Redacted ? null : response.passwordHash;
 
     final customAttributes = response.customAttributes;
     final customClaims = customAttributes != null
@@ -220,7 +213,7 @@ class UserInfo {
   });
 
   UserInfo.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1ProviderUserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1ProviderUserInfo response,
   )   : uid = response.rawId,
         displayName = response.displayName,
         email = response.email,
@@ -257,7 +250,7 @@ class MultiFactorSettings {
   MultiFactorSettings({required this.enrolledFactors});
 
   factory MultiFactorSettings.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1UserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
   ) {
     final parsedEnrolledFactors = <MultiFactorInfo>[
       ...?response.mfaInfo
@@ -288,7 +281,7 @@ abstract class MultiFactorInfo {
   });
 
   MultiFactorInfo.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
+    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   )   : uid = response.mfaEnrollmentId.orThrow(
           () => throw FirebaseAuthAdminException(
             AuthClientErrorCode.internalError,
@@ -306,7 +299,7 @@ abstract class MultiFactorInfo {
   /// @param response - The server side response.
   /// @internal
   static MultiFactorInfo? initMultiFactorInfo(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
+    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   ) {
     // PhoneMultiFactorInfo, TotpMultiFactorInfo currently available.
     try {
@@ -360,7 +353,7 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   /// Initializes the PhoneMultiFactorInfo object using the server side response.
   @internal
   PhoneMultiFactorInfo.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
+    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   )   : phoneNumber = response.phoneInfo,
         factorId = response.phoneInfo != null ? MultiFactorId.phone : throw 42,
         super.fromResponse(response);
@@ -390,7 +383,7 @@ class UserMetadata {
 
   @internal
   UserMetadata.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1UserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
   )   : creationTime = DateTime.fromMillisecondsSinceEpoch(
           int.parse(response.createdAt!),
         ),

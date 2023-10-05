@@ -1,32 +1,50 @@
-class ServiceAccount {
-  ServiceAccount({
-    required this.projectId,
-    required this.clientEmail,
-    required this.privateKey,
-  });
+part of '../app.dart';
 
-  final String? projectId;
-  final String? clientEmail;
-  final String? privateKey;
-}
+/// Authentication informations for Firebase Admin SDK.
+class Credential {
+  Credential._(
+    this.serviceAccountCredentials, {
+    this.serviceAccountId,
+  }) : assert(
+          serviceAccountId == null || serviceAccountCredentials == null,
+          'Cannot specify both serviceAccountId and serviceAccountCredentials',
+        );
 
-/// Interface for Google OAuth 2.0 access tokens.
-class GoogleOAuthAccessToken {
-  GoogleOAuthAccessToken({required this.accessToken, required this.expiresIn});
+  /// Log in to firebase from a service account file.
+  factory Credential.fromServiceAccount(File serviceAccountFile) {
+    final content = serviceAccountFile.readAsStringSync();
 
-  final String accessToken;
-  final int expiresIn;
-}
+    final json = jsonDecode(content);
+    if (json is! Map<String, Object?>) {
+      throw const FormatException('Invalid service account file');
+    }
 
-/// Interface that provides Google OAuth2 access tokens used to authenticate
-/// with Firebase services.
-///
-/// In most cases, you will not need to implement this yourself and can instead
-/// use the default implementations provided by the `firebase-admin/app` module.
-abstract class Credential {
-  /// Returns a Google OAuth2 access token object used to authenticate with
-  /// Firebase services.
-  ///
-  /// @returns A Google OAuth2 access token object.
-  Future<GoogleOAuthAccessToken> getAccessToken();
+    final serviceAccountCredentials =
+        auth.ServiceAccountCredentials.fromJson(json);
+
+    return Credential._(serviceAccountCredentials);
+  }
+
+  /// Log in to firebase using the environment variable.
+  Credential.fromApplicationDefaultCredentials({String? serviceAccountId})
+      : this._(
+          null,
+          serviceAccountId: serviceAccountId,
+        );
+
+  @internal
+  final String? serviceAccountId;
+
+  @internal
+  final auth.ServiceAccountCredentials? serviceAccountCredentials;
+
+  @internal
+  Future<auth.AuthClient> getAuthClient(List<String> scopes) {
+    final serviceAccountCredentials = this.serviceAccountCredentials;
+    if (serviceAccountCredentials == null) {
+      return auth.clientViaApplicationDefaultCredentials(scopes: scopes);
+    }
+
+    return auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
+  }
 }

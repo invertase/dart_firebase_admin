@@ -1,10 +1,4 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:meta/meta.dart';
-
-import '../dart_firebase_admin.dart';
-import '../utils/crypto_signer.dart';
+part of '../auth.dart';
 
 const _oneHourInSeconds = 60 * 60;
 
@@ -13,7 +7,7 @@ const _firebaseAudience =
     'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit';
 
 // List of blacklisted claims which cannot be provided when creating a custom token
-const blacklistedClaims = [
+const _blacklistedClaims = [
   'acr',
   'amr',
   'at_hash',
@@ -30,9 +24,8 @@ const blacklistedClaims = [
   'nonce',
 ];
 
-@internal
-class FirebaseTokenGenerator {
-  FirebaseTokenGenerator(
+class _FirebaseTokenGenerator {
+  _FirebaseTokenGenerator(
     this._signer, {
     required this.tenantId,
   }) {
@@ -70,7 +63,7 @@ class FirebaseTokenGenerator {
     final claims = <String, Object?>{...?developerClaims};
     if (developerClaims != null) {
       for (final key in developerClaims.keys) {
-        if (blacklistedClaims.contains(key)) {
+        if (_blacklistedClaims.contains(key)) {
           throw FirebaseAuthAdminException(
             AuthClientErrorCode.invalidArgument,
             'Developer claim "$key" is reserved and cannot be specified.',
@@ -103,7 +96,7 @@ class FirebaseTokenGenerator {
 
       return '$token.${_encodeSegment(signPromise)}';
     } on CryptoSignerException catch (err, stack) {
-      Error.throwWithStackTrace(handleCryptoSignerError(err), stack);
+      Error.throwWithStackTrace(_handleCryptoSignerError(err), stack);
     }
   }
 
@@ -116,14 +109,14 @@ class FirebaseTokenGenerator {
 
 /// Creates a new FirebaseAuthError by extracting the error code, message and other relevant
 /// details from a CryptoSignerError.
-Object handleCryptoSignerError(CryptoSignerException err) {
+Object _handleCryptoSignerError(CryptoSignerException err) {
   return FirebaseAuthAdminException(
-    mapToAuthClientErrorCode(err.code),
+    _mapToAuthClientErrorCode(err.code),
     err.message,
   );
 }
 
-AuthClientErrorCode mapToAuthClientErrorCode(String code) {
+AuthClientErrorCode _mapToAuthClientErrorCode(String code) {
   switch (code) {
     case CryptoSignerErrorCode.invalidCredential:
       return AuthClientErrorCode.invalidCredential;
@@ -132,4 +125,17 @@ AuthClientErrorCode mapToAuthClientErrorCode(String code) {
     default:
       return AuthClientErrorCode.internalError;
   }
+}
+
+/// A CryptoSigner implementation that is used when communicating with the Auth emulator.
+/// It produces unsigned tokens.
+class _EmulatedSigner implements CryptoSigner {
+  @override
+  String get algorithm => 'none';
+
+  @override
+  Future<Uint8List> sign(Uint8List buffer) async => utf8.encode('');
+
+  @override
+  Future<String> getAccountId() async => 'firebase-auth-emulator@example.com';
 }

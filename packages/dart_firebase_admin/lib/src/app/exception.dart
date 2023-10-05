@@ -1,4 +1,17 @@
-part of 'dart_firebase_admin.dart';
+part of '../app.dart';
+
+/// Composite type which includes both a `FirebaseError` object and an index
+/// which can be used to get the errored item.
+class FirebaseArrayIndexError {
+  FirebaseArrayIndexError({required this.index, required this.error});
+
+  /// The index of the errored item within the original array passed as part of the
+  /// called API method.
+  final int index;
+
+  /// The error object.
+  final FirebaseAdminException error;
+}
 
 /// A set of platform level error codes.
 ///
@@ -43,16 +56,25 @@ String _platformErrorCodeMessage(String code) {
 }
 
 /// Base interface for all Firebase Admin related errors.
-abstract class FirebaseAdminException extends FirebaseException {
+abstract class FirebaseAdminException {
   FirebaseAdminException(this.service, this._code, [this._message]);
 
   final String service;
   final String _code;
   final String? _message;
 
-  @override
+  /// Error codes are strings using the following format: `"service/String-code"`.
+  /// Some examples include `"auth/invalid-uid"` and
+  /// `"messaging/invalid-recipient"`.
+  ///
+  /// While the message for a given error can change, the code will remain the same
+  /// between backward-compatible versions of the Firebase SDK.
   String get code => '$service/${_code.replaceAll('_', '-').toLowerCase()}';
 
-  @override
+  /// An explanatory message for the error that just occurred.
+  ///
+  /// This message is designed to be helpful to you, the developer. Because
+  /// it generally does not convey meaningful information to end users,
+  /// this message should not be displayed in your application.
   String get message => _message ?? _platformErrorCodeMessage(_code);
 }

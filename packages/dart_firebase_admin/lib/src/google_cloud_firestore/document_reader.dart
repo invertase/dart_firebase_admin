@@ -1,8 +1,7 @@
 part of 'firestore.dart';
 
-@internal
-class DocumentReader<T> {
-  DocumentReader({
+class _DocumentReader<T> {
+  _DocumentReader({
     required this.firestore,
     required this.documents,
     required this.fieldMask,

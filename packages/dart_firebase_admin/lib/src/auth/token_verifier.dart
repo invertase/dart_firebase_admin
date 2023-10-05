@@ -1,12 +1,6 @@
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart' as dart_jsonwebtoken;
-import 'package:meta/meta.dart';
-
-import '../dart_firebase_admin.dart';
-import '../utils/jwt.dart';
+part of '../auth.dart';
 
 const _algorithmRS256 = 'RS256';
-const _firebaseAudience =
-    'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit';
 
 final _clientCertUrl = Uri.parse(
   'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com',
@@ -112,7 +106,7 @@ class FirebaseTokenVerifier {
   }
 
   Future<dart_jsonwebtoken.JWT> _safeDecode(String jtwToken) async {
-    return authGuard(() => dart_jsonwebtoken.JWT.decode(jtwToken));
+    return _authGuard(() => dart_jsonwebtoken.JWT.decode(jtwToken));
   }
 
   Future<void> _verifySignature(
@@ -338,7 +332,7 @@ class DecodedIdToken {
   /// The audience for which this token is intended.
   ///
   /// This value is a string equal to your Firebase project ID, the unique
-  /// identifier for your Firebase project, which can be found in [your project's
+  /// identifier for your Firebase project, which can be found in your project's
   /// settings](https://console.firebase.google.com/project/_/settings/general/android:com.random.android).
   String aud;
 
@@ -424,8 +418,7 @@ final _idTokenInfo = FirebaseTokenInfo(
 );
 
 /// Creates a new FirebaseTokenVerifier to verify Firebase ID tokens.
-@internal
-FirebaseTokenVerifier createIdTokenVerifier(
+FirebaseTokenVerifier _createIdTokenVerifier(
   FirebaseAdminApp app,
 ) {
   return FirebaseTokenVerifier(
@@ -435,3 +428,27 @@ FirebaseTokenVerifier createIdTokenVerifier(
     app: app,
   );
 }
+
+// URL containing the public keys for Firebase session cookies. This will be updated to a different URL soon.
+final _sessionCookieCertUrl = Uri.parse(
+  'https://www.googleapis.com/identitytoolkit/v3/relyingparty/publicKeys',
+);
+
+/// Creates a new FirebaseTokenVerifier to verify Firebase session cookies.
+FirebaseTokenVerifier _createSessionCookieVerifier(FirebaseAdminApp app) {
+  return FirebaseTokenVerifier(
+    clientCertUrl: _sessionCookieCertUrl,
+    issuer: Uri.parse('https://session.firebase.google.com/'),
+    tokenInfo: _sessionCookieInfo,
+    app: app,
+  );
+}
+
+/// User facing token information related to the Firebase session cookie.
+final _sessionCookieInfo = FirebaseTokenInfo(
+  url: Uri.parse('https://firebase.google.com/docs/auth/admin/manage-cookies'),
+  verifyApiName: 'verifySessionCookie()',
+  jwtName: 'Firebase session cookie',
+  shortName: 'session cookie',
+  expiredErrorCode: AuthClientErrorCode.sessionCookieExpired,
+);

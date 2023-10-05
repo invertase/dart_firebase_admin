@@ -1,22 +1,23 @@
 import 'dart:convert';
 
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 /// Class for verifying unsigned (emulator) JWTs.
 class EmulatorSignatureVerifier implements SignatureVerifier {
   @override
-  Future<void> verify(String token) {
-    // TODO algorithms: ['none'],
-    // TODO undefined key
-    var warn;
-    throw UnimplementedError();
-    // // Signature checks skipped for emulator; no need to fetch public keys.
-    // return verifyJwtSignature(
-    //   token,
-    //   algorithms: ['none'],
-    // );
+  Future<void> verify(String token) async {
+    // Signature checks skipped for emulator; no need to fetch public keys.
+    try {
+      return await verifyJwtSignature(
+        token,
+        SecretKey(''),
+      );
+    } on JWTInvalidException catch (e) {
+      if (e.message == 'invalid signature') return;
+      rethrow;
+    }
   }
 }
 

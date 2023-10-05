@@ -1,18 +1,4 @@
-import 'dart:convert';
-
-import 'package:firebaseapis/identitytoolkit/v1.dart' as auth1;
-import 'package:firebaseapis/identitytoolkit/v2.dart' as auth2;
-import 'package:firebaseapis/identitytoolkit/v3.dart' as auth3;
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
-
-import '../dart_firebase_admin.dart';
-import '../utils/utils.dart' as utils;
-import '../utils/validator.dart';
-import 'action_code_settings_builder.dart';
-import 'auth_config.dart';
-import 'base_auth.dart';
-import 'identifier.dart';
-import 'user_import_builder.dart';
+part of '../auth.dart';
 
 /// Maximum allowed number of provider configurations to batch download at one time.
 const _maxListProviderConfigurationPageSize = 100;
@@ -43,8 +29,8 @@ const _emailActionRequestTypes = {
   'VERIFY_AND_CHANGE_EMAIL',
 };
 
-abstract class AbstractAuthRequestHandler {
-  AbstractAuthRequestHandler(this.app) : _httpClient = _AuthHttpClient(app);
+abstract class _AbstractAuthRequestHandler {
+  _AbstractAuthRequestHandler(this.app) : _httpClient = _AuthHttpClient(app);
 
   final FirebaseAdminApp app;
   final _AuthHttpClient _httpClient;
@@ -75,7 +61,7 @@ abstract class AbstractAuthRequestHandler {
     }
 
     if (actionCodeSettings != null || requestType == 'EMAIL_SIGNIN') {
-      final builder = ActionCodeSettingsBuilder(actionCodeSettings!);
+      final builder = _ActionCodeSettingsBuilder(actionCodeSettings!);
       builder.buildRequest(request);
     }
 
@@ -125,14 +111,14 @@ abstract class AbstractAuthRequestHandler {
       createOAuthIdpConfig(
     OIDCAuthProviderConfig options,
   ) async {
-    final request = OIDCConfig.buildServerRequest(options) ??
+    final request = _OIDCConfig.buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig();
 
     final response = await _httpClient.createOAuthIdpConfig(request);
 
     final name = response.name;
     if (name == null ||
-        OIDCConfig.getProviderIdFromResourceName(name) == null) {
+        _OIDCConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to create OIDC configuration',
@@ -147,14 +133,14 @@ abstract class AbstractAuthRequestHandler {
       createInboundSamlConfig(
     SAMLAuthProviderConfig options,
   ) async {
-    final request = SAMLConfig.buildServerRequest(options) ??
+    final request = _SAMLConfig.buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig();
 
     final response = await _httpClient.createInboundSamlConfig(request);
 
     final name = response.name;
     if (name == null ||
-        SAMLConfig.getProviderIdFromResourceName(name) == null) {
+        _SAMLConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to create SAML configuration',
@@ -214,15 +200,15 @@ abstract class AbstractAuthRequestHandler {
     String providerId,
     OIDCUpdateAuthProviderRequest options,
   ) async {
-    if (!OIDCConfig.isProviderId(providerId)) {
+    if (!_OIDCConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
-    final request = OIDCConfig.buildServerRequest(
+    final request = _OIDCConfig.buildServerRequest(
       options,
       ignoreMissingFields: true,
     );
-    final updateMask = utils.generateUpdateMask(request);
+    final updateMask = generateUpdateMask(request);
 
     final response = await _httpClient.updateOAuthIdpConfig(
       request ?? auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig(),
@@ -232,7 +218,7 @@ abstract class AbstractAuthRequestHandler {
 
     final name = response.name;
     if (name == null ||
-        OIDCConfig.getProviderIdFromResourceName(name) == null) {
+        _OIDCConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to update OIDC configuration',
@@ -248,15 +234,15 @@ abstract class AbstractAuthRequestHandler {
     String providerId,
     SAMLUpdateAuthProviderRequest options,
   ) async {
-    if (!SAMLConfig.isProviderId(providerId)) {
+    if (!_SAMLConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
-    final request = SAMLConfig.buildServerRequest(
+    final request = _SAMLConfig.buildServerRequest(
       options,
       ignoreMissingFields: true,
     );
-    final updateMask = utils.generateUpdateMask(request);
+    final updateMask = generateUpdateMask(request);
     final response = await _httpClient.updateInboundSamlConfig(
       request ?? auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig(),
       providerId,
@@ -265,7 +251,7 @@ abstract class AbstractAuthRequestHandler {
 
     final name = response.name;
     if (name == null ||
-        SAMLConfig.getProviderIdFromResourceName(name) == null) {
+        _SAMLConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to update SAML provider configuration',
@@ -277,7 +263,7 @@ abstract class AbstractAuthRequestHandler {
   /// Looks up an OIDC provider configuration by provider ID.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
       getOAuthIdpConfig(String providerId) {
-    if (!OIDCConfig.isProviderId(providerId)) {
+    if (!_OIDCConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.invalidProviderId,
       );
@@ -288,7 +274,7 @@ abstract class AbstractAuthRequestHandler {
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
       getInboundSamlConfig(String providerId) {
-    if (!SAMLConfig.isProviderId(providerId)) {
+    if (!_SAMLConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
@@ -297,7 +283,7 @@ abstract class AbstractAuthRequestHandler {
 
   /// Deletes an OIDC configuration identified by a providerId.
   Future<void> deleteOAuthIdpConfig(String providerId) {
-    if (!OIDCConfig.isProviderId(providerId)) {
+    if (!_OIDCConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.invalidProviderId,
       );
@@ -308,7 +294,7 @@ abstract class AbstractAuthRequestHandler {
 
   /// Deletes a SAML configuration identified by a providerId.
   Future<void> deleteInboundSamlConfig(String providerId) {
-    if (!SAMLConfig.isProviderId(providerId)) {
+    if (!_SAMLConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.invalidProviderId,
       );
@@ -379,7 +365,7 @@ abstract class AbstractAuthRequestHandler {
     // For errors in the list of users, this will not throw and will report the errors and the
     // corresponding user index in the user import generated response below.
     // No need to validate raw request or raw response as this is done in UserImportBuilder.
-    final userImportBuilder = UserImportBuilder(
+    final userImportBuilder = _UserImportBuilder(
       users: users,
       options: options,
       userRequestValidator: (userRequest) {
@@ -723,7 +709,7 @@ abstract class AbstractAuthRequestHandler {
     if (isPhoneNumberDeleted) deleteProvider = ['phone'];
 
     final linkProviderUserInfo =
-        properties.providerToLink?.toProviderUserInfo();
+        properties.providerToLink?._toProviderUserInfo();
 
     final providerToUnlink = properties.providersToUnlink;
     if (providerToUnlink != null) {
@@ -753,6 +739,17 @@ abstract class AbstractAuthRequestHandler {
     final respons = await _httpClient.setAccountInfo(request);
     return respons.localId!;
   }
+}
+
+class _AuthRequestHandler extends _AbstractAuthRequestHandler {
+  _AuthRequestHandler(super.app);
+
+  // TODO getProjectConfig
+  // TODO updateProjectConfig
+  // TODO getTenant
+  // TODO listTenants
+  // TODO deleteTenant
+  // TODO updateTenant
 }
 
 class _AuthHttpClient {
@@ -1032,7 +1029,7 @@ class _AuthHttpClient {
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client) fn,
   ) {
-    return authGuard(
+    return _authGuard(
       () async => fn(
         auth1.IdentityToolkitApi(
           await _getClient(),
@@ -1045,7 +1042,7 @@ class _AuthHttpClient {
   Future<R> v2<R>(
     Future<R> Function(auth2.IdentityToolkitApi client) fn,
   ) async {
-    return authGuard(
+    return _authGuard(
       () async => fn(
         auth2.IdentityToolkitApi(
           await _getClient(),
@@ -1058,7 +1055,7 @@ class _AuthHttpClient {
   Future<R> v3<R>(
     Future<R> Function(auth3.IdentityToolkitApi client) fn,
   ) async {
-    return authGuard(
+    return _authGuard(
       () async => fn(
         auth3.IdentityToolkitApi(
           await _getClient(),

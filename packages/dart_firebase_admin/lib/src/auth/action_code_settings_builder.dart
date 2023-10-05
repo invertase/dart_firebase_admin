@@ -1,7 +1,4 @@
-import 'package:firebaseapis/identitytoolkit/v1.dart' as auth1;
-import 'package:meta/meta.dart';
-
-import '../dart_firebase_admin.dart';
+part of '../auth.dart';
 
 class ActionCodeSettingsIos {
   ActionCodeSettingsIos(this.bundleId);
@@ -81,9 +78,8 @@ class ActionCodeSettings {
   final String? dynamicLinkDomain;
 }
 
-@internal
-class ActionCodeSettingsBuilder {
-  ActionCodeSettingsBuilder(ActionCodeSettings actionCodeSettings)
+class _ActionCodeSettingsBuilder {
+  _ActionCodeSettingsBuilder(ActionCodeSettings actionCodeSettings)
       : _continueUrl = actionCodeSettings.url,
         _canHandleCodeInApp = actionCodeSettings.handleCodeInApp ?? false,
         _dynamicLinkDomain = actionCodeSettings.dynamicLinkDomain,

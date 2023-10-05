@@ -1,13 +1,7 @@
-import 'package:collection/collection.dart';
-import 'package:firebaseapis/identitytoolkit/v1.dart' as v1;
-import 'package:firebaseapis/identitytoolkit/v2.dart' as v2;
-import 'package:meta/meta.dart';
+part of '../auth.dart';
 
-import '../dart_firebase_admin.dart';
-import '../object_utils.dart';
-
-/// The possible types for [AuthProviderConfigFilter.type].
-enum AuthProviderConfigFilterType {
+/// The possible types for [AuthProviderConfigFilter._type].
+enum _AuthProviderConfigFilterType {
   saml,
   oidc,
 }
@@ -19,17 +13,17 @@ class AuthProviderConfigFilter {
   AuthProviderConfigFilter.oidc({
     this.maxResults,
     this.pageToken,
-  }) : type = AuthProviderConfigFilterType.oidc;
+  }) : _type = _AuthProviderConfigFilterType.oidc;
 
   AuthProviderConfigFilter.saml({
     this.maxResults,
     this.pageToken,
-  }) : type = AuthProviderConfigFilterType.saml;
+  }) : _type = _AuthProviderConfigFilterType.saml;
 
   /// The Auth provider configuration filter. This can be either `saml` or `oidc`.
   /// The former is used to look up SAML providers only, while the latter is used
   /// for OIDC providers.
-  final AuthProviderConfigFilterType type;
+  final _AuthProviderConfigFilterType _type;
 
   /// The maximum number of results to return per page. The default and maximum is
   /// 100.
@@ -42,7 +36,7 @@ class AuthProviderConfigFilter {
 
 /// The response interface for listing provider configs. This is only available
 /// when listing all identity providers' configurations via
-/// [BaseAuth.listProviderConfigs].
+/// [_BaseAuth.listProviderConfigs].
 class ListProviderConfigResults {
   ListProviderConfigResults({
     required this.providerConfigs,
@@ -58,9 +52,8 @@ class ListProviderConfigResults {
 
 abstract class UpdateAuthProviderRequest {}
 
-@internal
-class SAMLAuthProviderRequestBase implements UpdateAuthProviderRequest {
-  SAMLAuthProviderRequestBase({
+class _SAMLAuthProviderRequestBase implements UpdateAuthProviderRequest {
+  _SAMLAuthProviderRequestBase({
     this.providerId,
     this.displayName,
     this.enabled,
@@ -112,8 +105,8 @@ class SAMLAuthProviderRequestBase implements UpdateAuthProviderRequest {
 
 /// The request interface for updating a SAML Auth provider. This is used
 /// when updating a SAML provider's configuration via
-/// [BaseAuth.updateProviderConfig].
-class SAMLUpdateAuthProviderRequest extends SAMLAuthProviderRequestBase
+/// [_BaseAuth.updateProviderConfig].
+class SAMLUpdateAuthProviderRequest extends _SAMLAuthProviderRequestBase
     implements UpdateAuthProviderRequest {
   SAMLUpdateAuthProviderRequest({
     super.displayName,
@@ -126,9 +119,8 @@ class SAMLUpdateAuthProviderRequest extends SAMLAuthProviderRequestBase
   });
 }
 
-@internal
-abstract class OIDCAuthProviderRequestBase {
-  OIDCAuthProviderRequestBase({
+abstract class _OIDCAuthProviderRequestBase {
+  _OIDCAuthProviderRequestBase({
     this.providerId,
     this.displayName,
     this.enabled,
@@ -168,8 +160,8 @@ abstract class OIDCAuthProviderRequestBase {
 
 /// The request interface for updating an OIDC Auth provider. This is used
 /// when updating an OIDC provider's configuration via
-/// [BaseAuth.updateProviderConfig].
-class OIDCUpdateAuthProviderRequest extends OIDCAuthProviderRequestBase
+/// [_BaseAuth.updateProviderConfig].
+class OIDCUpdateAuthProviderRequest extends _OIDCAuthProviderRequestBase
     implements UpdateAuthProviderRequest {
   OIDCUpdateAuthProviderRequest({
     super.displayName,
@@ -182,8 +174,7 @@ class OIDCUpdateAuthProviderRequest extends OIDCAuthProviderRequestBase
 }
 
 sealed class AuthProviderConfig {
-  @internal
-  AuthProviderConfig({
+  AuthProviderConfig._({
     required this.providerId,
     required this.displayName,
     required this.enabled,
@@ -206,9 +197,9 @@ sealed class AuthProviderConfig {
 /// The
 /// [SAML](http://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-tech-overview-2.0.html)
 /// Auth provider configuration interface. A SAML provider can be created via
-/// [BaseAuth.createProviderConfig].
+/// [_BaseAuth.createProviderConfig].
 class SAMLAuthProviderConfig extends AuthProviderConfig
-    implements SAMLAuthProviderRequestBase {
+    implements _SAMLAuthProviderRequestBase {
   SAMLAuthProviderConfig({
     required this.idpEntityId,
     required this.ssoURL,
@@ -220,7 +211,7 @@ class SAMLAuthProviderConfig extends AuthProviderConfig
     required super.enabled,
     this.issuer,
     this.enableRequestSigning,
-  });
+  }) : super._();
 
   /// The SAML IdP entity identifier.
   @override
@@ -263,9 +254,9 @@ class SAMLAuthProviderConfig extends AuthProviderConfig
 
 /// The [OIDC](https://openid.net/specs/openid-connect-core-1_0-final.html) Auth
 /// provider configuration interface. An OIDC provider can be created via
-/// [BaseAuth.createProviderConfig].
+/// [_BaseAuth.createProviderConfig].
 class OIDCAuthProviderConfig extends AuthProviderConfig
-    implements OIDCAuthProviderRequestBase {
+    implements _OIDCAuthProviderRequestBase {
   OIDCAuthProviderConfig({
     required super.providerId,
     super.displayName,
@@ -274,7 +265,7 @@ class OIDCAuthProviderConfig extends AuthProviderConfig
     required this.issuer,
     this.clientSecret,
     this.responseType,
-  });
+  }) : super._();
 
   /// This is the required client ID used to confirm the audience of an OIDC
   /// provider's
@@ -317,8 +308,7 @@ class OIDCAuthProviderConfig extends AuthProviderConfig
 /// <li>Set <code>idToken</code> to <code>true</code> for the ID token flow.</li>
 /// </ul>
 class OAuthResponseType {
-  @internal
-  OAuthResponseType({required this.idToken, required this.code});
+  OAuthResponseType._({required this.idToken, required this.code});
 
   /// Whether ID token is returned from IdP's authorization endpoint.
   final bool? idToken;
@@ -327,9 +317,8 @@ class OAuthResponseType {
   final bool? code;
 }
 
-@internal
-class OIDCConfig extends OIDCAuthProviderConfig {
-  OIDCConfig({
+class _OIDCConfig extends OIDCAuthProviderConfig {
+  _OIDCConfig({
     required super.providerId,
     required super.displayName,
     required super.enabled,
@@ -339,7 +328,7 @@ class OIDCConfig extends OIDCAuthProviderConfig {
     required super.responseType,
   });
 
-  factory OIDCConfig.fromResponse(
+  factory _OIDCConfig.fromResponse(
     v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig response,
   ) {
     final issuer = response.issuer;
@@ -352,7 +341,7 @@ class OIDCConfig extends OIDCAuthProviderConfig {
       );
     }
 
-    final providerId = OIDCConfig.getProviderIdFromResourceName(name);
+    final providerId = _OIDCConfig.getProviderIdFromResourceName(name);
     if (providerId == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
@@ -360,7 +349,7 @@ class OIDCConfig extends OIDCAuthProviderConfig {
       );
     }
 
-    return OIDCConfig(
+    return _OIDCConfig(
       providerId: providerId,
       displayName: response.displayName,
       enabled: response.enabled ?? false,
@@ -368,7 +357,7 @@ class OIDCConfig extends OIDCAuthProviderConfig {
       issuer: issuer,
       clientSecret: response.clientSecret,
       responseType: response.responseType.let((responseType) {
-        return OAuthResponseType(
+        return OAuthResponseType._(
           idToken: responseType.idToken,
           code: responseType.code,
         );
@@ -376,7 +365,7 @@ class OIDCConfig extends OIDCAuthProviderConfig {
     );
   }
 
-  static void validate(OIDCAuthProviderRequestBase options,
+  static void validate(_OIDCAuthProviderRequestBase options,
       {required bool ignoreMissingFields}) {
     if (options.providerId case final providerId? when providerId.isNotEmpty) {
       if (!providerId.startsWith('oidc.')) {
@@ -447,13 +436,13 @@ class OIDCConfig extends OIDCAuthProviderConfig {
   }
 
   static v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig? buildServerRequest(
-    OIDCAuthProviderRequestBase options, {
+    _OIDCAuthProviderRequestBase options, {
     bool ignoreMissingFields = false,
   }) {
     final makeRequest = options.providerId != null || ignoreMissingFields;
     if (!makeRequest) return null;
 
-    OIDCConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
+    _OIDCConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
 
     return v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig(
       enabled: options.enabled,
@@ -486,9 +475,8 @@ class OIDCConfig extends OIDCAuthProviderConfig {
   }
 }
 
-@internal
-class SAMLConfig extends SAMLAuthProviderConfig {
-  SAMLConfig({
+class _SAMLConfig extends SAMLAuthProviderConfig {
+  _SAMLConfig({
     required super.idpEntityId,
     required super.ssoURL,
     required super.x509Certificates,
@@ -499,7 +487,7 @@ class SAMLConfig extends SAMLAuthProviderConfig {
     required super.enabled,
   });
 
-  factory SAMLConfig.fromResponse(
+  factory _SAMLConfig.fromResponse(
     v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig response,
   ) {
     final idpConfig = response.idpConfig;
@@ -508,7 +496,7 @@ class SAMLConfig extends SAMLAuthProviderConfig {
     final spConfig = response.spConfig;
     final spEntityId = spConfig?.spEntityId;
     final providerId =
-        response.name.let(SAMLConfig.getProviderIdFromResourceName);
+        response.name.let(_SAMLConfig.getProviderIdFromResourceName);
 
     if (idpConfig == null ||
         idpEntityId == null ||
@@ -522,7 +510,7 @@ class SAMLConfig extends SAMLAuthProviderConfig {
       );
     }
 
-    return SAMLConfig(
+    return _SAMLConfig(
       idpEntityId: idpEntityId,
       ssoURL: ssoURL,
       x509Certificates: [
@@ -540,13 +528,13 @@ class SAMLConfig extends SAMLAuthProviderConfig {
 
   static v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig?
       buildServerRequest(
-    SAMLAuthProviderRequestBase options, {
+    _SAMLAuthProviderRequestBase options, {
     bool ignoreMissingFields = false,
   }) {
     final makeRequest = options.providerId != null || ignoreMissingFields;
     if (!makeRequest) return null;
 
-    SAMLConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
+    _SAMLConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
 
     return v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig(
       enabled: options.enabled,
@@ -591,7 +579,7 @@ class SAMLConfig extends SAMLAuthProviderConfig {
   }
 
   static void validate(
-    SAMLAuthProviderRequestBase options, {
+    _SAMLAuthProviderRequestBase options, {
     required bool ignoreMissingFields,
   }) {
     // Required fields.
@@ -679,12 +667,12 @@ class _Sentinel {
 /// An object used to differentiate "no value" from "a null value".
 ///
 /// This is typically used to enable `update(displayName: null)`.
-class Box<T> {
-  Box(this.value);
+class _Box<T> {
+  _Box(this.value);
 
-  static Box<T?>? unwrap<T>(Object? value) {
+  static _Box<T?>? unwrap<T>(Object? value) {
     if (value == _sentinel) return null;
-    return Box(value as T?);
+    return _Box(value as T?);
   }
 
   final T value;
@@ -801,16 +789,16 @@ class _BaseUpdateRequest {
     required this.password,
     Object? phoneNumber = _sentinel,
     Object? photoURL = _sentinel,
-  })  : displayName = Box.unwrap(displayName),
-        phoneNumber = Box.unwrap(phoneNumber),
-        photoURL = Box.unwrap(photoURL);
+  })  : displayName = _Box.unwrap(displayName),
+        phoneNumber = _Box.unwrap(phoneNumber),
+        photoURL = _Box.unwrap(photoURL);
 
   /// Whether or not the user is disabled: `true` for disabled;
   /// `false` for enabled.
   final bool? disabled;
 
   /// The user's display name.
-  final Box<String?>? displayName;
+  final _Box<String?>? displayName;
 
   /// The user's primary email.
   final String? email;
@@ -822,10 +810,10 @@ class _BaseUpdateRequest {
   final String? password;
 
   /// The user's primary phone number.
-  final Box<String?>? phoneNumber;
+  final _Box<String?>? phoneNumber;
 
   /// The user's photo URL.
-  final Box<String?>? photoURL;
+  final _Box<String?>? photoURL;
 }
 
 /// Represents a user identity provider that can be associated with a Firebase user.
@@ -857,7 +845,7 @@ class UserProvider {
   /// The linked provider ID (for example, "google.com" for the Google provider).
   final String? providerId;
 
-  v1.GoogleCloudIdentitytoolkitV1ProviderUserInfo toProviderUserInfo() {
+  v1.GoogleCloudIdentitytoolkitV1ProviderUserInfo _toProviderUserInfo() {
     return v1.GoogleCloudIdentitytoolkitV1ProviderUserInfo(
       displayName: displayName,
       email: email,
