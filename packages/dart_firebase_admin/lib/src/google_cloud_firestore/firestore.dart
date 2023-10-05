@@ -86,13 +86,6 @@ class Firestore {
   ///
   /// Returns [CollectionReference] A reference to the new
   /// subcollection.
-  ///
-  /// @example
-  /// ```
-  /// let documentRef = firestore.doc('col/doc');
-  /// let subcollection = documentRef.collection('subcollection');
-  /// console.log(`Path to subcollection: ${subcollection.path}`);
-  /// ```
   CollectionReference<DocumentData> collection(String collectionPath) {
     _validateResourcePath('collectionPath', collectionPath);
 
