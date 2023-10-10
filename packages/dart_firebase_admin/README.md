@@ -12,6 +12,7 @@ Currently, only Firestore is available, with more to come (auth next).
     - [Connecting using the environment](#connecting-using-the-environment)
     - [Connecting using a `service-account.json` file](#connecting-using-a-service-accountjson-file)
   - [Using Firestore](#using-firestore)
+  - [Using Auth](#using-auth)
 
 ## Available features
 
@@ -232,6 +233,28 @@ Alternatively, you can fetch a specific document too:
 // Print the age of the user with ID "123"
 final user = await firestore.doc('users/123').get();
 print(user.data()?['age']);
+```
+
+### Using Auth
+
+First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
+You should now have an instance of a `FirebaseAdminApp` object.
+
+You can now use this object to create a `FirebaseAuth` object as followed:
+
+```dart
+// Obtained in the previous steps
+FirebaseAdminApp admin;
+final auth = FirebaseAuth(admin);
+```
+
+You can then use this `FirebaseAuth` object to perform various
+auth operations. For example, you can generate a password reset link:
+
+```dart
+final link = await auth.generatePasswordResetLink(
+  'hello@example.com',
+);
 ```
 
 ---
