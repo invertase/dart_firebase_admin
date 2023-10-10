@@ -724,7 +724,7 @@ abstract class _BaseAuth {
   /// - properties - The properties to update on the provided user.
   ///
   /// Returns a [Future] fulfilled with the updated user data.
-  Future<UserRecord> updateuser(String uid, UpdateRequest properties) async {
+  Future<UserRecord> updateUser(String uid, UpdateRequest properties) async {
     // Although we don't really advertise it, we want to also handle linking of
     // non-federated idps with this call. So if we detect one of them, we'll
     // adjust the properties parameter appropriately. This *does* imply that a

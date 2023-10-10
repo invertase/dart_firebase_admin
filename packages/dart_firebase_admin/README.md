@@ -6,11 +6,100 @@ Welcome! This project is a port of [Node's Fireabse Admin SDK](https://github.co
 Currently, only Firestore is available, with more to come (auth next).
 
 - [Dart Firebase Admin](#dart-firebase-admin)
+- [Available features](#available-features)
 - [Usage](#usage)
   - [Connecting to the SDK](#connecting-to-the-sdk)
     - [Connecting using the environment](#connecting-using-the-environment)
     - [Connecting using a `service-account.json` file](#connecting-using-a-service-accountjson-file)
   - [Using Firestore](#using-firestore)
+
+## Available features
+
+| Firestore                                        |     |
+| ------------------------------------------------ | --- |
+| reference.id                                     | [x] |
+| reference.parent                                 | [x] |
+| reference.path                                   | [x] |
+| reference.==                                     | [x] |
+| reference.withConverter                          | [x] |
+| collection.listDocuments                         | [x] |
+| collection.add                                   | [x] |
+| collection.get                                   | [x] |
+| collection.create                                | [x] |
+| collection.delete                                | [x] |
+| collection.set                                   | [x] |
+| collection.update                                | [x] |
+| collection.collection                            | [x] |
+| query.where('field', operator, value)            | [x] |
+| query.where('field.path', operator, value)       | [x] |
+| query.where(FieldPath('...'), operator, value)   | [x] |
+| query.whereFilter(Filter.and(a, b))              | [x] |
+| query.whereFilter(Filter.or(a, b))               | [x] |
+| query.startAt                                    | [x] |
+| query.startAtDocument                            | [x] |
+| query.startAfter                                 | [x] |
+| query.startAfterDocument                         | [x] |
+| query.endAt                                      | [x] |
+| query.endAtDocument                              | [x] |
+| query.endAfter                                   | [x] |
+| query.endAfterDocument                           | [x] |
+| query.onSnapshot                                 | [ ] |
+| query.select                                     | [x] |
+| query.orderBy                                    | [x] |
+| query.limit                                      | [x] |
+| query.limitToLast                                | [x] |
+| query.offset                                     | [x] |
+| querySnapshot.docs                               | [x] |
+| querySnapshot.readTime                           | [x] |
+| querySnapshot.docsChange                         | [-] |
+| documentSnapshots.data                           | [x] |
+| documentSnapshots.readTime/createTime/updateTime | [x] |
+| documentSnapshots.id                             | [x] |
+| documentSnapshots.exists                         | [x] |
+| documentSnapshots.data                           | [x] |
+| documentSnapshots.get(fieldPath)                 | [x] |
+| FieldValue.documentId                            | [x] |
+| FieldValue.increment                             | [x] |
+| FieldValue.arrayUnion                            | [x] |
+| FieldValue.arrayRemove                           | [x] |
+| FieldValue.delete                                | [x] |
+| FieldValue.serverTimestamp                       | [x] |
+| collectionGroup                                  | [ ] |
+| runTransaction                                   | [ ] |
+| GeoPoint                                         | [x] |
+| Timestamp                                        | [x] |
+| BundleBuilder                                    | [ ] |
+
+| Auth                                  |     |
+| ------------------------------------- | --- |
+| auth.tenantManager                    | [ ] |
+| auth.projectConfigManager             | [ ] |
+| auth.generatePasswirdResetLink        | [x] |
+| auth.generateEmailVerificationLink    | [x] |
+| auth.generateVerifyAndChangeEmailLink | [x] |
+| auth.generateSignInWithEmailLink      | [x] |
+| auth.listProviderConfigs              | [x] |
+| auth.createProviderConfig             | [x] |
+| auth.updateProviderConfig             | [x] |
+| auth.getProviderConfig                | [x] |
+| auth.deleteProviderConfig             | [x] |
+| auth.createCustomToken                | [x] |
+| auth.setCustomUserClaims              | [x] |
+| auth.verifyIdToken                    | [x] |
+| auth.revokeRefreshTokens              | [x] |
+| auth.createSessionCookie              | [x] |
+| auth.verifySessionCookie              | [x] |
+| auth.importUsers                      | [x] |
+| auth.listUsers                        | [x] |
+| auth.deleteUser                       | [x] |
+| auth.deleteUsers                      | [x] |
+| auth.getUser                          | [x] |
+| auth.getUserByPhoneNumber             | [x] |
+| auth.getUserByEmail                   | [x] |
+| auth.getUserByProviderUid             | [x] |
+| auth.getUsers                         | [x] |
+| auth.createUser                       | [x] |
+| auth.updateUser                       | [x] |
 
 ## Usage
 
