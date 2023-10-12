@@ -386,23 +386,21 @@ class UserMetadata {
   )   : creationTime = DateTime.fromMillisecondsSinceEpoch(
           int.parse(response.createdAt!),
         ),
-        lastSignInTime = DateTime.fromMillisecondsSinceEpoch(
-          int.parse(response.lastLoginAt!),
-        ),
-        lastRefreshTime = response.lastRefreshAt == null
-            ? null
-            : DateTime.fromMillisecondsSinceEpoch(
-                int.parse(response.lastRefreshAt!),
-              );
+        lastSignInTime = response.lastLoginAt.let((lastLoginAt) {
+          return DateTime.fromMillisecondsSinceEpoch(int.parse(lastLoginAt));
+        }),
+        lastRefreshTime = response.lastRefreshAt.let((lastRefreshAt) {
+          return DateTime.fromMillisecondsSinceEpoch(int.parse(lastRefreshAt));
+        });
 
   final DateTime creationTime;
-  final DateTime lastSignInTime;
+  final DateTime? lastSignInTime;
   final DateTime? lastRefreshTime;
 
   Map<String, Object?> toJson() {
     return {
       'creationTime': creationTime.toUtc().toString(),
-      'lastSignInTime': lastSignInTime.toUtc().toString(),
+      'lastSignInTime': lastSignInTime?.toUtc().toString(),
       'lastRefreshTime': lastRefreshTime?.toUtc().toString(),
     };
   }

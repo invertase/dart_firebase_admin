@@ -2,8 +2,8 @@ part of '../auth.dart';
 
 /// Auth service bound to the provided app.
 /// An Auth instance can have multiple tenants.
-class FirebaseAuth extends _BaseAuth {
-  FirebaseAuth(FirebaseAdminApp app)
+class Auth extends _BaseAuth {
+  Auth(FirebaseAdminApp app)
       : super(
           app: app,
           authRequestHandler: _AuthRequestHandler(app),

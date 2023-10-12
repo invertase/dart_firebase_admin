@@ -46,7 +46,7 @@ enum AuthClientErrorCode {
   invalidArgument('INVALID_ARGUMENT', 'Invalid argument provided.'),
   invalidConfig('INVALID_CONFIG', 'The provided configuration is invalid.'),
   emailAlreadyExists(
-    'EMAIL_ALREADY_EXISTS',
+    'EMAIL_EXISTS',
     'The email address is already in use by another account.',
   ),
   emailNotFound(
