@@ -1,3 +1,7 @@
+## Unreleased minor
+
+Added Firebase Auth
+
 ## 0.0.2
 
 Fix 404 error when not using the emulator.
