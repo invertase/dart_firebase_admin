@@ -1,1 +1,1 @@
-export 'src/dart_firebase_admin.dart' show FirebaseAdminApp, Credential;
+export 'src/app.dart';

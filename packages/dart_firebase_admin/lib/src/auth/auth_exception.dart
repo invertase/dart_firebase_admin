@@ -1,13 +1,14 @@
-part of '../dart_firebase_admin.dart';
+part of '../auth.dart';
 
-class FirebaseAuthAdminException extends FirebaseAdminException {
+class FirebaseAuthAdminException extends FirebaseAdminException
+    implements Exception {
   FirebaseAuthAdminException(
     this.errorCode, [
     String? message,
   ]) : super('auth', errorCode.name, errorCode.message ?? message);
 
   factory FirebaseAuthAdminException.fromServerError(
-    firebase_auth_v1.DetailedApiRequestError error,
+    auth1.DetailedApiRequestError error,
   ) {
     final code =
         _authServerToClientCode(error.message) ?? AuthClientErrorCode.unknown;
@@ -19,6 +20,8 @@ class FirebaseAuthAdminException extends FirebaseAdminException {
   @override
   String toString() => 'FirebaseAuthAdminException: $code: $message';
 }
+
+/// An enum representing possible error codes.
 
 extension AuthClientErrorCodeExtension on AuthClientErrorCode {
   String? get message => _authClientCodeMessage(this);
@@ -631,7 +634,7 @@ AuthClientErrorCode? _authServerToClientCode(String? serverCode) {
 }
 
 /// A generic guard wrapper for API calls to handle exceptions.
-R authGuard<R>(R Function() cb) {
+R _authGuard<R>(R Function() cb) {
   try {
     final value = cb();
 
@@ -647,7 +650,7 @@ R authGuard<R>(R Function() cb) {
 
 /// Converts a Exception to a FirebaseAdminException.
 Never _handleException(Object exception, StackTrace stackTrace) {
-  if (exception is firebase_auth_v1.DetailedApiRequestError) {
+  if (exception is auth1.DetailedApiRequestError) {
     Error.throwWithStackTrace(
       FirebaseAuthAdminException.fromServerError(exception),
       stackTrace,

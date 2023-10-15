@@ -9,7 +9,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:intl/intl.dart';
 
-import '../dart_firebase_admin.dart';
+import '../app.dart';
 import '../object_utils.dart';
 import 'util.dart';
 
@@ -48,7 +48,7 @@ class Firestore {
   late final _client = _FirestoreHttpClient(app);
   late final _serializer = _Serializer(this);
 
-  /// Gets a [DocumentReference]{@link DocumentReference} instance that
+  /// Gets a [DocumentReference] instance that
   /// refers to the document at the specified path.
   ///
   /// - [documentPath]: A slash-separated path to a document.
@@ -86,13 +86,6 @@ class Firestore {
   ///
   /// Returns [CollectionReference] A reference to the new
   /// subcollection.
-  ///
-  /// @example
-  /// ```
-  /// let documentRef = firestore.doc('col/doc');
-  /// let subcollection = documentRef.collection('subcollection');
-  /// console.log(`Path to subcollection: ${subcollection.path}`);
-  /// ```
   CollectionReference<DocumentData> collection(String collectionPath) {
     _validateResourcePath('collectionPath', collectionPath);
 
@@ -129,7 +122,7 @@ class Firestore {
     final fieldMask = _parseFieldMask(readOptions);
     final tag = requestTag();
 
-    final reader = DocumentReader(
+    final reader = _DocumentReader(
       firestore: this,
       documents: documents,
       transactionId: null,

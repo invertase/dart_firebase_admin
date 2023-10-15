@@ -1,13 +1,13 @@
-import '../dart_firebase_admin.dart';
+import '../auth.dart';
 
 /// Validates that a string is a valid phone number.
 bool isPhoneNumber(String phoneNumber) {
   // Phone number validation is very lax here. Backend will enforce E.164
   // spec compliance and will normalize accordingly.
   // The phone number string must be non-empty and starts with a plus sign.
-  final re1 = RegExp(r'^\+/');
+  final re1 = RegExp(r'^\+');
   // The phone number string must contain at least one alphanumeric character.
-  final re2 = RegExp(r'[\da-zA-Z]+/');
+  final re2 = RegExp(r'[\da-zA-Z]+');
   return re1.hasMatch(phoneNumber) && re2.hasMatch(phoneNumber);
 }
 

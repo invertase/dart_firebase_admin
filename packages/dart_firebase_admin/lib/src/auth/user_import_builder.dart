@@ -1,17 +1,4 @@
-// TODO remove redundant "required"
-
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:collection/collection.dart';
-import 'package:firebaseapis/identitytoolkit/v1.dart' as v1;
-import 'package:meta/meta.dart';
-
-import '../dart_firebase_admin.dart';
-import '../app/core.dart';
-import '../object_utils.dart';
-import 'auth_config.dart';
-import 'base_auth.dart';
+part of '../auth.dart';
 
 enum HashAlgorithmType {
   scrypt('SCRYPT'),
@@ -84,7 +71,7 @@ class UserImportHashOptions {
 }
 
 /// Interface representing the user import options needed for
-/// {@link BaseAuth.importUsers} method. This is used to
+/// [_BaseAuth.importUsers] method. This is used to
 /// provide the password hashing algorithm information.
 class UserImportOptions {
   UserImportOptions({required this.hash});
@@ -121,10 +108,10 @@ class UploadAccountOptions {
 class UserProviderRequest {
   UserProviderRequest({
     required this.uid,
-    required this.displayName,
-    required this.email,
-    required this.phoneNumber,
-    required this.photoURL,
+    this.displayName,
+    this.email,
+    this.phoneNumber,
+    this.photoURL,
     required this.providerId,
   });
 
@@ -148,23 +135,23 @@ class UserProviderRequest {
 }
 
 /// Interface representing a user to import to Firebase Auth via the
-/// {@link BaseAuth.importUsers} method.
+/// [_BaseAuth.importUsers] method.
 class UserImportRecord {
   UserImportRecord({
     required this.uid,
-    required this.email,
-    required this.emailVerified,
-    required this.displayName,
-    required this.phoneNumber,
-    required this.photoURL,
-    required this.disabled,
-    required this.metadata,
-    required this.providerData,
-    required this.customClaims,
-    required this.passwordHash,
-    required this.passwordSalt,
-    required this.tenantId,
-    required this.multiFactor,
+    this.email,
+    this.emailVerified,
+    this.displayName,
+    this.phoneNumber,
+    this.photoURL,
+    this.disabled,
+    this.metadata,
+    this.providerData,
+    this.customClaims,
+    this.passwordHash,
+    this.passwordSalt,
+    this.tenantId,
+    this.multiFactor,
   });
 
   /// The user's `uid`.
@@ -201,7 +188,7 @@ class UserImportRecord {
 
   /// The buffer of bytes representing the user's hashed password.
   /// When a user is to be imported with a password hash,
-  /// {@link UserImportOptions} are required to be
+  /// [UserImportOptions] are required to be
   /// specified to identify the hashing algorithm used to generate this hash.
   final Uint8List? passwordHash;
 
@@ -219,42 +206,8 @@ class UserImportRecord {
   final MultiFactorUpdateSettings? multiFactor;
 }
 
-/// Interface representing an Auth second factor in Auth server format.
-class AuthFactorInfo {
-  AuthFactorInfo({
-    required this.mfaEnrollmentId,
-    required this.displayName,
-    required this.phoneInfo,
-    required this.enrolledAt,
-  });
-
-  // TODO allow any key
-
-  // Not required for signupNewUser endpoint.
-  final String? mfaEnrollmentId;
-  final String? displayName;
-  final String? phoneInfo;
-  final String? enrolledAt;
-}
-
-class UploadProviderUserInfo {
-  UploadProviderUserInfo({
-    required this.rawId,
-    required this.providerId,
-    required this.email,
-    required this.displayName,
-    required this.photoUrl,
-  });
-
-  final String rawId;
-  final String providerId;
-  final String? email;
-  final String? displayName;
-  final String? photoUrl;
-}
-
 /// Callback function to validate an UploadAccountUser object.
-typedef ValidatorFunction = void Function(
+typedef _ValidatorFunction = void Function(
   v1.GoogleCloudIdentitytoolkitV1UserInfo data,
 );
 
@@ -272,9 +225,8 @@ class UserMetadataRequest {
   final DateTime? creationTime;
 }
 
-@internal
-class UserImportBuilder {
-  UserImportBuilder({
+class _UserImportBuilder {
+  _UserImportBuilder({
     required this.users,
     required this.options,
     required this.userRequestValidator,
@@ -288,7 +240,7 @@ class UserImportBuilder {
 
   final List<UserImportRecord> users;
   final UserImportOptions? options;
-  final ValidatorFunction? userRequestValidator;
+  final _ValidatorFunction? userRequestValidator;
 
   var _requiresHashOptions = false;
   var _validatedUsers = <v1.GoogleCloudIdentitytoolkitV1UserInfo>[];
@@ -500,7 +452,7 @@ class UserImportBuilder {
   /// @returns {UploadAccountUser[]} The populated uploadAccount users.
   List<v1.GoogleCloudIdentitytoolkitV1UserInfo> _populateUsers(
     List<UserImportRecord> users,
-    ValidatorFunction? userValidator,
+    _ValidatorFunction? userValidator,
   ) {
     final populatedUsers = <v1.GoogleCloudIdentitytoolkitV1UserInfo>[];
     users.forEachIndexed((index, user) {
@@ -514,7 +466,7 @@ class UserImportBuilder {
         populatedUsers.add(result);
         // Map user's index (the one to be sent to backend) to original developer provided array.
         _indexMap[populatedUsers.length - 1] = index;
-      } on FirebaseException catch (err) {
+      } on FirebaseAdminException catch (err) {
         _userImportResultErrors.add(
           FirebaseArrayIndexError(index: index, error: err),
         );
@@ -532,7 +484,7 @@ class UserImportBuilder {
 /// @returns {UploadAccountUser} The corresponding UploadAccountUser to return.
 v1.GoogleCloudIdentitytoolkitV1UserInfo _populateUploadAccountUser(
   UserImportRecord user,
-  ValidatorFunction? userValidator,
+  _ValidatorFunction? userValidator,
 ) {
   final mfaInfo = user.multiFactor?.enrolledFactors
       ?.map(

@@ -1,14 +1,7 @@
-import 'dart:convert';
-
-import 'package:collection/collection.dart';
-import 'package:firebaseapis/identitytoolkit/v1.dart' as firebase_auth_v1;
-import 'package:meta/meta.dart';
-
-import '../dart_firebase_admin.dart';
-import '../object_utils.dart';
+part of '../auth.dart';
 
 /// 'REDACTED', encoded as a base64 string.
-final b64Redacted = base64Encode('REDACTED'.codeUnits);
+final _b64Redacted = base64Encode('REDACTED'.codeUnits);
 
 enum MultiFactorId {
   phone._('phone'),
@@ -41,7 +34,7 @@ class UserRecord {
 
   @internal
   factory UserRecord.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1UserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
   ) {
     final localId = response.localId;
     // The Firebase user id is required.
@@ -67,7 +60,7 @@ class UserRecord {
     // then clear it out, similar to how the salt is returned. (Otherwise, it
     // *looks* like a b64-encoded hash is present, which is confusing.)
     final passwordHash =
-        response.passwordHash == b64Redacted ? null : response.passwordHash;
+        response.passwordHash == _b64Redacted ? null : response.passwordHash;
 
     final customAttributes = response.customAttributes;
     final customClaims = customAttributes != null
@@ -145,19 +138,19 @@ class UserRecord {
   /// when uploading this user, as is typical when migrating from another Auth
   /// system, this will be an empty string. If no password is set, this is
   /// null. This is only available when the user is obtained from
-  /// {@link BaseAuth.listUsers}.
+  /// [_BaseAuth.listUsers].
   final String? passwordHash;
 
   /// The user's password salt (base64-encoded), only if Firebase Auth hashing
   /// algorithm (SCRYPT) is used. If a different hashing algorithm had been used to
   /// upload this user, typical when migrating from another Auth system, this will
   /// be an empty string. If no password is set, this is null. This is only
-  /// available when the user is obtained from {@link BaseAuth.listUsers}.
+  /// available when the user is obtained from [_BaseAuth.listUsers].
   final String? passwordSalt;
 
   /// The user's custom claims object if available, typically used to define
   /// user roles and propagated to an authenticated user's ID token.
-  /// This is set via {@link BaseAuth.setCustomUserClaims}
+  /// This is set via [_BaseAuth.setCustomUserClaims].
   final Map<String, Object?>? customClaims;
 
   /// The ID of the tenant the user belongs to, if available.
@@ -165,8 +158,7 @@ class UserRecord {
 
   /// The date the user's tokens are valid after, formatted as a UTC string.
   /// This is updated every time the user's refresh token are revoked either
-// TODO review {@link}
-  /// from the {@link BaseAuth.revokeRefreshTokens}
+  /// from the [_BaseAuth.revokeRefreshTokens].
   /// API or from the Firebase Auth backend on big account changes (password
   /// resets, password or email updates, etc).
   final DateTime? tokensValidAfterTime;
@@ -220,7 +212,7 @@ class UserInfo {
   });
 
   UserInfo.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1ProviderUserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1ProviderUserInfo response,
   )   : uid = response.rawId,
         displayName = response.displayName,
         email = response.email,
@@ -257,7 +249,7 @@ class MultiFactorSettings {
   MultiFactorSettings({required this.enrolledFactors});
 
   factory MultiFactorSettings.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1UserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
   ) {
     final parsedEnrolledFactors = <MultiFactorInfo>[
       ...?response.mfaInfo
@@ -288,7 +280,7 @@ abstract class MultiFactorInfo {
   });
 
   MultiFactorInfo.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
+    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   )   : uid = response.mfaEnrollmentId.orThrow(
           () => throw FirebaseAuthAdminException(
             AuthClientErrorCode.internalError,
@@ -306,7 +298,7 @@ abstract class MultiFactorInfo {
   /// @param response - The server side response.
   /// @internal
   static MultiFactorInfo? initMultiFactorInfo(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
+    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   ) {
     // PhoneMultiFactorInfo, TotpMultiFactorInfo currently available.
     try {
@@ -360,7 +352,7 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   /// Initializes the PhoneMultiFactorInfo object using the server side response.
   @internal
   PhoneMultiFactorInfo.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
+    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   )   : phoneNumber = response.phoneInfo,
         factorId = response.phoneInfo != null ? MultiFactorId.phone : throw 42,
         super.fromResponse(response);
@@ -390,27 +382,25 @@ class UserMetadata {
 
   @internal
   UserMetadata.fromResponse(
-    firebase_auth_v1.GoogleCloudIdentitytoolkitV1UserInfo response,
+    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
   )   : creationTime = DateTime.fromMillisecondsSinceEpoch(
           int.parse(response.createdAt!),
         ),
-        lastSignInTime = DateTime.fromMillisecondsSinceEpoch(
-          int.parse(response.lastLoginAt!),
-        ),
-        lastRefreshTime = response.lastRefreshAt == null
-            ? null
-            : DateTime.fromMillisecondsSinceEpoch(
-                int.parse(response.lastRefreshAt!),
-              );
+        lastSignInTime = response.lastLoginAt.let((lastLoginAt) {
+          return DateTime.fromMillisecondsSinceEpoch(int.parse(lastLoginAt));
+        }),
+        lastRefreshTime = response.lastRefreshAt.let((lastRefreshAt) {
+          return DateTime.fromMillisecondsSinceEpoch(int.parse(lastRefreshAt));
+        });
 
   final DateTime creationTime;
-  final DateTime lastSignInTime;
+  final DateTime? lastSignInTime;
   final DateTime? lastRefreshTime;
 
   Map<String, Object?> toJson() {
     return {
       'creationTime': creationTime.toUtc().toString(),
-      'lastSignInTime': lastSignInTime.toUtc().toString(),
+      'lastSignInTime': lastSignInTime?.toUtc().toString(),
       'lastRefreshTime': lastRefreshTime?.toUtc().toString(),
     };
   }
