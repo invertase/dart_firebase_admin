@@ -108,10 +108,10 @@ class UploadAccountOptions {
 class UserProviderRequest {
   UserProviderRequest({
     required this.uid,
-    required this.displayName,
-    required this.email,
-    required this.phoneNumber,
-    required this.photoURL,
+    this.displayName,
+    this.email,
+    this.phoneNumber,
+    this.photoURL,
     required this.providerId,
   });
 
@@ -139,19 +139,19 @@ class UserProviderRequest {
 class UserImportRecord {
   UserImportRecord({
     required this.uid,
-    required this.email,
-    required this.emailVerified,
-    required this.displayName,
-    required this.phoneNumber,
-    required this.photoURL,
-    required this.disabled,
-    required this.metadata,
-    required this.providerData,
-    required this.customClaims,
-    required this.passwordHash,
-    required this.passwordSalt,
-    required this.tenantId,
-    required this.multiFactor,
+    this.email,
+    this.emailVerified,
+    this.displayName,
+    this.phoneNumber,
+    this.photoURL,
+    this.disabled,
+    this.metadata,
+    this.providerData,
+    this.customClaims,
+    this.passwordHash,
+    this.passwordSalt,
+    this.tenantId,
+    this.multiFactor,
   });
 
   /// The user's `uid`.
