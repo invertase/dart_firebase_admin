@@ -753,7 +753,7 @@ class _AuthHttpClient {
   // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
 
-  auth.AuthClient? _client;
+  auth.AutoRefreshingAuthClient? _client;
 
   String _buildParent() => 'projects/${app.projectId}';
 
@@ -1013,20 +1013,38 @@ class _AuthHttpClient {
     });
   }
 
-  Future<auth.AuthClient> _getClient() async {
-    return _client ??= await app.credential.getAuthClient([
-      auth3.IdentityToolkitApi.cloudPlatformScope,
-      auth3.IdentityToolkitApi.firebaseScope,
-    ]);
+  Future<R> _run<R>(
+    Future<R> Function(AutoRefreshingAuthClient client) fn,
+  ) async {
+    return _authGuard(() {
+      if (_client case final client?) {
+        return fn(client);
+      }
+
+      return app.credential.runWithClient(
+        [
+          auth3.IdentityToolkitApi.cloudPlatformScope,
+          auth3.IdentityToolkitApi.firebaseScope,
+        ],
+        (client) async {
+          _client = client;
+          try {
+            return await fn(client);
+          } finally {
+            _client = null;
+          }
+        },
+      );
+    });
   }
 
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client) fn,
   ) {
-    return _authGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         auth1.IdentityToolkitApi(
-          await _getClient(),
+          client,
           rootUrl: app.authApiHost.toString(),
         ),
       ),
@@ -1036,10 +1054,10 @@ class _AuthHttpClient {
   Future<R> v2<R>(
     Future<R> Function(auth2.IdentityToolkitApi client) fn,
   ) async {
-    return _authGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         auth2.IdentityToolkitApi(
-          await _getClient(),
+          client,
           rootUrl: app.authApiHost.toString(),
         ),
       ),
@@ -1049,10 +1067,10 @@ class _AuthHttpClient {
   Future<R> v3<R>(
     Future<R> Function(auth3.IdentityToolkitApi client) fn,
   ) async {
-    return _authGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         auth3.IdentityToolkitApi(
-          await _getClient(),
+          client,
           rootUrl: app.authApiHost.toString(),
         ),
       ),

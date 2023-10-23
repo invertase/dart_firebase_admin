@@ -347,11 +347,10 @@ abstract class MultiFactorInfo {
 class PhoneMultiFactorInfo extends MultiFactorInfo {
   /// Initializes the PhoneMultiFactorInfo object using the server side response.
   @internal
-  PhoneMultiFactorInfo.fromResponse(
-    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
-  )   : phoneNumber = response.phoneInfo,
+  PhoneMultiFactorInfo.fromResponse(super.response)
+      : phoneNumber = response.phoneInfo,
         factorId = response.phoneInfo != null ? MultiFactorId.phone : throw 42,
-        super.fromResponse(response);
+        super.fromResponse();
 
   /// The phone number associated with a phone second factor.
   final String? phoneNumber;

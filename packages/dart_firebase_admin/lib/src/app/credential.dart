@@ -39,12 +39,19 @@ class Credential {
   final auth.ServiceAccountCredentials? serviceAccountCredentials;
 
   @internal
-  Future<auth.AuthClient> getAuthClient(List<String> scopes) {
+  Future<R> runWithClient<R>(
+    List<String> scopes,
+    FutureOr<R> Function(AutoRefreshingAuthClient client) cb,
+  ) async {
     final serviceAccountCredentials = this.serviceAccountCredentials;
-    if (serviceAccountCredentials == null) {
-      return auth.clientViaApplicationDefaultCredentials(scopes: scopes);
-    }
+    final client = serviceAccountCredentials == null
+        ? await auth.clientViaApplicationDefaultCredentials(scopes: scopes)
+        : await auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
 
-    return auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
+    try {
+      return await cb(client);
+    } finally {
+      client.close();
+    }
   }
 }
