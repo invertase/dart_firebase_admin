@@ -1,6 +1,6 @@
 part of '../app.dart';
 
-/// Authentication informations for Firebase Admin SDK.
+/// Authentication information for Firebase Admin SDK.
 class Credential {
   Credential._(
     this.serviceAccountCredentials, {

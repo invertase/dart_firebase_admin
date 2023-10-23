@@ -135,7 +135,7 @@ import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 void main() {
   final admin = FirebaseAdminApp.initializeApp(
     '<your project name>',
-    // This will obtain authentication informations from the environment
+    // This will obtain authentication information from the environment
     Credential.fromApplicationDefaultCredentials(),
   );
 
