@@ -108,7 +108,7 @@ class CollectionReference<T> extends Query<T> {
       for (final document
           in response.documents ?? const <firestore1.Document>[])
         doc(
-          // ignore: unnecessary_null_checks, we don't want to inadvertedly obtain a new document
+          // ignore: unnecessary_null_checks, we don't want to inadvertently obtain a new document
           _QualifiedResourcePath.fromSlashSeparatedString(document.name!).id!,
         ),
     ];
@@ -580,8 +580,8 @@ class _CompositeFilterInternal implements _FilterInternal {
   @override
   late final flattenedFilters = filters.fold<List<_FieldFilterInternal>>(
     [],
-    (allFilters, subfilter) {
-      return allFilters..addAll(subfilter.flattenedFilters);
+    (allFilters, subFilter) {
+      return allFilters..addAll(subFilter.flattenedFilters);
     },
   );
 
@@ -1487,7 +1487,7 @@ class Query<T> {
   /// ```dart
   /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
-  /// query.orderaBy('foo', 'desc').get().then((querySnapshot) {
+  /// query.orderBy('foo', 'desc').get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
   ///     print('Found document at ${documentSnapshot.ref.path}');
   ///   });
