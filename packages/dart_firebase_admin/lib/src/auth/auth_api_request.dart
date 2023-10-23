@@ -496,21 +496,15 @@ abstract class _AbstractAuthRequestHandler {
       // TODO support tenants
       final response = await client.projects.accounts(
         auth1.GoogleCloudIdentitytoolkitV1SignUpRequest(
-          captchaChallenge: null,
-          captchaResponse: null,
           disabled: properties.disabled,
           displayName: properties.displayName?.value,
           email: properties.email,
           emailVerified: properties.emailVerified,
-          idToken: null,
-          instanceId: null,
           localId: properties.uid,
           mfaInfo: mfaInfo,
           password: properties.password,
           phoneNumber: properties.phoneNumber?.value,
           photoUrl: properties.photoURL?.value,
-          targetProjectId: null,
-          tenantId: null,
         ),
         app.projectId,
       );
@@ -736,8 +730,8 @@ abstract class _AbstractAuthRequestHandler {
       photoUrl: properties.photoURL?.value,
     );
 
-    final respons = await _httpClient.setAccountInfo(request);
-    return respons.localId!;
+    final response = await _httpClient.setAccountInfo(request);
+    return response.localId!;
   }
 }
 
@@ -970,7 +964,7 @@ class _AuthHttpClient {
     return v1((client) async {
       // TODO should this use account/project/update or account/update?
       // Or maybe both?
-      // ^ Depending on it, use tenantId... Or do we? The requestr seems to reject tenantID args
+      // ^ Depending on it, use tenantId... Or do we? The request seems to reject tenantID args
       final response = await client.accounts.update(request);
 
       final localId = response.localId;

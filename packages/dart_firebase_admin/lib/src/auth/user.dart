@@ -304,14 +304,10 @@ abstract class MultiFactorInfo {
     try {
       final phoneInfo = response.phoneInfo;
       // TODO Support TotpMultiFactorInfo
-      // final totpInfo = response.totpInfo;
 
       if (phoneInfo != null) {
         return PhoneMultiFactorInfo.fromResponse(response);
-      } /* else if (totpInfo != null) {
-        return TotpMultiFactorInfo(response);
-      }*/
-
+      }
       // Ignore the other SDK unsupported MFA factors to prevent blocking developers using the current SDK.
     } catch (e) {
       // Ignore error.
