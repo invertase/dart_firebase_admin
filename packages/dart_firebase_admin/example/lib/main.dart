@@ -23,4 +23,6 @@ Future<void> main() async {
   for (final doc in snapshot.docs) {
     print(doc.data());
   }
+
+  await admin.close();
 }

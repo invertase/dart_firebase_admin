@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebaseapis/identitytoolkit/v3.dart' as auth3;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:meta/meta.dart';

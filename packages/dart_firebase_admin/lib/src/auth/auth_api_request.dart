@@ -753,8 +753,6 @@ class _AuthHttpClient {
   // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
 
-  auth.AutoRefreshingAuthClient? _client;
-
   String _buildParent() => 'projects/${app.projectId}';
 
   String _buildOAuthIpdParent(String parentId) => 'projects/${app.projectId}/'
@@ -1015,27 +1013,8 @@ class _AuthHttpClient {
 
   Future<R> _run<R>(
     Future<R> Function(AutoRefreshingAuthClient client) fn,
-  ) async {
-    return _authGuard(() {
-      if (_client case final client?) {
-        return fn(client);
-      }
-
-      return app.credential.runWithClient(
-        [
-          auth3.IdentityToolkitApi.cloudPlatformScope,
-          auth3.IdentityToolkitApi.firebaseScope,
-        ],
-        (client) async {
-          _client = client;
-          try {
-            return await fn(client);
-          } finally {
-            _client = null;
-          }
-        },
-      );
-    });
+  ) {
+    return _authGuard(() => app.credential.client.then(fn));
   }
 
   Future<R> v1<R>(

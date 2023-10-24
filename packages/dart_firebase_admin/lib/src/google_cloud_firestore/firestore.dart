@@ -4,9 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/firestore/v1.dart' as firestore1;
 import 'package:firebaseapis/firestore/v1beta1.dart' as firestore1beta1;
 import 'package:firebaseapis/firestore/v1beta2.dart' as firestore1beta2;
-import 'package:firebaseapis/identitytoolkit/v3.dart' as auth3;
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:intl/intl.dart';
 
@@ -48,6 +46,16 @@ class Firestore {
 
   late final _client = _FirestoreHttpClient(app);
   late final _serializer = _Serializer(this);
+
+  // TODO collectionGroup
+  // TODO batch
+  // TODO bulkWriter
+  // TODO bundle
+  // TODO listCollections
+  // TODO getAll
+  // TODO runTransaction
+  // TODO recursiveDelete
+  // TODO terminate
 
   /// Gets a [DocumentReference] instance that
   /// refers to the document at the specified path.
@@ -163,32 +171,12 @@ class _FirestoreHttpClient {
   // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
 
-  auth.AutoRefreshingAuthClient? _client;
   // TODO refactor with auth
   // TODO is it fine to use AuthClient?
   Future<R> _run<R>(
     Future<R> Function(AutoRefreshingAuthClient client) fn,
-  ) async {
-    return _firestoreGuard(() {
-      if (_client case final client?) {
-        return fn(client);
-      }
-
-      return app.credential.runWithClient(
-        [
-          auth3.IdentityToolkitApi.cloudPlatformScope,
-          auth3.IdentityToolkitApi.firebaseScope,
-        ],
-        (client) async {
-          _client = client;
-          try {
-            return await fn(client);
-          } finally {
-            _client = null;
-          }
-        },
-      );
-    });
+  ) {
+    return _firestoreGuard(() => app.credential.client.then(fn));
   }
 
   Future<R> v1<R>(

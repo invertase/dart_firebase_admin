@@ -39,19 +39,19 @@ class Credential {
   final auth.ServiceAccountCredentials? serviceAccountCredentials;
 
   @internal
-  Future<R> runWithClient<R>(
-    List<String> scopes,
-    FutureOr<R> Function(AutoRefreshingAuthClient client) cb,
-  ) async {
+  late final client = _getClient(
+    [
+      auth3.IdentityToolkitApi.cloudPlatformScope,
+      auth3.IdentityToolkitApi.firebaseScope,
+    ],
+  );
+
+  Future<AutoRefreshingAuthClient> _getClient(List<String> scopes) async {
     final serviceAccountCredentials = this.serviceAccountCredentials;
     final client = serviceAccountCredentials == null
         ? await auth.clientViaApplicationDefaultCredentials(scopes: scopes)
         : await auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
 
-    try {
-      return await cb(client);
-    } finally {
-      client.close();
-    }
+    return client;
   }
 }

@@ -1,6 +1,6 @@
 ## Unreleased minor
 
-- Fix HTTP clients not being closed after use
+- Added `FirebaseAdminApp.close`, to close open connections and stop the SDK.
 - Fixed various typos
 
 ## 0.1.0 - 2023-10-15
