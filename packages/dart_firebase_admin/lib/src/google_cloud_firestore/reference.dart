@@ -10,7 +10,7 @@ class CollectionReference<T> extends Query<T> {
         );
 
   _QualifiedResourcePath get _resourcePath =>
-      _queryOptions.parentPath._append(id);
+      _queryOptions.parentPath._append(id) as _QualifiedResourcePath;
 
   /// The last path element of the referenced collection.
   String get id => _queryOptions.collectionId;
@@ -28,7 +28,7 @@ class CollectionReference<T> extends Query<T> {
 
     return DocumentReference<T>._(
       firestore: firestore,
-      path: _queryOptions.parentPath,
+      path: _queryOptions.parentPath as _QualifiedResourcePath,
       converter: _queryOptions.converter,
     );
   }
@@ -140,7 +140,7 @@ class CollectionReference<T> extends Query<T> {
   }) {
     return CollectionReference<U>._(
       firestore: firestore,
-      path: _queryOptions.parentPath._append(id),
+      path: _queryOptions.parentPath._append(id) as _QualifiedResourcePath,
       converter: (
         fromFirestore: fromFirestore,
         toFirestore: toFirestore,
@@ -483,9 +483,9 @@ class _FieldOrder {
 }
 
 @freezed
-class _QueryOptions<T> with _$_QueryOptions<T> {
+class _QueryOptions<T> with _$QueryOptions<T> {
   factory _QueryOptions({
-    required _QualifiedResourcePath parentPath,
+    required _ResourcePath parentPath,
     required String collectionId,
     required _FirestoreDataConverter<T> converter,
     required bool allDescendants,
@@ -518,6 +518,21 @@ class _QueryOptions<T> with _$_QueryOptions<T> {
       collectionId: collectionRef.id!,
       converter: converter,
       allDescendants: false,
+      filters: [],
+      fieldOrders: [],
+    );
+  }
+
+  /// Returns query options for a collection group query.
+  factory _QueryOptions.forCollectionGroupQuery(
+    String collectionId,
+    _FirestoreDataConverter<T> converter,
+  ) {
+    return _QueryOptions(
+      parentPath: _ResourcePath.empty,
+      collectionId: collectionId,
+      converter: converter,
+      allDescendants: true,
       filters: [],
       fieldOrders: [],
     );

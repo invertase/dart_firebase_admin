@@ -28,6 +28,7 @@ part 'write_batch.dart';
 part 'document_change.dart';
 part 'filter.dart';
 part 'firestore_exception.dart';
+part 'collection_group.dart';
 
 class Firestore {
   Firestore(this.app, {Settings? settings})
@@ -47,7 +48,6 @@ class Firestore {
   late final _client = _FirestoreHttpClient(app);
   late final _serializer = _Serializer(this);
 
-  // TODO collectionGroup
   // TODO batch
   // TODO bulkWriter
   // TODO bundle
@@ -55,7 +55,6 @@ class Firestore {
   // TODO getAll
   // TODO runTransaction
   // TODO recursiveDelete
-  // TODO terminate
 
   /// Gets a [DocumentReference] instance that
   /// refers to the document at the specified path.
@@ -111,6 +110,39 @@ class Firestore {
     return CollectionReference._(
       firestore: this,
       path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      converter: _jsonConverter,
+    );
+  }
+
+  /// Creates and returns a new Query that includes all documents in the
+  /// database that are contained in a collection or subcollection with the
+  /// given collectionId.
+  ///
+  /// - [collectionId] Identifies the collections to query over.
+  /// Every collection or subcollection with this ID as the last segment of its
+  /// path will be included. Cannot contain a slash.
+  ///
+  /// ```dart
+  /// final docA = await firestore.doc('my-group/docA').set({foo: 'bar'});
+  /// final docB = await firestore.doc('abc/def/my-group/docB').set({foo: 'bar'});
+  ///
+  /// final query = firestore.collectionGroup('my-group')
+  ///    .where('foo', WhereOperator.equal 'bar');
+  /// final snapshot = await query.get();
+  /// print('Found ${snapshot.size} documents.');
+  /// ```
+  CollectionGroup<DocumentData> collectionGroup(String collectionId) {
+    if (collectionId.contains('/')) {
+      throw ArgumentError.value(
+        collectionId,
+        'collectionId',
+        'Invalid collectionId "$collectionId". Collection IDs must not contain "/".',
+      );
+    }
+
+    return CollectionGroup._(
+      collectionId,
+      firestore: this,
       converter: _jsonConverter,
     );
   }
