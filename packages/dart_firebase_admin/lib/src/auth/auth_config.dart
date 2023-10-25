@@ -365,8 +365,10 @@ class _OIDCConfig extends OIDCAuthProviderConfig {
     );
   }
 
-  static void validate(_OIDCAuthProviderRequestBase options,
-      {required bool ignoreMissingFields}) {
+  static void validate(
+    _OIDCAuthProviderRequestBase options, {
+    required bool ignoreMissingFields,
+  }) {
     if (options.providerId case final providerId? when providerId.isNotEmpty) {
       if (!providerId.startsWith('oidc.')) {
         throw FirebaseAuthAdminException(
@@ -428,7 +430,7 @@ class _OIDCConfig extends OIDCAuthProviderConfig {
 
       if ((responseType.code ?? false) && (responseType.idToken ?? false)) {
         throw FirebaseAuthAdminException(
-          AuthClientErrorCode.invalidOauthResponsetype,
+          AuthClientErrorCode.invalidOauthResponseType,
           'Only exactly one OAuth responseType should be set to true.',
         );
       }

@@ -304,14 +304,10 @@ abstract class MultiFactorInfo {
     try {
       final phoneInfo = response.phoneInfo;
       // TODO Support TotpMultiFactorInfo
-      // final totpInfo = response.totpInfo;
 
       if (phoneInfo != null) {
         return PhoneMultiFactorInfo.fromResponse(response);
-      } /* else if (totpInfo != null) {
-        return TotpMultiFactorInfo(response);
-      }*/
-
+      }
       // Ignore the other SDK unsupported MFA factors to prevent blocking developers using the current SDK.
     } catch (e) {
       // Ignore error.
@@ -351,11 +347,10 @@ abstract class MultiFactorInfo {
 class PhoneMultiFactorInfo extends MultiFactorInfo {
   /// Initializes the PhoneMultiFactorInfo object using the server side response.
   @internal
-  PhoneMultiFactorInfo.fromResponse(
-    auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
-  )   : phoneNumber = response.phoneInfo,
+  PhoneMultiFactorInfo.fromResponse(super.response)
+      : phoneNumber = response.phoneInfo,
         factorId = response.phoneInfo != null ? MultiFactorId.phone : throw 42,
-        super.fromResponse(response);
+        super.fromResponse();
 
   /// The phone number associated with a phone second factor.
   final String? phoneNumber;

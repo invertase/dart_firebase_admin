@@ -74,7 +74,7 @@ enum AuthClientErrorCode {
   invalidProviderData,
   invalidProviderId,
   invalidProviderUid,
-  invalidOauthResponsetype,
+  invalidOauthResponseType,
   invalidSessionCookieDuration,
   invalidTenantId,
   invalidTenantType,
@@ -257,7 +257,7 @@ String? _authClientCodeMessage(AuthClientErrorCode code) {
     case AuthClientErrorCode.invalidProviderUid:
       return 'The providerUid must be a valid provider uid string.';
 
-    case AuthClientErrorCode.invalidOauthResponsetype:
+    case AuthClientErrorCode.invalidOauthResponseType:
       return 'Only exactly one OAuth responseType should be set to true.';
 
     case AuthClientErrorCode.invalidSessionCookieDuration:

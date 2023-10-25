@@ -496,21 +496,15 @@ abstract class _AbstractAuthRequestHandler {
       // TODO support tenants
       final response = await client.projects.accounts(
         auth1.GoogleCloudIdentitytoolkitV1SignUpRequest(
-          captchaChallenge: null,
-          captchaResponse: null,
           disabled: properties.disabled,
           displayName: properties.displayName?.value,
           email: properties.email,
           emailVerified: properties.emailVerified,
-          idToken: null,
-          instanceId: null,
           localId: properties.uid,
           mfaInfo: mfaInfo,
           password: properties.password,
           phoneNumber: properties.phoneNumber?.value,
           photoUrl: properties.photoURL?.value,
-          targetProjectId: null,
-          tenantId: null,
         ),
         app.projectId,
       );
@@ -736,8 +730,8 @@ abstract class _AbstractAuthRequestHandler {
       photoUrl: properties.photoURL?.value,
     );
 
-    final respons = await _httpClient.setAccountInfo(request);
-    return respons.localId!;
+    final response = await _httpClient.setAccountInfo(request);
+    return response.localId!;
   }
 }
 
@@ -758,8 +752,6 @@ class _AuthHttpClient {
   // TODO handle tenants
   // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
-
-  auth.AuthClient? _client;
 
   String _buildParent() => 'projects/${app.projectId}';
 
@@ -970,7 +962,7 @@ class _AuthHttpClient {
     return v1((client) async {
       // TODO should this use account/project/update or account/update?
       // Or maybe both?
-      // ^ Depending on it, use tenantId... Or do we? The requestr seems to reject tenantID args
+      // ^ Depending on it, use tenantId... Or do we? The request seems to reject tenantID args
       final response = await client.accounts.update(request);
 
       final localId = response.localId;
@@ -1019,20 +1011,19 @@ class _AuthHttpClient {
     });
   }
 
-  Future<auth.AuthClient> _getClient() async {
-    return _client ??= await app.credential.getAuthClient([
-      auth3.IdentityToolkitApi.cloudPlatformScope,
-      auth3.IdentityToolkitApi.firebaseScope,
-    ]);
+  Future<R> _run<R>(
+    Future<R> Function(AutoRefreshingAuthClient client) fn,
+  ) {
+    return _authGuard(() => app.credential.client.then(fn));
   }
 
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client) fn,
   ) {
-    return _authGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         auth1.IdentityToolkitApi(
-          await _getClient(),
+          client,
           rootUrl: app.authApiHost.toString(),
         ),
       ),
@@ -1042,10 +1033,10 @@ class _AuthHttpClient {
   Future<R> v2<R>(
     Future<R> Function(auth2.IdentityToolkitApi client) fn,
   ) async {
-    return _authGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         auth2.IdentityToolkitApi(
-          await _getClient(),
+          client,
           rootUrl: app.authApiHost.toString(),
         ),
       ),
@@ -1055,10 +1046,10 @@ class _AuthHttpClient {
   Future<R> v3<R>(
     Future<R> Function(auth3.IdentityToolkitApi client) fn,
   ) async {
-    return _authGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         auth3.IdentityToolkitApi(
-          await _getClient(),
+          client,
           rootUrl: app.authApiHost.toString(),
         ),
       ),

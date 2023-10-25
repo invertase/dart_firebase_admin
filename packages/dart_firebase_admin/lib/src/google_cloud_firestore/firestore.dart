@@ -4,9 +4,8 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/firestore/v1.dart' as firestore1;
 import 'package:firebaseapis/firestore/v1beta1.dart' as firestore1beta1;
 import 'package:firebaseapis/firestore/v1beta2.dart' as firestore1beta2;
-import 'package:firebaseapis/identitytoolkit/v3.dart' as auth3;
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
+import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../app.dart';
@@ -29,6 +28,7 @@ part 'write_batch.dart';
 part 'document_change.dart';
 part 'filter.dart';
 part 'firestore_exception.dart';
+part 'collection_group.dart';
 
 class Firestore {
   Firestore(this.app, {Settings? settings})
@@ -47,6 +47,14 @@ class Firestore {
 
   late final _client = _FirestoreHttpClient(app);
   late final _serializer = _Serializer(this);
+
+  // TODO batch
+  // TODO bulkWriter
+  // TODO bundle
+  // TODO listCollections
+  // TODO getAll
+  // TODO runTransaction
+  // TODO recursiveDelete
 
   /// Gets a [DocumentReference] instance that
   /// refers to the document at the specified path.
@@ -85,7 +93,7 @@ class Firestore {
   /// - [collectionPath]: A slash-separated path to a collection.
   ///
   /// Returns [CollectionReference] A reference to the new
-  /// subcollection.
+  /// sub-collection.
   CollectionReference<DocumentData> collection(String collectionPath) {
     _validateResourcePath('collectionPath', collectionPath);
 
@@ -102,6 +110,39 @@ class Firestore {
     return CollectionReference._(
       firestore: this,
       path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      converter: _jsonConverter,
+    );
+  }
+
+  /// Creates and returns a new Query that includes all documents in the
+  /// database that are contained in a collection or subcollection with the
+  /// given collectionId.
+  ///
+  /// - [collectionId] Identifies the collections to query over.
+  /// Every collection or subcollection with this ID as the last segment of its
+  /// path will be included. Cannot contain a slash.
+  ///
+  /// ```dart
+  /// final docA = await firestore.doc('my-group/docA').set({foo: 'bar'});
+  /// final docB = await firestore.doc('abc/def/my-group/docB').set({foo: 'bar'});
+  ///
+  /// final query = firestore.collectionGroup('my-group')
+  ///    .where('foo', WhereOperator.equal 'bar');
+  /// final snapshot = await query.get();
+  /// print('Found ${snapshot.size} documents.');
+  /// ```
+  CollectionGroup<DocumentData> collectionGroup(String collectionId) {
+    if (collectionId.contains('/')) {
+      throw ArgumentError.value(
+        collectionId,
+        'collectionId',
+        'Invalid collectionId "$collectionId". Collection IDs must not contain "/".',
+      );
+    }
+
+    return CollectionGroup._(
+      collectionId,
+      firestore: this,
       converter: _jsonConverter,
     );
   }
@@ -162,23 +203,21 @@ class _FirestoreHttpClient {
   // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
 
-  auth.AuthClient? _client;
   // TODO refactor with auth
   // TODO is it fine to use AuthClient?
-  Future<auth.AuthClient> _getClient() async {
-    return _client ??= await app.credential.getAuthClient([
-      auth3.IdentityToolkitApi.cloudPlatformScope,
-      auth3.IdentityToolkitApi.firebaseScope,
-    ]);
+  Future<R> _run<R>(
+    Future<R> Function(AutoRefreshingAuthClient client) fn,
+  ) {
+    return _firestoreGuard(() => app.credential.client.then(fn));
   }
 
   Future<R> v1<R>(
     Future<R> Function(firestore1.FirestoreApi client) fn,
   ) {
-    return _firestoreGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         firestore1.FirestoreApi(
-          await _getClient(),
+          client,
           rootUrl: app.firestoreApiHost.toString(),
         ),
       ),
@@ -188,10 +227,10 @@ class _FirestoreHttpClient {
   Future<R> v1Beta1<R>(
     Future<R> Function(firestore1beta1.FirestoreApi client) fn,
   ) async {
-    return _firestoreGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         firestore1beta1.FirestoreApi(
-          await _getClient(),
+          client,
           rootUrl: app.firestoreApiHost.toString(),
         ),
       ),
@@ -201,10 +240,10 @@ class _FirestoreHttpClient {
   Future<R> v1Beta2<R>(
     Future<R> Function(firestore1beta2.FirestoreApi client) fn,
   ) async {
-    return _firestoreGuard(
-      () async => fn(
+    return _run(
+      (client) => fn(
         firestore1beta2.FirestoreApi(
-          await _getClient(),
+          client,
           rootUrl: app.firestoreApiHost.toString(),
         ),
       ),

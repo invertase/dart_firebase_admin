@@ -18,89 +18,89 @@ Currently, only Firestore is available, with more to come (auth next).
 
 | Firestore                                        |     |
 | ------------------------------------------------ | --- |
-| reference.id                                     | [x] |
-| reference.parent                                 | [x] |
-| reference.path                                   | [x] |
-| reference.==                                     | [x] |
-| reference.withConverter                          | [x] |
-| collection.listDocuments                         | [x] |
-| collection.add                                   | [x] |
-| collection.get                                   | [x] |
-| collection.create                                | [x] |
-| collection.delete                                | [x] |
-| collection.set                                   | [x] |
-| collection.update                                | [x] |
-| collection.collection                            | [x] |
-| query.where('field', operator, value)            | [x] |
-| query.where('field.path', operator, value)       | [x] |
-| query.where(FieldPath('...'), operator, value)   | [x] |
-| query.whereFilter(Filter.and(a, b))              | [x] |
-| query.whereFilter(Filter.or(a, b))               | [x] |
-| query.startAt                                    | [x] |
-| query.startAtDocument                            | [x] |
-| query.startAfter                                 | [x] |
-| query.startAfterDocument                         | [x] |
-| query.endAt                                      | [x] |
-| query.endAtDocument                              | [x] |
-| query.endAfter                                   | [x] |
-| query.endAfterDocument                           | [x] |
-| query.onSnapshot                                 | [ ] |
-| query.select                                     | [x] |
-| query.orderBy                                    | [x] |
-| query.limit                                      | [x] |
-| query.limitToLast                                | [x] |
-| query.offset                                     | [x] |
-| querySnapshot.docs                               | [x] |
-| querySnapshot.readTime                           | [x] |
-| querySnapshot.docsChange                         | [-] |
-| documentSnapshots.data                           | [x] |
-| documentSnapshots.readTime/createTime/updateTime | [x] |
-| documentSnapshots.id                             | [x] |
-| documentSnapshots.exists                         | [x] |
-| documentSnapshots.data                           | [x] |
-| documentSnapshots.get(fieldPath)                 | [x] |
-| FieldValue.documentId                            | [x] |
-| FieldValue.increment                             | [x] |
-| FieldValue.arrayUnion                            | [x] |
-| FieldValue.arrayRemove                           | [x] |
-| FieldValue.delete                                | [x] |
-| FieldValue.serverTimestamp                       | [x] |
-| collectionGroup                                  | [ ] |
-| runTransaction                                   | [ ] |
-| GeoPoint                                         | [x] |
-| Timestamp                                        | [x] |
-| BundleBuilder                                    | [ ] |
+| reference.id                                     | ✅  |
+| reference.parent                                 | ✅  |
+| reference.path                                   | ✅  |
+| reference.==                                     | ✅  |
+| reference.withConverter                          | ✅  |
+| collection.listDocuments                         | ✅  |
+| collection.add                                   | ✅  |
+| collection.get                                   | ✅  |
+| collection.create                                | ✅  |
+| collection.delete                                | ✅  |
+| collection.set                                   | ✅  |
+| collection.update                                | ✅  |
+| collection.collection                            | ✅  |
+| query.where('field', operator, value)            | ✅  |
+| query.where('field.path', operator, value)       | ✅  |
+| query.where(FieldPath('...'), operator, value)   | ✅  |
+| query.whereFilter(Filter.and(a, b))              | ✅  |
+| query.whereFilter(Filter.or(a, b))               | ✅  |
+| query.startAt                                    | ✅  |
+| query.startAtDocument                            | ✅  |
+| query.startAfter                                 | ✅  |
+| query.startAfterDocument                         | ✅  |
+| query.endAt                                      | ✅  |
+| query.endAtDocument                              | ✅  |
+| query.endAfter                                   | ✅  |
+| query.endAfterDocument                           | ✅  |
+| query.onSnapshot                                 | ❌  |
+| query.select                                     | ✅  |
+| query.orderBy                                    | ✅  |
+| query.limit                                      | ✅  |
+| query.limitToLast                                | ✅  |
+| query.offset                                     | ✅  |
+| querySnapshot.docs                               | ✅  |
+| querySnapshot.readTime                           | ✅  |
+| querySnapshot.docsChange                         | ⚠️ |
+| documentSnapshots.data                           | ✅  |
+| documentSnapshots.readTime/createTime/updateTime | ✅  |
+| documentSnapshots.id                             | ✅  |
+| documentSnapshots.exists                         | ✅  |
+| documentSnapshots.data                           | ✅  |
+| documentSnapshots.get(fieldPath)                 | ✅  |
+| FieldValue.documentId                            | ✅  |
+| FieldValue.increment                             | ✅  |
+| FieldValue.arrayUnion                            | ✅  |
+| FieldValue.arrayRemove                           | ✅  |
+| FieldValue.delete                                | ✅  |
+| FieldValue.serverTimestamp                       | ✅  |
+| collectionGroup                                  | ✅  |
+| runTransaction                                   | ❌  |
+| GeoPoint                                         | ✅  |
+| Timestamp                                        | ✅  |
+| BundleBuilder                                    | ❌  |
 
 | Auth                                  |     |
 | ------------------------------------- | --- |
-| auth.tenantManager                    | [ ] |
-| auth.projectConfigManager             | [ ] |
-| auth.generatePasswirdResetLink        | [x] |
-| auth.generateEmailVerificationLink    | [x] |
-| auth.generateVerifyAndChangeEmailLink | [x] |
-| auth.generateSignInWithEmailLink      | [x] |
-| auth.listProviderConfigs              | [x] |
-| auth.createProviderConfig             | [x] |
-| auth.updateProviderConfig             | [x] |
-| auth.getProviderConfig                | [x] |
-| auth.deleteProviderConfig             | [x] |
-| auth.createCustomToken                | [x] |
-| auth.setCustomUserClaims              | [x] |
-| auth.verifyIdToken                    | [x] |
-| auth.revokeRefreshTokens              | [x] |
-| auth.createSessionCookie              | [x] |
-| auth.verifySessionCookie              | [x] |
-| auth.importUsers                      | [x] |
-| auth.listUsers                        | [x] |
-| auth.deleteUser                       | [x] |
-| auth.deleteUsers                      | [x] |
-| auth.getUser                          | [x] |
-| auth.getUserByPhoneNumber             | [x] |
-| auth.getUserByEmail                   | [x] |
-| auth.getUserByProviderUid             | [x] |
-| auth.getUsers                         | [x] |
-| auth.createUser                       | [x] |
-| auth.updateUser                       | [x] |
+| auth.tenantManager                    | ❌  |
+| auth.projectConfigManager             | ❌  |
+| auth.generatePasswordResetLink        | ✅  |
+| auth.generateEmailVerificationLink    | ✅  |
+| auth.generateVerifyAndChangeEmailLink | ✅  |
+| auth.generateSignInWithEmailLink      | ✅  |
+| auth.listProviderConfigs              | ✅  |
+| auth.createProviderConfig             | ✅  |
+| auth.updateProviderConfig             | ✅  |
+| auth.getProviderConfig                | ✅  |
+| auth.deleteProviderConfig             | ✅  |
+| auth.createCustomToken                | ✅  |
+| auth.setCustomUserClaims              | ✅  |
+| auth.verifyIdToken                    | ✅  |
+| auth.revokeRefreshTokens              | ✅  |
+| auth.createSessionCookie              | ✅  |
+| auth.verifySessionCookie              | ✅  |
+| auth.importUsers                      | ✅  |
+| auth.listUsers                        | ✅  |
+| auth.deleteUser                       | ✅  |
+| auth.deleteUsers                      | ✅  |
+| auth.getUser                          | ✅  |
+| auth.getUserByPhoneNumber             | ✅  |
+| auth.getUserByEmail                   | ✅  |
+| auth.getUserByProviderUid             | ✅  |
+| auth.getUsers                         | ✅  |
+| auth.createUser                       | ✅  |
+| auth.updateUser                       | ✅  |
 
 ## Usage
 
@@ -135,7 +135,7 @@ import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 void main() {
   final admin = FirebaseAdminApp.initializeApp(
     '<your project name>',
-    // This will obtain authentication informations from the environment
+    // This will obtain authentication information from the environment
     Credential.fromApplicationDefaultCredentials(),
   );
 
@@ -194,7 +194,7 @@ final firestore = Firestore(admin);
 ```
 
 From this point onwards, using Firestore with the admin ADK
-is roughtly equivalent to using [FlutterFire](https://github.com/firebase/flutterfire).
+is roughly equivalent to using [FlutterFire](https://github.com/firebase/flutterfire).
 
 Using this `Firestore` object, you'll find your usual collection/query/document
 objects.

@@ -68,21 +68,22 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
 }
 
 /// @nodoc
-abstract class _$$_SettingsCopyWith<$Res> implements $SettingsCopyWith<$Res> {
-  factory _$$_SettingsCopyWith(
-          _$_Settings value, $Res Function(_$_Settings) then) =
-      __$$_SettingsCopyWithImpl<$Res>;
+abstract class _$$SettingsImplCopyWith<$Res>
+    implements $SettingsCopyWith<$Res> {
+  factory _$$SettingsImplCopyWith(
+          _$SettingsImpl value, $Res Function(_$SettingsImpl) then) =
+      __$$SettingsImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String? databaseId, bool? useBigInt});
 }
 
 /// @nodoc
-class __$$_SettingsCopyWithImpl<$Res>
-    extends _$SettingsCopyWithImpl<$Res, _$_Settings>
-    implements _$$_SettingsCopyWith<$Res> {
-  __$$_SettingsCopyWithImpl(
-      _$_Settings _value, $Res Function(_$_Settings) _then)
+class __$$SettingsImplCopyWithImpl<$Res>
+    extends _$SettingsCopyWithImpl<$Res, _$SettingsImpl>
+    implements _$$SettingsImplCopyWith<$Res> {
+  __$$SettingsImplCopyWithImpl(
+      _$SettingsImpl _value, $Res Function(_$SettingsImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -91,7 +92,7 @@ class __$$_SettingsCopyWithImpl<$Res>
     Object? databaseId = freezed,
     Object? useBigInt = freezed,
   }) {
-    return _then(_$_Settings(
+    return _then(_$SettingsImpl(
       databaseId: freezed == databaseId
           ? _value.databaseId
           : databaseId // ignore: cast_nullable_to_non_nullable
@@ -106,8 +107,8 @@ class __$$_SettingsCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$_Settings implements _Settings {
-  _$_Settings({this.databaseId, this.useBigInt});
+class _$SettingsImpl implements _Settings {
+  _$SettingsImpl({this.databaseId, this.useBigInt});
 
   /// The database name. If omitted, the default database will be used.
   @override
@@ -129,7 +130,7 @@ class _$_Settings implements _Settings {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Settings &&
+            other is _$SettingsImpl &&
             (identical(other.databaseId, databaseId) ||
                 other.databaseId == databaseId) &&
             (identical(other.useBigInt, useBigInt) ||
@@ -142,13 +143,13 @@ class _$_Settings implements _Settings {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_SettingsCopyWith<_$_Settings> get copyWith =>
-      __$$_SettingsCopyWithImpl<_$_Settings>(this, _$identity);
+  _$$SettingsImplCopyWith<_$SettingsImpl> get copyWith =>
+      __$$SettingsImplCopyWithImpl<_$SettingsImpl>(this, _$identity);
 }
 
 abstract class _Settings implements Settings {
   factory _Settings({final String? databaseId, final bool? useBigInt}) =
-      _$_Settings;
+      _$SettingsImpl;
 
   @override
 
@@ -163,13 +164,13 @@ abstract class _Settings implements Settings {
   bool? get useBigInt;
   @override
   @JsonKey(ignore: true)
-  _$$_SettingsCopyWith<_$_Settings> get copyWith =>
+  _$$SettingsImplCopyWith<_$SettingsImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-mixin _$_QueryOptions<T> {
-  _QualifiedResourcePath get parentPath => throw _privateConstructorUsedError;
+mixin _$QueryOptions<T> {
+  _ResourcePath get parentPath => throw _privateConstructorUsedError;
   String get collectionId => throw _privateConstructorUsedError;
   ({
     T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
@@ -204,7 +205,7 @@ abstract class _$QueryOptionsCopyWith<T, $Res> {
       __$QueryOptionsCopyWithImpl<T, $Res, _QueryOptions<T>>;
   @useResult
   $Res call(
-      {_QualifiedResourcePath parentPath,
+      {_ResourcePath parentPath,
       String collectionId,
       ({
         T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
@@ -255,7 +256,7 @@ class __$QueryOptionsCopyWithImpl<T, $Res, $Val extends _QueryOptions<T>>
       parentPath: null == parentPath
           ? _value.parentPath
           : parentPath // ignore: cast_nullable_to_non_nullable
-              as _QualifiedResourcePath,
+              as _ResourcePath,
       collectionId: null == collectionId
           ? _value.collectionId
           : collectionId // ignore: cast_nullable_to_non_nullable
@@ -317,15 +318,15 @@ class __$QueryOptionsCopyWithImpl<T, $Res, $Val extends _QueryOptions<T>>
 }
 
 /// @nodoc
-abstract class _$$__QueryOptionsCopyWith<T, $Res>
+abstract class _$$_QueryOptionsImplCopyWith<T, $Res>
     implements _$QueryOptionsCopyWith<T, $Res> {
-  factory _$$__QueryOptionsCopyWith(
-          _$__QueryOptions<T> value, $Res Function(_$__QueryOptions<T>) then) =
-      __$$__QueryOptionsCopyWithImpl<T, $Res>;
+  factory _$$_QueryOptionsImplCopyWith(_$_QueryOptionsImpl<T> value,
+          $Res Function(_$_QueryOptionsImpl<T>) then) =
+      __$$_QueryOptionsImplCopyWithImpl<T, $Res>;
   @override
   @useResult
   $Res call(
-      {_QualifiedResourcePath parentPath,
+      {_ResourcePath parentPath,
       String collectionId,
       ({
         T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
@@ -345,11 +346,11 @@ abstract class _$$__QueryOptionsCopyWith<T, $Res>
 }
 
 /// @nodoc
-class __$$__QueryOptionsCopyWithImpl<T, $Res>
-    extends __$QueryOptionsCopyWithImpl<T, $Res, _$__QueryOptions<T>>
-    implements _$$__QueryOptionsCopyWith<T, $Res> {
-  __$$__QueryOptionsCopyWithImpl(
-      _$__QueryOptions<T> _value, $Res Function(_$__QueryOptions<T>) _then)
+class __$$_QueryOptionsImplCopyWithImpl<T, $Res>
+    extends __$QueryOptionsCopyWithImpl<T, $Res, _$_QueryOptionsImpl<T>>
+    implements _$$_QueryOptionsImplCopyWith<T, $Res> {
+  __$$_QueryOptionsImplCopyWithImpl(_$_QueryOptionsImpl<T> _value,
+      $Res Function(_$_QueryOptionsImpl<T>) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -370,11 +371,11 @@ class __$$__QueryOptionsCopyWithImpl<T, $Res>
     Object? kindless = null,
     Object? requireConsistency = null,
   }) {
-    return _then(_$__QueryOptions<T>(
+    return _then(_$_QueryOptionsImpl<T>(
       parentPath: null == parentPath
           ? _value.parentPath
           : parentPath // ignore: cast_nullable_to_non_nullable
-              as _QualifiedResourcePath,
+              as _ResourcePath,
       collectionId: null == collectionId
           ? _value.collectionId
           : collectionId // ignore: cast_nullable_to_non_nullable
@@ -437,8 +438,8 @@ class __$$__QueryOptionsCopyWithImpl<T, $Res>
 
 /// @nodoc
 
-class _$__QueryOptions<T> extends __QueryOptions<T> {
-  _$__QueryOptions(
+class _$_QueryOptionsImpl<T> extends __QueryOptions<T> {
+  _$_QueryOptionsImpl(
       {required this.parentPath,
       required this.collectionId,
       required this.converter,
@@ -458,7 +459,7 @@ class _$__QueryOptions<T> extends __QueryOptions<T> {
         super._();
 
   @override
-  final _QualifiedResourcePath parentPath;
+  final _ResourcePath parentPath;
   @override
   final String collectionId;
   @override
@@ -517,7 +518,7 @@ class _$__QueryOptions<T> extends __QueryOptions<T> {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$__QueryOptions<T> &&
+            other is _$_QueryOptionsImpl<T> &&
             (identical(other.parentPath, parentPath) ||
                 other.parentPath == parentPath) &&
             (identical(other.collectionId, collectionId) ||
@@ -564,13 +565,14 @@ class _$__QueryOptions<T> extends __QueryOptions<T> {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$__QueryOptionsCopyWith<T, _$__QueryOptions<T>> get copyWith =>
-      __$$__QueryOptionsCopyWithImpl<T, _$__QueryOptions<T>>(this, _$identity);
+  _$$_QueryOptionsImplCopyWith<T, _$_QueryOptionsImpl<T>> get copyWith =>
+      __$$_QueryOptionsImplCopyWithImpl<T, _$_QueryOptionsImpl<T>>(
+          this, _$identity);
 }
 
 abstract class __QueryOptions<T> extends _QueryOptions<T> {
   factory __QueryOptions(
-      {required final _QualifiedResourcePath parentPath,
+      {required final _ResourcePath parentPath,
       required final String collectionId,
       required final ({
         T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
@@ -586,11 +588,11 @@ abstract class __QueryOptions<T> extends _QueryOptions<T> {
       final LimitType? limitType,
       final int? offset,
       final bool kindless,
-      final bool requireConsistency}) = _$__QueryOptions<T>;
+      final bool requireConsistency}) = _$_QueryOptionsImpl<T>;
   __QueryOptions._() : super._();
 
   @override
-  _QualifiedResourcePath get parentPath;
+  _ResourcePath get parentPath;
   @override
   String get collectionId;
   @override
@@ -625,6 +627,6 @@ abstract class __QueryOptions<T> extends _QueryOptions<T> {
   bool get requireConsistency;
   @override
   @JsonKey(ignore: true)
-  _$$__QueryOptionsCopyWith<T, _$__QueryOptions<T>> get copyWith =>
+  _$$_QueryOptionsImplCopyWith<T, _$_QueryOptionsImpl<T>> get copyWith =>
       throw _privateConstructorUsedError;
 }

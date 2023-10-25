@@ -1,3 +1,13 @@
 {
-  "dart.runPubGetOnPubspecChanges": false
+  "cSpell.words": [
+    "HAMC",
+    "hmac",
+    "jsonwebtoken",
+    "OIDC",
+    "pbkdf",
+    "SIGNIN",
+    "subcollection",
+    "subcollections",
+    "totp"
+  ]
 }

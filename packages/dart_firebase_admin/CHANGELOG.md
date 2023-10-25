@@ -1,3 +1,9 @@
+## Unreleased minor
+
+- Added `FirebaseAdminApp.close`, to close open connections and stop the SDK.
+- Fixed various typos
+- Added `Firestore.collectionGroup` support
+
 ## 0.1.0 - 2023-10-15
 
 Added Firebase Auth

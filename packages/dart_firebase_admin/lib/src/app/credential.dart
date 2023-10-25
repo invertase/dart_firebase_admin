@@ -1,6 +1,6 @@
 part of '../app.dart';
 
-/// Authentication informations for Firebase Admin SDK.
+/// Authentication information for Firebase Admin SDK.
 class Credential {
   Credential._(
     this.serviceAccountCredentials, {
@@ -39,12 +39,19 @@ class Credential {
   final auth.ServiceAccountCredentials? serviceAccountCredentials;
 
   @internal
-  Future<auth.AuthClient> getAuthClient(List<String> scopes) {
-    final serviceAccountCredentials = this.serviceAccountCredentials;
-    if (serviceAccountCredentials == null) {
-      return auth.clientViaApplicationDefaultCredentials(scopes: scopes);
-    }
+  late final client = _getClient(
+    [
+      auth3.IdentityToolkitApi.cloudPlatformScope,
+      auth3.IdentityToolkitApi.firebaseScope,
+    ],
+  );
 
-    return auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
+  Future<AutoRefreshingAuthClient> _getClient(List<String> scopes) async {
+    final serviceAccountCredentials = this.serviceAccountCredentials;
+    final client = serviceAccountCredentials == null
+        ? await auth.clientViaApplicationDefaultCredentials(scopes: scopes)
+        : await auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
+
+    return client;
   }
 }

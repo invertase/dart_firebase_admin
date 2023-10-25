@@ -446,10 +446,9 @@ class _UserImportBuilder {
   /// Whenever a user with an error is detected, the error is cached and will later be
   /// merged into the user import result. This allows the processing of valid users without
   /// failing early on the first error detected.
-  /// @param {UserImportRecord[]} users The UserImportRecords to convert to UnploadAccountUser
-  ///     objects.
-  /// @param {ValidatorFunction=} userValidator The user validator function.
-  /// @returns {UploadAccountUser[]} The populated uploadAccount users.
+  ///
+  /// - [users] The UserImportRecords to convert to UploadAccountUser objects.
+  /// - [userValidator] The user validator function.
   List<v1.GoogleCloudIdentitytoolkitV1UserInfo> _populateUsers(
     List<UserImportRecord> users,
     _ValidatorFunction? userValidator,
@@ -479,9 +478,9 @@ class _UserImportBuilder {
 
 /// Converts a UserImportRecord to a UploadAccountUser object. Throws an error when invalid
 /// fields are provided.
-/// @param {UserImportRecord} user The UserImportRecord to conver to UploadAccountUser.
-/// @param {ValidatorFunction=} userValidator The user validator function.
-/// @returns {UploadAccountUser} The corresponding UploadAccountUser to return.
+///
+/// - [UserImportRecord] user The UserImportRecord to convert to UploadAccountUser.
+/// - [_ValidatorFunction] userValidator The user validator function.
 v1.GoogleCloudIdentitytoolkitV1UserInfo _populateUploadAccountUser(
   UserImportRecord user,
   _ValidatorFunction? userValidator,
