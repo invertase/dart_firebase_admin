@@ -358,7 +358,6 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   @override
   final MultiFactorId factorId;
 
-  /// {@inheritdoc MultiFactorInfo.toJSON}
   @override
   Map<String, Object?> toJson() {
     return {
