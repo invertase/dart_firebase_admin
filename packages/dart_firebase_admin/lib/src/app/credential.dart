@@ -25,6 +25,22 @@ class Credential {
     return Credential._(serviceAccountCredentials);
   }
 
+  /// Log in to firebase from a service account file parameters.
+  factory Credential.fromServiceAccountParams({
+    required String clientId,
+    required String privateKey,
+    required String clientEmail,
+  }) {
+    final serviceAccountCredentials = auth.ServiceAccountCredentials.fromJson({
+      'type': 'service_account',
+      'private_key': privateKey,
+      'client_email': clientEmail,
+      'client_id': clientId,
+    });
+
+    return Credential._(serviceAccountCredentials);
+  }
+
   /// Log in to firebase using the environment variable.
   Credential.fromApplicationDefaultCredentials({String? serviceAccountId})
       : this._(
