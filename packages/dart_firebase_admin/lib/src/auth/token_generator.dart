@@ -92,7 +92,9 @@ class _FirebaseTokenGenerator {
       };
 
       final token = '${_encodeSegment(header)}.${_encodeSegment(body)}';
-      final signPromise = await _signer.sign(utf8.encode(token));
+      final signPromise = await _signer.sign(
+        Uint8List.fromList(token.codeUnits),
+      );
 
       return '$token.${_encodeSegment(signPromise)}';
     } on CryptoSignerException catch (err, stack) {
@@ -134,7 +136,8 @@ class _EmulatedSigner implements CryptoSigner {
   String get algorithm => 'none';
 
   @override
-  Future<Uint8List> sign(Uint8List buffer) async => utf8.encode('');
+  Future<Uint8List> sign(Uint8List buffer) async =>
+      Uint8List.fromList(''.codeUnits);
 
   @override
   Future<String> getAccountId() async => 'firebase-auth-emulator@example.com';
