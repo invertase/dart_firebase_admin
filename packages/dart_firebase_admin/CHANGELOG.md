@@ -1,4 +1,4 @@
-## Unreleased minor
+## 0.2.0 - 2023-11-30
 
 - Increased minimum Dart SDK to `3.2.0`.
   This fixes a compilation error due to `utf8.encode`.
