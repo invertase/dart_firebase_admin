@@ -29,14 +29,13 @@ class Credential {
   factory Credential.fromServiceAccountParams({
     required String clientId,
     required String privateKey,
-    required String clientEmail,
+    required String email,
   }) {
-    final serviceAccountCredentials = auth.ServiceAccountCredentials.fromJson({
-      'type': 'service_account',
-      'private_key': privateKey,
-      'client_email': clientEmail,
-      'client_id': clientId,
-    });
+    final serviceAccountCredentials = auth.ServiceAccountCredentials(
+      email,
+      ClientId(clientId),
+      privateKey,
+    );
 
     return Credential._(serviceAccountCredentials);
   }
