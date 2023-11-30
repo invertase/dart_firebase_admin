@@ -367,7 +367,10 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   }
 }
 
+/// Metadata information about when a user was created and last signed in.
 class UserMetadata {
+  /// Metadata information about when a user was created and last signed in.
+  @internal
   UserMetadata({
     required this.creationTime,
     required this.lastSignInTime,
@@ -383,9 +386,7 @@ class UserMetadata {
         lastSignInTime = response.lastLoginAt.let((lastLoginAt) {
           return DateTime.fromMillisecondsSinceEpoch(int.parse(lastLoginAt));
         }),
-        lastRefreshTime = response.lastRefreshAt.let((lastRefreshAt) {
-          return DateTime.fromMillisecondsSinceEpoch(int.parse(lastRefreshAt));
-        });
+        lastRefreshTime = response.lastRefreshAt.let(DateTime.parse);
 
   final DateTime creationTime;
   final DateTime? lastSignInTime;
@@ -393,9 +394,9 @@ class UserMetadata {
 
   Map<String, Object?> toJson() {
     return {
-      'creationTime': creationTime.toUtc().toString(),
-      'lastSignInTime': lastSignInTime?.toUtc().toString(),
-      'lastRefreshTime': lastRefreshTime?.toUtc().toString(),
+      'creationTime': creationTime.microsecondsSinceEpoch.toString(),
+      'lastSignInTime': lastSignInTime?.millisecondsSinceEpoch.toString(),
+      'lastRefreshTime': lastRefreshTime?.toIso8601String(),
     };
   }
 }
