@@ -1,5 +1,7 @@
 ## Unreleased minor
 
+- Increased minimum Dart SDK to `3.2.0`.
+  This fixes a compilation error due to `utf8.encode`.
 - Added `Credential.fromServiceAccountParams` (thanks to @akaboshinit)
 - Added `FirebaseAdminApp.close`, to close open connections and stop the SDK.
 - Fixed various typos
