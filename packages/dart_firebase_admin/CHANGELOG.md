@@ -1,5 +1,6 @@
 ## Unreleased minor
 
+- Added `Credential.fromServiceAccountParams` (thanks to @akaboshinit)
 - Added `FirebaseAdminApp.close`, to close open connections and stop the SDK.
 - Fixed various typos
 - Added `Firestore.collectionGroup` support
@@ -15,4 +16,3 @@ Fix 404 error when not using the emulator.
 ## 0.0.1
 
 Initial release
-
