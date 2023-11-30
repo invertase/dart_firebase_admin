@@ -5,7 +5,7 @@ class FirebaseAuthAdminException extends FirebaseAdminException
   FirebaseAuthAdminException(
     this.errorCode, [
     String? message,
-  ]) : super('auth', errorCode.name, errorCode.message ?? message);
+  ]) : super('auth', errorCode.name, message ?? errorCode.message);
 
   factory FirebaseAuthAdminException.fromServerError(
     auth1.DetailedApiRequestError error,

@@ -1,28 +1,65 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
+import 'package:dart_firebase_admin/messaging.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
 Future<void> main() async {
-  final admin = FirebaseAdminApp.initializeApp(
-    'dart-firebase-admin',
-    Credential.fromApplicationDefaultCredentials(),
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  runApp(
+    MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Dart Firebase Admin'),
+        ),
+        body: StreamBuilder(
+          stream: FirebaseFirestore.instance.collection('foo').snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text(
+                snapshot.data!.docs.firstOrNull?.data().toString() ?? 'No data',
+              );
+            }
+
+            return const Text('Loading...');
+          },
+        ),
+      ),
+    ),
   );
 
-  admin.useEmulator();
+  // final admin = FirebaseAdminApp.initializeApp(
+  //   'dart-firebase-admin',
+  //   Credential.fromApplicationDefaultCredentials(),
+  // );
 
-  final firestore = Firestore(admin);
+  // // admin.useEmulator();
 
-  final collection = firestore.collection('users');
+  // final messaging = Messaging(admin);
 
-  await collection.doc('123').set({
-    'name': 'John Doe',
-    'age': 30,
-  });
+  // final result = await messaging.send(
+  //   TopicMessage(topic: 'test'),
+  // );
 
-  final snapshot = await collection.get();
+  // print(result);
 
-  for (final doc in snapshot.docs) {
-    print(doc.data());
-  }
+  // final firestore = Firestore(admin);
 
-  await admin.close();
+  // final collection = firestore.collection('users');
+
+  // await collection.doc('123').set({
+  //   'name': 'John Doe',
+  //   'age': 30,
+  // });
+
+  // final snapshot = await collection.get();
+
+  // for (final doc in snapshot.docs) {
+  //   print(doc.data());
+  // }
+
+  // await admin.close();
 }
