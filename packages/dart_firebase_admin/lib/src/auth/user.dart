@@ -168,8 +168,8 @@ class UserRecord {
 
   /// Returns a JSON-serializable representation of this object.
   ///
-  /// @returns A JSON-serializable representation of this object.
-  Map<String, Object?> toJson() {
+  /// A JSON-serializable representation of this object.
+  Map<String, Object?> _toJson() {
     final providerDataJson = <Object?>[];
     final json = <String, Object?>{
       'uid': uid,
@@ -180,7 +180,7 @@ class UserRecord {
       'phoneNumber': phoneNumber,
       'disabled': disabled,
       // Convert metadata to json.
-      'metadata': metadata.toJson(),
+      'metadata': metadata._toJson(),
       'passwordHash': passwordHash,
       'passwordSalt': passwordSalt,
       'customClaims': customClaims,
@@ -190,12 +190,12 @@ class UserRecord {
     };
 
     final multiFactor = this.multiFactor;
-    if (multiFactor != null) json['multiFactor'] = multiFactor.toJson();
+    if (multiFactor != null) json['multiFactor'] = multiFactor._toJson();
 
     json['providerData'] = [];
     for (final entry in providerData) {
       // Convert each provider data to json.
-      providerDataJson.add(entry.toJson());
+      providerDataJson.add(entry._toJson());
     }
     return json;
   }
@@ -233,7 +233,7 @@ class UserInfo {
   final String? providerId;
   final String? phoneNumber;
 
-  Map<String, Object?> toJson() {
+  Map<String, Object?> _toJson() {
     return {
       'uid': uid,
       'displayName': displayName,
@@ -264,9 +264,9 @@ class MultiFactorSettings {
 
   final List<MultiFactorInfo> enrolledFactors;
 
-  Map<String, Object?> toJson() {
+  Map<String, Object?> _toJson() {
     return {
-      'enrolledFactors': enrolledFactors.map((info) => info.toJson()).toList(),
+      'enrolledFactors': enrolledFactors.map((info) => info._toJson()).toList(),
     };
   }
 }
@@ -333,7 +333,7 @@ abstract class MultiFactorInfo {
   /// Returns a JSON-serializable representation of this object.
   ///
   /// @returns A JSON-serializable representation of this object.
-  Map<String, Object?> toJson() {
+  Map<String, Object?> _toJson() {
     return {
       'uid': uid,
       'displayName': displayName,
@@ -359,9 +359,9 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   final MultiFactorId factorId;
 
   @override
-  Map<String, Object?> toJson() {
+  Map<String, Object?> _toJson() {
     return {
-      ...super.toJson(),
+      ...super._toJson(),
       'phoneNumber': phoneNumber,
     };
   }
@@ -392,11 +392,17 @@ class UserMetadata {
   final DateTime? lastSignInTime;
   final DateTime? lastRefreshTime;
 
-  Map<String, Object?> toJson() {
+  Map<String, Object?> _toJson() {
     return {
       'creationTime': creationTime.microsecondsSinceEpoch.toString(),
       'lastSignInTime': lastSignInTime?.millisecondsSinceEpoch.toString(),
       'lastRefreshTime': lastRefreshTime?.toIso8601String(),
     };
   }
+}
+
+/// Export [UserMetadata._toJson] for testing purposes.
+@internal
+extension UserMetadataToJson on UserMetadata {
+  Map<String, Object?> toJson() => _toJson();
 }

@@ -830,7 +830,7 @@ describe('admin.auth', () => {
       })
         .then((userRecord) => {
           // Confirm second factors added to user.
-          const actualUserRecord: { [key: string]: any } = userRecord.toJSON();
+          const actualUserRecord: { [key: string]: any } = userRecord._toJson();
           expect(actualUserRecord.multiFactor.enrolledFactors.length).to.equal(2);
           expect(actualUserRecord.multiFactor.enrolledFactors).to.deep.equal(enrolledFactors);
           // Update list of second factors.
@@ -842,7 +842,7 @@ describe('admin.auth', () => {
         })
         .then((userRecord) => {
           expect(userRecord.multiFactor!.enrolledFactors.length).to.equal(1);
-          const actualUserRecord: { [key: string]: any } = userRecord.toJSON();
+          const actualUserRecord: { [key: string]: any } = userRecord._toJson();
           expect(actualUserRecord.multiFactor.enrolledFactors[0]).to.deep.equal(enrolledFactors[0]);
           // Remove all second factors.
           return getAuth().updateUser(updateUser.uid, {
@@ -1344,22 +1344,22 @@ describe('admin.auth', () => {
         .then((actualProjectConfig) => {
           // ReCAPTCHA keys are generated differently each time.
           delete actualProjectConfig.recaptchaConfig?.recaptchaKeys;
-          expect(actualProjectConfig.toJSON()).to.deep.equal(expectedProjectConfig1);
+          expect(actualProjectConfig._toJson()).to.deep.equal(expectedProjectConfig1);
           return getAuth().projectConfigManager().updateProjectConfig(projectConfigOption2);
         })
         .then((actualProjectConfig) => {
-          expect(actualProjectConfig.toJSON()).to.deep.equal(expectedProjectConfig2);
+          expect(actualProjectConfig._toJson()).to.deep.equal(expectedProjectConfig2);
           return getAuth().projectConfigManager().updateProjectConfig(projectConfigOptionSmsEnabledTotpDisabled);
         })
         .then((actualProjectConfig) => {
-          expect(actualProjectConfig.toJSON()).to.deep.equal(expectedProjectConfigSmsEnabledTotpDisabled);
+          expect(actualProjectConfig._toJson()).to.deep.equal(expectedProjectConfigSmsEnabledTotpDisabled);
         });
     });
 
     it('getProjectConfig() should resolve with expected project config', () => {
       return getAuth().projectConfigManager().getProjectConfig()
         .then((actualConfig) => {
-          const actualConfigObj = actualConfig.toJSON();
+          const actualConfigObj = actualConfig._toJson();
           expect(actualConfigObj).to.deep.equal(expectedProjectConfigSmsEnabledTotpDisabled);
         });
     });
@@ -1533,7 +1533,7 @@ describe('admin.auth', () => {
           createdTenantId = actualTenant.tenantId;
           createdTenants.push(createdTenantId);
           expectedCreatedTenant.tenantId = createdTenantId;
-          const actualTenantObj = actualTenant.toJSON();
+          const actualTenantObj = actualTenant._toJson();
           if (authEmulatorHost) {
             // Not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
@@ -1891,7 +1891,7 @@ describe('admin.auth', () => {
     it('getTenant() should resolve with expected tenant', () => {
       return getAuth().tenantManager().getTenant(createdTenantId)
         .then((actualTenant) => {
-          const actualTenantObj = actualTenant.toJSON();
+          const actualTenantObj = actualTenant._toJson();
           if (authEmulatorHost) {
             // Not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
@@ -1927,7 +1927,7 @@ describe('admin.auth', () => {
       if (authEmulatorHost) {
         return getAuth().tenantManager().updateTenant(createdTenantId, updatedOptions)
           .then((actualTenant) => {
-            const actualTenantObj = actualTenant.toJSON();
+            const actualTenantObj = actualTenant._toJson();
             // Not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
             delete expectedUpdatedTenant.testPhoneNumbers;
@@ -1935,7 +1935,7 @@ describe('admin.auth', () => {
             return getAuth().tenantManager().updateTenant(createdTenantId, updatedOptions2);
           })
           .then((actualTenant) => {
-            const actualTenantObj = actualTenant.toJSON();
+            const actualTenantObj = actualTenant._toJson();
             // Not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
             delete expectedUpdatedTenant2.testPhoneNumbers;
@@ -1944,14 +1944,14 @@ describe('admin.auth', () => {
       }
       return getAuth().tenantManager().updateTenant(createdTenantId, updatedOptions)
         .then((actualTenant) => {
-          expect(actualTenant.toJSON()).to.deep.equal(expectedUpdatedTenant);
+          expect(actualTenant._toJson()).to.deep.equal(expectedUpdatedTenant);
           return getAuth().tenantManager().updateTenant(createdTenantId, updatedOptions2);
         })
         .then((actualTenant) => {
           // response from backend ignores account defender status is recaptcha status is OFF.
           const expectedUpdatedTenantCopy = deepCopy(expectedUpdatedTenant2);
           delete expectedUpdatedTenantCopy.recaptchaConfig.useAccountDefender;
-          expect(actualTenant.toJSON()).to.deep.equal(expectedUpdatedTenantCopy);
+          expect(actualTenant._toJson()).to.deep.equal(expectedUpdatedTenantCopy);
         });
     });
 
@@ -1964,7 +1964,7 @@ describe('admin.auth', () => {
       if (authEmulatorHost) {
         return getAuth().tenantManager().updateTenant(createdTenantId, updatedOptions2)
           .then((actualTenant) => {
-            const actualTenantObj = actualTenant.toJSON();
+            const actualTenantObj = actualTenant._toJson();
             // Not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
             delete expectedUpdatedTenant2.testPhoneNumbers;
@@ -1976,7 +1976,7 @@ describe('admin.auth', () => {
           // response from backend ignores account defender status is recaptcha status is OFF.
           const expectedUpdatedTenantCopy = deepCopy(expectedUpdatedTenant2);
           delete expectedUpdatedTenantCopy.recaptchaConfig.useAccountDefender;
-          expect(actualTenant.toJSON()).to.deep.equal(expectedUpdatedTenantCopy);
+          expect(actualTenant._toJson()).to.deep.equal(expectedUpdatedTenantCopy);
         });
     });
 
@@ -1989,7 +1989,7 @@ describe('admin.auth', () => {
       if (authEmulatorHost) {
         return getAuth().tenantManager().updateTenant(createdTenantId, updateRequestNoMfaConfig)
           .then((actualTenant) => {
-            const actualTenantObj = actualTenant.toJSON();
+            const actualTenantObj = actualTenant._toJson();
             // Configuring test phone numbers are not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
             delete expectedUpdatedTenant2.testPhoneNumbers;
@@ -2008,7 +2008,7 @@ describe('admin.auth', () => {
       if (authEmulatorHost) {
         return getAuth().tenantManager().updateTenant(createdTenantId, updatedOptions2)
           .then((actualTenant) => {
-            const actualTenantObj = actualTenant.toJSON();
+            const actualTenantObj = actualTenant._toJson();
             // Not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
             delete expectedUpdatedTenant2.testPhoneNumbers;
@@ -2020,7 +2020,7 @@ describe('admin.auth', () => {
           // response from backend ignores account defender status is recaptcha status is OFF.
           const expectedUpdatedTenantCopy = deepCopy(expectedUpdatedTenant2);
           delete expectedUpdatedTenantCopy.recaptchaConfig.useAccountDefender;
-          expect(actualTenant.toJSON()).to.deep.equal(expectedUpdatedTenantCopy);
+          expect(actualTenant._toJson()).to.deep.equal(expectedUpdatedTenantCopy);
         });
     });
     it('updateTenant() should not disable SMS MFA when TOTP is disabled', () => {
@@ -2041,7 +2041,7 @@ describe('admin.auth', () => {
       if (authEmulatorHost) {
         return getAuth().tenantManager().updateTenant(createdTenantId, updateRequestSMSEnabledTOTPDisabled)
           .then((actualTenant) => {
-            const actualTenantObj = actualTenant.toJSON();
+            const actualTenantObj = actualTenant._toJson();
             // Configuring test phone numbers are not supported in Auth Emulator
             delete (actualTenantObj as { testPhoneNumbers?: Record<string, string> }).testPhoneNumbers;
             delete expectedUpdatedTenantSmsEnabledTotpDisabled.testPhoneNumbers;
@@ -2053,7 +2053,7 @@ describe('admin.auth', () => {
           // response from backend ignores account defender status is recaptcha status is OFF.
           const expectedUpdatedTenantCopy = deepCopy(expectedUpdatedTenantSmsEnabledTotpDisabled);
           delete expectedUpdatedTenantCopy.recaptchaConfig.useAccountDefender;
-          expect(actualTenant.toJSON()).to.deep.equal(expectedUpdatedTenantCopy);
+          expect(actualTenant._toJson()).to.deep.equal(expectedUpdatedTenantCopy);
         });
     });
 
@@ -2955,7 +2955,7 @@ describe('admin.auth', () => {
             -readonly [k in keyof UserMetadata]: UserMetadata[k];
           };
           (importUserRecord.metadata as Writable<UserMetadata>).lastRefreshTime = null;
-          const actualUserRecord: { [key: string]: any } = userRecord.toJSON();
+          const actualUserRecord: { [key: string]: any } = userRecord._toJson();
           for (const key of Object.keys(importUserRecord)) {
             expect(JSON.stringify(actualUserRecord[key]))
               .to.be.equal(JSON.stringify((importUserRecord as any)[key]));
@@ -3019,7 +3019,7 @@ describe('admin.auth', () => {
           return getAuth().getUser(uid);
         }).then((userRecord) => {
           // Confirm second factors added to user.
-          const actualUserRecord: { [key: string]: any } = userRecord.toJSON();
+          const actualUserRecord: { [key: string]: any } = userRecord._toJson();
           expect(actualUserRecord.multiFactor.enrolledFactors.length).to.equal(2);
           expect(actualUserRecord.multiFactor.enrolledFactors)
             .to.deep.equal(importUserRecord.multiFactor?.enrolledFactors);

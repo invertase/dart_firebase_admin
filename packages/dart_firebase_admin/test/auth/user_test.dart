@@ -1,10 +1,11 @@
 import 'package:dart_firebase_admin/auth.dart';
+import 'package:dart_firebase_admin/src/auth.dart' show UserMetadataToJson;
 import 'package:firebaseapis/identitytoolkit/v1.dart' as auth1;
 import 'package:test/test.dart';
 
 void main() {
   group('UserMetadata', () {
-    test('toJson', () {
+    test('_toJson', () {
       final now = DateTime.now().toUtc();
 
       final metadata = UserMetadata.fromResponse(

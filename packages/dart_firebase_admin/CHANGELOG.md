@@ -1,3 +1,8 @@
+## Unreleased minor
+
+**Breaking**: Removed the value `toJson` methods on objects.
+These were not intended to be public.
+
 ## 0.2.0 - 2023-11-30
 
 - Increased minimum Dart SDK to `3.2.0`.
