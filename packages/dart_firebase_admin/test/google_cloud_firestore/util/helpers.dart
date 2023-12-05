@@ -6,7 +6,12 @@ const projectId = 'dart-firebase-admin';
 
 FirebaseAdminApp createApp() {
   final credential = Credential.fromApplicationDefaultCredentials();
-  return FirebaseAdminApp.initializeApp(projectId, credential)..useEmulator();
+  final app = FirebaseAdminApp.initializeApp(projectId, credential)
+    ..useEmulator();
+
+  addTearDown(app.close);
+
+  return app;
 }
 
 Firestore createInstance([Settings? settings]) {

@@ -1,13 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:dart_firebase_admin/firestore.dart';
-import 'package:dart_firebase_admin/messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  final token = await FirebaseMessaging.instance.getToken();
+
+  print('token $token');
 
   runApp(
     MaterialApp(
@@ -15,17 +21,24 @@ Future<void> main() async {
         appBar: AppBar(
           title: const Text('Dart Firebase Admin'),
         ),
-        body: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('foo').snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Text(
-                snapshot.data!.docs.firstOrNull?.data().toString() ?? 'No data',
-              );
-            }
+        body: Center(
+          child: StreamBuilder(
+            stream: FirebaseFirestore.instance.collection('foo').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Text(
+                  snapshot.data!.docs.firstOrNull?.data().toString() ??
+                      'No data',
+                );
+              }
 
-            return const Text('Loading...');
-          },
+              if (snapshot.hasError) {
+                return Text(snapshot.error.toString());
+              }
+
+              return const Text('Loading...');
+            },
+          ),
         ),
       ),
     ),

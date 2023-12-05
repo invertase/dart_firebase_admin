@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:firebaseapis/fcm/v1.dart' as fmc1;
 import 'package:googleapis_auth/auth_io.dart';
+import 'package:meta/meta.dart';
 
 import 'app.dart';
 
@@ -13,13 +14,16 @@ part 'messaging/messaging_api.dart';
 /// An interface for interacting with the Firebase Cloud Messaging service.
 class Messaging {
   /// An interface for interacting with the Firebase Cloud Messaging service.
-  Messaging(this.firebase)
-      : _requestHandler = _FirebaseMessagingRequestHandler(firebase);
+  Messaging(
+    this.firebase, {
+    @internal FirebaseMessagingRequestHandler? requestHandler,
+  }) : _requestHandler =
+            requestHandler ?? FirebaseMessagingRequestHandler(firebase);
 
   /// The app associated with this Messaging instance.
   final FirebaseAdminApp firebase;
 
-  final _FirebaseMessagingRequestHandler _requestHandler;
+  final FirebaseMessagingRequestHandler _requestHandler;
 
   String get _parent => 'projects/${firebase.projectId}';
 

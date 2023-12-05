@@ -13,6 +13,7 @@ Currently, only Firestore is available, with more to come (auth next).
     - [Connecting using a `service-account.json` file](#connecting-using-a-service-accountjson-file)
   - [Using Firestore](#using-firestore)
   - [Using Auth](#using-auth)
+- [Using Messaging](#using-messaging)
 
 ## Available features
 
@@ -52,7 +53,7 @@ Currently, only Firestore is available, with more to come (auth next).
 | query.offset                                     | ✅  |
 | querySnapshot.docs                               | ✅  |
 | querySnapshot.readTime                           | ✅  |
-| querySnapshot.docsChange                         | ⚠️ |
+| querySnapshot.docsChange                         | ⚠️  |
 | documentSnapshots.data                           | ✅  |
 | documentSnapshots.readTime/createTime/updateTime | ✅  |
 | documentSnapshots.id                             | ✅  |
@@ -165,7 +166,7 @@ After all of that is done, you can now authenticate in your Dart program using:
 ```dart
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 
-void main() {
+Future<void> main() async {
   final admin = FirebaseAdminApp.initializeApp(
     '<your project name>',
     // Log-in using the newly downloaded file.
@@ -177,6 +178,9 @@ void main() {
   // TODO use the Admin SDK
   final firestore = Firestore(admin);
   firestore.doc('hello/world').get();
+
+  // Don't forget to close the Admin SDK at the end of your "main"!
+  await admin.close();
 }
 ```
 
@@ -267,3 +271,35 @@ final link = await auth.generatePasswordResetLink(
     Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">Invertase</a>.
   </p>
 </p>
+
+## Using Messaging
+
+First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
+You should now have an instance of a `FirebaseAdminApp` object.
+
+Then, you can create an instance of `Messaging` as followed:
+
+```dart
+// Obtained in the previous steps
+FirebaseAdminApp admin;
+final messaging = Messaging(messaging);
+```
+
+You can then use that `Messaging` object to interact with Firebase Messaging.
+For example, if you want to send a notification to a specific device, you can do:
+
+```dart
+await messaging.send(
+  TokenMessage(
+    // The token of the targeted device.
+    // This token can be obtain by using FlutterFire's firebase_messaging:
+    // https://pub.dev/documentation/firebase_messaging/latest/firebase_messaging/FirebaseMessaging/getToken.html
+    token: "<targeted device's token>",
+    notification: Notification(
+      // The content of the notification
+      title: 'Hello',
+      body: 'World',
+    ),
+  ),
+);
+```

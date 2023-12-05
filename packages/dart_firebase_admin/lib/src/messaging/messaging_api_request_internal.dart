@@ -1,7 +1,8 @@
 part of '../messaging.dart';
 
-class _FirebaseMessagingRequestHandler {
-  _FirebaseMessagingRequestHandler(this.firebase);
+@internal
+class FirebaseMessagingRequestHandler {
+  FirebaseMessagingRequestHandler(this.firebase);
 
   final FirebaseAdminApp firebase;
 
