@@ -1,63 +1,28 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
-
-import 'firebase_options.dart';
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  final admin = FirebaseAdminApp.initializeApp(
+    'dart-firebase-admin',
+    Credential.fromApplicationDefaultCredentials(),
   );
 
-  final token = await FirebaseMessaging.instance.getToken();
+  // // admin.useEmulator();
 
-  print('token $token');
+  final messaging = Messaging(admin);
 
-  runApp(
-    MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Dart Firebase Admin'),
-        ),
-        body: Center(
-          child: StreamBuilder(
-            stream: FirebaseFirestore.instance.collection('foo').snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Text(
-                  snapshot.data!.docs.firstOrNull?.data().toString() ??
-                      'No data',
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Text(snapshot.error.toString());
-              }
-
-              return const Text('Loading...');
-            },
-          ),
-        ),
+  final result = await messaging.send(
+    TokenMessage(
+      token:
+          'e8Ap1n9UTQenyB-UEjNQt9:APA91bHhgc9RZYDcCKb7U1scQo1K0ZTSMItop8IqctrOcgvmN__oBo4vgbFX-ji4atr1PVw3Loug-eOCBmj4HVZjUE0aQBA0mGry7uL-7JuMaojhtl13MpvQtbZptvX_8f6vDcqei88O',
+      notification: Notification(
+        title: 'Hello',
+        body: 'World',
       ),
     ),
   );
 
-  // final admin = FirebaseAdminApp.initializeApp(
-  //   'dart-firebase-admin',
-  //   Credential.fromApplicationDefaultCredentials(),
-  // );
-
-  // // admin.useEmulator();
-
-  // final messaging = Messaging(admin);
-
-  // final result = await messaging.send(
-  //   TopicMessage(topic: 'test'),
-  // );
-
-  // print(result);
+  print(result);
 
   // final firestore = Firestore(admin);
 
@@ -74,5 +39,5 @@ Future<void> main() async {
   //   print(doc.data());
   // }
 
-  // await admin.close();
+  await admin.close();
 }
