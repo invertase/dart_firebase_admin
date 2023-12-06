@@ -89,5 +89,23 @@ void main() {
         ),
       );
     });
+
+    test('dryRun', () async {
+      when(() => messages.send(any(), any())).thenAnswer(
+        (_) => Future.value(fmc1.Message(name: 'test')),
+      );
+
+      await messaging.send(
+        TopicMessage(topic: 'test'),
+        dryRun: true,
+      );
+
+      final capture = verify(() => messages.send(captureAny(), captureAny()))
+        ..called(1);
+
+      final request = capture.captured.first as SendMessageRequest;
+
+      expect(request.validateOnly, true);
+    });
   });
 }

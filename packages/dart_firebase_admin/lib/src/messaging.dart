@@ -58,4 +58,15 @@ class Messaging {
       },
     );
   }
+
+  // TODO sendEach
+  // TODO sendEachForMulticast
+  // TODO sendAll
+  // TODO sendMulticast
+  // TODO sendToDevice
+  // TODO sendToDeviceGroup
+  // TODO sendToTopic
+  // TODO sendToCondition
+  // TODO subscribeToTopic
+  // TODO unsubscribeFromTopic
 }
