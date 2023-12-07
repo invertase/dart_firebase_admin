@@ -1223,7 +1223,7 @@ class MessagingTopicManagementResponse {
 class BatchResponse {
   /// Interface representing the server response from the
   /// [Messaging.sendAll] and [Messaging.sendMulticast] methods.
-  BatchResponse({
+  BatchResponse._({
     required this.responses,
     required this.successCount,
     required this.failureCount,
@@ -1244,7 +1244,7 @@ class BatchResponse {
 class SendResponse {
   /// Interface representing the status of an individual message that was sent as
   /// part of a batch request.
-  SendResponse({
+  SendResponse._({
     required this.success,
     this.messageId,
     this.error,
@@ -1257,7 +1257,6 @@ class SendResponse {
 
   /// A unique message ID string, if the message was handed off to FCM for
   /// delivery.
-  ///
   final String? messageId;
 
   /// An error, if the message was not handed off to FCM successfully.

@@ -31,15 +31,18 @@ void main() {
     registerFallbackValue(SendMessageRequestFake());
   });
 
-  setUp(() {
-    when(() => projectResourceMock.messages).thenReturn(messages);
-    when(() => messagingApiMock.projects).thenReturn(projectResourceMock);
-    when(() => requestHandler.v1<String>(any())).thenAnswer((invocation) async {
+  void mockV1<T>() {
+    when(() => requestHandler.v1<T>(any())).thenAnswer((invocation) async {
       final callback = invocation.positionalArguments.first as Function;
 
       final result = await Function.apply(callback, [messagingApiMock]);
-      return result as String;
+      return result as T;
     });
+  }
+
+  setUp(() {
+    when(() => projectResourceMock.messages).thenReturn(messages);
+    when(() => messagingApiMock.projects).thenReturn(projectResourceMock);
 
     final sdk = createApp();
     sdk.useEmulator();
@@ -55,6 +58,7 @@ void main() {
 
   group('Messaging.send', () {
     test('should send a message', () async {
+      mockV1<String>();
       when(() => messages.send(any(), any())).thenAnswer(
         (_) => Future.value(fmc1.Message(name: 'test')),
       );
@@ -77,6 +81,7 @@ void main() {
     });
 
     test('throws internal error if response has no name', () {
+      mockV1<String>();
       when(() => messages.send(any(), any())).thenAnswer(
         (_) => Future.value(fmc1.Message()),
       );
@@ -104,6 +109,86 @@ void main() {
         ..called(1);
 
       final request = capture.captured.first as SendMessageRequest;
+
+      expect(request.validateOnly, true);
+    });
+  });
+
+  group('sendEach', () {
+    test('works', () async {
+      mockV1<BatchResponse>();
+      when(() => messages.send(any(), any())).thenAnswer(
+        (i) {
+          final request = i.positionalArguments.first as SendMessageRequest;
+          switch (request.message?.topic) {
+            case 'test':
+              return Future.value(fmc1.Message(name: 'test'));
+            case _:
+              return Future.error('error');
+          }
+        },
+      );
+
+      final result = await messaging.sendEach([
+        TopicMessage(topic: 'test'),
+        TopicMessage(topic: 'test2'),
+      ]);
+
+      expect(result.successCount, 1);
+      expect(result.failureCount, 1);
+
+      expect(
+        result.responses,
+        unorderedMatches([
+          isA<SendResponse>()
+              .having((r) => r.success, 'success', true)
+              .having((r) => r.messageId, 'messageId', 'test')
+              .having((r) => r.error, 'error', null),
+          isA<SendResponse>()
+              .having((r) => r.success, 'success', false)
+              .having((r) => r.messageId, 'messageId', null)
+              .having(
+                (r) => r.error,
+                'error',
+                isA<FirebaseMessagingAdminException>()
+                    .having((e) => e.message, 'message', 'error'),
+              ),
+        ]),
+      );
+
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(2);
+      verifyNoMoreInteractions(messages);
+
+      var request = capture.captured.first as SendMessageRequest;
+
+      expect(request.validateOnly, null);
+
+      request = capture.captured[1] as SendMessageRequest;
+
+      expect(request.validateOnly, null);
+    });
+
+    test('dry run', () async {
+      mockV1<BatchResponse>();
+      when(() => messages.send(any(), any())).thenAnswer(
+        (i) => Future.value(fmc1.Message(name: 'test')),
+      );
+
+      await messaging.sendEach([
+        TopicMessage(topic: 'test'),
+        TopicMessage(topic: 'test2'),
+      ]);
+
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(2);
+      verifyNoMoreInteractions(messages);
+
+      var request = capture.captured.first as SendMessageRequest;
+
+      expect(request.validateOnly, true);
+
+      request = capture.captured[1] as SendMessageRequest;
 
       expect(request.validateOnly, true);
     });
