@@ -61,6 +61,19 @@ class Messaging {
     );
   }
 
+  /// Sends each message in the given array via Firebase Cloud Messaging.
+  ///
+  /// Unlike [Messaging.sendAll], this method makes a single RPC call for each message
+  /// in the given array.
+  ///
+  /// The responses list obtained from the return value corresponds to the order of `messages`.
+  /// An error from this method or a `BatchResponse` with all failures indicates a total failure,
+  /// meaning that none of the messages in the list could be sent. Partial failures or no
+  /// failures are only indicated by a `BatchResponse` return value.
+  ///
+  /// - [messages]: A non-empty array containing up to 500 messages.
+  /// - [dryRun]: Whether to send the messages in the dry-run
+  ///   (validation only) mode.
   Future<BatchResponse> sendEach(List<Message> messages, {bool? dryRun}) {
     return _requestHandler.v1(
       (client) async {
@@ -77,9 +90,7 @@ class Messaging {
           );
         }
 
-        final responses = <SendResponse>[];
-
-        await Future.wait(
+        final responses = await Future.wait<SendResponse>(
           messages.map((message) async {
             final response = client.projects.messages.send(
               fmc1.SendMessageRequest(
@@ -91,22 +102,18 @@ class Messaging {
 
             return response.then(
               (value) {
-                responses.add(
-                  SendResponse._(success: true, messageId: value.name),
-                );
+                return SendResponse._(success: true, messageId: value.name);
               },
               // ignore: avoid_types_on_closure_parameters
               onError: (Object? error) {
-                responses.add(
-                  SendResponse._(
-                    success: false,
-                    error: error is FirebaseMessagingAdminException
-                        ? error
-                        : FirebaseMessagingAdminException(
-                            MessagingClientErrorCode.internal,
-                            error.toString(),
-                          ),
-                  ),
+                return SendResponse._(
+                  success: false,
+                  error: error is FirebaseMessagingAdminException
+                      ? error
+                      : FirebaseMessagingAdminException(
+                          MessagingClientErrorCode.internal,
+                          error.toString(),
+                        ),
                 );
               },
             );
@@ -124,7 +131,6 @@ class Messaging {
     );
   }
 
-  // TODO sendEach
   // TODO sendEachForMulticast
   // TODO sendAll
   // TODO sendMulticast

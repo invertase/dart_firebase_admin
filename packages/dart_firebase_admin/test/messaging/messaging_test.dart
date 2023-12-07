@@ -57,8 +57,9 @@ void main() {
   });
 
   group('Messaging.send', () {
+    setUp(() => mockV1<String>());
+
     test('should send a message', () async {
-      mockV1<String>();
       when(() => messages.send(any(), any())).thenAnswer(
         (_) => Future.value(fmc1.Message(name: 'test')),
       );
@@ -81,7 +82,6 @@ void main() {
     });
 
     test('throws internal error if response has no name', () {
-      mockV1<String>();
       when(() => messages.send(any(), any())).thenAnswer(
         (_) => Future.value(fmc1.Message()),
       );
@@ -115,14 +115,42 @@ void main() {
   });
 
   group('sendEach', () {
+    setUp(() => mockV1<BatchResponse>());
+
+    test('asserts list length >=1 <500', () {
+      expect(
+        () => messaging.sendEach([]),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'messages must be a non-empty array',
+          ),
+        ),
+      );
+
+      expect(
+        () => messaging.sendEach(
+          List.generate(501, (index) => TopicMessage(topic: '$index')),
+        ),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'messages list must not contain more than 500 items',
+          ),
+        ),
+      );
+    });
+
     test('works', () async {
-      mockV1<BatchResponse>();
       when(() => messages.send(any(), any())).thenAnswer(
         (i) {
           final request = i.positionalArguments.first as SendMessageRequest;
           switch (request.message?.topic) {
             case 'test':
-              return Future.value(fmc1.Message(name: 'test'));
+              // Voluntary cause "test" to resolve after "test2"
+              return Future(() => Future.value(fmc1.Message(name: 'test')));
             case _:
               return Future.error('error');
           }
@@ -137,24 +165,21 @@ void main() {
       expect(result.successCount, 1);
       expect(result.failureCount, 1);
 
-      expect(
-        result.responses,
-        unorderedMatches([
-          isA<SendResponse>()
-              .having((r) => r.success, 'success', true)
-              .having((r) => r.messageId, 'messageId', 'test')
-              .having((r) => r.error, 'error', null),
-          isA<SendResponse>()
-              .having((r) => r.success, 'success', false)
-              .having((r) => r.messageId, 'messageId', null)
-              .having(
-                (r) => r.error,
-                'error',
-                isA<FirebaseMessagingAdminException>()
-                    .having((e) => e.message, 'message', 'error'),
-              ),
-        ]),
-      );
+      expect(result.responses, [
+        isA<SendResponse>()
+            .having((r) => r.success, 'success', true)
+            .having((r) => r.messageId, 'messageId', 'test')
+            .having((r) => r.error, 'error', null),
+        isA<SendResponse>()
+            .having((r) => r.success, 'success', false)
+            .having((r) => r.messageId, 'messageId', null)
+            .having(
+              (r) => r.error,
+              'error',
+              isA<FirebaseMessagingAdminException>()
+                  .having((e) => e.message, 'message', 'error'),
+            ),
+      ]);
 
       final capture = verify(() => messages.send(captureAny(), any()))
         ..called(2);
@@ -170,7 +195,6 @@ void main() {
     });
 
     test('dry run', () async {
-      mockV1<BatchResponse>();
       when(() => messages.send(any(), any())).thenAnswer(
         (i) => Future.value(fmc1.Message(name: 'test')),
       );
@@ -178,7 +202,7 @@ void main() {
       await messaging.sendEach([
         TopicMessage(topic: 'test'),
         TopicMessage(topic: 'test2'),
-      ]);
+      ], dryRun: true);
 
       final capture = verify(() => messages.send(captureAny(), any()))
         ..called(2);
