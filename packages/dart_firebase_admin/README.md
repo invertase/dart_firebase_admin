@@ -6,104 +6,22 @@ Welcome! This project is a port of [Node's Firebase Admin SDK](https://github.co
 Currently, only Firestore is available, with more to come (auth next).
 
 - [Dart Firebase Admin](#dart-firebase-admin)
-- [Available features](#available-features)
-- [Usage](#usage)
+- [Getting started](#getting-started)
   - [Connecting to the SDK](#connecting-to-the-sdk)
     - [Connecting using the environment](#connecting-using-the-environment)
     - [Connecting using a `service-account.json` file](#connecting-using-a-service-accountjson-file)
-  - [Using Firestore](#using-firestore)
-  - [Using Auth](#using-auth)
-- [Using Messaging](#using-messaging)
+- [Firestore](#firestore)
+  - [Usage](#usage)
+  - [Supported features](#supported-features)
+- [Auth](#auth)
+  - [Usage](#usage-1)
+  - [Supported features](#supported-features-1)
+- [Available features](#available-features)
+- [Messaging](#messaging)
+  - [Usage](#usage-2)
+  - [Supported features](#supported-features-2)
 
-## Available features
-
-| Firestore                                        |     |
-| ------------------------------------------------ | --- |
-| reference.id                                     | ✅  |
-| reference.parent                                 | ✅  |
-| reference.path                                   | ✅  |
-| reference.==                                     | ✅  |
-| reference.withConverter                          | ✅  |
-| collection.listDocuments                         | ✅  |
-| collection.add                                   | ✅  |
-| collection.get                                   | ✅  |
-| collection.create                                | ✅  |
-| collection.delete                                | ✅  |
-| collection.set                                   | ✅  |
-| collection.update                                | ✅  |
-| collection.collection                            | ✅  |
-| query.where('field', operator, value)            | ✅  |
-| query.where('field.path', operator, value)       | ✅  |
-| query.where(FieldPath('...'), operator, value)   | ✅  |
-| query.whereFilter(Filter.and(a, b))              | ✅  |
-| query.whereFilter(Filter.or(a, b))               | ✅  |
-| query.startAt                                    | ✅  |
-| query.startAtDocument                            | ✅  |
-| query.startAfter                                 | ✅  |
-| query.startAfterDocument                         | ✅  |
-| query.endAt                                      | ✅  |
-| query.endAtDocument                              | ✅  |
-| query.endAfter                                   | ✅  |
-| query.endAfterDocument                           | ✅  |
-| query.onSnapshot                                 | ❌  |
-| query.select                                     | ✅  |
-| query.orderBy                                    | ✅  |
-| query.limit                                      | ✅  |
-| query.limitToLast                                | ✅  |
-| query.offset                                     | ✅  |
-| querySnapshot.docs                               | ✅  |
-| querySnapshot.readTime                           | ✅  |
-| querySnapshot.docsChange                         | ⚠️  |
-| documentSnapshots.data                           | ✅  |
-| documentSnapshots.readTime/createTime/updateTime | ✅  |
-| documentSnapshots.id                             | ✅  |
-| documentSnapshots.exists                         | ✅  |
-| documentSnapshots.data                           | ✅  |
-| documentSnapshots.get(fieldPath)                 | ✅  |
-| FieldValue.documentId                            | ✅  |
-| FieldValue.increment                             | ✅  |
-| FieldValue.arrayUnion                            | ✅  |
-| FieldValue.arrayRemove                           | ✅  |
-| FieldValue.delete                                | ✅  |
-| FieldValue.serverTimestamp                       | ✅  |
-| collectionGroup                                  | ✅  |
-| runTransaction                                   | ❌  |
-| GeoPoint                                         | ✅  |
-| Timestamp                                        | ✅  |
-| BundleBuilder                                    | ❌  |
-
-| Auth                                  |     |
-| ------------------------------------- | --- |
-| auth.tenantManager                    | ❌  |
-| auth.projectConfigManager             | ❌  |
-| auth.generatePasswordResetLink        | ✅  |
-| auth.generateEmailVerificationLink    | ✅  |
-| auth.generateVerifyAndChangeEmailLink | ✅  |
-| auth.generateSignInWithEmailLink      | ✅  |
-| auth.listProviderConfigs              | ✅  |
-| auth.createProviderConfig             | ✅  |
-| auth.updateProviderConfig             | ✅  |
-| auth.getProviderConfig                | ✅  |
-| auth.deleteProviderConfig             | ✅  |
-| auth.createCustomToken                | ✅  |
-| auth.setCustomUserClaims              | ✅  |
-| auth.verifyIdToken                    | ✅  |
-| auth.revokeRefreshTokens              | ✅  |
-| auth.createSessionCookie              | ✅  |
-| auth.verifySessionCookie              | ✅  |
-| auth.importUsers                      | ✅  |
-| auth.listUsers                        | ✅  |
-| auth.deleteUser                       | ✅  |
-| auth.deleteUsers                      | ✅  |
-| auth.getUser                          | ✅  |
-| auth.getUserByPhoneNumber             | ✅  |
-| auth.getUserByEmail                   | ✅  |
-| auth.getUserByProviderUid             | ✅  |
-| auth.getUsers                         | ✅  |
-| auth.createUser                       | ✅  |
-| auth.updateUser                       | ✅  |
-
-## Usage
+## Getting started
 
 ### Connecting to the SDK
 
@@ -184,7 +102,9 @@ Future<void> main() async {
 }
 ```
 
-### Using Firestore
+## Firestore
+
+### Usage
 
 First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
 You should now have an instance of a `FirebaseAdminApp` object.
@@ -239,7 +159,66 @@ final user = await firestore.doc('users/123').get();
 print(user.data()?['age']);
 ```
 
-### Using Auth
+### Supported features
+
+| Firestore                                        |     |
+| ------------------------------------------------ | --- |
+| reference.id                                     | ✅  |
+| reference.parent                                 | ✅  |
+| reference.path                                   | ✅  |
+| reference.==                                     | ✅  |
+| reference.withConverter                          | ✅  |
+| collection.listDocuments                         | ✅  |
+| collection.add                                   | ✅  |
+| collection.get                                   | ✅  |
+| collection.create                                | ✅  |
+| collection.delete                                | ✅  |
+| collection.set                                   | ✅  |
+| collection.update                                | ✅  |
+| collection.collection                            | ✅  |
+| query.where('field', operator, value)            | ✅  |
+| query.where('field.path', operator, value)       | ✅  |
+| query.where(FieldPath('...'), operator, value)   | ✅  |
+| query.whereFilter(Filter.and(a, b))              | ✅  |
+| query.whereFilter(Filter.or(a, b))               | ✅  |
+| query.startAt                                    | ✅  |
+| query.startAtDocument                            | ✅  |
+| query.startAfter                                 | ✅  |
+| query.startAfterDocument                         | ✅  |
+| query.endAt                                      | ✅  |
+| query.endAtDocument                              | ✅  |
+| query.endAfter                                   | ✅  |
+| query.endAfterDocument                           | ✅  |
+| query.select                                     | ✅  |
+| query.orderBy                                    | ✅  |
+| query.limit                                      | ✅  |
+| query.limitToLast                                | ✅  |
+| query.offset                                     | ✅  |
+| querySnapshot.docs                               | ✅  |
+| querySnapshot.readTime                           | ✅  |
+| documentSnapshots.data                           | ✅  |
+| documentSnapshots.readTime/createTime/updateTime | ✅  |
+| documentSnapshots.id                             | ✅  |
+| documentSnapshots.exists                         | ✅  |
+| documentSnapshots.data                           | ✅  |
+| documentSnapshots.get(fieldPath)                 | ✅  |
+| FieldValue.documentId                            | ✅  |
+| FieldValue.increment                             | ✅  |
+| FieldValue.arrayUnion                            | ✅  |
+| FieldValue.arrayRemove                           | ✅  |
+| FieldValue.delete                                | ✅  |
+| FieldValue.serverTimestamp                       | ✅  |
+| collectionGroup                                  | ✅  |
+| GeoPoint                                         | ✅  |
+| Timestamp                                        | ✅  |
+| querySnapshot.docsChange                         | ⚠️  |
+| query.onSnapshot                                 | ❌  |
+| runTransaction                                   | ❌  |
+| BundleBuilder                                    | ❌  |
+
+## Auth
+
+### Usage
 
 First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
 You should now have an instance of a `FirebaseAdminApp` object.
@@ -261,18 +240,44 @@ final link = await auth.generatePasswordResetLink(
 );
 ```
 
----
+### Supported features
 
-<p align="center">
-  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">
-    <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
-  </a>
-  <p align="center">
-    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">Invertase</a>.
-  </p>
-</p>
+## Available features
 
-## Using Messaging
+| Auth                                  |     |
+| ------------------------------------- | --- |
+| auth.tenantManager                    | ❌  |
+| auth.projectConfigManager             | ❌  |
+| auth.generatePasswordResetLink        | ✅  |
+| auth.generateEmailVerificationLink    | ✅  |
+| auth.generateVerifyAndChangeEmailLink | ✅  |
+| auth.generateSignInWithEmailLink      | ✅  |
+| auth.listProviderConfigs              | ✅  |
+| auth.createProviderConfig             | ✅  |
+| auth.updateProviderConfig             | ✅  |
+| auth.getProviderConfig                | ✅  |
+| auth.deleteProviderConfig             | ✅  |
+| auth.createCustomToken                | ✅  |
+| auth.setCustomUserClaims              | ✅  |
+| auth.verifyIdToken                    | ✅  |
+| auth.revokeRefreshTokens              | ✅  |
+| auth.createSessionCookie              | ✅  |
+| auth.verifySessionCookie              | ✅  |
+| auth.importUsers                      | ✅  |
+| auth.listUsers                        | ✅  |
+| auth.deleteUser                       | ✅  |
+| auth.deleteUsers                      | ✅  |
+| auth.getUser                          | ✅  |
+| auth.getUserByPhoneNumber             | ✅  |
+| auth.getUserByEmail                   | ✅  |
+| auth.getUserByProviderUid             | ✅  |
+| auth.getUsers                         | ✅  |
+| auth.createUser                       | ✅  |
+| auth.updateUser                       | ✅  |
+
+## Messaging
+
+### Usage
 
 First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
 You should now have an instance of a `FirebaseAdminApp` object.
@@ -303,3 +308,29 @@ await messaging.send(
   ),
 );
 ```
+
+### Supported features
+
+| Messaging                      |     |
+| ------------------------------ | --- |
+| Messaging.send                 | ✅  |
+| Messaging.sendEach             | ✅  |
+| Messaging.sendEachForMulticast | ✅  |
+| Messaging.subscribeToTopic     | ✅  |
+| Messaging.unsubscribeFromTopic | ✅  |
+| TokenMessage                   | ✅  |
+| TopicMessage                   | ✅  |
+| ConditionMessage               | ✅  |
+| Messaging.sendAll              | ❌  |
+| Messaging.sendMulticast        | ❌  |
+
+---
+
+<p align="center">
+  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">
+    <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
+  </a>
+  <p align="center">
+    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">Invertase</a>.
+  </p>
+</p>
