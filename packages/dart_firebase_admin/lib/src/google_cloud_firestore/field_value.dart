@@ -198,7 +198,7 @@ class _NumericIncrementTransform implements _FieldTransform {
   }
 
   @override
-  bool operator ==(Object? other) {
+  bool operator ==(Object other) {
     return other is _NumericIncrementTransform && value == other.value;
   }
 
@@ -239,7 +239,7 @@ class _ArrayUnionTransform implements _FieldTransform {
   }
 
   @override
-  bool operator ==(Object? other) {
+  bool operator ==(Object other) {
     return other is _ArrayUnionTransform &&
         const DeepCollectionEquality().equals(elements, other.elements);
   }
@@ -281,7 +281,7 @@ class _ArrayRemoveTransform implements _FieldTransform {
   }
 
   @override
-  bool operator ==(Object? other) {
+  bool operator ==(Object other) {
     return other is _ArrayRemoveTransform &&
         const DeepCollectionEquality().equals(elements, other.elements);
   }

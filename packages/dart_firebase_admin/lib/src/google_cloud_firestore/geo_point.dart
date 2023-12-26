@@ -64,7 +64,7 @@ class GeoPoint implements _Serializable {
   }
 
   @override
-  bool operator ==(Object? other) {
+  bool operator ==(Object other) {
     return other is GeoPoint &&
         other.latitude == latitude &&
         other.longitude == longitude;

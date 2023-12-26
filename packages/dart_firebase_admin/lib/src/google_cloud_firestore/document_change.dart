@@ -35,7 +35,7 @@ class DocumentChange<T> {
   final DocumentChangeType type;
 
   @override
-  bool operator ==(Object? other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         other is DocumentChange<T> &&
             runtimeType == other.runtimeType &&

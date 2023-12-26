@@ -127,7 +127,7 @@ class _$SettingsImpl implements _Settings {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$SettingsImpl &&
@@ -515,7 +515,7 @@ class _$_QueryOptionsImpl<T> extends __QueryOptions<T> {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_QueryOptionsImpl<T> &&

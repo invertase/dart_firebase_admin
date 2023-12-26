@@ -20,6 +20,12 @@ abstract class _BaseMessage {
 
 /// Payload for the [Messaging.send] operation. The payload contains all the fields
 /// in the BaseMessage type, and exactly one of token, topic or condition.
+///
+/// See also:
+/// - [Messaging.send], to send a message.
+/// - [TopicMessage], to send a message to a topic.
+/// - [ConditionMessage], to send a message to a condition.
+/// - [TokenMessage], to send a message to a device.
 sealed class Message extends _BaseMessage {
   Message._({
     super.data,
@@ -33,6 +39,9 @@ sealed class Message extends _BaseMessage {
   fmc1.Message _toProto();
 }
 
+/// A message targeting a specific registration token.
+///
+/// See [Send to individual devices](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-specific-devices)
 class TokenMessage extends Message {
   TokenMessage({
     required this.token,
@@ -60,6 +69,9 @@ class TokenMessage extends Message {
   }
 }
 
+/// A message targeting a topic.
+///
+/// See [Send to a topic](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-topics)
 class TopicMessage extends Message {
   TopicMessage({
     required this.topic,
@@ -87,6 +99,9 @@ class TopicMessage extends Message {
   }
 }
 
+/// A message targeting a condition.
+///
+/// See [Send messages to topics](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-topics).
 class ConditionMessage extends Message {
   ConditionMessage({
     required this.condition,
@@ -1023,13 +1038,35 @@ class NotificationMessagePayload {
   final String? titleLocArgs;
 }
 
+// Keys which are not allowed in the messaging data payload object.
+const _blacklistedDataPayloadKeys = {'from'};
+
 /// Interface representing a Firebase Cloud Messaging message payload. One or
 /// both of the `data` and `notification` keys are required.
 ///
 /// See [Build send requests](https://firebase.google.com/docs/cloud-messaging/send-message)
 /// for code samples and detailed documentation.
 class MessagingPayload {
-  MessagingPayload({this.data, this.notification});
+  MessagingPayload({this.data, this.notification}) {
+    if (data == null && notification == null) {
+      throw FirebaseMessagingAdminException(
+        MessagingClientErrorCode.invalidPayload,
+        'Messaging payload must contain at least one of the "data" or "notification" properties.',
+      );
+    }
+
+    if (data != null) {
+      for (final key in data!.keys) {
+        if (_blacklistedDataPayloadKeys.contains(key) ||
+            key.startsWith('google.')) {
+          throw FirebaseMessagingAdminException(
+            MessagingClientErrorCode.invalidPayload,
+            'Messaging payload contains the blacklisted "data.$key" property.',
+          );
+        }
+      }
+    }
+  }
 
   /// The data message payload.
   ///
@@ -1051,6 +1088,43 @@ class MessagingPayload {
   final NotificationMessagePayload? notification;
 }
 
+class MessagingDevicesResponse {
+  @internal
+  MessagingDevicesResponse({
+    required this.canonicalRegistrationTokenCount,
+    required this.failureCount,
+    required this.multicastId,
+    required this.results,
+    required this.successCount,
+  });
+
+  final int canonicalRegistrationTokenCount;
+  final int failureCount;
+  final int multicastId;
+  final List<MessagingDeviceResult> results;
+  final int successCount;
+}
+
+class MessagingDeviceResult {
+  @internal
+  MessagingDeviceResult({
+    required this.error,
+    required this.messageId,
+    required this.canonicalRegistrationToken,
+  });
+
+  /// The error that occurred when processing the message for the recipient.
+  final FirebaseAdminException? error;
+
+  /// A unique ID for the successfully processed message.
+  final String? messageId;
+
+  /// The canonical registration token for the client app that the message was
+  /// processed and sent to. You should use this value as the registration token
+  /// for future requests. Otherwise, future messages might be rejected.
+  final String? canonicalRegistrationToken;
+}
+
 /// Interface representing the options that can be provided when sending a
 /// message via the FCM legacy APIs.
 ///
@@ -1070,7 +1144,34 @@ class MessagingOptions {
     this.mutableContent,
     this.contentAvailable,
     this.restrictedPackageName,
-  });
+  }) {
+    final collapseKey = this.collapseKey;
+    if (collapseKey != null && collapseKey.isEmpty) {
+      throw FirebaseMessagingAdminException(
+        MessagingClientErrorCode.invalidOptions,
+        'Messaging options contains an invalid value for the "$collapseKey" property. Value must '
+        'be a boolean.',
+      );
+    }
+
+    final priority = this.priority;
+    if (priority != null && priority.isEmpty) {
+      throw FirebaseMessagingAdminException(
+        MessagingClientErrorCode.invalidOptions,
+        'Messaging options contains an invalid value for the "priority" property. Value must '
+        'be a non-empty string.',
+      );
+    }
+
+    final restrictedPackageName = this.restrictedPackageName;
+    if (restrictedPackageName != null && restrictedPackageName.isEmpty) {
+      throw FirebaseMessagingAdminException(
+        MessagingClientErrorCode.invalidOptions,
+        'Messaging options contains an invalid value for the "restrictedPackageName" property. '
+        'Value must be a non-empty string.',
+      );
+    }
+  }
 
   /// Whether or not the message should actually be sent. When set to `true`,
   /// allows developers to test a request without actually sending a message. When
@@ -1199,11 +1300,47 @@ class MessagingTopicManagementResponse {
   /// See
   /// [Manage topics from the server](https://firebase.google.com/docs/cloud-messaging/manage-topics)
   /// for code samples and detailed documentation.
-  MessagingTopicManagementResponse({
+  MessagingTopicManagementResponse._({
     required this.failureCount,
     required this.successCount,
     required this.errors,
   });
+
+  factory MessagingTopicManagementResponse._fromResponse(Object? response) {
+    // Add the success and failure counts.
+    var successCount = 0;
+    var failureCount = 0;
+    final errors = <FirebaseArrayIndexError>[];
+
+    if (response case {'results': final List<Object?> results}) {
+      results.forEachIndexed((index, tokenManagementResult) {
+        // Map the FCM server's error strings to actual error objects.
+        if (tokenManagementResult case {'error': final String error}) {
+          failureCount += 1;
+          final newError =
+              FirebaseMessagingAdminException.fromTopicManagementServerError(
+            serverErrorCode: error,
+            rawServerResponse: error,
+          );
+
+          errors.add(
+            FirebaseArrayIndexError(
+              index: index,
+              error: newError,
+            ),
+          );
+        } else {
+          successCount += 1;
+        }
+      });
+    }
+
+    return MessagingTopicManagementResponse._(
+      successCount: successCount,
+      failureCount: failureCount,
+      errors: [],
+    );
+  }
 
   /// The number of registration tokens that could not be subscribed to the topic
   /// and resulted in an error.
