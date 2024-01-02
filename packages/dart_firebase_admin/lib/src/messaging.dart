@@ -5,11 +5,9 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/fcm/v1.dart' as fmc1;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart';
-import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
 import 'app.dart';
-import 'utils/validator.dart' as validator;
 
 part 'messaging/fmc_exception.dart';
 part 'messaging/messaging_api.dart';
@@ -17,9 +15,9 @@ part 'messaging/messaging_api_request_internal.dart';
 
 const _fmcMaxBatchSize = 500;
 
-const _fcmTopicManagementHost = 'iid.googleapis.com';
-const _fcmTopicManagementAddPath = '/iid/v1:batchAdd';
-const _fcmTopicManagementRemovePath = '/iid/v1:batchRemove';
+// const _fcmTopicManagementHost = 'iid.googleapis.com';
+// const _fcmTopicManagementAddPath = '/iid/v1:batchAdd';
+// const _fcmTopicManagementRemovePath = '/iid/v1:batchRemove';
 
 /// An interface for interacting with the Firebase Cloud Messaging service.
 class Messaging {
