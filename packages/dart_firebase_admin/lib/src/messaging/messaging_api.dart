@@ -129,7 +129,7 @@ class ConditionMessage extends Message {
   }
 }
 
-/// Payload for the [Messaging.sendMulticast] method. The payload contains all the fields
+/// Payload for the [Messaging.sendEachForMulticast] method. The payload contains all the fields
 /// in the BaseMessage type, and a list of tokens.
 class MulticastMessage extends _BaseMessage {
   MulticastMessage({
@@ -1265,26 +1265,6 @@ class MessagingTopicResponse {
   final num messageId;
 }
 
-/// Interface representing the server response from the legacy
-/// [Messaging.sendToCondition] method.
-///
-/// See
-/// [Send to a condition](https://firebase.google.com/docs/cloud-messaging/admin/send-messages#send_to_a_condition)
-/// for code samples and detailed documentation.
-class MessagingConditionResponse {
-  /// Interface representing the server response from the legacy
-  /// [Messaging.sendToCondition] method.
-  ///
-  /// See
-  /// [Send to a condition](https://firebase.google.com/docs/cloud-messaging/admin/send-messages#send_to_a_condition)
-  /// for code samples and detailed documentation.
-  MessagingConditionResponse({required this.messageId});
-
-  /// The message ID for a successfully received request which FCM will attempt to
-  /// deliver to all subscribed devices.
-  final num messageId;
-}
-
 /// Interface representing the server response from the
 /// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic]
 /// methods.
@@ -1292,6 +1272,7 @@ class MessagingConditionResponse {
 /// See
 /// [Manage topics from the server](https://firebase.google.com/docs/cloud-messaging/manage-topics)
 /// for code samples and detailed documentation.
+@internal
 class MessagingTopicManagementResponse {
   /// Interface representing the server response from the
   /// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic]
@@ -1356,10 +1337,10 @@ class MessagingTopicManagementResponse {
 }
 
 /// Interface representing the server response from the
-/// [Messaging.sendAll] and [Messaging.sendMulticast] methods.
+/// [Messaging.sendEach] and [Messaging.sendEachForMulticast] methods.
 class BatchResponse {
   /// Interface representing the server response from the
-  /// [Messaging.sendAll] and [Messaging.sendMulticast] methods.
+  /// [Messaging.sendEach] and [Messaging.sendEachForMulticast] methods.
   BatchResponse._({
     required this.responses,
     required this.successCount,

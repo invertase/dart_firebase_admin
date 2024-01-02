@@ -1,1 +1,2 @@
-export 'src/messaging.dart' hide FirebaseMessagingRequestHandler;
+export 'src/messaging.dart'
+    hide FirebaseMessagingRequestHandler, MessagingTopicManagementResponse;

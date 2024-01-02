@@ -1,7 +1,9 @@
 ## Unreleased minor
 
-**Breaking**: Removed the value `toJson` methods on objects.
-These were not intended to be public.
+- **Breaking**: Removed the value `toJson` methods on objects.
+  These were not intended to be public.
+- Added Firebase Messaging
+- Upgraded outdated dependencies
 
 ## 0.2.0 - 2023-11-30
 

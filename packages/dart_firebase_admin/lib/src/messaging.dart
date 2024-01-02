@@ -173,6 +173,7 @@ class Messaging {
   }
 
   // TODO uncomment code below when we figure out hot to send the subscription request
+  // TODO also unmark the response as internal
   // /// Subscribes a device to an FCM topic.
   // ///
   // /// See [Subscribe to a topic](https://firebase.google.com/docs/cloud-messaging/manage-topics#suscribe_and_unsubscribe_using_the)
