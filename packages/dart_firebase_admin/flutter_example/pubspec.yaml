@@ -5,5 +5,10 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
+  cloud_firestore: ^4.13.2
   dart_firebase_admin:
     path: ../
+  firebase_core: ^2.23.0
+  firebase_messaging: ^14.7.6
+  flutter:
+    sdk: flutter

@@ -697,7 +697,7 @@ class _FieldFilterInternal implements _FilterInternal {
   }
 
   @override
-  bool operator ==(Object? other) {
+  bool operator ==(Object other) {
     return other is _FieldFilterInternal &&
         field == other.field &&
         op == other.op &&

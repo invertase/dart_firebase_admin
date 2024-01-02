@@ -1,5 +1,6 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
+import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
   final admin = FirebaseAdminApp.initializeApp(
@@ -7,7 +8,22 @@ Future<void> main() async {
     Credential.fromApplicationDefaultCredentials(),
   );
 
-  admin.useEmulator();
+  // // admin.useEmulator();
+
+  final messaging = Messaging(admin);
+
+  final result = await messaging.send(
+    TokenMessage(
+      token:
+          'e8Ap1n9UTQenyB-UEjNQt9:APA91bHhgc9RZYDcCKb7U1scQo1K0ZTSMItop8IqctrOcgvmN__oBo4vgbFX-ji4atr1PVw3Loug-eOCBmj4HVZjUE0aQBA0mGry7uL-7JuMaojhtl13MpvQtbZptvX_8f6vDcqei88O',
+      notification: Notification(
+        title: 'Hello',
+        body: 'World',
+      ),
+    ),
+  );
+
+  print(result);
 
   final firestore = Firestore(admin);
 

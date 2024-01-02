@@ -3,11 +3,16 @@
     "HAMC",
     "hmac",
     "jsonwebtoken",
+    "Millis",
     "OIDC",
     "pbkdf",
+    "rrggbb",
+    "rrggbbaa",
     "SIGNIN",
     "subcollection",
     "subcollections",
-    "totp"
+    "totp",
+    "Webpush",
+    "webush"
   ]
 }
