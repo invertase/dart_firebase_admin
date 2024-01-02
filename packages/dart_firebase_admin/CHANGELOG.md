@@ -1,4 +1,4 @@
-## Unreleased minor
+## 0.3.0 - 2024-01-02
 
 - **Breaking**: Removed the value `toJson` methods on objects.
   These were not intended to be public.
