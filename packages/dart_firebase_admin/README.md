@@ -316,8 +316,8 @@ await messaging.send(
 | Messaging.send                 | ✅  |
 | Messaging.sendEach             | ✅  |
 | Messaging.sendEachForMulticast | ✅  |
-| Messaging.subscribeToTopic     | ✅  |
-| Messaging.unsubscribeFromTopic | ✅  |
+| Messaging.subscribeToTopic     | ❌  |
+| Messaging.unsubscribeFromTopic | ❌  |
 | TokenMessage                   | ✅  |
 | TopicMessage                   | ✅  |
 | ConditionMessage               | ✅  |

@@ -2,7 +2,7 @@ part of '../messaging.dart';
 
 final _legacyFirebaseMessagingHeaders = {
   // TODO send version
-  'X-Firebase-Client': 'dart_firebase_admin',
+  'X-Firebase-Client': 'fire-admin-node/12.0.0',
   'access_token_auth': 'true',
 };
 
@@ -49,8 +49,12 @@ class FirebaseMessagingRequestHandler {
 
       final response = await client.post(
         Uri.https(host, path),
-        body: requestData,
-        headers: _legacyFirebaseMessagingHeaders,
+        body: jsonEncode(requestData),
+        headers: {
+          ..._legacyFirebaseMessagingHeaders,
+          'content-type': 'application/json',
+          'Authorization': 'Bearer ${client.credentials.accessToken.data}',
+        },
       );
 
       // Send non-JSON responses to the catch() below where they will be treated as errors.

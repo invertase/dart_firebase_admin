@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/fcm/v1.dart' as fmc1;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
 import 'app.dart';
@@ -173,173 +174,174 @@ class Messaging {
     );
   }
 
-  /// Validates the type of the provided registration token(s).
-  /// If invalid, an error will be thrown.
-  void _validateRegistrationTokensType(
-    List<String> registrationTokenOrTokens, {
-    required String methodName,
-    MessagingClientErrorCode errorInfo =
-        MessagingClientErrorCode.invalidArgument,
-  }) {
-    if (registrationTokenOrTokens.isEmpty) {
-      throw FirebaseMessagingAdminException(
-        errorInfo,
-        'Registration token(s) provided to $methodName() must be a non-empty string or a '
-        'non-empty array.',
-      );
-    }
-  }
+  // TODO uncomment code below when we figure out hot to send the subscription request
+  // /// Subscribes a device to an FCM topic.
+  // ///
+  // /// See [Subscribe to a topic](https://firebase.google.com/docs/cloud-messaging/manage-topics#suscribe_and_unsubscribe_using_the)
+  // /// for code samples and detailed documentation. Optionally, you can provide an
+  // /// array of tokens to subscribe multiple devices.
+  // ///
+  // /// - [registrationTokens]: A token or array of registration tokens
+  // ///   for the devices to subscribe to the topic.
+  // /// - [topic]: The topic to which to subscribe.
+  // ///
+  // /// Returns a future fulfilled with the server's response after the device has been
+  // /// subscribed to the topic.
+  // Future<MessagingTopicManagementResponse> subscribeToTopic(
+  //   List<String> registrationTokenOrTokens,
+  //   String topic,
+  // ) {
+  //   return _sendTopicManagementRequest(
+  //     registrationTokenOrTokens,
+  //     topic: topic,
+  //     methodName: 'subscribeToTopic',
+  //     path: _fcmTopicManagementAddPath,
+  //   );
+  // }
 
-  /// Validates the provided registration tokens.
-  /// If invalid, an error will be thrown.
-  void _validateRegistrationTokens(
-    List<String> registrationTokenOrTokens, {
-    required String methodName,
-    MessagingClientErrorCode errorInfo =
-        MessagingClientErrorCode.invalidArgument,
-  }) {
-    // Validate the array contains no more than 1,000 registration tokens.
-    if (registrationTokenOrTokens.length > 1000) {
-      throw FirebaseMessagingAdminException(
-        errorInfo,
-        'Too many registration tokens provided in a single request to $methodName(). Batch '
-        'your requests to contain no more than 1,000 registration tokens per request.',
-      );
-    }
+  // /// Unsubscribes a device from an FCM topic.
+  // ///
+  // /// See [Unsubscribe from a topic](https://firebase.google.com/docs/cloud-messaging/admin/manage-topic-subscriptions#unsubscribe_from_a_topic)
+  // /// for code samples and detailed documentation.  Optionally, you can provide an
+  // /// array of tokens to unsubscribe multiple devices.
+  // ///
+  // /// - [registrationTokens]: A device registration token or an array of
+  // ///   device registration tokens to unsubscribe from the topic.
+  // /// - [topic]: The topic from which to unsubscribe.
+  // ///
+  // /// Returns a Future fulfilled with the server's response after the device has been
+  // /// unsubscribed from the topic.
+  // Future<MessagingTopicManagementResponse> unsubscribeFromTopic(
+  //   List<String> registrationTokenOrTokens,
+  //   String topic,
+  // ) {
+  //   return _sendTopicManagementRequest(
+  //     registrationTokenOrTokens,
+  //     topic: topic,
+  //     methodName: 'unsubscribeFromTopic',
+  //     path: _fcmTopicManagementRemovePath,
+  //   );
+  // }
 
-    // Validate the array contains registration tokens which are non-empty strings.
-    registrationTokenOrTokens.forEachIndexed((index, registrationToken) {
-      if (registrationToken.isEmpty) {
-        throw FirebaseMessagingAdminException(
-          errorInfo,
-          'Registration token provided to $methodName() at index $index must be a '
-          'non-empty string.',
-        );
-      }
-    });
-  }
+  // /// Helper method which sends and handles topic subscription management requests.
+  // Future<MessagingTopicManagementResponse> _sendTopicManagementRequest(
+  //   List<String> registrationTokenOrTokens, {
+  //   required String topic,
+  //   required String methodName,
+  //   required String path,
+  // }) async {
+  //   _validateRegistrationTokensType(
+  //     registrationTokenOrTokens,
+  //     methodName: methodName,
+  //   );
+  //   _validateTopicType(topic, methodName: methodName);
 
-  /// Subscribes a device to an FCM topic.
-  ///
-  /// See [Subscribe to a topic](https://firebase.google.com/docs/cloud-messaging/manage-topics#suscribe_and_unsubscribe_using_the)
-  /// for code samples and detailed documentation. Optionally, you can provide an
-  /// array of tokens to subscribe multiple devices.
-  ///
-  /// - [registrationTokens]: A token or array of registration tokens
-  ///   for the devices to subscribe to the topic.
-  /// - [topic]: The topic to which to subscribe.
-  ///
-  /// Returns a future fulfilled with the server's response after the device has been
-  /// subscribed to the topic.
-  Future<MessagingTopicManagementResponse> subscribeToTopic(
-    List<String> registrationTokenOrTokens,
-    String topic,
-  ) {
-    return _sendTopicManagementRequest(
-      registrationTokenOrTokens,
-      topic: topic,
-      methodName: 'subscribeToTopic',
-      path: _fcmTopicManagementAddPath,
-    );
-  }
+  //   // Prepend the topic with /topics/ if necessary.
+  //   topic = _normalizeTopic(topic);
 
-  /// Unsubscribes a device from an FCM topic.
-  ///
-  /// See [Unsubscribe from a topic](https://firebase.google.com/docs/cloud-messaging/admin/manage-topic-subscriptions#unsubscribe_from_a_topic)
-  /// for code samples and detailed documentation.  Optionally, you can provide an
-  /// array of tokens to unsubscribe multiple devices.
-  ///
-  /// - [registrationTokens]: A device registration token or an array of
-  ///   device registration tokens to unsubscribe from the topic.
-  /// - [topic]: The topic from which to unsubscribe.
-  ///
-  /// Returns a Future fulfilled with the server's response after the device has been
-  /// unsubscribed from the topic.
-  Future<MessagingTopicManagementResponse> unsubscribeFromTopic(
-    List<String> registrationTokenOrTokens,
-    String topic,
-  ) {
-    return _sendTopicManagementRequest(
-      registrationTokenOrTokens,
-      topic: topic,
-      methodName: 'unsubscribeFromTopic',
-      path: _fcmTopicManagementRemovePath,
-    );
-  }
+  //   _validateRegistrationTokens(
+  //     registrationTokenOrTokens,
+  //     methodName: methodName,
+  //   );
+  //   _validateTopic(topic, methodName: methodName);
 
-  /// Helper method which sends and handles topic subscription management requests.
-  Future<MessagingTopicManagementResponse> _sendTopicManagementRequest(
-    List<String> registrationTokenOrTokens, {
-    required String topic,
-    required String methodName,
-    required String path,
-  }) async {
-    _validateRegistrationTokensType(
-      registrationTokenOrTokens,
-      methodName: methodName,
-    );
-    _validateTopicType(topic, methodName: methodName);
+  //   final response = await _requestHandler.invokeRequestHandler(
+  //     host: _fcmTopicManagementHost,
+  //     path: path,
+  //     requestData: {
+  //       'to': topic,
+  //       'registration_tokens': registrationTokenOrTokens,
+  //     },
+  //   );
 
-    // Prepend the topic with /topics/ if necessary.
-    topic = _normalizeTopic(topic);
+  //   return MessagingTopicManagementResponse._fromResponse(response);
+  // }
 
-    _validateRegistrationTokens(
-      registrationTokenOrTokens,
-      methodName: methodName,
-    );
-    _validateTopic(topic, methodName: methodName);
+  // /// Validates the type of the provided registration token(s).
+  // /// If invalid, an error will be thrown.
+  // void _validateRegistrationTokensType(
+  //   List<String> registrationTokenOrTokens, {
+  //   required String methodName,
+  //   MessagingClientErrorCode errorInfo =
+  //       MessagingClientErrorCode.invalidArgument,
+  // }) {
+  //   if (registrationTokenOrTokens.isEmpty) {
+  //     throw FirebaseMessagingAdminException(
+  //       errorInfo,
+  //       'Registration token(s) provided to $methodName() must be a non-empty string or a '
+  //       'non-empty array.',
+  //     );
+  //   }
+  // }
 
-    final response = await _requestHandler.invokeRequestHandler(
-      host: _fcmTopicManagementHost,
-      path: path,
-      requestData: {
-        'to': topic,
-        'registration_tokens': registrationTokenOrTokens,
-      },
-    );
+  // /// Validates the provided registration tokens.
+  // /// If invalid, an error will be thrown.
+  // void _validateRegistrationTokens(
+  //   List<String> registrationTokenOrTokens, {
+  //   required String methodName,
+  //   MessagingClientErrorCode errorInfo =
+  //       MessagingClientErrorCode.invalidArgument,
+  // }) {
+  //   // Validate the array contains no more than 1,000 registration tokens.
+  //   if (registrationTokenOrTokens.length > 1000) {
+  //     throw FirebaseMessagingAdminException(
+  //       errorInfo,
+  //       'Too many registration tokens provided in a single request to $methodName(). Batch '
+  //       'your requests to contain no more than 1,000 registration tokens per request.',
+  //     );
+  //   }
 
-    return MessagingTopicManagementResponse._fromResponse(response);
-  }
+  //   // Validate the array contains registration tokens which are non-empty strings.
+  //   registrationTokenOrTokens.forEachIndexed((index, registrationToken) {
+  //     if (registrationToken.isEmpty) {
+  //       throw FirebaseMessagingAdminException(
+  //         errorInfo,
+  //         'Registration token provided to $methodName() at index $index must be a '
+  //         'non-empty string.',
+  //       );
+  //     }
+  //   });
+  // }
 
-  /// Validates the type of the provided topic. If invalid, an error will be thrown.
-  void _validateTopicType(
-    String topic, {
-    required String methodName,
-    MessagingClientErrorCode errorInfo =
-        MessagingClientErrorCode.invalidArgument,
-  }) {
-    if (topic.isEmpty) {
-      throw FirebaseMessagingAdminException(
-        errorInfo,
-        'Topic provided to $methodName() must be a string which matches the format '
-        '"/topics/[a-zA-Z0-9-_.~%]+".',
-      );
-    }
-  }
+  // /// Validates the type of the provided topic. If invalid, an error will be thrown.
+  // void _validateTopicType(
+  //   String topic, {
+  //   required String methodName,
+  //   MessagingClientErrorCode errorInfo =
+  //       MessagingClientErrorCode.invalidArgument,
+  // }) {
+  //   if (topic.isEmpty) {
+  //     throw FirebaseMessagingAdminException(
+  //       errorInfo,
+  //       'Topic provided to $methodName() must be a string which matches the format '
+  //       '"/topics/[a-zA-Z0-9-_.~%]+".',
+  //     );
+  //   }
+  // }
 
-  /// Normalizes the provided topic name by prepending it with '/topics/', if necessary.
-  String _normalizeTopic(String topic) {
-    if (!topic.startsWith('/topics/')) {
-      return '/topics/$topic';
-    }
-    return topic;
-  }
+  // /// Normalizes the provided topic name by prepending it with '/topics/', if necessary.
+  // String _normalizeTopic(String topic) {
+  //   if (!topic.startsWith('/topics/')) {
+  //     return '/topics/$topic';
+  //   }
+  //   return topic;
+  // }
 
-  /// Validates the provided topic. If invalid, an error will be thrown.
-  void _validateTopic(
-    String topic, {
-    required String methodName,
-    MessagingClientErrorCode errorInfo =
-        MessagingClientErrorCode.invalidArgument,
-  }) {
-    if (!validator.isTopic(topic)) {
-      throw FirebaseMessagingAdminException(
-        errorInfo,
-        'Topic provided to $methodName() must be a string which matches the format '
-        '"/topics/[a-zA-Z0-9-_.~%]+".',
-      );
-    }
-  }
+  // /// Validates the provided topic. If invalid, an error will be thrown.
+  // void _validateTopic(
+  //   String topic, {
+  //   required String methodName,
+  //   MessagingClientErrorCode errorInfo =
+  //       MessagingClientErrorCode.invalidArgument,
+  // }) {
+  //   if (!validator.isTopic(topic)) {
+  //     throw FirebaseMessagingAdminException(
+  //       errorInfo,
+  //       'Topic provided to $methodName() must be a string which matches the format '
+  //       '"/topics/[a-zA-Z0-9-_.~%]+".',
+  //     );
+  //   }
+  // }
 
   // TODO sendAll – missing batch client implementation
   // TODO sendMulticast - relies on sendAll

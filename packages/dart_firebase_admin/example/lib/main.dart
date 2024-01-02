@@ -1,4 +1,5 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
@@ -24,20 +25,20 @@ Future<void> main() async {
 
   print(result);
 
-  // final firestore = Firestore(admin);
+  final firestore = Firestore(admin);
 
-  // final collection = firestore.collection('users');
+  final collection = firestore.collection('users');
 
-  // await collection.doc('123').set({
-  //   'name': 'John Doe',
-  //   'age': 30,
-  // });
+  await collection.doc('123').set({
+    'name': 'John Doe',
+    'age': 30,
+  });
 
-  // final snapshot = await collection.get();
+  final snapshot = await collection.get();
 
-  // for (final doc in snapshot.docs) {
-  //   print(doc.data());
-  // }
+  for (final doc in snapshot.docs) {
+    print(doc.data());
+  }
 
   await admin.close();
 }
