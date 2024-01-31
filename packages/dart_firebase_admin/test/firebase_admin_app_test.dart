@@ -10,14 +10,17 @@ void main() {
       );
 
       expect(app, isA<FirebaseAdminApp>());
-      expect(app.authApiHost, Uri.https('identitytoolkit.googleapis.com', '/'));
+      expect(
+        app.authApiHost,
+        Uri.https('identitytoolkit.googleapis.com', '/'),
+      );
       expect(
         app.firestoreApiHost,
-        Uri.https('identitytoolkit.googleapis.com', '/'),
+        Uri.https('firestore.googleapis.com', '/'),
       );
     });
 
-    test('useEmulator() sets the apiHost to the emulator', () {
+    test('useEmulator() sets the default emulator hosts to the emulator', () {
       final app = FirebaseAdminApp.initializeApp(
         'dart-firebase-admin',
         Credential.fromApplicationDefaultCredentials(),
@@ -30,9 +33,34 @@ void main() {
         Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/'),
       );
       expect(
-        app.authApiHost,
-        Uri.http('127.0.0.1:8080', 'identitytoolkit.googleapis.com/'),
+        app.firestoreApiHost,
+        Uri.http('127.0.0.1:8080', '/'),
       );
     });
+
+    test(
+      'useEmulator() leverages custom hosts and ports',
+      () {
+        final app = FirebaseAdminApp.initializeApp(
+          'dart-firebase-admin',
+          Credential.fromApplicationDefaultCredentials(),
+          emulatorAuthHost: 'localhost',
+          emulatorAuthPort: 1099,
+          emulatorFirestoreHost: 'localhost',
+          emulatorFirestorePort: 1080,
+        );
+
+        app.useEmulator();
+
+        expect(
+          app.authApiHost,
+          Uri.http('localhost:1099', 'identitytoolkit.googleapis.com/'),
+        );
+        expect(
+          app.firestoreApiHost,
+          Uri.http('localhost:1080', '/'),
+        );
+      },
+    );
   });
 }
