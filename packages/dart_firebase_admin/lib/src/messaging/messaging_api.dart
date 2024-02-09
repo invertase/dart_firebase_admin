@@ -1050,7 +1050,7 @@ class MessagingPayload {
   MessagingPayload({this.data, this.notification}) {
     if (data == null && notification == null) {
       throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidPayload,
+        MessagingClientErrorCode.invalidArgument,
         'Messaging payload must contain at least one of the "data" or "notification" properties.',
       );
     }
@@ -1060,7 +1060,7 @@ class MessagingPayload {
         if (_blacklistedDataPayloadKeys.contains(key) ||
             key.startsWith('google.')) {
           throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.invalidPayload,
+            MessagingClientErrorCode.invalidArgument,
             'Messaging payload contains the blacklisted "data.$key" property.',
           );
         }
@@ -1148,7 +1148,7 @@ class MessagingOptions {
     final collapseKey = this.collapseKey;
     if (collapseKey != null && collapseKey.isEmpty) {
       throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidOptions,
+        MessagingClientErrorCode.invalidArgument,
         'Messaging options contains an invalid value for the "$collapseKey" property. Value must '
         'be a boolean.',
       );
@@ -1157,7 +1157,7 @@ class MessagingOptions {
     final priority = this.priority;
     if (priority != null && priority.isEmpty) {
       throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidOptions,
+        MessagingClientErrorCode.invalidArgument,
         'Messaging options contains an invalid value for the "priority" property. Value must '
         'be a non-empty string.',
       );
@@ -1166,7 +1166,7 @@ class MessagingOptions {
     final restrictedPackageName = this.restrictedPackageName;
     if (restrictedPackageName != null && restrictedPackageName.isEmpty) {
       throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidOptions,
+        MessagingClientErrorCode.invalidArgument,
         'Messaging options contains an invalid value for the "restrictedPackageName" property. '
         'Value must be a non-empty string.',
       );

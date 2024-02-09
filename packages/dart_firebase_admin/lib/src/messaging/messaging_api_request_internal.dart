@@ -112,7 +112,7 @@ class FirebaseMessagingRequestHandler {
       final errorMessage = _getErrorMessage(json);
 
       return FirebaseMessagingAdminException(
-        MessagingClientErrorCode.fromCode(errorCode),
+        MessagingClientErrorCode.fromCode(err.response.statusCode, errorCode),
         errorMessage,
       );
     }
@@ -123,19 +123,20 @@ class FirebaseMessagingRequestHandler {
       case 400:
         error = MessagingClientErrorCode.invalidArgument;
       case 401:
+        error = MessagingClientErrorCode.thirdPartyAuthError;
       case 403:
-        error = MessagingClientErrorCode.authenticationError;
+        error = MessagingClientErrorCode.senderIdMismatch;
       case 500:
-        error = MessagingClientErrorCode.internalError;
+        error = MessagingClientErrorCode.internal;
       case 503:
-        error = MessagingClientErrorCode.serverUnavailable;
+        error = MessagingClientErrorCode.unavailable;
       default:
         // Treat non-JSON responses with unexpected status codes as unknown errors.
         error = MessagingClientErrorCode.unknown;
     }
 
     return FirebaseMessagingAdminException(
-      MessagingClientErrorCode.fromCode(error.code),
+      MessagingClientErrorCode.fromCode(err.response.statusCode, error.code),
       '${error.message} Raw server response: "${err.response.body}". Status code: '
       '${err.response.statusCode}.',
     );
