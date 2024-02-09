@@ -9,7 +9,6 @@ environment:
 
 dependencies:
   collection: ^1.18.0
-  crypto: ^3.0.3
   dart_jsonwebtoken: ^2.11.0
   firebaseapis: ^0.2.0
   freezed_annotation: ^2.4.1
