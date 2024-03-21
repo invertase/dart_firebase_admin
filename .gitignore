@@ -25,4 +25,4 @@ pubspec.lock
 
 service-account.json
 
-pubspec_overrides.yaml
+**/pubspec_overrides.yaml
