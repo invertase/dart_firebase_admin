@@ -24,3 +24,5 @@ pubspec.lock
 .last_build_id
 
 service-account.json
+
+pubspec_overrides.yaml
