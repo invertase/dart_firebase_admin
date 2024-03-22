@@ -144,6 +144,28 @@ void main() {
       expect(user.uid, importUser.uid);
     });
   });
+
+  group('updateUser', () {
+    test('supports updating email', () async {
+      final user = await auth.createUser(
+        CreateRequest(
+          email: 'testuser@example.com',
+        ),
+      );
+
+      final updatedUser = await auth.updateUser(
+        user.uid,
+        UpdateRequest(
+          email: 'updateduser@example.com',
+        ),
+      );
+
+      expect(updatedUser.email, equals('updateduser@example.com'));
+
+      final user2 = await auth.getUserByEmail(updatedUser.email!);
+      expect(user2.uid, equals(user.uid));
+    });
+  });
 }
 
 Future<void> cleanup(Auth auth) async {
