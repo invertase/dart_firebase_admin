@@ -1502,7 +1502,7 @@ class Query<T> {
   /// ```dart
   /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
-  /// query.orderBy('foo', 'desc').get().then((querySnapshot) {
+  /// query.orderBy('foo', descending: true).get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
   ///     print('Found document at ${documentSnapshot.ref.path}');
   ///   });
@@ -1546,7 +1546,7 @@ class Query<T> {
   /// ```dart
   /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
-  /// query.orderBy('foo', 'desc').get().then((querySnapshot) {
+  /// query.orderBy('foo', descending: true).get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
   ///     print('Found document at ${documentSnapshot.ref.path}');
   ///   });
