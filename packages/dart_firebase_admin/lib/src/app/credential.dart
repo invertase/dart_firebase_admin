@@ -41,11 +41,20 @@ class Credential {
   }
 
   /// Log in to firebase using the environment variable.
-  Credential.fromApplicationDefaultCredentials({String? serviceAccountId})
-      : this._(
-          null,
-          serviceAccountId: serviceAccountId,
-        );
+  factory Credential.fromApplicationDefaultCredentials({
+    String? serviceAccountId,
+  }) {
+    ServiceAccountCredentials? creds;
+    final maybeConfig = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
+    if (maybeConfig != null && maybeConfig.startsWith('{')) {
+      creds = ServiceAccountCredentials.fromJson(jsonDecode(maybeConfig));
+    }
+
+    return Credential._(
+      creds,
+      serviceAccountId: serviceAccountId,
+    );
+  }
 
   @internal
   final String? serviceAccountId;
