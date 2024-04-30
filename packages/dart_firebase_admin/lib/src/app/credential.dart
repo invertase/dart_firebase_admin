@@ -48,7 +48,10 @@ class Credential {
     final maybeConfig = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
     if (maybeConfig != null) {
       try {
-        creds = ServiceAccountCredentials.fromJson(jsonDecode(maybeConfig));
+        final decodedValue = jsonDecode(maybeConfig);
+        if (decodedValue is Map) {
+          creds = ServiceAccountCredentials.fromJson(decodedValue);
+        }
       } catch (_) {}
     }
 
