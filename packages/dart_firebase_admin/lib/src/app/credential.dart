@@ -46,8 +46,10 @@ class Credential {
   }) {
     ServiceAccountCredentials? creds;
     final maybeConfig = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
-    if (maybeConfig != null && maybeConfig.startsWith('{')) {
-      creds = ServiceAccountCredentials.fromJson(jsonDecode(maybeConfig));
+    if (maybeConfig != null) {
+      try {
+        creds = ServiceAccountCredentials.fromJson(jsonDecode(maybeConfig));
+      } catch (_) {}
     }
 
     return Credential._(
