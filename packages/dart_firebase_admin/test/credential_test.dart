@@ -89,6 +89,18 @@ void main() {
         final credential = Credential.fromApplicationDefaultCredentials();
         expect(credential.serviceAccountCredentials, isNotNull);
       });
+
+      test(
+          'does nothing if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is not valid service account JSON',
+          () {
+        platform = FakePlatform(
+          environment: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
+        );
+
+        // Should not throw.
+        final credential = Credential.fromApplicationDefaultCredentials();
+        expect(credential.serviceAccountCredentials, isNull);
+      });
     });
   });
 }
