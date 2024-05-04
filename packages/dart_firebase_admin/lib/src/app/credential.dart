@@ -1,5 +1,7 @@
 part of '../app.dart';
 
+Platform platform = const LocalPlatform();
+
 /// Authentication information for Firebase Admin SDK.
 class Credential {
   Credential._(
@@ -45,7 +47,7 @@ class Credential {
     String? serviceAccountId,
   }) {
     ServiceAccountCredentials? creds;
-    final maybeConfig = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
+    final maybeConfig = platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
     if (maybeConfig != null) {
       try {
         final decodedValue = jsonDecode(maybeConfig);

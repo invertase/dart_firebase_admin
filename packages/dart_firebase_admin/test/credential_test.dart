@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:file/memory.dart';
+import 'package:platform/platform.dart';
 import 'package:test/test.dart';
 
 const _fakeRSAKey =
@@ -64,6 +65,29 @@ void main() {
 
         // Should not throw.
         Credential.fromServiceAccount(fs.file('service-account.json'));
+      });
+    });
+
+    group('fromApplicationDefaultCredentials', () {
+      test(
+          'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
+          () {
+        platform = FakePlatform(
+          environment: {
+            'GOOGLE_APPLICATION_CREDENTIALS': '''
+{
+  "type": "service_account",
+  "client_id": "id",
+  "private_key": ${jsonEncode(_fakeRSAKey)},
+  "client_email": "email"
+}
+''',
+          },
+        );
+
+        // Should not throw.
+        final credential = Credential.fromApplicationDefaultCredentials();
+        expect(credential.serviceAccountCredentials, isNotNull);
       });
     });
   });
