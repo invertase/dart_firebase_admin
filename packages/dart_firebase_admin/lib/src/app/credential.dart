@@ -1,7 +1,6 @@
 part of '../app.dart';
 
 @internal
-@visibleForTesting
 const envSymbol = #_envSymbol;
 
 /// Authentication information for Firebase Admin SDK.
