@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:file/memory.dart';
-import 'package:platform/platform.dart';
 import 'package:test/test.dart';
 
 const _fakeRSAKey =
@@ -72,33 +72,38 @@ void main() {
       test(
           'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
           () {
-        platform = FakePlatform(
-          environment: {
-            'GOOGLE_APPLICATION_CREDENTIALS': '''
+        final fakeServiceAccount = {
+          'GOOGLE_APPLICATION_CREDENTIALS': '''
 {
   "type": "service_account",
   "client_id": "id",
   "private_key": ${jsonEncode(_fakeRSAKey)},
-  "client_email": "email"
+  "client_email": "foo@bar.com"
 }
 ''',
-          },
+        };
+        final credential = runZoned(
+          Credential.fromApplicationDefaultCredentials,
+          zoneValues: {envSymbol: fakeServiceAccount},
         );
-
-        // Should not throw.
-        final credential = Credential.fromApplicationDefaultCredentials();
         expect(credential.serviceAccountCredentials, isNotNull);
+
+        // Verify if service account is actually being used
+        expect(
+          credential.serviceAccountCredentials!.email,
+          'foo@bar.com',
+        );
       });
 
       test(
           'does nothing if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is not valid service account JSON',
           () {
-        platform = FakePlatform(
-          environment: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
+        final credential = runZoned(
+          Credential.fromApplicationDefaultCredentials,
+          zoneValues: {
+            envSymbol: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
+          },
         );
-
-        // Should not throw.
-        final credential = Credential.fromApplicationDefaultCredentials();
         expect(credential.serviceAccountCredentials, isNull);
       });
     });

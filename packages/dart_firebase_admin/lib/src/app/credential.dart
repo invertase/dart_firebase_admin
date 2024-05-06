@@ -1,6 +1,8 @@
 part of '../app.dart';
 
-Platform platform = const LocalPlatform();
+@internal
+@visibleForTesting
+const envSymbol = #_envSymbol;
 
 /// Authentication information for Firebase Admin SDK.
 class Credential {
@@ -47,14 +49,17 @@ class Credential {
     String? serviceAccountId,
   }) {
     ServiceAccountCredentials? creds;
-    final maybeConfig = platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
+
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final maybeConfig = env['GOOGLE_APPLICATION_CREDENTIALS'];
     if (maybeConfig != null) {
       try {
         final decodedValue = jsonDecode(maybeConfig);
         if (decodedValue is Map) {
           creds = ServiceAccountCredentials.fromJson(decodedValue);
         }
-      } catch (_) {}
+      } on FormatException catch (_) {}
     }
 
     return Credential._(
