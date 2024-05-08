@@ -16,7 +16,7 @@ String _toGoogleDateTime({required int seconds, required int nanoseconds}) {
 
 @immutable
 class Timestamp implements _Serializable {
-  Timestamp._({required this.seconds, required this.nanoseconds}) {
+  Timestamp({required this.seconds, required this.nanoseconds}) {
     const minSeconds = -62135596800;
     const maxSeconds = 253402300799;
 
@@ -82,7 +82,7 @@ class Timestamp implements _Serializable {
   factory Timestamp.fromMillis(int milliseconds) {
     final seconds = (milliseconds / 1000).floor();
     final nanos = (milliseconds - seconds * 1000) * _msToNanos;
-    return Timestamp._(seconds: seconds, nanoseconds: nanos);
+    return Timestamp(seconds: seconds, nanoseconds: nanos);
   }
 
   factory Timestamp._fromString(String timestampValue) {
@@ -106,7 +106,7 @@ class Timestamp implements _Serializable {
       );
     }
 
-    return Timestamp._(
+    return Timestamp(
       seconds: date.millisecondsSinceEpoch ~/ 1000,
       nanoseconds: nanos,
     );
