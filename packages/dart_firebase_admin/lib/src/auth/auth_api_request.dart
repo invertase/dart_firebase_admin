@@ -728,6 +728,8 @@ abstract class _AbstractAuthRequestHandler {
       phoneNumber: properties.phoneNumber?.value,
       // Will be null if deleted or set to null. "deleteAttribute" will take over
       photoUrl: properties.photoURL?.value,
+      // The UID of the user to be updated.
+      localId: uid,
     );
 
     final response = await _httpClient.setAccountInfo(request);
