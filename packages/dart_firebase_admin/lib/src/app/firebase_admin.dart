@@ -9,19 +9,44 @@ class FirebaseAdminApp {
   /// The [Credential] used to authenticate the Admin SDK.
   final Credential credential;
 
-  bool get isUsingEmulator => _isUsingEmulator;
-  var _isUsingEmulator = false;
+  bool get isUsingAuthEmulator => _isUsingAuthEmulator;
+
+  bool get isUsingFirestoreEmulator => _isUsingFirestoreEmulator;
+
+  bool get isUsingEmulator => _isUsingAuthEmulator || _isUsingFirestoreEmulator;
+
+  var _isUsingAuthEmulator = false;
+  var _isUsingFirestoreEmulator = false;
 
   @internal
   Uri authApiHost = Uri.https('identitytoolkit.googleapis.com', '/');
   @internal
   Uri firestoreApiHost = Uri.https('firestore.googleapis.com', '/');
 
-  /// Use the Firebase Emulator Suite to run the app locally.
-  void useEmulator() {
-    _isUsingEmulator = true;
-    authApiHost = Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/');
-    firestoreApiHost = Uri.http('127.0.0.1:8080', '/');
+  /// Use the Firebase Emulator suite to run the app locally.
+  void useEmulator({
+    Emulator authEmulator = const Emulator.defaultAuth(),
+    Emulator firestoreEmulator = const Emulator.defaultFirestore(),
+  }) {
+    useAuthEmulator(emulator: authEmulator);
+    useFirestoreEmulator(emulator: firestoreEmulator);
+  }
+
+  /// Use the Firebase Auth Emulator to run the app locally.
+  void useAuthEmulator({
+    Emulator emulator = const Emulator.defaultAuth(),
+  }) {
+    _isUsingAuthEmulator = true;
+    authApiHost = Uri.http(
+        '${emulator.host}:${emulator.port}', 'identitytoolkit.googleapis.com/');
+  }
+
+  /// Use the Firebase Firestore Emulator to run the app locally.
+  void useFirestoreEmulator({
+    Emulator emulator = const Emulator.defaultFirestore(),
+  }) {
+    _isUsingFirestoreEmulator = true;
+    firestoreApiHost = Uri.http('${emulator.host}:${emulator.port}', '/');
   }
 
   /// Stops the app and releases any resources associated with it.
