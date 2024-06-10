@@ -10,8 +10,11 @@ class FirebaseAdminApp {
   final Credential credential;
 
   bool get isUsingAuthEmulator => _isUsingAuthEmulator;
+
   bool get isUsingFirestoreEmulator => _isUsingFirestoreEmulator;
+
   bool get isUsingEmulator => _isUsingAuthEmulator || _isUsingFirestoreEmulator;
+
   var _isUsingAuthEmulator = false;
   var _isUsingFirestoreEmulator = false;
 
@@ -21,25 +24,29 @@ class FirebaseAdminApp {
   Uri firestoreApiHost = Uri.https('firestore.googleapis.com', '/');
 
   /// Use the Firebase Emulator suite to run the app locally.
-  void useEmulator({Emulator? authEmulator, Emulator? firestoreEmulator}) {
+  void useEmulator({
+    Emulator authEmulator = const Emulator.defaultAuth(),
+    Emulator firestoreEmulator = const Emulator.defaultFirestore(),
+  }) {
     useAuthEmulator(emulator: authEmulator);
     useFirestoreEmulator(emulator: firestoreEmulator);
   }
 
   /// Use the Firebase Auth Emulator to run the app locally.
-  void useAuthEmulator({Emulator? emulator}) {
+  void useAuthEmulator({
+    Emulator emulator = const Emulator.defaultAuth(),
+  }) {
     _isUsingAuthEmulator = true;
-    final host = emulator?.host ?? '127.0.0.1';
-    final port = emulator?.port ?? 9099;
-    authApiHost = Uri.http('$host:$port', 'identitytoolkit.googleapis.com/');
+    authApiHost = Uri.http(
+        '${emulator.host}:${emulator.port}', 'identitytoolkit.googleapis.com/');
   }
 
   /// Use the Firebase Firestore Emulator to run the app locally.
-  void useFirestoreEmulator({Emulator? emulator}) {
+  void useFirestoreEmulator({
+    Emulator emulator = const Emulator.defaultFirestore(),
+  }) {
     _isUsingFirestoreEmulator = true;
-    final host = emulator?.host ?? '127.0.0.1';
-    final port = emulator?.port ?? 8080;
-    firestoreApiHost = Uri.http('$host:$port', '/');
+    firestoreApiHost = Uri.http('${emulator.host}:${emulator.port}', '/');
   }
 
   /// Stops the app and releases any resources associated with it.
