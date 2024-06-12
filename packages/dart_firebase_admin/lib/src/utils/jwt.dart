@@ -4,16 +4,19 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
+const String jwtCallbackErrorPrefix =
+    'error in secret or public key callback: ';
+
+const String moMatchingKidErrorMessage = 'no-matching-kid-error';
+const String noKidInHeaderErrorMessage = 'no-kid-in-header-error';
+
 /// Class for verifying unsigned (emulator) JWTs.
 class EmulatorSignatureVerifier implements SignatureVerifier {
   @override
   Future<void> verify(String token) async {
     // Signature checks skipped for emulator; no need to fetch public keys.
     try {
-      return await verifyJwtSignature(
-        token,
-        SecretKey(''),
-      );
+      JWT.decode(token);
     } on JWTInvalidException catch (e) {
       if (e.message == 'invalid signature') return;
       rethrow;
@@ -96,9 +99,51 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
   final KeyFetcher keyFetcher;
 
   @override
-  Future<bool> verify(String token) {
-    throw UnimplementedError();
-    // verifyJwtSignature(token);
+  Future<void> verify(String token) async {
+    try {
+      final jwt = JWT.decode(token);
+      final kid = jwt.header?['kid'] as String?;
+
+      if (kid == null) {
+        throw JwtError(
+          JwtErrorCode.noKidInHeader,
+          noKidInHeaderErrorMessage,
+        );
+      }
+
+      final publicKeys = await keyFetcher.fetchPublicKeys();
+      final publicKey = publicKeys[kid];
+
+      if (publicKey == null) {
+        throw JwtError(
+          JwtErrorCode.noMatchingKid,
+          moMatchingKidErrorMessage,
+        );
+      }
+      JWT.verify(
+        token,
+        RSAPublicKey.cert(publicKey),
+      );
+    } on JWTExpiredException {
+      throw JwtError(
+        JwtErrorCode.tokenExpired,
+        'The provided token has expired. Get a fresh token from your client app and try again.',
+      );
+    } on JWTException catch (e) {
+      if (e.message.startsWith(jwtCallbackErrorPrefix)) {
+        final message = e.message.split(jwtCallbackErrorPrefix).last.trim();
+        JwtErrorCode code;
+        if (message == moMatchingKidErrorMessage) {
+          code = JwtErrorCode.noMatchingKid;
+        } else if (message == noKidInHeaderErrorMessage) {
+          code = JwtErrorCode.noKidInHeader;
+        } else {
+          code = JwtErrorCode.keyFetchError;
+        }
+        throw JwtError(code, message);
+      }
+      throw JwtError(JwtErrorCode.invalidSignature, e.message);
+    }
   }
 }
 
