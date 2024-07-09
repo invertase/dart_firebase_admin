@@ -14,6 +14,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: packages/dart_firebase_admin
+
     steps:
       - uses: actions/checkout@v3.1.0
         with:
@@ -25,8 +29,6 @@ jobs:
         run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
       - name: Add pub cache to PATH
         run: echo "PUB_CACHE="$HOME/.pub-cache"" >> $GITHUB_ENV
-
-      - run: cd packages/dart_firebase_admin
 
       - name: Install dependencies
         run: dart pub get && cd example && dart pub get && cd -
