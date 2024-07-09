@@ -29,7 +29,7 @@ jobs:
       - run: cd packages/dart_firebase_admin
 
       - name: Install dependencies
-        run: dart pub get
+        run: dart pub get && cd example && dart pub get && cd -
 
       - name: Check format
         run: dart format --set-exit-if-changed .
