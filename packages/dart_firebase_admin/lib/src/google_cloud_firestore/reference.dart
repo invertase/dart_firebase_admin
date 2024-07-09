@@ -1,6 +1,6 @@
 part of 'firestore.dart';
 
-class CollectionReference<T> extends Query<T> {
+final class CollectionReference<T> extends Query<T> {
   CollectionReference._({
     required super.firestore,
     required _QualifiedResourcePath path,
@@ -156,7 +156,7 @@ class CollectionReference<T> extends Query<T> {
 }
 
 @immutable
-class DocumentReference<T> implements _Serializable {
+final class DocumentReference<T> implements _Serializable {
   const DocumentReference._({
     required this.firestore,
     required _QualifiedResourcePath path,
@@ -709,7 +709,7 @@ class _FieldFilterInternal implements _FilterInternal {
 }
 
 @immutable
-class Query<T> {
+base class Query<T> {
   const Query._({
     required this.firestore,
     required _QueryOptions<T> queryOptions,

@@ -6,7 +6,7 @@ typedef DocumentData = Map<String, Object?>;
 @internal
 typedef ApiMapValue = Map<String, firestore1.Value>;
 
-abstract class _Serializable {
+abstract base class _Serializable {
   firestore1.Value _toProto();
 }
 

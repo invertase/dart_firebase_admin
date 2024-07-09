@@ -1,6 +1,7 @@
 ## Unreleased fix
 
 - Fixes crash when updating users (thanks to @HeySreelal)
+- Marked various classes that cannot be extended as base/final.
 
 ## 0.3.1
 
