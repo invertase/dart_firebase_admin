@@ -75,7 +75,6 @@ enum MessagingClientErrorCode {
     httpStatusCode: 500,
   ),
 
-  ///
   /// Potential causes include invalid registration, invalid package name,
   /// message too big, invalid data key, invalid TTL, or other invalid parameters.
   ///
