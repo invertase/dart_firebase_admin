@@ -1,0 +1,5 @@
+include: ../../../analysis_options.yaml
+linter:
+  rules:
+    # Disabling inside tests for the sake of type testing
+    omit_local_variable_types: false

@@ -23,13 +23,13 @@ class CollectionReference<T> extends Query<T> {
   /// final documentRef = collectionRef.parent;
   /// print('Parent name: ${documentRef.path}');
   /// ```
-  DocumentReference<T>? get parent {
+  DocumentReference<DocumentData>? get parent {
     if (!_queryOptions.parentPath.isDocument) return null;
 
-    return DocumentReference<T>._(
+    return DocumentReference<DocumentData>._(
       firestore: firestore,
       path: _queryOptions.parentPath as _QualifiedResourcePath,
-      converter: _queryOptions.converter,
+      converter: _jsonConverter,
     );
   }
 
