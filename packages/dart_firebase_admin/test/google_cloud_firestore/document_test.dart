@@ -535,11 +535,11 @@ void main() {
       final soon = DateTime.now().toUtc().millisecondsSinceEpoch + 5000;
 
       await expectLater(
-        firestore.doc('collectionId/lastupdatetimeprecondition').update(
+        firestore.doc('collectionId/invalidlastupdatetimeprecondition').update(
           {'foo': 'bar'},
           Precondition.timestamp(Timestamp.fromMillis(soon)),
         ),
-        throwsA(isA<Exception>()),
+        throwsA(isA<FirebaseFirestoreAdminException>()),
       );
     });
 
