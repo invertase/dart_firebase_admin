@@ -163,9 +163,8 @@ void main() {
 
       expect(collection, isA<CollectionReference<int>>());
 
-      final parent = collection.parent;
+      final DocumentReference<DocumentData>? parent = collection.parent;
 
-      expect(parent, isA<DocumentReference<DocumentData>>());
       expect(parent!.path, 'withConverterColParent/doc');
     });
   });
