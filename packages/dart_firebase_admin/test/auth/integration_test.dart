@@ -10,12 +10,10 @@ void main() {
   late Auth auth;
 
   setUp(() {
-    final sdk = createApp();
+    final sdk = createApp(tearDown: () => cleanup(auth));
     sdk.useEmulator();
     auth = Auth(sdk);
   });
-
-  tearDown(() => cleanup(auth));
 
   group('createUser', () {
     test('supports no specified uid', () async {

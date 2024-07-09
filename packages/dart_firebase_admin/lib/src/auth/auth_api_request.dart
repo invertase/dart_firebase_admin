@@ -1012,9 +1012,9 @@ class _AuthHttpClient {
   }
 
   Future<R> _run<R>(
-    Future<R> Function(AutoRefreshingAuthClient client) fn,
+    Future<R> Function(Client client) fn,
   ) {
-    return _authGuard(() => app.credential.client.then(fn));
+    return _authGuard(() => app.client.then(fn));
   }
 
   Future<R> v1<R>(
