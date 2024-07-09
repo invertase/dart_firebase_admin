@@ -750,7 +750,6 @@ class _AuthHttpClient {
   _AuthHttpClient(this.app);
 
   // TODO handle tenants
-  // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
 
   String _buildParent() => 'projects/${app.projectId}';
