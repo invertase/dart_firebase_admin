@@ -220,7 +220,7 @@ class DocumentReference<T> implements _Serializable {
   }
 
   Future<DocumentSnapshot<T>> get() async {
-    final result = await firestore.getAll([this], null);
+    final result = await firestore.getAll([this]);
     return result.single;
   }
 
@@ -1146,7 +1146,7 @@ class Query<T> {
 
           return finalDoc.build();
         })
-        .whereNotNull()
+        .nonNulls
         // Specifying fieldsProto should cause the builder to create a query snapshot.
         .cast<QueryDocumentSnapshot<T>>()
         .toList();
