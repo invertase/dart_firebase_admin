@@ -61,12 +61,10 @@ const _topicMgtServerToClientCode = {
 
 /// Enum for handling different Firebase Cloud Messaging error cases per
 /// https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode
-///
 enum MessagingClientErrorCode {
   /// The server encountered an error while trying to process the request.
   /// You could retry the same request following the requirements listed in UNAVAILABLE
   /// If the error persists, please contact Firebase support.
-  ///
   internal(
     code: 'INTERNAL',
     message: 'Internal server error.',
@@ -97,7 +95,6 @@ enum MessagingClientErrorCode {
   /// duration in seconds between 0 and 2,419,200 (4 weeks).
   ///
   /// Invalid parameters: Check that the provided parameters have the right name and type.
-  ///
   invalidArgument(
     code: 'INVALID_ARGUMENT',
     message: 'One or more arguments specified in the request were invalid.',
