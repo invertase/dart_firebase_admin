@@ -5,6 +5,6 @@ set -e
 
 dart pub global activate coverage
 
-dart test --coverage="coverage"
+firebase emulators:exec --project flutterfire-e2e-tests --only firestore,auth "dart test --coverage=coverage" 
 
 format_coverage --lcov --in=coverage --out=coverage.lcov --packages=.dart_tool/package_config.json --report-on=lib
