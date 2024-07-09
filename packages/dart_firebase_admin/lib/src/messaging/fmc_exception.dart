@@ -59,12 +59,10 @@ const _topicMgtServerToClientCode = {
   'UNKNOWN': 'UNKNOWN_ERROR',
 };
 
-///
 /// Enum for handling different Firebase Cloud Messaging error cases per
 /// https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode
 ///
 enum MessagingClientErrorCode {
-  ///
   /// The server encountered an error while trying to process the request.
   /// You could retry the same request following the requirements listed in UNAVAILABLE
   /// If the error persists, please contact Firebase support.
