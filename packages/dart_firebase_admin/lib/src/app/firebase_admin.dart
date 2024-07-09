@@ -49,9 +49,30 @@ class FirebaseAdminApp {
     firestoreApiHost = Uri.http('${emulator.host}:${emulator.port}', '/');
   }
 
+  @internal
+  late final client = _getClient(
+    [
+      auth3.IdentityToolkitApi.cloudPlatformScope,
+      auth3.IdentityToolkitApi.firebaseScope,
+    ],
+  );
+
+  Future<Client> _getClient(List<String> scopes) async {
+    if (isUsingEmulator) {
+      return _EmulatorClient(Client());
+    }
+
+    final serviceAccountCredentials = credential.serviceAccountCredentials;
+    final client = serviceAccountCredentials == null
+        ? await auth.clientViaApplicationDefaultCredentials(scopes: scopes)
+        : await auth.clientViaServiceAccount(serviceAccountCredentials, scopes);
+
+    return client;
+  }
+
   /// Stops the app and releases any resources associated with it.
   Future<void> close() async {
-    final client = await credential.client;
+    final client = await this.client;
     client.close();
   }
 }

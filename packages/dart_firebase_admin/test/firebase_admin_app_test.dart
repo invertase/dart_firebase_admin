@@ -13,7 +13,7 @@ void main() {
       expect(app.authApiHost, Uri.https('identitytoolkit.googleapis.com', '/'));
       expect(
         app.firestoreApiHost,
-        Uri.https('identitytoolkit.googleapis.com', '/'),
+        Uri.https('firestore.googleapis.com', '/'),
       );
     });
 
@@ -30,8 +30,8 @@ void main() {
         Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/'),
       );
       expect(
-        app.authApiHost,
-        Uri.http('127.0.0.1:8080', 'identitytoolkit.googleapis.com/'),
+        app.firestoreApiHost,
+        Uri.http('127.0.0.1:8080', '/'),
       );
     });
   });

@@ -199,10 +199,10 @@ void main() {
         (i) => Future.value(fmc1.Message(name: 'test')),
       );
 
-      await messaging.sendEach([
+      await messaging.sendEach(dryRun: true, [
         TopicMessage(topic: 'test'),
         TopicMessage(topic: 'test2'),
-      ], dryRun: true);
+      ]);
 
       final capture = verify(() => messages.send(captureAny(), any()))
         ..called(2);
