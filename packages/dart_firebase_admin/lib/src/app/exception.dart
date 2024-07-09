@@ -56,7 +56,7 @@ String _platformErrorCodeMessage(String code) {
 }
 
 /// Base interface for all Firebase Admin related errors.
-abstract class FirebaseAdminException {
+abstract class FirebaseAdminException implements Exception {
   FirebaseAdminException(this.service, this._code, [this._message]);
 
   final String service;

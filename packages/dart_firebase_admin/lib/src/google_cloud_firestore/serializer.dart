@@ -66,7 +66,7 @@ class _Serializer {
       case List():
         return firestore1.Value(
           arrayValue: firestore1.ArrayValue(
-            values: value.map(encodeValue).whereNotNull().toList(),
+            values: value.map(encodeValue).nonNulls.toList(),
           ),
         );
 

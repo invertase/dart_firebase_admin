@@ -752,7 +752,6 @@ class _AuthHttpClient {
   _AuthHttpClient(this.app);
 
   // TODO handle tenants
-  // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
 
   String _buildParent() => 'projects/${app.projectId}';
@@ -1014,9 +1013,9 @@ class _AuthHttpClient {
   }
 
   Future<R> _run<R>(
-    Future<R> Function(AutoRefreshingAuthClient client) fn,
+    Future<R> Function(Client client) fn,
   ) {
-    return _authGuard(() => app.credential.client.then(fn));
+    return _authGuard(() => app.client.then(fn));
   }
 
   Future<R> v1<R>(
