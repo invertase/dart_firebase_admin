@@ -1,3 +1,7 @@
+## 0.3.1
+
+ - **FEAT**: Use GOOGLE_APPLICATION_CREDENTIALS if json value (#32).
+
 ## 0.3.0 - 2024-01-02
 
 - **Breaking**: Removed the value `toJson` methods on objects.

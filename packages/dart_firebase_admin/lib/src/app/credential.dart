@@ -1,5 +1,8 @@
 part of '../app.dart';
 
+@internal
+const envSymbol = #_envSymbol;
+
 /// Authentication information for Firebase Admin SDK.
 class Credential {
   Credential._(
@@ -41,11 +44,28 @@ class Credential {
   }
 
   /// Log in to firebase using the environment variable.
-  Credential.fromApplicationDefaultCredentials({String? serviceAccountId})
-      : this._(
-          null,
-          serviceAccountId: serviceAccountId,
-        );
+  factory Credential.fromApplicationDefaultCredentials({
+    String? serviceAccountId,
+  }) {
+    ServiceAccountCredentials? creds;
+
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final maybeConfig = env['GOOGLE_APPLICATION_CREDENTIALS'];
+    if (maybeConfig != null) {
+      try {
+        final decodedValue = jsonDecode(maybeConfig);
+        if (decodedValue is Map) {
+          creds = ServiceAccountCredentials.fromJson(decodedValue);
+        }
+      } on FormatException catch (_) {}
+    }
+
+    return Credential._(
+      creds,
+      serviceAccountId: serviceAccountId,
+    );
+  }
 
   @internal
   final String? serviceAccountId;

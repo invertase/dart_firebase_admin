@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -64,6 +65,46 @@ void main() {
 
         // Should not throw.
         Credential.fromServiceAccount(fs.file('service-account.json'));
+      });
+    });
+
+    group('fromApplicationDefaultCredentials', () {
+      test(
+          'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
+          () {
+        final fakeServiceAccount = {
+          'GOOGLE_APPLICATION_CREDENTIALS': '''
+{
+  "type": "service_account",
+  "client_id": "id",
+  "private_key": ${jsonEncode(_fakeRSAKey)},
+  "client_email": "foo@bar.com"
+}
+''',
+        };
+        final credential = runZoned(
+          Credential.fromApplicationDefaultCredentials,
+          zoneValues: {envSymbol: fakeServiceAccount},
+        );
+        expect(credential.serviceAccountCredentials, isNotNull);
+
+        // Verify if service account is actually being used
+        expect(
+          credential.serviceAccountCredentials!.email,
+          'foo@bar.com',
+        );
+      });
+
+      test(
+          'does nothing if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is not valid service account JSON',
+          () {
+        final credential = runZoned(
+          Credential.fromApplicationDefaultCredentials,
+          zoneValues: {
+            envSymbol: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
+          },
+        );
+        expect(credential.serviceAccountCredentials, isNull);
       });
     });
   });

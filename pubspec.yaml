@@ -1,0 +1,7 @@
+name: dart_firebase_admin_workspace
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dev_dependencies:
+  melos: ^5.2.1
