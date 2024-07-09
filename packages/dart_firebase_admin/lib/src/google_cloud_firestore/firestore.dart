@@ -5,7 +5,7 @@ import 'package:firebaseapis/firestore/v1.dart' as firestore1;
 import 'package:firebaseapis/firestore/v1beta1.dart' as firestore1beta1;
 import 'package:firebaseapis/firestore/v1beta2.dart' as firestore1beta2;
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:googleapis_auth/googleapis_auth.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
 import '../app.dart';
@@ -206,9 +206,9 @@ class _FirestoreHttpClient {
   // TODO refactor with auth
   // TODO is it fine to use AuthClient?
   Future<R> _run<R>(
-    Future<R> Function(AutoRefreshingAuthClient client) fn,
+    Future<R> Function(Client client) fn,
   ) {
-    return _firestoreGuard(() => app.credential.client.then(fn));
+    return _firestoreGuard(() => app.client.then(fn));
   }
 
   Future<R> v1<R>(
