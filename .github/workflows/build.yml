@@ -34,6 +34,8 @@ jobs:
       - name: Install firebase CLI
         run: npm install -g firebase-tools
 
+      - run: yes | firebase init firestore
+
       - name: Install dependencies
         run: dart pub get && cd example && dart pub get && cd -
 
