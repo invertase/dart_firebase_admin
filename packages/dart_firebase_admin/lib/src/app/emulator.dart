@@ -3,7 +3,6 @@ part of '../app.dart';
 /// Represents a Firebase Emulator.
 /// Now for Auth and Firestore.
 class Emulator {
-
   /// If there is no environment variable set, please use this constructor.
   /// For example, gcloud firestore emulators.
   const Emulator(this.host, this.port);
