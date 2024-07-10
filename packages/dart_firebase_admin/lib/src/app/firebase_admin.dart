@@ -25,8 +25,8 @@ class FirebaseAdminApp {
 
   /// Use the Firebase Emulator suite to run the app locally.
   void useEmulator({
-    Emulator authEmulator = const Emulator.defaultAuth(),
-    Emulator firestoreEmulator = const Emulator.defaultFirestore(),
+    Emulator? authEmulator,
+    Emulator? firestoreEmulator,
   }) {
     useAuthEmulator(emulator: authEmulator);
     useFirestoreEmulator(emulator: firestoreEmulator);
@@ -34,18 +34,20 @@ class FirebaseAdminApp {
 
   /// Use the Firebase Auth Emulator to run the app locally.
   void useAuthEmulator({
-    Emulator emulator = const Emulator.defaultAuth(),
+    Emulator? emulator
   }) {
     _isUsingAuthEmulator = true;
+    emulator ??= Emulator.auth();
     authApiHost = Uri.http(
         '${emulator.host}:${emulator.port}', 'identitytoolkit.googleapis.com/');
   }
 
   /// Use the Firebase Firestore Emulator to run the app locally.
   void useFirestoreEmulator({
-    Emulator emulator = const Emulator.defaultFirestore(),
+    Emulator? emulator,
   }) {
     _isUsingFirestoreEmulator = true;
+    emulator ??= Emulator.firestore();
     firestoreApiHost = Uri.http('${emulator.host}:${emulator.port}', '/');
   }
 
