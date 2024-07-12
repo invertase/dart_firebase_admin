@@ -1,3 +1,7 @@
+firebase-debug.log
+ui-debug.log
+firestore-debug.log
+
 build
 coverage
 
@@ -24,3 +28,5 @@ pubspec.lock
 .last_build_id
 
 service-account.json
+
+**/pubspec_overrides.yaml

@@ -1,1 +1,1 @@
-export 'src/app.dart';
+export 'src/app.dart' hide envSymbol;

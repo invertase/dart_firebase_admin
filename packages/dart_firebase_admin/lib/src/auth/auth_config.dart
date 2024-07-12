@@ -52,9 +52,9 @@ class ListProviderConfigResults {
 
 abstract class UpdateAuthProviderRequest {}
 
-class _SAMLAuthProviderRequestBase implements UpdateAuthProviderRequest {
+abstract class _SAMLAuthProviderRequestBase
+    implements UpdateAuthProviderRequest {
   _SAMLAuthProviderRequestBase({
-    this.providerId,
     this.displayName,
     this.enabled,
     this.idpEntityId,
@@ -62,17 +62,15 @@ class _SAMLAuthProviderRequestBase implements UpdateAuthProviderRequest {
     this.x509Certificates,
     this.rpEntityId,
     this.callbackURL,
-    this.enableRequestSigning,
-    this.issuer,
   });
 
-  final bool? enableRequestSigning;
+  bool? get enableRequestSigning;
 
-  final String? issuer;
+  String? get issuer;
 
   /// The SAML provider's updated provider ID. If not provided, the existing
   /// configuration's value is not modified.
-  final String? providerId;
+  String? get providerId;
 
   /// The SAML provider's updated display name. If not provided, the existing
   /// configuration's value is not modified.
@@ -117,11 +115,19 @@ class SAMLUpdateAuthProviderRequest extends _SAMLAuthProviderRequestBase
     super.rpEntityId,
     super.callbackURL,
   });
+
+  @override
+  bool? get enableRequestSigning => null;
+
+  @override
+  String? get issuer => null;
+
+  @override
+  String? get providerId => null;
 }
 
 abstract class _OIDCAuthProviderRequestBase {
   _OIDCAuthProviderRequestBase({
-    this.providerId,
     this.displayName,
     this.enabled,
     this.clientId,
@@ -132,7 +138,7 @@ abstract class _OIDCAuthProviderRequestBase {
 
   /// The OIDC provider's updated provider ID. If not provided, the existing
   /// configuration's value is not modified.
-  final String? providerId;
+  String? get providerId;
 
   /// The OIDC provider's updated display name. If not provided, the existing
   /// configuration's value is not modified.
@@ -171,6 +177,9 @@ class OIDCUpdateAuthProviderRequest extends _OIDCAuthProviderRequestBase
     super.clientSecret,
     super.responseType,
   });
+
+  @override
+  String? get providerId => null;
 }
 
 sealed class AuthProviderConfig {
@@ -516,9 +525,7 @@ class _SAMLConfig extends SAMLAuthProviderConfig {
       idpEntityId: idpEntityId,
       ssoURL: ssoURL,
       x509Certificates: [
-        ...?idpConfig.idpCertificates
-            ?.map((c) => c.x509Certificate)
-            .whereNotNull(),
+        ...?idpConfig.idpCertificates?.map((c) => c.x509Certificate).nonNulls,
       ],
       rpEntityId: spEntityId,
       callbackURL: spConfig.callbackUri,
@@ -855,8 +862,6 @@ class UserProvider {
       photoUrl: photoURL,
       providerId: providerId,
       rawId: uid,
-      federatedId: null,
-      screenName: null,
     );
   }
 }

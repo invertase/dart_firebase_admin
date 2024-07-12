@@ -14,9 +14,8 @@ String _toGoogleDateTime({required int seconds, required int nanoseconds}) {
   return '${formattedDate}Z';
 }
 
-@immutable
-class Timestamp implements _Serializable {
-  Timestamp({required this.seconds, required this.nanoseconds}) {
+final class Timestamp implements _Serializable {
+  Timestamp._({required this.seconds, required this.nanoseconds}) {
     const minSeconds = -62135596800;
     const maxSeconds = 253402300799;
 

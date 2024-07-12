@@ -13,9 +13,9 @@ class FirebaseMessagingRequestHandler {
   final FirebaseAdminApp firebase;
 
   Future<R> _run<R>(
-    Future<R> Function(AutoRefreshingAuthClient client) fn,
+    Future<R> Function(Client client) fn,
   ) {
-    return _fmcGuard(() => firebase.credential.client.then(fn));
+    return _fmcGuard(() => firebase.client.then(fn));
   }
 
   Future<T> _fmcGuard<T>(
@@ -45,7 +45,7 @@ class FirebaseMessagingRequestHandler {
     Object? requestData,
   }) async {
     try {
-      final client = await firebase.credential.client;
+      final client = await firebase.client;
 
       final response = await client.post(
         Uri.https(host, path),
@@ -53,7 +53,6 @@ class FirebaseMessagingRequestHandler {
         headers: {
           ..._legacyFirebaseMessagingHeaders,
           'content-type': 'application/json',
-          'Authorization': 'Bearer ${client.credentials.accessToken.data}',
         },
       );
 

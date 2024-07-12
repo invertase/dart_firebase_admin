@@ -3,7 +3,7 @@ part of 'firestore.dart';
 /// An immutable object representing a geographic location in Firestore. The
 /// location is represented as a latitude/longitude pair.
 @immutable
-class GeoPoint implements _Serializable {
+final class GeoPoint implements _Serializable {
   GeoPoint({
     required this.latitude,
     required this.longitude,
