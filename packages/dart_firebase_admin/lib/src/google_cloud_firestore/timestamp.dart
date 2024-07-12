@@ -63,7 +63,7 @@ final class Timestamp implements _Serializable {
   /// Returns a new [Timestamp] representing the same point in time
   /// as the given date.
   factory Timestamp.fromDate(DateTime date) {
-    return Timestamp.fromMillis(date.millisecondsSinceEpoch);
+    return Timestamp.fromMicros(date.microsecondsSinceEpoch);
   }
 
   /// Creates a new timestamp from the given number of milliseconds.
@@ -81,7 +81,13 @@ final class Timestamp implements _Serializable {
   /// as the given number of milliseconds.
   factory Timestamp.fromMillis(int milliseconds) {
     final seconds = (milliseconds / 1000).floor();
-    final nanos = (milliseconds - seconds * 1000) * _msToNanos;
+    final nanos = (milliseconds - seconds * 1000 * 1000) * _msToNanos;
+    return Timestamp(seconds: seconds, nanoseconds: nanos);
+  }
+
+  factory Timestamp.fromMicros(int microseconds) {
+    final seconds = (microseconds / 1000 / 1000).floor();
+    final nanos = (microseconds - seconds * 1000 * 1000) * _usToNanos;
     return Timestamp(seconds: seconds, nanoseconds: nanos);
   }
 
@@ -113,6 +119,7 @@ final class Timestamp implements _Serializable {
   }
 
   static const _msToNanos = 1000000;
+  static const _usToNanos = 1000;
 
   final int seconds;
   final int nanoseconds;
