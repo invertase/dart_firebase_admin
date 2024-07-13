@@ -14,6 +14,16 @@ String _toGoogleDateTime({required int seconds, required int nanoseconds}) {
   return '${formattedDate}Z';
 }
 
+/// A Timestamp represents a point in time independent of any time zone or calendar,
+/// represented as seconds and fractions of seconds at nanosecond resolution in UTC
+/// Epoch time. It is encoded using the Proleptic Gregorian Calendar which extends
+/// the Gregorian calendar backwards to year one. It is encoded assuming all minutes
+/// are 60 seconds long, i.e. leap seconds are "smeared" so that no leap second table
+/// is needed for interpretation. Range is from 0001-01-01T00:00:00Z to
+/// 9999-12-31T23:59:59.999999999Z. By restricting to that range, we ensure that we
+/// can convert to and from RFC 3339 date strings.
+///
+/// For more information, see [the reference timestamp definition](https://github.com/google/protobuf/blob/master/src/google/protobuf/timestamp.proto)
 @immutable
 final class Timestamp implements _Serializable {
   Timestamp({required this.seconds, required this.nanoseconds}) {
@@ -85,6 +95,19 @@ final class Timestamp implements _Serializable {
     return Timestamp(seconds: seconds, nanoseconds: nanos);
   }
 
+  /// Creates a new timestamp from the given number of microseconds.
+  ///
+  /// ```dart
+  /// final documentRef = firestore.doc('col/doc');
+  ///
+  /// documentRef.set({ 'startTime': Timestamp.fromMicros(42) });
+  /// ```
+  ///
+  /// - [microseconds]: Number of microseconds since Unix epoch
+  /// 1970-01-01T00:00:00Z.
+  ///
+  /// Returns a new [Timestamp] representing the same point in time
+  /// as the given number of microseconds.
   factory Timestamp.fromMicros(int microseconds) {
     final seconds = (microseconds / 1000 / 1000).floor();
     final nanos = (microseconds - seconds * 1000 * 1000) * _usToNanos;
