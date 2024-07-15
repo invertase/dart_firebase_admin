@@ -7,7 +7,7 @@ void main() {
   group('collectionGroup', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('throws if collectionId contains "/"', () {
       expect(

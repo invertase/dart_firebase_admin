@@ -7,7 +7,7 @@ void main() {
   group('Collection interface', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('has doc() method', () {
       final collection = firestore.collection('colId');

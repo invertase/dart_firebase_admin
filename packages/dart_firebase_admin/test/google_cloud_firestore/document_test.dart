@@ -9,7 +9,7 @@ void main() {
     late DocumentReference<Map<String, Object?>> documentRef;
 
     setUp(() {
-      firestore = createInstance();
+      firestore = createFirestore();
       documentRef = firestore.doc('collectionId/documentId');
     });
 
@@ -82,7 +82,7 @@ void main() {
   group('serialize document', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test("doesn't serialize unsupported types", () {
       expect(
@@ -120,7 +120,7 @@ void main() {
     });
 
     test('Supports BigInt', () async {
-      final firestore = createInstance(Settings(useBigInt: true));
+      final firestore = createFirestore(Settings(useBigInt: true));
 
       await firestore.doc('collectionId/bigInt').set({
         'foo': BigInt.from(9223372036854775807),
@@ -221,10 +221,10 @@ void main() {
   group('get document', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('returns document', () async {
-      firestore = createInstance();
+      firestore = createFirestore();
       await firestore.doc('collectionId/getdocument').set({
         'foo': {
           'bar': 'foobar',
@@ -302,7 +302,7 @@ void main() {
   group('delete document', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('works', () async {
       await firestore.doc('collectionId/deletedoc').set({});
@@ -355,7 +355,7 @@ void main() {
   group('set documents', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('sends empty non-merge write even with just field transform',
         () async {
@@ -408,7 +408,7 @@ void main() {
   group('create document', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('creates document', () async {
       await firestore.doc('collectionId/createdoc').delete();
@@ -455,7 +455,7 @@ void main() {
   group('update document', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('works', () async {
       await firestore.doc('collectionId/updatedoc').set({'foo': 'bar'});

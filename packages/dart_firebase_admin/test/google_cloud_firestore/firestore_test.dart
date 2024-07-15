@@ -7,7 +7,7 @@ void main() {
   group('Firestore', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('listCollections', () async {
       final a = firestore.collection('a');
