@@ -51,10 +51,31 @@ class Firestore {
   // TODO batch
   // TODO bulkWriter
   // TODO bundle
-  // TODO listCollections
   // TODO getAll
   // TODO runTransaction
   // TODO recursiveDelete
+
+  /// Fetches the root collections that are associated with this Firestore
+  /// database.
+  ///
+  /// Returns a Promise that resolves with an array of CollectionReferences.
+  ///
+  /// ```dart
+  /// firestore.listCollections().then((collections) {
+  ///   for (final collection in collections) {
+  ///     print('Found collection with id: ${collection.id}');
+  ///   }
+  /// });
+  /// ```
+  Future<List<CollectionReference<DocumentData>>> listCollections() {
+    final rootDocument = DocumentReference._(
+      firestore: this,
+      path: _ResourcePath.empty,
+      converter: _jsonConverter,
+    );
+
+    return rootDocument.listCollections();
+  }
 
   /// Gets a [DocumentReference] instance that
   /// refers to the document at the specified path.

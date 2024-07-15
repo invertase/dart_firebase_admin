@@ -1,5 +1,6 @@
 ## Unreleased minor
 
+- Added `firestore.listCollections()` and `doc.listCollections()`
 - Fixes some errors incorrectly coming back as "unknown".
 - `Apns` parameters are no-longer required
 - Fixes argument error in FMC when sending booleans

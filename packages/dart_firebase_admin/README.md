@@ -163,7 +163,9 @@ print(user.data()?['age']);
 
 | Firestore                                        |     |
 | ------------------------------------------------ | --- |
+| firestore.listCollections()                      | ✅  |
 | reference.id                                     | ✅  |
+| reference.listCollections()                      | ✅  |
 | reference.parent                                 | ✅  |
 | reference.path                                   | ✅  |
 | reference.==                                     | ✅  |

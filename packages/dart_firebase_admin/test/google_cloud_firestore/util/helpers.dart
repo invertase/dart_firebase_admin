@@ -28,8 +28,22 @@ FirebaseAdminApp createApp({
   return app;
 }
 
-Firestore createInstance([Settings? settings]) {
-  return Firestore(createApp(), settings: settings);
+Firestore createFirestore([Settings? settings]) {
+  final firestore = Firestore(createApp(), settings: settings);
+
+  addTearDown(() async {
+    final collections = await firestore.listCollections();
+
+    for (final collection in collections) {
+      final docs = await collection.get();
+
+      await Future.wait([
+        for (final doc in docs.docs) doc.ref.delete(),
+      ]);
+    }
+  });
+
+  return firestore;
 }
 
 Matcher isArgumentError({String? message}) {
