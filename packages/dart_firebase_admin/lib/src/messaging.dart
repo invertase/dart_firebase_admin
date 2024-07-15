@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:firebaseapis/fcm/v1.dart' as fmc1;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
@@ -56,7 +55,7 @@ class Messaging {
         final name = response.name;
         if (name == null) {
           throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.internal,
+            MessagingClientErrorCode.internalError,
             'No name in response',
           );
         }
@@ -117,7 +116,7 @@ class Messaging {
                   error: error is FirebaseMessagingAdminException
                       ? error
                       : FirebaseMessagingAdminException(
-                          MessagingClientErrorCode.internal,
+                          MessagingClientErrorCode.internalError,
                           error.toString(),
                         ),
                 );

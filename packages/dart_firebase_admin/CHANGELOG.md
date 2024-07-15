@@ -1,5 +1,8 @@
-## Unreleased fix
+## Unreleased minor
 
+- Fixes some errors incorrectly coming back as "unknown".
+- Renamed various error codes to remove duplicates and removed
+  unused codes.
 - Fixes crash when updating users (thanks to @HeySreelal)
 - Marked various classes that cannot be extended as base/final.
 

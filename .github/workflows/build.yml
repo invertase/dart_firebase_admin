@@ -44,7 +44,7 @@ jobs:
         run: dart analyze
 
       - name: Run tests
-        run: ${{github.workspace}}/scripts/coverage.sh
+        run: firebase emulators:exec --project dart-firebase-admin --only auth,firestore "dart test"
 
       - name: Upload coverage to codecov
         run: curl -s https://codecov.io/bash | bash

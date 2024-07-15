@@ -1,7 +1,11 @@
 part of '../app.dart';
 
 class FirebaseAdminApp {
-  FirebaseAdminApp.initializeApp(this.projectId, this.credential);
+  FirebaseAdminApp.initializeApp(
+    this.projectId,
+    this.credential, {
+    Client? client,
+  }) : _clientOverride = client;
 
   /// The ID of the Google Cloud project associated with the app.
   final String projectId;
@@ -31,8 +35,13 @@ class FirebaseAdminApp {
       auth3.IdentityToolkitApi.firebaseScope,
     ],
   );
+  final Client? _clientOverride;
 
   Future<Client> _getClient(List<String> scopes) async {
+    if (_clientOverride != null) {
+      return _clientOverride;
+    }
+
     if (isUsingEmulator) {
       return _EmulatorClient(Client());
     }
