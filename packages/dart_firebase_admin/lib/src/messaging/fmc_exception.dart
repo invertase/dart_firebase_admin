@@ -214,8 +214,11 @@ Never _handleException(Object exception, StackTrace stackTrace) {
     Error.throwWithStackTrace(
       _createFirebaseError(
         statusCode: exception.status,
-        body: '',
-        isJson: false,
+        body: switch (exception.jsonResponse) {
+          null => '',
+          final json => jsonEncode(json),
+        },
+        isJson: exception.jsonResponse != null,
       ),
       stackTrace,
     );

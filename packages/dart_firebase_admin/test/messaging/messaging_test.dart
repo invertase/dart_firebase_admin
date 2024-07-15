@@ -21,8 +21,6 @@ class FirebaseCloudMessagingApiMock extends Mock
 
 class ProjectsResourceMock extends Mock implements ProjectsResource {}
 
-class SendMessageRequestFake extends Fake implements SendMessageRequest {}
-
 void main() {
   late Messaging messaging;
 
@@ -31,10 +29,7 @@ void main() {
   final projectResourceMock = ProjectsResourceMock();
   final messagingApiMock = FirebaseCloudMessagingApiMock();
 
-  setUpAll(() {
-    registerFallbackValue(SendMessageRequestFake());
-    registerFallbackValue(Uri());
-  });
+  setUpAll(registerFallbacks);
 
   void mockV1<T>() {
     when(() => requestHandler.v1<T>(any())).thenAnswer((invocation) async {
@@ -61,7 +56,7 @@ void main() {
     reset(messagingApiMock);
   });
 
-  group('FirebaseMessagingRequestHandler', () {
+  group('Error handling', () {
     for (final (:code, :error) in [
       (code: 400, error: MessagingClientErrorCode.invalidArgument),
       (code: 401, error: MessagingClientErrorCode.authenticationError),
@@ -72,24 +67,17 @@ void main() {
     ]) {
       test('converts $code codes into errors', () async {
         final clientMock = ClientMock();
-        when(
-          () => clientMock.post(
-            any(),
-            body: any(named: 'body'),
-            headers: any(named: 'headers'),
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(Stream.value(utf8.encode('')), code),
           ),
-        ).thenAnswer((_) => Future.value(Response('', code)));
+        );
 
-        final app = FirebaseAdminMock();
-        when(() => app.client).thenAnswer((_) => Future.value(clientMock));
-
-        final handler = FirebaseMessagingRequestHandler(app);
+        final app = createApp(client: clientMock);
+        final handler = Messaging(app);
 
         await expectLater(
-          () => handler.invokeRequestHandler(
-            host: 'host',
-            path: 'path',
-          ),
+          () => handler.send(TokenMessage(token: '123')),
           throwsA(
             isA<FirebaseMessagingAdminException>()
                 .having((e) => e.errorCode, 'errorCode', error),
@@ -102,17 +90,17 @@ void main() {
         in messagingServerToClientCode.entries) {
       test('converts $messagingError error codes', () async {
         final clientMock = ClientMock();
-        when(
-          () => clientMock.post(
-            any(),
-            body: any(named: 'body'),
-            headers: any(named: 'headers'),
-          ),
-        ).thenAnswer(
+        when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
-            Response(
-              jsonEncode({'error': messagingError}),
-              200,
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'message': messagingError},
+                  }),
+                ),
+              ),
+              400,
               headers: {
                 'content-type': 'application/json',
               },
@@ -120,16 +108,11 @@ void main() {
           ),
         );
 
-        final app = FirebaseAdminMock();
-        when(() => app.client).thenAnswer((_) => Future.value(clientMock));
-
-        final handler = FirebaseMessagingRequestHandler(app);
+        final app = createApp(client: clientMock);
+        final handler = Messaging(app);
 
         await expectLater(
-          () => handler.invokeRequestHandler(
-            host: 'host',
-            path: 'path',
-          ),
+          () => handler.send(TokenMessage(token: '123')),
           throwsA(
             isA<FirebaseMessagingAdminException>()
                 .having((e) => e.errorCode, 'errorCode', code)

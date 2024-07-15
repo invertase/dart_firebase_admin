@@ -2,16 +2,21 @@ import 'dart:async';
 
 import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/src/app.dart';
+import 'package:http/http.dart';
 import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
 
 FirebaseAdminApp createApp({
   FutureOr<void> Function()? tearDown,
+  Client? client,
 }) {
   final credential = Credential.fromApplicationDefaultCredentials();
-  final app = FirebaseAdminApp.initializeApp(projectId, credential)
-    ..useEmulator();
+  final app = FirebaseAdminApp.initializeApp(
+    projectId,
+    credential,
+    client: client,
+  )..useEmulator();
 
   addTearDown(() async {
     if (tearDown != null) {
