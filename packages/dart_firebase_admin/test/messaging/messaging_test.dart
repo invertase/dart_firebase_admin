@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:dart_firebase_admin/src/messaging.dart';
 import 'package:firebaseapis/fcm/v1.dart' as fmc1;
 import 'package:firebaseapis/fcm/v1.dart';
+import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 import '../google_cloud_firestore/util/helpers.dart';
+import '../mock.dart';
 
 class ProjectsMessagesResourceMock extends Mock
     implements ProjectsMessagesResource {}
@@ -29,6 +33,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(SendMessageRequestFake());
+    registerFallbackValue(Uri());
   });
 
   void mockV1<T>() {
@@ -54,6 +59,79 @@ void main() {
     reset(messages);
     reset(projectResourceMock);
     reset(messagingApiMock);
+  });
+
+  group('FirebaseMessagingRequestHandler', () {
+    test('converts status codes into errors', () async {
+      final clientMock = ClientMock();
+      when(
+        () => clientMock.post(
+          any(),
+          body: any(named: 'body'),
+          headers: any(named: 'headers'),
+        ),
+      ).thenAnswer((_) => Future.value(Response('', 503)));
+
+      final app = FirebaseAdminMock();
+      when(() => app.client).thenAnswer((_) => Future.value(clientMock));
+
+      final handler = FirebaseMessagingRequestHandler(app);
+
+      await expectLater(
+        () => handler.invokeRequestHandler(
+          host: 'host',
+          path: 'path',
+        ),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            MessagingClientErrorCode.serverUnavailable,
+          ),
+        ),
+      );
+    });
+
+    for (final MapEntry(key: messagingError, value: code)
+        in messagingServerToClientCode.entries) {
+      test('converts $messagingError error codes', () async {
+        final clientMock = ClientMock();
+        when(
+          () => clientMock.post(
+            any(),
+            body: any(named: 'body'),
+            headers: any(named: 'headers'),
+          ),
+        ).thenAnswer(
+          (_) => Future.value(
+            Response(
+              jsonEncode({'error': messagingError}),
+              200,
+              headers: {
+                'content-type': 'application/json',
+              },
+            ),
+          ),
+        );
+
+        final app = FirebaseAdminMock();
+        when(() => app.client).thenAnswer((_) => Future.value(clientMock));
+
+        final handler = FirebaseMessagingRequestHandler(app);
+
+        await expectLater(
+          () => handler.invokeRequestHandler(
+            host: 'host',
+            path: 'path',
+          ),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having((e) => e.errorCode, 'errorCode', code)
+                .having((e) => e.code, 'code', 'messaging/${code.code}'),
+          ),
+        );
+      });
+    }
   });
 
   group('Messaging.send', () {
@@ -90,6 +168,11 @@ void main() {
         () => messaging.send(TopicMessage(topic: 'test')),
         throwsA(
           isA<FirebaseMessagingAdminException>()
+              .having(
+                (e) => e.errorCode,
+                'errorCode',
+                MessagingClientErrorCode.internalError,
+              )
               .having((e) => e.message, 'message', 'No name in response'),
         ),
       );
