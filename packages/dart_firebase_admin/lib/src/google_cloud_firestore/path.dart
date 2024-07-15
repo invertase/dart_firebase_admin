@@ -33,7 +33,7 @@ abstract class _Path<T extends _Path<Object?>> implements Comparable<_Path<T>> {
   List<String> _split(String relativePath);
 
   /// Returns the path of the parent node.
-  T? _parent() {
+  T? parent() {
     if (segments.isEmpty) return null;
 
     return _construct(segments.sublist(0, segments.length - 1));
@@ -83,7 +83,6 @@ abstract class _Path<T extends _Path<Object?>> implements Comparable<_Path<T>> {
   @override
   bool operator ==(Object other) {
     return other is _Path<T> &&
-        runtimeType == other.runtimeType &&
         const ListEquality<String>().equals(segments, other.segments);
   }
 
@@ -179,8 +178,7 @@ class _QualifiedResourcePath extends _ResourcePath {
   final String _databaseId;
 
   @override
-  _QualifiedResourcePath? _parent() =>
-      super._parent() as _QualifiedResourcePath?;
+  _QualifiedResourcePath? parent() => super.parent() as _QualifiedResourcePath?;
 
   /// String representation of a ResourcePath as expected by the API.
   String get _formattedName {

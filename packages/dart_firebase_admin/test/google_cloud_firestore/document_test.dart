@@ -13,6 +13,28 @@ void main() {
       documentRef = firestore.doc('collectionId/documentId');
     });
 
+    test('listCollections', () async {
+      final doc1 = firestore.doc('collectionId/a');
+      final doc2 = firestore.doc('collectionId/b');
+
+      final doc1col1 = doc1.collection('a');
+      final doc1col2 = doc1.collection('b');
+
+      final doc2col1 = doc2.collection('c');
+      final doc2col2 = doc2.collection('d');
+
+      await doc1col1.add({});
+      await doc1col2.add({});
+      await doc2col1.add({});
+      await doc2col2.add({});
+
+      final doc1Collections = await doc1.listCollections();
+      final doc2Collections = await doc2.listCollections();
+
+      expect(doc1Collections, unorderedEquals([doc1col1, doc1col2]));
+      expect(doc2Collections, unorderedEquals([doc2col1, doc2col2]));
+    });
+
     test('has collection() method', () {
       final collection = documentRef.collection('col');
       expect(collection.id, 'col');
