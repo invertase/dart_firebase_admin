@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:dart_firebase_admin/src/messaging.dart';
 import 'package:firebaseapis/fcm/v1.dart' as fmc1;
-import 'package:firebaseapis/fcm/v1.dart';
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -11,15 +10,19 @@ import '../google_cloud_firestore/util/helpers.dart';
 import '../mock.dart';
 
 class ProjectsMessagesResourceMock extends Mock
-    implements ProjectsMessagesResource {}
+    implements fmc1.ProjectsMessagesResource {}
 
 class FirebaseMessagingRequestHandlerMock extends Mock
     implements FirebaseMessagingRequestHandler {}
 
 class FirebaseCloudMessagingApiMock extends Mock
-    implements FirebaseCloudMessagingApi {}
+    implements fmc1.FirebaseCloudMessagingApi {}
 
-class ProjectsResourceMock extends Mock implements ProjectsResource {}
+class ProjectsResourceMock extends Mock implements fmc1.ProjectsResource {}
+
+extension on Object? {
+  T cast<T>() => this as T;
+}
 
 void main() {
   late Messaging messaging;
@@ -141,7 +144,7 @@ void main() {
         ..called(1);
       verifyNoMoreInteractions(messages);
 
-      final request = capture.captured.first as SendMessageRequest;
+      final request = capture.captured.first as fmc1.SendMessageRequest;
       final parent = capture.captured.last as String;
 
       expect(request.message?.topic, 'test');
@@ -180,9 +183,59 @@ void main() {
       final capture = verify(() => messages.send(captureAny(), captureAny()))
         ..called(1);
 
-      final request = capture.captured.first as SendMessageRequest;
+      final request = capture.captured.first as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
+    });
+
+    test('supports booleans', () async {
+      when(() => messages.send(any(), any())).thenAnswer(
+        (_) => Future.value(fmc1.Message(name: 'test')),
+      );
+
+      await messaging.send(
+        TopicMessage(
+          topic: 'test',
+          apns: ApnsConfig(
+            payload: ApnsPayload(
+              aps: Aps(
+                contentAvailable: true,
+                mutableContent: true,
+                sound: CriticalSound(critical: true, name: 'default'),
+              ),
+            ),
+          ),
+          webpush: WebpushConfig(
+            notification: WebpushNotification(renotify: true),
+          ),
+        ),
+      );
+
+      final capture = verify(() => messages.send(captureAny(), captureAny()))
+        ..called(1);
+      final request = capture.captured.first as fmc1.SendMessageRequest;
+
+      expect(
+        request.message!.apns!.payload!['aps']!
+            .cast<Map<Object?, Object?>>()['content-available'],
+        1,
+      );
+      expect(
+        request.message!.apns!.payload!['aps']!
+            .cast<Map<Object?, Object?>>()['mutable-content'],
+        1,
+      );
+      expect(
+        request.message!.apns!.payload!['aps']!
+            .cast<Map<Object?, Object?>>()['sound']
+            .cast<Map<Object?, Object?>>()['critical'],
+        1,
+      );
+
+      expect(
+        request.message!.webpush!.notification!['renotify'],
+        1,
+      );
     });
   });
 
@@ -218,7 +271,8 @@ void main() {
     test('works', () async {
       when(() => messages.send(any(), any())).thenAnswer(
         (i) {
-          final request = i.positionalArguments.first as SendMessageRequest;
+          final request =
+              i.positionalArguments.first as fmc1.SendMessageRequest;
           switch (request.message?.topic) {
             case 'test':
               // Voluntary cause "test" to resolve after "test2"
@@ -257,11 +311,11 @@ void main() {
         ..called(2);
       verifyNoMoreInteractions(messages);
 
-      var request = capture.captured.first as SendMessageRequest;
+      var request = capture.captured.first as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, null);
 
-      request = capture.captured[1] as SendMessageRequest;
+      request = capture.captured[1] as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, null);
     });
@@ -280,11 +334,11 @@ void main() {
         ..called(2);
       verifyNoMoreInteractions(messages);
 
-      var request = capture.captured.first as SendMessageRequest;
+      var request = capture.captured.first as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
 
-      request = capture.captured[1] as SendMessageRequest;
+      request = capture.captured[1] as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
     });

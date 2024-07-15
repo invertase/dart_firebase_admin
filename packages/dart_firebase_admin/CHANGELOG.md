@@ -1,6 +1,8 @@
 ## Unreleased minor
 
 - Fixes some errors incorrectly coming back as "unknown".
+- `Apns` parameters are no-longer required
+- Fixes argument error in FMC when sending booleans
 - Renamed various error codes to remove duplicates and removed
   unused codes.
 - Fixes crash when updating users (thanks to @HeySreelal)
