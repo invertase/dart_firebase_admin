@@ -62,35 +62,41 @@ void main() {
   });
 
   group('FirebaseMessagingRequestHandler', () {
-    test('converts status codes into errors', () async {
-      final clientMock = ClientMock();
-      when(
-        () => clientMock.post(
-          any(),
-          body: any(named: 'body'),
-          headers: any(named: 'headers'),
-        ),
-      ).thenAnswer((_) => Future.value(Response('', 503)));
-
-      final app = FirebaseAdminMock();
-      when(() => app.client).thenAnswer((_) => Future.value(clientMock));
-
-      final handler = FirebaseMessagingRequestHandler(app);
-
-      await expectLater(
-        () => handler.invokeRequestHandler(
-          host: 'host',
-          path: 'path',
-        ),
-        throwsA(
-          isA<FirebaseMessagingAdminException>().having(
-            (e) => e.errorCode,
-            'errorCode',
-            MessagingClientErrorCode.serverUnavailable,
+    for (final (:code, :error) in [
+      (code: 400, error: MessagingClientErrorCode.invalidArgument),
+      (code: 401, error: MessagingClientErrorCode.authenticationError),
+      (code: 403, error: MessagingClientErrorCode.authenticationError),
+      (code: 500, error: MessagingClientErrorCode.internalError),
+      (code: 503, error: MessagingClientErrorCode.serverUnavailable),
+      (code: 505, error: MessagingClientErrorCode.unknownError),
+    ]) {
+      test('converts $code codes into errors', () async {
+        final clientMock = ClientMock();
+        when(
+          () => clientMock.post(
+            any(),
+            body: any(named: 'body'),
+            headers: any(named: 'headers'),
           ),
-        ),
-      );
-    });
+        ).thenAnswer((_) => Future.value(Response('', code)));
+
+        final app = FirebaseAdminMock();
+        when(() => app.client).thenAnswer((_) => Future.value(clientMock));
+
+        final handler = FirebaseMessagingRequestHandler(app);
+
+        await expectLater(
+          () => handler.invokeRequestHandler(
+            host: 'host',
+            path: 'path',
+          ),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having((e) => e.errorCode, 'errorCode', error),
+          ),
+        );
+      });
+    }
 
     for (final MapEntry(key: messagingError, value: code)
         in messagingServerToClientCode.entries) {
