@@ -257,7 +257,22 @@ class WebpushNotificationAction {
       'action': action,
       'icon': icon,
       'title': title,
-    };
+    }._cleanProto();
+  }
+}
+
+extension on Map<String, Object?> {
+  Map<String, Object?> _cleanProto() {
+    for (final entry in entries) {
+      switch (entry.value) {
+        case true:
+          this[entry.key] = 1;
+        case false:
+          this[entry.key] = 0;
+      }
+    }
+
+    return this;
   }
 }
 
@@ -368,7 +383,7 @@ class WebpushNotification {
       'timestamp': timestamp,
       'vibrate': vibrate,
       if (customData case final customData?) ...customData,
-    };
+    }._cleanProto();
   }
 }
 
@@ -422,7 +437,7 @@ class ApnsPayload {
     return {
       'aps': aps._toProto(),
       if (customData case final customData?) ...customData,
-    };
+    }._cleanProto();
   }
 }
 
@@ -430,13 +445,13 @@ class ApnsPayload {
 /// that is part of APNs messages.
 class Aps {
   Aps({
-    required this.alert,
-    required this.badge,
-    required this.sound,
-    required this.contentAvailable,
-    required this.mutableContent,
-    required this.category,
-    required this.threadId,
+    this.alert,
+    this.badge,
+    this.sound,
+    this.contentAvailable,
+    this.mutableContent,
+    this.category,
+    this.threadId,
   });
 
   /// Alert to be included in the message. This may be a string or an object of
@@ -472,7 +487,7 @@ class Aps {
       'mutable-content': mutableContent,
       'category': category,
       'thread-id': threadId,
-    };
+    }._cleanProto();
   }
 }
 
@@ -516,7 +531,7 @@ class ApsAlert {
       'subtitle-loc-args': subtitleLocArgs,
       'action-loc-key': actionLocKey,
       'launch-image': launchImage,
-    };
+    }._cleanProto();
   }
 }
 
@@ -542,7 +557,7 @@ class CriticalSound {
       'critical': critical,
       'name': name,
       'volume': volume,
-    };
+    }._cleanProto();
   }
 }
 
