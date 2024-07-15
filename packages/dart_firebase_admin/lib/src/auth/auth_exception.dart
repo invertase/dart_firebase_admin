@@ -589,7 +589,7 @@ enum AuthClientErrorCode {
         'reCAPTCHA enforcement state must be either "OFF", "AUDIT" or "ENFORCE".',
   ),
   recaptchaNotEnabled(
-    code: 'racaptcha-not-enabled',
+    code: 'recaptcha-not-enabled',
     message: 'reCAPTCHA enterprise is not enabled.',
   );
 
