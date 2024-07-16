@@ -18,6 +18,7 @@ void main() {
     test('fromDate constructor', () {
       final now = DateTime.now().toUtc();
       final timestamp = Timestamp.fromDate(now);
+
       expect(timestamp.seconds, now.millisecondsSinceEpoch ~/ 1000);
     });
   });
