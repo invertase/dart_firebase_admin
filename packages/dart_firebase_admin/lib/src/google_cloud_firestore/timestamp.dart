@@ -91,7 +91,7 @@ final class Timestamp implements _Serializable {
   /// as the given number of milliseconds.
   factory Timestamp.fromMillis(int milliseconds) {
     final seconds = (milliseconds / 1000).floor();
-    final nanos = (milliseconds - seconds * 1000 * 1000) * _msToNanos;
+    final nanos = (milliseconds - seconds * 1000) * _msToNanos;
 
     return Timestamp(seconds: seconds, nanoseconds: nanos);
   }
