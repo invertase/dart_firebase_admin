@@ -21,5 +21,27 @@ void main() {
 
       expect(timestamp.seconds, now.millisecondsSinceEpoch ~/ 1000);
     });
+
+    test('fromMillis constructor', () {
+      final now = DateTime.now().toUtc();
+      final timestamp = Timestamp.fromMillis(now.millisecondsSinceEpoch);
+
+      expect(timestamp.seconds, now.millisecondsSinceEpoch ~/ 1000);
+      expect(
+        timestamp.nanoseconds,
+        (now.millisecondsSinceEpoch % 1000) * (1000 * 1000),
+      );
+    });
+
+    test('fromMicros constructor', () {
+      final now = DateTime.now().toUtc();
+      final timestamp = Timestamp.fromMicros(now.microsecondsSinceEpoch);
+
+      expect(timestamp.seconds, now.microsecondsSinceEpoch ~/ (1000 * 1000));
+      expect(
+        timestamp.nanoseconds,
+        (now.microsecondsSinceEpoch % (1000 * 1000)) * 1000,
+      );
+    });
   });
 }
