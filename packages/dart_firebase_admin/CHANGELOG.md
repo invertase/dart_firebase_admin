@@ -8,6 +8,7 @@
   unused codes.
 - Fixes crash when updating users (thanks to @HeySreelal)
 - Marked various classes that cannot be extended as base/final.
+- Added a default constructor on `Timestamp` (thanks to @KKimj)
 
 ## 0.3.1
 
