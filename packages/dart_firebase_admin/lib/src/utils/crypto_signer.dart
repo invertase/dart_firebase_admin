@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
+import 'package:pointycastle/pointycastle.dart';
 
 import '../../dart_firebase_admin.dart';
 
@@ -107,11 +107,33 @@ class _ServiceAccountSigner implements CryptoSigner {
 
   @override
   Future<Uint8List> sign(Uint8List buffer) async {
-    final key = utf8.encode(credential.privateKey);
-    final hmac = Hmac(sha256, key);
-    final digest = hmac.convert(buffer);
+    final rsaPrivateKey = _parsePrivateKeyFromPem();
+    final signer = Signer('SHA-256/RSA')
+      ..init(true, PrivateKeyParameter<RSAPrivateKey>(rsaPrivateKey));
+    final signature = signer.generateSignature(buffer) as RSASignature;
+    return signature.bytes;
+  }
 
-    return Uint8List.fromList(digest.bytes);
+  RSAPrivateKey _parsePrivateKeyFromPem() {
+    final privateKeyString = credential.privateKey
+        .replaceAll('-----BEGIN PRIVATE KEY-----', '')
+        .replaceAll('-----END PRIVATE KEY-----', '')
+        .replaceAll('\n', '');
+    final privateKeyDER = base64Decode(privateKeyString);
+
+    final asn1Parser = ASN1Parser(Uint8List.fromList(privateKeyDER));
+    final topLevelSequence = asn1Parser.nextObject() as ASN1Sequence;
+    final privateKeyOctet = topLevelSequence.elements![2] as ASN1OctetString;
+
+    final privateKeyParser = ASN1Parser(privateKeyOctet.valueBytes);
+    final privatekeySequence = privateKeyParser.nextObject() as ASN1Sequence;
+
+    final modulus = (privatekeySequence.elements![1] as ASN1Integer).integer!;
+    final exponent = (privatekeySequence.elements![3] as ASN1Integer).integer!;
+    final p = (privatekeySequence.elements![4] as ASN1Integer).integer;
+    final q = (privatekeySequence.elements![5] as ASN1Integer).integer;
+
+    return RSAPrivateKey(modulus, exponent, p, q);
   }
 }
 
