@@ -1,3 +1,15 @@
+## Unreleased minor
+
+- Added `firestore.listCollections()` and `doc.listCollections()`
+- Fixes some errors incorrectly coming back as "unknown".
+- `Apns` parameters are no-longer required
+- Fixes argument error in FMC when sending booleans
+- Renamed various error codes to remove duplicates and removed
+  unused codes.
+- Fixes crash when updating users (thanks to @HeySreelal)
+- Marked various classes that cannot be extended as base/final.
+- Added a default constructor on `Timestamp` (thanks to @KKimj)
+
 ## 0.3.1
 
  - **FEAT**: Use GOOGLE_APPLICATION_CREDENTIALS if json value (#32).

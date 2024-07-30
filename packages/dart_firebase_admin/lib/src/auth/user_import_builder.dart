@@ -87,7 +87,6 @@ class UploadAccountOptions {
     this.rounds,
     this.memoryCost,
     this.saltSeparator,
-    this.cpuMemCost,
     this.parallelization,
     this.blockSize,
     this.dkLen,
@@ -98,7 +97,6 @@ class UploadAccountOptions {
   final int? rounds;
   final int? memoryCost;
   final String? saltSeparator;
-  final int? cpuMemCost;
   final int? parallelization;
   final int? blockSize;
   final int? dkLen;
@@ -255,7 +253,6 @@ class _UserImportBuilder {
       rounds: _validatedOptions?.rounds,
       memoryCost: _validatedOptions?.memoryCost,
       saltSeparator: _validatedOptions?.saltSeparator,
-      cpuMemCost: _validatedOptions?.cpuMemCost,
       parallelization: _validatedOptions?.parallelization,
       blockSize: _validatedOptions?.blockSize,
       dkLen: _validatedOptions?.dkLen,

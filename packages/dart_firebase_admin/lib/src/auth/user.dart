@@ -169,6 +169,8 @@ class UserRecord {
   /// Returns a JSON-serializable representation of this object.
   ///
   /// A JSON-serializable representation of this object.
+  // TODO is this dead code?
+  // ignore: unused_element
   Map<String, Object?> _toJson() {
     final providerDataJson = <Object?>[];
     final json = <String, Object?>{
@@ -252,9 +254,7 @@ class MultiFactorSettings {
     auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
   ) {
     final parsedEnrolledFactors = <MultiFactorInfo>[
-      ...?response.mfaInfo
-          ?.map(MultiFactorInfo.initMultiFactorInfo)
-          .whereNotNull(),
+      ...?response.mfaInfo?.map(MultiFactorInfo.initMultiFactorInfo).nonNulls,
     ];
 
     return MultiFactorSettings(
@@ -349,14 +349,13 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   @internal
   PhoneMultiFactorInfo.fromResponse(super.response)
       : phoneNumber = response.phoneInfo,
-        factorId = response.phoneInfo != null ? MultiFactorId.phone : throw 42,
         super.fromResponse();
 
   /// The phone number associated with a phone second factor.
   final String? phoneNumber;
 
   @override
-  final MultiFactorId factorId;
+  MultiFactorId get factorId => MultiFactorId.phone;
 
   @override
   Map<String, Object?> _toJson() {

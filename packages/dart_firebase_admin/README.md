@@ -163,7 +163,9 @@ print(user.data()?['age']);
 
 | Firestore                                        |     |
 | ------------------------------------------------ | --- |
+| firestore.listCollections()                      | ✅  |
 | reference.id                                     | ✅  |
+| reference.listCollections()                      | ✅  |
 | reference.parent                                 | ✅  |
 | reference.path                                   | ✅  |
 | reference.==                                     | ✅  |
@@ -223,15 +225,15 @@ print(user.data()?['age']);
 First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
 You should now have an instance of a `FirebaseAdminApp` object.
 
-You can now use this object to create a `FirebaseAuth` object as followed:
+You can now use this object to create a `Auth` object as followed:
 
 ```dart
 // Obtained in the previous steps
 FirebaseAdminApp admin;
-final auth = FirebaseAuth(admin);
+final auth = Auth(admin);
 ```
 
-You can then use this `FirebaseAuth` object to perform various
+You can then use this `Auth` object to perform various
 auth operations. For example, you can generate a password reset link:
 
 ```dart

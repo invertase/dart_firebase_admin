@@ -6,7 +6,7 @@ typedef DocumentData = Map<String, Object?>;
 @internal
 typedef ApiMapValue = Map<String, firestore1.Value>;
 
-abstract class _Serializable {
+abstract base class _Serializable {
   firestore1.Value _toProto();
 }
 
@@ -66,7 +66,7 @@ class _Serializer {
       case List():
         return firestore1.Value(
           arrayValue: firestore1.ArrayValue(
-            values: value.map(encodeValue).whereNotNull().toList(),
+            values: value.map(encodeValue).nonNulls.toList(),
           ),
         );
 

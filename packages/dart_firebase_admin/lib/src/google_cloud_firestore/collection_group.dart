@@ -1,6 +1,6 @@
 part of 'firestore.dart';
 
-class CollectionGroup<T> extends Query<T> {
+final class CollectionGroup<T> extends Query<T> {
   CollectionGroup._(
     String collectionId, {
     required super.firestore,

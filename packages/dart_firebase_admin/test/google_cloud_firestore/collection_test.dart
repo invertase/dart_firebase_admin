@@ -7,7 +7,7 @@ void main() {
   group('Collection interface', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createInstance());
+    setUp(() => firestore = createFirestore());
 
     test('has doc() method', () {
       final collection = firestore.collection('colId');
@@ -163,9 +163,8 @@ void main() {
 
       expect(collection, isA<CollectionReference<int>>());
 
-      final parent = collection.parent;
+      final DocumentReference<DocumentData>? parent = collection.parent;
 
-      expect(parent, isA<DocumentReference<DocumentData>>());
       expect(parent!.path, 'withConverterColParent/doc');
     });
   });
