@@ -4,19 +4,16 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
-const String jwtCallbackErrorPrefix =
-    'error in secret or public key callback: ';
-
-const String moMatchingKidErrorMessage = 'no-matching-kid-error';
-const String noKidInHeaderErrorMessage = 'no-kid-in-header-error';
-
 /// Class for verifying unsigned (emulator) JWTs.
 class EmulatorSignatureVerifier implements SignatureVerifier {
   @override
   Future<void> verify(String token) async {
     // Signature checks skipped for emulator; no need to fetch public keys.
     try {
-      JWT.decode(token);
+      return await verifyJwtSignature(
+        token,
+        SecretKey(''),
+      );
     } on JWTInvalidException catch (e) {
       if (e.message == 'invalid signature') return;
       rethrow;
@@ -107,7 +104,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       if (kid == null) {
         throw JwtError(
           JwtErrorCode.noKidInHeader,
-          noKidInHeaderErrorMessage,
+          'no-kid-in-header-error',
         );
       }
 
@@ -117,7 +114,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       if (publicKey == null) {
         throw JwtError(
           JwtErrorCode.noMatchingKid,
-          moMatchingKidErrorMessage,
+          'no-matching-kid-error',
         );
       }
       JWT.verify(
@@ -130,19 +127,8 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
         'The provided token has expired. Get a fresh token from your client app and try again.',
       );
     } on JWTException catch (e) {
-      if (e.message.startsWith(jwtCallbackErrorPrefix)) {
-        final message = e.message.split(jwtCallbackErrorPrefix).last.trim();
-        JwtErrorCode code;
-        if (message == moMatchingKidErrorMessage) {
-          code = JwtErrorCode.noMatchingKid;
-        } else if (message == noKidInHeaderErrorMessage) {
-          code = JwtErrorCode.noKidInHeader;
-        } else {
-          code = JwtErrorCode.keyFetchError;
-        }
-        throw JwtError(code, message);
-      }
-      throw JwtError(JwtErrorCode.invalidSignature, e.message);
+      // TODO: Handle specific JWTException types to provide detailed error messages.
+      throw JwtError(JwtErrorCode.unknown, e.message);
     }
   }
 }
@@ -205,7 +191,8 @@ enum JwtErrorCode {
   invalidSignature('invalid-token'),
   noMatchingKid('no-matching-kid-error'),
   noKidInHeader('no-kid-error'),
-  keyFetchError('key-fetch-error');
+  keyFetchError('key-fetch-error'),
+  unknown('unknown');
 
   const JwtErrorCode(this.value);
 
