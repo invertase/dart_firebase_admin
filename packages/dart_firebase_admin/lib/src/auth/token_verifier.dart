@@ -327,7 +327,7 @@ class DecodedIdToken {
       phoneNumber: map['phone_number'] as String?,
       picture: map['picture'] as String?,
       sub: map['sub']! as String,
-      uid: map['sub']! as String,
+      uid: map['uid']! as String,
     );
   }
 
