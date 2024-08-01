@@ -96,9 +96,40 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
   final KeyFetcher keyFetcher;
 
   @override
-  Future<bool> verify(String token) {
-    throw UnimplementedError();
-    // verifyJwtSignature(token);
+  Future<void> verify(String token) async {
+    try {
+      final jwt = JWT.decode(token);
+      final kid = jwt.header?['kid'] as String?;
+
+      if (kid == null) {
+        throw JwtError(
+          JwtErrorCode.noKidInHeader,
+          'no-kid-in-header-error',
+        );
+      }
+
+      final publicKeys = await keyFetcher.fetchPublicKeys();
+      final publicKey = publicKeys[kid];
+
+      if (publicKey == null) {
+        throw JwtError(
+          JwtErrorCode.noMatchingKid,
+          'no-matching-kid-error',
+        );
+      }
+      JWT.verify(
+        token,
+        RSAPublicKey.cert(publicKey),
+      );
+    } on JWTExpiredException {
+      throw JwtError(
+        JwtErrorCode.tokenExpired,
+        'The provided token has expired. Get a fresh token from your client app and try again.',
+      );
+    } on JWTException catch (e) {
+      // TODO: Handle specific JWTException types to provide detailed error messages.
+      throw JwtError(JwtErrorCode.unknown, e.message);
+    }
   }
 }
 
@@ -160,7 +191,8 @@ enum JwtErrorCode {
   invalidSignature('invalid-token'),
   noMatchingKid('no-matching-kid-error'),
   noKidInHeader('no-kid-error'),
-  keyFetchError('key-fetch-error');
+  keyFetchError('key-fetch-error'),
+  unknown('unknown');
 
   const JwtErrorCode(this.value);
 
