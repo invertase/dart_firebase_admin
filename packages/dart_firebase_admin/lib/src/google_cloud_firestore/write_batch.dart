@@ -34,7 +34,7 @@ class WriteBatch {
   /// Create a document with the provided object values. This will fail the batch
   /// if a document exists at its location.
   ///
-  /// - [documentRef]: A reference to the document to be created.
+  /// - [ref]: A reference to the document to be created.
   /// - [data] The object to serialize as the document.
   ///
   /// Throws if the provided input is not a valid Firestore document.
