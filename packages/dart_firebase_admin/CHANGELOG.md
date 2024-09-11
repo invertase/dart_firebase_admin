@@ -1,4 +1,4 @@
-## Unreleased minor
+## 0.4.0 - 2024-09-11
 
 - Added `firestore.listCollections()` and `doc.listCollections()`
 - Fixes some errors incorrectly coming back as "unknown".
