@@ -261,7 +261,7 @@ final link = await auth.generatePasswordResetLink(
 | auth.deleteProviderConfig             | ✅  |
 | auth.createCustomToken                | ✅  |
 | auth.setCustomUserClaims              | ✅  |
-| auth.verifyIdToken                    | ✅  |
+| auth.verifyIdToken                    | ❌  |
 | auth.revokeRefreshTokens              | ✅  |
 | auth.createSessionCookie              | ✅  |
 | auth.verifySessionCookie              | ✅  |
