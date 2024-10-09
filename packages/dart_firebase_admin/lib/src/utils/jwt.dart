@@ -10,7 +10,7 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
   Future<void> verify(String token) async {
     // Signature checks skipped for emulator; no need to fetch public keys.
     try {
-      return await verifyJwtSignature(
+      verifyJwtSignature(
         token,
         SecretKey(''),
       );
@@ -95,17 +95,53 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
 
   final KeyFetcher keyFetcher;
 
+  /// Verifies a JWT token.
+  ///
+  /// This verifies the token's signature. The signing key is selected using the
+  /// 'kid' claim in the token's header.
+  /// The token's expiration is also verified.
   @override
-  Future<bool> verify(String token) {
-    throw UnimplementedError();
-    // verifyJwtSignature(token);
+  Future<void> verify(String token) async {
+    try {
+      final jwt = JWT.decode(token);
+      final kid = jwt.header?['kid'] as String?;
+
+      if (kid == null) {
+        throw JwtError(
+          JwtErrorCode.noKidInHeader,
+          'no-kid-in-header-error',
+        );
+      }
+
+      final publicKeys = await keyFetcher.fetchPublicKeys();
+      final publicKey = publicKeys[kid];
+
+      if (publicKey == null) {
+        throw JwtError(
+          JwtErrorCode.noMatchingKid,
+          'no-matching-kid-error',
+        );
+      }
+      verifyJwtSignature(
+        token,
+        RSAPublicKey.cert(publicKey),
+        issueAt: Duration.zero, // Any past date should be valid
+      );
+      // At this point most JWTException's should have been caught in
+      // verifyJwtSignature, but we could still get some from JWT.decode above
+    } on JWTException catch (e) {
+      throw JwtError(
+        JwtErrorCode.unknown,
+        e is JWTUndefinedException ? e.message : '${e.runtimeType}: e.message',
+      );
+    }
   }
 }
 
 sealed class SecretOrPublicKey {}
 
 @internal
-Future<void> verifyJwtSignature(
+void verifyJwtSignature(
   String token,
   JWTKey key, {
   Duration? issueAt,
@@ -113,7 +149,7 @@ Future<void> verifyJwtSignature(
   String? subject,
   String? issuer,
   String? jwtId,
-}) async {
+}) {
   try {
     JWT.verify(
       token,
@@ -160,7 +196,8 @@ enum JwtErrorCode {
   invalidSignature('invalid-token'),
   noMatchingKid('no-matching-kid-error'),
   noKidInHeader('no-kid-error'),
-  keyFetchError('key-fetch-error');
+  keyFetchError('key-fetch-error'),
+  unknown('unknown');
 
   const JwtErrorCode(this.value);
 
