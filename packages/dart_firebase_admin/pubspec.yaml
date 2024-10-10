@@ -1,6 +1,6 @@
 name: dart_firebase_admin
 description: A Firebase Admin SDK implementation for Dart.
-version: 0.4.1
+version: 0.4.0
 homepage: "https://github.com/invertase/dart_firebase_admin"
 repository: "https://github.com/invertase/dart_firebase_admin"
 
@@ -26,3 +26,6 @@ dev_dependencies:
   mocktail: ^1.0.1
   test: ^1.24.4
   uuid: ^4.0.0
+
+false_secrets:
+ - /test/auth/jwt_test.dart

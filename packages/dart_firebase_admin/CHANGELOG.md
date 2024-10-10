@@ -1,8 +1,3 @@
-## 0.4.1 - 2024-10-10
-
-- Fixes the `Auth.verifyIdToken()` implementation by adding the
-    token signature verification part. 
-
 ## 0.4.0 - 2024-09-11
 
 - Added `firestore.listCollections()` and `doc.listCollections()`
@@ -14,6 +9,8 @@
 - Fixes crash when updating users (thanks to @HeySreelal)
 - Marked various classes that cannot be extended as base/final.
 - Added a default constructor on `Timestamp` (thanks to @KKimj)
+- Fixes the `Auth.verifyIdToken()` implementation by adding the
+    token signature verification part. 
 
 ## 0.3.1
 
