@@ -1,3 +1,8 @@
+## 0.4.1
+
+- Fixes the `Auth.verifyIdToken()` implementation by adding the
+    token signature verification part. 
+
 ## 0.4.0 - 2024-09-11
 
 - Added `firestore.listCollections()` and `doc.listCollections()`
