@@ -13,3 +13,4 @@ import 'package:meta/meta.dart';
 part 'app/credential.dart';
 part 'app/exception.dart';
 part 'app/firebase_admin.dart';
+part 'app/emulator.dart';
