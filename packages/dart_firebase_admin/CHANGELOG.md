@@ -1,4 +1,4 @@
-## 0.4.1
+## 0.4.1 - 2024-10-10
 
 - Fixes the `Auth.verifyIdToken()` implementation by adding the
     token signature verification part. 
