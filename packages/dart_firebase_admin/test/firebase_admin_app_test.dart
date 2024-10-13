@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:test/test.dart';
@@ -21,30 +21,34 @@ void main() {
 
     test(
         'useEmulator() uses environment variables to set apiHost to the emulator',
-        () {
-      assert(Platform.environment['FIREBASE_AUTH_EMULATOR_HOST'] != null,
-          'FIREBASE_AUTH_EMULATOR_HOST is not set');
-      assert(Platform.environment['FIRESTORE_EMULATOR_HOST'] != null,
-          'FIRESTORE_EMULATOR_HOST is not set');
-      final firebaseAuthEmulatorHost =
-          Platform.environment['FIREBASE_AUTH_EMULATOR_HOST']!;
-      final firestoreEmulatorHost =
-          Platform.environment['FIRESTORE_EMULATOR_HOST']!;
+        () async {
+      const firebaseAuthEmulatorHost = '127.0.0.1:9000';
+      const firestoreEmulatorHost = '127.0.0.1:8000';
+      final testEnv = <String, String>{
+        'FIREBASE_AUTH_EMULATOR_HOST': firebaseAuthEmulatorHost,
+        'FIRESTORE_EMULATOR_HOST': firestoreEmulatorHost,
+      };
 
-      final app = FirebaseAdminApp.initializeApp(
-        'dart-firebase-admin',
-        Credential.fromApplicationDefaultCredentials(),
-      );
+      await runZoned(
+        () async {
+          final app = FirebaseAdminApp.initializeApp(
+            'dart-firebase-admin',
+            Credential.fromApplicationDefaultCredentials(),
+          );
 
-      app.useEmulator();
+          app.useEmulator();
 
-      expect(
-        app.authApiHost,
-        Uri.http(firebaseAuthEmulatorHost, 'identitytoolkit.googleapis.com/'),
-      );
-      expect(
-        app.firestoreApiHost,
-        Uri.http(firestoreEmulatorHost, '/'),
+          expect(
+            app.authApiHost,
+            Uri.http(
+                firebaseAuthEmulatorHost, 'identitytoolkit.googleapis.com/'),
+          );
+          expect(
+            app.firestoreApiHost,
+            Uri.http(firestoreEmulatorHost, '/'),
+          );
+        },
+        zoneValues: {envSymbol: testEnv},
       );
     });
   });
