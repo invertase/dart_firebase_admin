@@ -30,6 +30,7 @@ void main() {
       };
 
       await runZoned(
+        zoneValues: {envSymbol: testEnv},
         () async {
           final app = FirebaseAdminApp.initializeApp(
             'dart-firebase-admin',
@@ -48,7 +49,6 @@ void main() {
             Uri.http(firestoreEmulatorHost, '/'),
           );
         },
-        zoneValues: {envSymbol: testEnv},
       );
     });
   });
