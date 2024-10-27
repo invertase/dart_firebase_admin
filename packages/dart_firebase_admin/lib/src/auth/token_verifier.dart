@@ -79,9 +79,7 @@ class FirebaseTokenVerifier {
       isEmulator: isEmulator,
     );
 
-    final decodedIdToken = DecodedIdToken.fromMap(decoded.payload);
-    decodedIdToken.uid = decodedIdToken.sub;
-    return decodedIdToken;
+    return DecodedIdToken.fromMap(decoded.payload);
   }
 
   Future<DecodedToken> _decodeAndVerify(
@@ -249,6 +247,17 @@ class TokenProvider {
     required this.tenant,
   });
 
+  @internal
+  factory TokenProvider.fromMap(Map<dynamic, dynamic> map) {
+    return TokenProvider(
+      identities: map['identities']! as Map<String, Object?>,
+      signInProvider: map['sign_in_provider']! as String,
+      signInSecondFactor: map['sign_in_second_factor'] as String?,
+      secondFactorIdentifier: map['second_factor_identifier'] as String?,
+      tenant: map['tenant'] as String?,
+    );
+  }
+
   /// Provider-specific identity details corresponding
   /// to the provider used to sign in the user.
   Map<String, Object?> identities;
@@ -313,19 +322,13 @@ class DecodedIdToken {
       email: map['email'] as String?,
       emailVerified: map['email_verified'] as bool?,
       exp: map['exp']! as int,
-      firebase: TokenProvider(
-        identities: Map.from(map['firebase']! as Map),
-        signInProvider: map['sign_in_provider']! as String,
-        signInSecondFactor: map['sign_in_second_factor'] as String?,
-        secondFactorIdentifier: map['second_factor_identifier'] as String?,
-        tenant: map['tenant'] as String?,
-      ),
+      firebase: TokenProvider.fromMap(map['firebase']! as Map),
       iat: map['iat']! as int,
       iss: map['iss']! as String,
       phoneNumber: map['phone_number'] as String?,
       picture: map['picture'] as String?,
       sub: map['sub']! as String,
-      uid: map['uid']! as String,
+      uid: map['sub']! as String,
     );
   }
 
