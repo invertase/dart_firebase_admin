@@ -25,7 +25,6 @@ void main() {
           'phone_number': 'mock-phone-number',
           'picture': 'mock-picture',
           'sub': 'mock-sub',
-          'uid': 'mock-sub',
         },
       );
       expect(idToken.aud, 'mock-aud');
