@@ -20,8 +20,6 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
       if (e.message == 'unknown algorithm') return;
       if (e.message == 'invalid signature') return;
       rethrow;
-    } catch (_) {
-      // Invalid signature. Can be ignored when using emulator.
     }
   }
 }
