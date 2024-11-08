@@ -11,18 +11,9 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
     // Signature checks skipped for emulator; no need to fetch public keys.
 
     try {
-      JWT.verify(
+      verifyJwtSignature(
         token,
         SecretKey(''),
-      );
-    } on JWTExpiredException catch (e, stackTrace) {
-      Error.throwWithStackTrace(
-        JwtError(
-          JwtErrorCode.tokenExpired,
-          'The provided token has expired. Get a fresh token from your '
-          'client app and try again.',
-        ),
-        stackTrace,
       );
     } on JWTInvalidException catch (e) {
       // Emulator tokens have "alg": "none"
@@ -138,19 +129,10 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       }
 
       try {
-        JWT.verify(
+        verifyJwtSignature(
           token,
           RSAPublicKey.cert(publicKey),
           issueAt: Duration.zero, // Any past date should be valid
-        );
-      } on JWTExpiredException catch (e, stackTrace) {
-        Error.throwWithStackTrace(
-          JwtError(
-            JwtErrorCode.tokenExpired,
-            'The provided token has expired. Get a fresh token from your '
-            'client app and try again.',
-          ),
-          stackTrace,
         );
       } catch (e, stackTrace) {
         Error.throwWithStackTrace(
@@ -174,6 +156,38 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
 }
 
 sealed class SecretOrPublicKey {}
+
+@internal
+void verifyJwtSignature(
+  String token,
+  JWTKey key, {
+  Duration? issueAt,
+  Audience? audience,
+  String? subject,
+  String? issuer,
+  String? jwtId,
+}) {
+  try {
+    JWT.verify(
+      token,
+      key,
+      issueAt: issueAt,
+      audience: audience,
+      subject: subject,
+      issuer: issuer,
+      jwtId: jwtId,
+    );
+  } on JWTExpiredException catch (e, stackTrace) {
+    Error.throwWithStackTrace(
+      JwtError(
+        JwtErrorCode.tokenExpired,
+        'The provided token has expired. Get a fresh token from your '
+        'client app and try again.',
+      ),
+      stackTrace,
+    );
+  }
+}
 
 /// Jwt error code structure.
 class JwtError extends Error {
