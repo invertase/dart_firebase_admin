@@ -19,7 +19,10 @@ R _firestoreGuard<R>(R Function() cb) {
 Never _handleException(Object exception, StackTrace stackTrace) {
   if (exception is firestore1.DetailedApiRequestError) {
     Error.throwWithStackTrace(
-      FirebaseFirestoreAdminException.fromServerError(exception),
+      FirebaseFirestoreAdminException.fromServerError(
+        serverErrorCode: exception.message ?? '',
+        rawServerResponse: exception.jsonResponse,
+      ),
       stackTrace,
     );
   }
