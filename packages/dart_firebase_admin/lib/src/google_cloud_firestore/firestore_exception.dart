@@ -28,21 +28,45 @@ Never _handleException(Object exception, StackTrace stackTrace) {
 }
 
 class FirebaseFirestoreAdminException extends FirebaseAdminException {
-  FirebaseFirestoreAdminException.fromServerError(
-    this.serverError,
-  ) : super('firestore', 'unknown', serverError.message);
+  FirebaseFirestoreAdminException(
+    this.errorCode, [
+    String? message,
+  ]) : super('firestore', errorCode.code, message ?? errorCode.message);
 
-  /// The error thrown by the http/grpc client.
-  ///
-  /// This is exposed temporarily as a workaround until proper status codes
-  /// are exposed officially.
-  // TODO handle firestore error codes.
-  @experimental
-  final firestore1.DetailedApiRequestError serverError;
+  factory FirebaseFirestoreAdminException.fromServerError({
+    required String serverErrorCode,
+    Object? rawServerResponse,
+  }) {
+    // serverErrorCode could contain additional details:
+    // ERROR_CODE : Detailed message which can also contain colons
+    final colonSeparator = serverErrorCode.indexOf(':');
+    String? customMessage;
+    if (colonSeparator != -1) {
+      customMessage = serverErrorCode.substring(colonSeparator + 1).trim();
+      serverErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
+    }
+    // If not found, default to internal error.
+    final error = firestoreServerToClientCode[serverErrorCode] ??
+        FirestoreErrorCode.internal;
+    // Server detailed message should have highest priority.
+    customMessage = customMessage ?? error.message;
+
+    if (error == FirestoreErrorCode.internal && rawServerResponse != null) {
+      try {
+        customMessage +=
+            ' Raw server response: "${jsonEncode(rawServerResponse)}"';
+      } catch (e) {
+        // Ignore JSON parsing error.
+      }
+    }
+
+    return FirebaseFirestoreAdminException(error, customMessage);
+  }
+
+  final FirestoreErrorCode errorCode;
 
   @override
-  String toString() =>
-      'FirebaseFirestoreAdminException: $code: $message ${serverError.jsonResponse} ';
+  String toString() => 'FirebaseFirestoreAdminException: $code: $message';
 }
 
 /// Firestore server to client enum error codes.
