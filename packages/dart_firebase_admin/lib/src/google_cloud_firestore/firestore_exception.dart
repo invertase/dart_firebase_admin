@@ -45,7 +45,46 @@ class FirebaseFirestoreAdminException extends FirebaseAdminException {
       'FirebaseFirestoreAdminException: $code: $message ${serverError.jsonResponse} ';
 }
 
-/// Auth client error codes and their default messages.
+/// Firestore server to client enum error codes.
+@internal
+const firestoreServerToClientCode = {
+  // The operation was aborted, typically due to a concurrency issue like transaction aborts, etc.
+  'ABORTED': FirestoreErrorCode.aborted,
+  // Some document that we attempted to create already exists.
+  'ALREADY-EXISTS': FirestoreErrorCode.alreadyExists,
+  // The operation was cancelled (typically by the caller).
+  'CANCELLED': FirestoreErrorCode.cancelled,
+  // Unrecoverable data loss or corruption.
+  'DATA-LOSS': FirestoreErrorCode.dataLoss,
+  // Deadline expired before operation could complete.
+  'DEADLINE-EXCEEDED': FirestoreErrorCode.deadlineExceeded,
+  // Operation was rejected because the system is not in a state required for the operation's execution.
+  'FAILED-PRECONDITION': FirestoreErrorCode.failedPrecondition,
+  // Internal errors.
+  'INTERNAL': FirestoreErrorCode.internal,
+  // Client specified an invalid argument.
+  'INVALID-ARGUMENT': FirestoreErrorCode.invalidArgument,
+  // Some requested document was not found.
+  'NOT-FOUND': FirestoreErrorCode.notFound,
+  // The operation completed successfully.
+  'OK': FirestoreErrorCode.ok,
+  // Operation was attempted past the valid range.
+  'OUT-OF-RANGE': FirestoreErrorCode.outOfRange,
+  // The caller does not have permission to execute the specified operation.
+  'PERMISSION-DENIED': FirestoreErrorCode.permissionDenied,
+  // Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system is out of space.
+  'RESOURCE-EXHAUSTED': FirestoreErrorCode.resourceExhausted,
+  // The request does not have valid authentication credentials for the operation.
+  'UNAUTHENTICATED': FirestoreErrorCode.unauthenticated,
+  // The service is currently unavailable.
+  'UNAVAILABLE': FirestoreErrorCode.unavailable,
+  // Operation is not implemented or not supported/enabled.
+  'UNIMPLEMENTED': FirestoreErrorCode.unimplemented,
+  // Unknown error or an error from a different error domain.
+  'UNKNOWN': FirestoreErrorCode.unknown,
+};
+
+/// Firestore client error codes and their default messages.
 enum FirestoreErrorCode {
   aborted(
     code: 'aborted',
