@@ -30,7 +30,8 @@ Never _handleException(Object exception, StackTrace stackTrace) {
   Error.throwWithStackTrace(exception, stackTrace);
 }
 
-class FirebaseFirestoreAdminException extends FirebaseAdminException {
+class FirebaseFirestoreAdminException extends FirebaseAdminException
+    implements Exception {
   FirebaseFirestoreAdminException(
     this.errorCode, [
     String? message,
