@@ -88,8 +88,8 @@ class WriteBatch {
   ///   console.log('Successfully executed batch.');
   /// });
   /// ```
-  Future<List<WriteResult>> commit() async {
-    final response = await _commit(transactionId: null);
+  Future<List<WriteResult>> commit([String? transactionId]) async {
+    final response = await _commit(transactionId: transactionId);
 
     return [
       for (final writeResult

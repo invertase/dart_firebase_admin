@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -28,6 +30,7 @@ part 'write_batch.dart';
 part 'document_change.dart';
 part 'filter.dart';
 part 'firestore_exception.dart';
+part 'firestore_api_request_internal.dart';
 part 'collection_group.dart';
 
 class Firestore {
@@ -192,6 +195,79 @@ class Firestore {
     );
 
     return reader.get(tag);
+  }
+
+  Future<T> runTransaction<T>(
+    TransactionHandler<T> transactionHandler, {
+    int maxAttempts = 5,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    if (maxAttempts <= 0) {
+      return Future.error(
+        FirebaseFirestoreAdminException(
+          FirestoreClientErrorCode.failedPrecondition,
+          'Transaction max attemps must be > 0.',
+        ),
+      );
+    }
+    return Future<T>(() async {
+      var attempts = 1;
+      while (true) {
+        try {
+          return await _runTransaction(transactionHandler);
+        } on FirebaseFirestoreAdminException catch (firebaseError) {
+          if (firebaseError.errorCode == FirestoreClientErrorCode.aborted ||
+              firebaseError.errorCode == FirestoreClientErrorCode.unavailable ||
+              firebaseError.errorCode == FirestoreClientErrorCode.internal) {
+            if (attempts < maxAttempts) {
+              attempts += 1;
+            } else {
+              return Future.error(
+                FirebaseFirestoreAdminException(
+                  FirestoreClientErrorCode.failedPrecondition,
+                  'Transaction max atempts exceded.',
+                ),
+              );
+            }
+          } else {
+            return Future.error(firebaseError);
+          }
+        } catch (e) {
+          return Future.error(e);
+        }
+      }
+    }).timeout(
+      timeout,
+      onTimeout: () => Future.error(
+        FirebaseFirestoreAdminException(
+          FirestoreClientErrorCode.deadlineExceeded,
+          'Transaction timout.',
+        ),
+      ),
+    );
+  }
+
+  Future<T> _runTransaction<T>(
+    TransactionHandler<T> transactionHandler,
+  ) async {
+    final transactionRequest = firestore1.BeginTransactionRequest();
+
+    return _client.v1(
+      (client) async {
+        final transactionResponse = await client.projects.databases.documents
+            .beginTransaction(transactionRequest, _formattedDatabaseName)
+            .catchError(_handleException);
+
+        final transactionId = transactionResponse.transaction;
+        final transaction = Transaction(this, transactionId!);
+        final result = await transactionHandler(transaction);
+        await transaction._transactionWriteBatch
+            .commit(transactionId)
+            .catchError(_handleException);
+
+        return result;
+      },
+    );
   }
 }
 
