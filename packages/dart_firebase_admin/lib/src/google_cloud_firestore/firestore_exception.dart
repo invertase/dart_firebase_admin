@@ -19,9 +19,13 @@ R _firestoreGuard<R>(R Function() cb) {
 Never _handleException(Object exception, StackTrace stackTrace) {
   if (exception is firestore1.DetailedApiRequestError) {
     Error.throwWithStackTrace(
-      FirebaseFirestoreAdminException.fromServerError(
-        serverErrorCode: exception.message ?? '',
-        rawServerResponse: exception.jsonResponse,
+      _createFirebaseError(
+        statusCode: exception.status,
+        body: switch (exception.jsonResponse) {
+          null => '',
+          final json => jsonEncode(json),
+        },
+        isJson: exception.jsonResponse != null,
       ),
       stackTrace,
     );
@@ -37,83 +41,77 @@ class FirebaseFirestoreAdminException extends FirebaseAdminException
     String? message,
   ]) : super('firestore', errorCode.code, message ?? errorCode.message);
 
+  @internal
   factory FirebaseFirestoreAdminException.fromServerError({
     required String serverErrorCode,
+    String? message,
     Object? rawServerResponse,
   }) {
-    // serverErrorCode could contain additional details:
-    // ERROR_CODE : Detailed message which can also contain colons
-    final colonSeparator = serverErrorCode.indexOf(':');
-    String? customMessage;
-    if (colonSeparator != -1) {
-      customMessage = serverErrorCode.substring(colonSeparator + 1).trim();
-      serverErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
-    }
-    // If not found, default to internal error.
+    // If not found, default to unknown error.
     final error = firestoreServerToClientCode[serverErrorCode] ??
-        FirestoreErrorCode.internal;
-    // Server detailed message should have highest priority.
-    customMessage = customMessage ?? error.message;
+        FirestoreClientErrorCode.unknown;
+    message ??= error.message;
 
-    if (error == FirestoreErrorCode.internal && rawServerResponse != null) {
+    if (error == FirestoreClientErrorCode.unknown &&
+        rawServerResponse != null) {
       try {
-        customMessage +=
-            ' Raw server response: "${jsonEncode(rawServerResponse)}"';
+        message += ' Raw server response: "${jsonEncode(rawServerResponse)}"';
       } catch (e) {
         // Ignore JSON parsing error.
       }
     }
 
-    return FirebaseFirestoreAdminException(error, customMessage);
+    return FirebaseFirestoreAdminException(error, message);
   }
 
-  final FirestoreErrorCode errorCode;
+  final FirestoreClientErrorCode errorCode;
 
   @override
   String toString() => 'FirebaseFirestoreAdminException: $code: $message';
 }
 
 /// Firestore server to client enum error codes.
+/// https://cloud.google.com/firestore/docs/use-rest-api#error_codes
 @internal
 const firestoreServerToClientCode = {
   // The operation was aborted, typically due to a concurrency issue like transaction aborts, etc.
-  'ABORTED': FirestoreErrorCode.aborted,
+  'ABORTED': FirestoreClientErrorCode.aborted,
   // Some document that we attempted to create already exists.
-  'ALREADY-EXISTS': FirestoreErrorCode.alreadyExists,
+  'ALREADY_EXISTS': FirestoreClientErrorCode.alreadyExists,
   // The operation was cancelled (typically by the caller).
-  'CANCELLED': FirestoreErrorCode.cancelled,
+  'CANCELLED': FirestoreClientErrorCode.cancelled,
   // Unrecoverable data loss or corruption.
-  'DATA-LOSS': FirestoreErrorCode.dataLoss,
+  'DATA_LOSS': FirestoreClientErrorCode.dataLoss,
   // Deadline expired before operation could complete.
-  'DEADLINE-EXCEEDED': FirestoreErrorCode.deadlineExceeded,
+  'DEADLINE_EXCEEDED': FirestoreClientErrorCode.deadlineExceeded,
   // Operation was rejected because the system is not in a state required for the operation's execution.
-  'FAILED-PRECONDITION': FirestoreErrorCode.failedPrecondition,
+  'FAILED_PRECONDITION': FirestoreClientErrorCode.failedPrecondition,
   // Internal errors.
-  'INTERNAL': FirestoreErrorCode.internal,
+  'INTERNAL': FirestoreClientErrorCode.internal,
   // Client specified an invalid argument.
-  'INVALID-ARGUMENT': FirestoreErrorCode.invalidArgument,
+  'INVALID_ARGUMENT': FirestoreClientErrorCode.invalidArgument,
   // Some requested document was not found.
-  'NOT-FOUND': FirestoreErrorCode.notFound,
+  'NOT_FOUND': FirestoreClientErrorCode.notFound,
   // The operation completed successfully.
-  'OK': FirestoreErrorCode.ok,
+  'OK': FirestoreClientErrorCode.ok,
   // Operation was attempted past the valid range.
-  'OUT-OF-RANGE': FirestoreErrorCode.outOfRange,
+  'OUT_OF_RANGE': FirestoreClientErrorCode.outOfRange,
   // The caller does not have permission to execute the specified operation.
-  'PERMISSION-DENIED': FirestoreErrorCode.permissionDenied,
+  'PERMISSION_DENIED': FirestoreClientErrorCode.permissionDenied,
   // Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system is out of space.
-  'RESOURCE-EXHAUSTED': FirestoreErrorCode.resourceExhausted,
+  'RESOURCE_EXHAUSTED': FirestoreClientErrorCode.resourceExhausted,
   // The request does not have valid authentication credentials for the operation.
-  'UNAUTHENTICATED': FirestoreErrorCode.unauthenticated,
+  'UNAUTHENTICATED': FirestoreClientErrorCode.unauthenticated,
   // The service is currently unavailable.
-  'UNAVAILABLE': FirestoreErrorCode.unavailable,
+  'UNAVAILABLE': FirestoreClientErrorCode.unavailable,
   // Operation is not implemented or not supported/enabled.
-  'UNIMPLEMENTED': FirestoreErrorCode.unimplemented,
+  'UNIMPLEMENTED': FirestoreClientErrorCode.unimplemented,
   // Unknown error or an error from a different error domain.
-  'UNKNOWN': FirestoreErrorCode.unknown,
+  'UNKNOWN': FirestoreClientErrorCode.unknown,
 };
 
 /// Firestore client error codes and their default messages.
-enum FirestoreErrorCode {
+enum FirestoreClientErrorCode {
   aborted(
     code: 'aborted',
     message:
@@ -188,7 +186,7 @@ enum FirestoreErrorCode {
     message: 'Unknown error or an error from a different error domain.',
   );
 
-  const FirestoreErrorCode({
+  const FirestoreClientErrorCode({
     required this.code,
     required this.message,
   });
