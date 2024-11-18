@@ -264,24 +264,6 @@ void main() {
             fail('Transaction threw invalid exception. $e');
           }
         });
-
-        // ignore: todo
-        // TODO(Salakar): Test seems to fail sometimes. Will look at in a future PR.
-        // testWidgets('support returning any value, e.g. a [DocumentSnapshot]', (_) async {
-        //   DocumentReference<Map<String, dynamic>> documentReference =
-        //       await initializeTest('transaction-get');
-
-        //   DocumentSnapshot<Map<String, dynamic>> snapshot =
-        //       await firestore.runTransaction((Transaction transaction) async {
-        //     DocumentSnapshot<Map<String, dynamic>> returned = await transaction.get(documentReference);
-        //     // required:
-        //     transaction.set(documentReference, {'foo': 'bar'});
-        //     return returned;
-        //   });
-
-        //   expect(snapshot, isA<DocumentSnapshot>());
-        //   expect(snapshot.reference.path, equals(documentReference.path));
-        // }, skip: kUseFirestoreEmulator);
       });
 
       group('Transaction.delete()', () {
