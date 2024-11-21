@@ -113,84 +113,103 @@ const firestoreServerToClientCode = {
 /// Firestore client error codes and their default messages.
 enum FirestoreClientErrorCode {
   aborted(
+    statusCode: StatusCode.aborted,
     code: 'aborted',
     message:
         'The operation was aborted, typically due to a concurrency issue like transaction aborts, etc.',
   ),
   alreadyExists(
+    statusCode: StatusCode.alreadyExists,
     code: 'already-exists',
     message: 'Some document that we attempted to create already exists.',
   ),
   cancelled(
+    statusCode: StatusCode.cancelled,
     code: 'cancelled',
     message: 'The operation was cancelled (typically by the caller).',
   ),
   dataLoss(
+    statusCode: StatusCode.dataLoss,
     code: 'data-loss',
     message: 'Unrecoverable data loss or corruption.',
   ),
   deadlineExceeded(
+    statusCode: StatusCode.deadlineExceeded,
     code: 'deadline_exceeded',
     message: 'Deadline expired before operation could complete.',
   ),
   failedPrecondition(
+    statusCode: StatusCode.failedPrecondition,
     code: 'failed_precondition',
     message:
         "Operation was rejected because the system is not in a state required for the operation's execution.",
   ),
   internal(
+    statusCode: StatusCode.internal,
     code: 'internal',
     message: 'Internal errors.',
   ),
   invalidArgument(
+    statusCode: StatusCode.invalidArgument,
     code: 'invalid_argument',
     message: 'Client specified an invalid argument.',
   ),
   notFound(
+    statusCode: StatusCode.notFound,
     code: 'not_found',
     message: 'Some requested document was not found.',
   ),
   ok(
+    statusCode: StatusCode.ok,
     code: 'ok',
     message: 'The operation completed successfully.',
   ),
   outOfRange(
+    statusCode: StatusCode.outOfRange,
     code: 'out_of_range',
     message: 'Operation was attempted past the valid range.',
   ),
   permissionDenied(
+    statusCode: StatusCode.permissionDenied,
     code: 'permission_denied',
     message:
         'The caller does not have permission to execute the specified operation.',
   ),
   resourceExhausted(
+    statusCode: StatusCode.resourceExhausted,
     code: 'resource_exhausted',
     message:
         'Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system is out of space.',
   ),
   unauthenticated(
+    statusCode: StatusCode.unauthenticated,
     code: 'unauthenticated',
     message:
         'The request does not have valid authentication credentials for the operation.',
   ),
   unavailable(
+    statusCode: StatusCode.unavailable,
     code: 'unavailable',
     message: 'The service is currently unavailable.',
   ),
   unimplemented(
+    statusCode: StatusCode.unimplemented,
     code: 'unimplemented',
     message: 'Operation is not implemented or not supported/enabled.',
   ),
   unknown(
+    statusCode: StatusCode.unknown,
     code: 'unknown',
     message: 'Unknown error or an error from a different error domain.',
   );
 
   const FirestoreClientErrorCode({
+    required this.statusCode,
     required this.code,
     required this.message,
   });
 
+  final StatusCode statusCode;
   final String code;
   final String message;
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:firebaseapis/firestore/v1.dart' as firestore1;
@@ -10,8 +11,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
+import '../../messaging.dart';
 import '../app.dart';
 import '../object_utils.dart';
+import 'backoff.dart';
+import 'status_code.dart';
 import 'util.dart';
 
 part 'convert.dart';
@@ -25,6 +29,8 @@ part 'reference.dart';
 part 'serializer.dart';
 part 'timestamp.dart';
 part 'transaction.dart';
+part 'transaction remake.dart';
+
 part 'types.dart';
 part 'write_batch.dart';
 part 'document_change.dart';
