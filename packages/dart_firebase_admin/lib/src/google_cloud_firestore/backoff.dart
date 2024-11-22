@@ -62,7 +62,7 @@ class ExponentialBackoff {
       throw Exception('Exceeded maximum number of retries allowed.');
     }
 
-    final int delayWithJitterMs = _currentBaseMs + _jitterDelayMs();
+    final delayWithJitterMs = _currentBaseMs + _jitterDelayMs();
 
     _currentBaseMs = (_currentBaseMs * backoffFactor).toInt();
     _currentBaseMs = _currentBaseMs.clamp(initialDelayMs, maxDelayMs);

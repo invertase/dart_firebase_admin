@@ -17,8 +17,8 @@ class _DocumentReader<T> {
     this.transactionOptions,
   })  : _outstandingDocuments = documents.map((e) => e._formattedName).toSet(),
         assert(
-          [transactionId, readTime, transactionOptions].nonNulls.length > 1,
-          'Only transactionId or readTime or transactionOptions must be provided.',
+          [transactionId, readTime, transactionOptions].nonNulls.length <= 1,
+          'Only transactionId or readTime or transactionOptions must be provided. transactionId = $transactionId, readTime = $readTime, transactionOptions = $transactionOptions',
         );
 
   String? _retrievedTransactionId;
@@ -87,7 +87,7 @@ class _DocumentReader<T> {
       }).catchError(_handleException);
 
       for (final response in documents) {
-        DocumentSnapshot<DocumentData> documentSnapshot;
+        DocumentSnapshot<DocumentData>? documentSnapshot;
 
         if (response.transaction?.isNotEmpty ?? false) {
           this._retrievedTransactionId = response.transaction;
@@ -100,7 +100,7 @@ class _DocumentReader<T> {
             response.readTime,
             firestore,
           );
-        } else {
+        } else if (response.missing != null) {
           final missing = response.missing!;
           documentSnapshot = DocumentSnapshot._missing(
             missing,
@@ -109,10 +109,12 @@ class _DocumentReader<T> {
           );
         }
 
-        final path = documentSnapshot.ref._formattedName;
-        _outstandingDocuments.remove(path);
-        _retreivedDocuments[path] = documentSnapshot;
-        resultCount++;
+        if (documentSnapshot != null) {
+          final path = documentSnapshot.ref._formattedName;
+          _outstandingDocuments.remove(path);
+          _retreivedDocuments[path] = documentSnapshot;
+          resultCount++;
+        }
       }
     } on FirebaseFirestoreAdminException catch (firestoreError) {
       final shoulRetry = request.transaction != null &&

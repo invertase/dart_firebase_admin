@@ -120,6 +120,12 @@ class WriteBatch {
     });
   }
 
+  ///Resets the WriteBatch and dequeues all pending operations.
+  void reset() {
+    _operations.clear();
+    _commited = false;
+  }
+
   /// Deletes a document from the database.
   ///
   /// - [precondition] can be passed to specify custom requirements for the

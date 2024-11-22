@@ -35,7 +35,7 @@ String? _getErrorMessage(Object? response) {
   return null;
 }
 
-/// Creates a new FirebaseMessagingError by extracting the error code, message and other relevant
+/// Creates a new FirebaseFirestoreAdminException by extracting the error code, message and other relevant
 /// details from an HTTP error response.
 FirebaseFirestoreAdminException _createFirebaseError({
   required String body,

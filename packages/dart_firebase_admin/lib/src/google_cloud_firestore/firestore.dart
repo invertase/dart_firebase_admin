@@ -7,6 +7,7 @@ import 'package:collection/collection.dart';
 import 'package:firebaseapis/firestore/v1.dart' as firestore1;
 import 'package:firebaseapis/firestore/v1beta1.dart' as firestore1beta1;
 import 'package:firebaseapis/firestore/v1beta2.dart' as firestore1beta2;
+import 'package:firebaseapis/shared.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
@@ -203,7 +204,22 @@ class Firestore {
     return reader.get(tag);
   }
 
+  Future<T> runTransactionRemake<T>(
+    TransactionHandlerRemake<T> updateFuntion, {
+    TransactionOptions? transactionOptions,
+    Duration timeout = const Duration(seconds: 30),
+  }) {
+    final tag = requestTag();
+    if (transactionOptions != null) {}
+
+    final transaction = NewTransaction(this, tag, transactionOptions);
+
+    return transaction._runTransaction(updateFuntion);
+  }
+
   Future<T> runTransaction<T>(
+    /// - Returns: A Future that resolves with the result of the transaction.
+    /// - Returns: A Future that resolves with the result of the transaction.
     TransactionHandler<T> transactionHandler, {
     int maxAttempts = 5,
     Duration timeout = const Duration(seconds: 30),
@@ -352,4 +368,36 @@ class _FirestoreHttpClient {
       ),
     );
   }
+}
+
+sealed class TransactionOptions {
+  bool get readOnly;
+
+  int get maxAttempts;
+}
+
+class ReadOnlyTransactionOptions extends TransactionOptions {
+  ReadOnlyTransactionOptions({Timestamp? readTime}) : _readTime = readTime;
+  @override
+  bool readOnly = true;
+
+  @override
+  int get maxAttempts => 1;
+
+  Timestamp? get readTime => _readTime;
+
+  final Timestamp? _readTime;
+}
+
+class ReadWriteTransactionOptions extends TransactionOptions {
+  ReadWriteTransactionOptions({int maxAttempts = 5})
+      : _maxAttempts = maxAttempts;
+
+  final int _maxAttempts;
+
+  @override
+  bool readOnly = false;
+
+  @override
+  int get maxAttempts => _maxAttempts;
 }
