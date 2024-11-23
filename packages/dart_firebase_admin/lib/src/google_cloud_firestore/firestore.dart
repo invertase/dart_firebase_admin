@@ -30,7 +30,7 @@ part 'reference.dart';
 part 'serializer.dart';
 part 'timestamp.dart';
 part 'transaction.dart';
-part 'transaction remake.dart';
+part 'transaction.dart';
 
 part 'types.dart';
 part 'write_batch.dart';
@@ -41,8 +41,7 @@ part 'firestore_api_request_internal.dart';
 part 'collection_group.dart';
 
 class Firestore {
-  Firestore(this.app, {Settings? settings})
-      : _settings = settings ?? Settings();
+  Firestore(this.app, {Settings? settings}) : _settings = settings ?? Settings();
 
   /// Returns the Database ID for this Firestore instance.
   String get _databaseId => _settings.databaseId ?? '(default)';
@@ -204,6 +203,13 @@ class Firestore {
     return reader.get(tag);
   }
 
+  ///Executes the given updateFunction and commits the changes applied within the transaction.
+  ///You can use the transaction object passed to 'updateFunction' to read and modify Firestore documents under lock. You have to perform all reads before before you perform any write.
+  ///Transactions can be performed as read-only or read-write transactions. By default, transactions are executed in read-write mode.
+  ///A read-write transaction obtains a pessimistic lock on all documents that are read during the transaction. These locks block other transactions, batched writes, and other non-transactional writes from changing that document. Any writes in a read-write transactions are committed once 'updateFunction' resolves, which also releases all locks.
+  ///If a read-write transaction fails with contention, the transaction is retried up to five times. The updateFunction is invoked once for each attempt.
+  ///Read-only transactions do not lock documents. They can be used to read documents at a consistent snapshot in time, which may be up to 60 seconds in the past. Read-only transactions are not retried.
+  ///Transactions time out after 60 seconds if no documents are read. Transactions that are not committed within than 270 seconds are also aborted. Any remaining locks are released when a transaction times out.
   Future<T> runTransactionRemake<T>(
     TransactionHandlerRemake<T> updateFuntion, {
     TransactionOptions? transactionOptions,
@@ -276,16 +282,13 @@ class Firestore {
 
     return _client.v1(
       (client) async {
-        final transactionResponse = await client.projects.databases.documents
-            .beginTransaction(transactionRequest, _formattedDatabaseName)
-            .catchError(_handleException);
+        final transactionResponse =
+            await client.projects.databases.documents.beginTransaction(transactionRequest, _formattedDatabaseName).catchError(_handleException);
 
         final transactionId = transactionResponse.transaction;
         final transaction = Transaction(this, transactionId!);
         final result = await transactionHandler(transaction);
-        await transaction._transactionWriteBatch
-            .commit(transactionId)
-            .catchError(_handleException);
+        await transaction._transactionWriteBatch.commit(transactionId).catchError(_handleException);
 
         return result;
       },
@@ -390,8 +393,7 @@ class ReadOnlyTransactionOptions extends TransactionOptions {
 }
 
 class ReadWriteTransactionOptions extends TransactionOptions {
-  ReadWriteTransactionOptions({int maxAttempts = 5})
-      : _maxAttempts = maxAttempts;
+  ReadWriteTransactionOptions({int maxAttempts = 5}) : _maxAttempts = maxAttempts;
 
   final int _maxAttempts;
 

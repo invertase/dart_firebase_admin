@@ -89,6 +89,9 @@ class WriteBatch {
   /// });
   /// ```
   Future<List<WriteResult>> commit([String? transactionId]) async {
+    print(
+        'committing batch with ${_operations.length} operations and ID $transactionId');
+
     final response = await _commit(transactionId: transactionId);
 
     return [

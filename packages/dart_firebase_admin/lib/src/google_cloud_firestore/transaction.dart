@@ -1,121 +1,320 @@
 part of 'firestore.dart';
 
-class ReadOptions {
-  ReadOptions({this.fieldMask});
+/// A reference to a transaction.
+///
+/// The Transaction object passed to a transaction's updateFunction provides
+/// the methods to read and write data within the transaction context. See
+/// [Firestore.runTransaction].
+class NewTransaction {
+  NewTransaction(
+    Firestore firestore,
+    TransactionOptions? transactionOptions,
+  ) {
+    _firestore = firestore;
 
-  /// Specifies the set of fields to return and reduces the amount of data
-  /// transmitted by the backend.
-  ///
-  /// Adding a field mask does not filter results. Documents do not need to
-  /// contain values for all the fields in the mask to be part of the result
-  /// set.
-  final List<FieldMask>? fieldMask;
-}
+    _maxAttempts = transactionOptions?.maxAttempts ?? defaultMaxTransactionsAttempts;
 
-List<FieldPath>? _parseFieldMask(ReadOptions? readOptions) {
-  return readOptions?.fieldMask?.map(FieldPath.fromArgument).toList();
-}
-
-/// The [TransactionHandler] may be executed multiple times; it should be able
-/// to handle multiple executions.
-typedef TransactionHandler<T> = Future<T> Function(Transaction transaction);
-
-/// Transaction class which is created from a call to [runTransaction()].
-class Transaction {
-  Transaction(this._firestore, this._transactionId) {
-    _transactionWriteBatch = WriteBatch._(_firestore);
+    switch (transactionOptions) {
+      case ReadOnlyTransactionOptions():
+        _readOnlyReadTime = transactionOptions.readTime;
+        _writeBatch = null;
+      default:
+        _writeBatch = WriteBatch._(_firestore);
+        _backoff = ExponentialBackoff();
+    }
   }
 
-  Transaction._(
-    this._firestore,
-    this._transactionId,
-    this._transactionWriteBatch,
-  );
+  static const int defaultMaxTransactionsAttempts = 5;
 
-  final Firestore _firestore;
-  final String _transactionId;
+  //Error message for transactional reads that were executed after performing writes.
+  static const String readAfterWriteErrorMsg = 'Firestore transactions require all reads to be executed before all writes.';
 
-  late final WriteBatch _transactionWriteBatch;
+  static const String readOnlyWriteErrorMsg = 'Firestore read-only transactions cannot execute writes.';
 
-  /// Reads the document referenced by the provided [docRef].
-  ///
+  late final Firestore _firestore;
+
+  late final int _maxAttempts;
+
+  /// Optional, could be set only if transaction is read only
+  Timestamp? _readOnlyReadTime;
+
+  /// `null` if transaction is read only
+  late final WriteBatch? _writeBatch;
+
+  /// `null` if transaction is read only
+  late final ExponentialBackoff _backoff;
+
+  /// Future that resolves to the transaction ID of the current attempt.
+  /// It is lazily initialised upon the first read. Upon retry, it is reset and
+  /// [_prevTransactionId] is set
+  Future<String>? _transactionIdPromise;
+  String? _prevTransactionId;
+
+  // TODO support Query as parameter for [get]
+
+  /// Retrieve a document from the database by the provided [docRef]. Holds a
+  /// pessimistic lock on all returned documents.
   /// If the document does not exist, the operation throws a [FirebaseFirestoreAdminException] with
   /// [FirestoreClientErrorCode.notFound].
   Future<DocumentSnapshot<T>> get<T>(
     DocumentReference<T> docRef,
   ) async {
-    assert(
-      _transactionWriteBatch._operations.isEmpty,
-      'Transactions require all reads to be executed before all writes.',
+    if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
+      throw Exception(readAfterWriteErrorMsg);
+    }
+    return withLazyStartedTransaction<T>(
+      docRef,
+      resultFn: _getSingleFn,
     );
-    // return _firestore.doc(documentPath).get();
+  }
+
+  //TODO support SetOptions to include merge parameter
+  void set<T>(DocumentReference<T> documentRef, T data) {
+    if (_writeBatch == null) {
+      throw Exception(readOnlyWriteErrorMsg);
+    }
+    _writeBatch.set<T>(documentRef, data);
+  }
+
+  void delete(DocumentReference<Map<String, dynamic>> documentRef, {Precondition? precondition}) {
+    if (_writeBatch == null) {
+      throw Exception(readOnlyWriteErrorMsg);
+    }
+    _writeBatch.delete(documentRef, precondition: precondition);
+  }
+
+  void update(DocumentReference<dynamic> documentRef, Map<Object?, Object?> data, {Precondition? precondition}) {
+    if (_writeBatch == null) {
+      throw Exception(readOnlyWriteErrorMsg);
+    }
+
+    _writeBatch.update(
+      documentRef,
+      {
+        for (final entry in data.entries) FieldPath.from(entry.key): entry.value,
+      },
+      precondition: precondition,
+    );
+  }
+
+  Future<Map<String, dynamic>> _getSingleFn<T>(
+    DocumentReference<T> docRef, {
+    Timestamp? readTime,
+    String? transactionId,
+    firestore1.TransactionOptions? transactionOptions,
+  }) async {
     final reader = _DocumentReader(
       firestore: _firestore,
       documents: [docRef],
       fieldMask: null,
-      transactionId: _transactionId,
+      transactionId: transactionId,
+      readTime: readTime,
+      transactionOptions: transactionOptions,
     );
-    final tag = requestTag();
-    final result = (await reader.get(tag)).single;
+    final result = await reader._get(_requestTag);
+    return {
+      'transaction': result.transaction,
+      'result': result.result.single,
+    };
+  }
 
-    if (!result.exists) {
-      throw FirebaseFirestoreAdminException(FirestoreClientErrorCode.notFound);
+  /// Given a function that performs a read operation, ensures that the first one
+  /// is provided with new transaction options and all subsequent ones are queued
+  /// upon the resulting transaction ID.
+  Future<DocumentSnapshot<T>> withLazyStartedTransaction<T>(
+    DocumentReference<T> docRef, {
+    required Future<Map<String, dynamic>> Function(
+      DocumentReference<T> docRef, {
+      String? transactionId,
+      Timestamp? readTime,
+      firestore1.TransactionOptions? transactionOptions,
+    }) resultFn,
+  }) {
+    if (_transactionIdPromise != null) {
+      // Simply queue this subsequent read operation after the first read
+      // operation has resolved and we don't expect a transaction ID in the
+      // response because we are not starting a new transaction
+      return _transactionIdPromise!
+          .then(
+            (transactionId) => resultFn(docRef, transactionId: transactionId),
+          )
+          .then((r) => r['result'] as DocumentSnapshot<T>);
     } else {
-      return result;
+      if (_readOnlyReadTime != null) {
+        // We do not start a transaction for read-only transactions
+        // do not set _prevTransactionId
+        return resultFn(docRef, readTime: _readOnlyReadTime).then((r) => r['result'] as DocumentSnapshot<T>);
+      } else {
+        // This is the first read of the transaction so we create the appropriate
+        // options for lazily starting the transaction inside this first read op
+        final opts = firestore1.TransactionOptions();
+        if (_writeBatch != null) {
+          opts.readWrite = _prevTransactionId == null ? firestore1.ReadWrite() : firestore1.ReadWrite(retryTransaction: _prevTransactionId);
+        } else {
+          opts.readOnly = firestore1.ReadOnly();
+        }
+
+        final resultPromise = resultFn(docRef, transactionOptions: opts);
+
+        // Ensure the _transactionIdPromise is set synchronously so that
+        // subsequent operations will not race to start another transaction
+        _transactionIdPromise = resultPromise.then((r) {
+          if (r['transaction'] == null) {
+            // Illegal state
+            // The read operation was provided with new transaction options but did not return a transaction ID
+            // Rejecting here will cause all queued reads to reject
+            throw Exception(
+              'Transaction ID was missing from server response',
+            );
+          }
+          return r['transaction'] as String;
+        });
+
+        return resultPromise.then(
+          (r) {
+            return r['result'] as DocumentSnapshot<T>;
+          },
+        );
+      }
     }
   }
 
-  /// Deletes the document referred by the provided [docRef].
-  ///
-  /// If the document does not exist, the operation does nothing and returns
-  /// normally.
-  Transaction delete(DocumentReference<Map<String, dynamic>> docRef) {
-    return Transaction._(
-      _firestore,
-      _transactionId,
-      _transactionWriteBatch..delete(docRef),
-    );
+  Future<T> _runTransaction<T>(
+    TransactionHandlerRemake<T> updateFunction,
+  ) async {
+    // No backoff is set for readonly transactions (i.e. attempts == 1)
+    if (_writeBatch == null) {
+      return _runTransactionOnce(updateFunction);
+    }
+    FirebaseFirestoreAdminException? lastError;
+
+    for (var attempts = 0; attempts < _maxAttempts; attempts++) {
+      try {
+        _writeBatch.reset();
+        await maybeBackoff(_backoff, lastError);
+
+        return await _runTransactionOnce(updateFunction);
+      } on FirebaseFirestoreAdminException catch (e) {
+        lastError = e;
+
+        if (!_isRetryableTransactionError(e)) {
+          return Future.error(e);
+        }
+      } catch (e) {
+        return Future.error(e);
+      }
+    }
+
+    throw Exception('Transaction max attempts exceeded');
   }
 
-  /// Updates fields provided in [data] for the document referred to by [docRef].
-  ///
-  /// Only the fields specified in [data] will be updated. Fields that
-  /// are not specified in [data] will not be changed.
-  ///
-  /// If the document does not yet exist, it will fail.
-
-  Transaction update(
-    DocumentReference<dynamic> docRef,
-    Map<Object?, Object?> data, [
-    Precondition? precondition,
-  ]) {
-    _transactionWriteBatch.update(
-      docRef,
-      {
-        for (final entry in data.entries)
-          FieldPath.from(entry.key): entry.value,
-      },
-      precondition: precondition,
-    );
-
-    return Transaction._(_firestore, _transactionId, _transactionWriteBatch);
+  Future<T> _runTransactionOnce<T>(
+    TransactionHandlerRemake<T> updateFunction,
+  ) async {
+    try {
+      final result = await updateFunction(this);
+      //If we are on a readWrite transaction, commit
+      if (_writeBatch != null) {
+        await commit();
+      }
+      return result;
+    } catch (e) {
+      await rollback();
+      return Future.error(e);
+    }
   }
 
-  /// Sets fields provided in [data] for the document referred to by [docRef].
-  ///
-  /// All fields will be overwritten with the provided [data]. This means
-  /// that all fields that are not specified in [data] will be deleted.
-  ///
-  /// If the document does not yet exist, it will be created.
-  Transaction set<T>(
-    DocumentReference<T> docRef,
-    T data,
-  ) {
-    _transactionWriteBatch.set(docRef, data);
-    return Transaction._(
-      _firestore,
-      _transactionId,
-      _transactionWriteBatch,
-    );
+  Future<void> commit() async {
+    if (_writeBatch == null) {
+      throw Exception(readOnlyWriteErrorMsg);
+    }
+
+    String? transactionId;
+    // If we have not performed any reads in this particular attempt
+    // then the writes will be atomically committed without a transaction ID
+    if (_transactionIdPromise != null) {
+      transactionId = await _transactionIdPromise;
+    } else if (_writeBatch._operations.isEmpty) {
+      // If we have not started a transaction (no reads) and we have no writes
+      // then the commit is a no-op (success)
+      return;
+    }
+    //TODO support requestTag parameter on commit.
+    await _writeBatch._commit(transactionId: transactionId);
+
+    _transactionIdPromise = null;
+    _prevTransactionId = transactionId;
+  }
+
+  Future<void> rollback() async {
+    // No need to roll back if we have not lazily started the transaction
+    // or if we are read only
+    if (_transactionIdPromise == null || _writeBatch == null) {
+      return;
+    }
+
+    String? transactionId;
+
+    try {
+      transactionId = await _transactionIdPromise;
+    } catch (e) {
+      // This means the initial read operation rejected
+      // and we do not have a transaction ID to roll back
+      _transactionIdPromise = null;
+      return;
+    }
+
+    _transactionIdPromise = null;
+    _prevTransactionId = transactionId;
+
+    // We don't need to wait for rollback to completed before continuing.
+    // If there are any locks held, then rollback will eventually release them.
+    // Rollback can be done concurrently thereby reducing latency caused by
+    // otherwise blocking.
+    final rollBackRequest = firestore1.RollbackRequest(transaction: transactionId);
+    return _firestore._client.v1((client) {
+      return client.projects.databases.documents
+          .rollback(
+            rollBackRequest,
+            _firestore._formattedDatabaseName,
+          )
+          .catchError(_handleException);
+    });
+  }
+}
+
+/// The [TransactionHandlerRemake] may be executed multiple times; it should be able
+/// to handle multiple executions.
+typedef TransactionHandlerRemake<T> = Future<T> Function(NewTransaction transaction);
+
+/// Delays further operations based on the provided error.
+Future<void> maybeBackoff(
+  ExponentialBackoff backoff, [
+  FirebaseFirestoreAdminException? error,
+]) async {
+  if (error?.errorCode.statusCode == StatusCode.resourceExhausted) {
+    backoff.resetToMax();
+  }
+  await backoff.backoffAndWait();
+}
+
+bool _isRetryableTransactionError(FirebaseFirestoreAdminException error) {
+  switch (error.errorCode.statusCode) {
+    case StatusCode.aborted:
+    case StatusCode.cancelled:
+    case StatusCode.unknown:
+    case StatusCode.deadlineExceeded:
+    case StatusCode.internal:
+    case StatusCode.unavailable:
+    case StatusCode.unauthenticated:
+    case StatusCode.resourceExhausted:
+      return true;
+    case StatusCode.invalidArgument:
+      // The Firestore backend uses "INVALID_ARGUMENT" for transactions
+      // IDs that have expired. While INVALID_ARGUMENT is generally not
+      // retryable, we retry this specific case.
+      return error.message.toLowerCase().contains('transaction has expired');
+    default:
+      return false;
   }
 }
