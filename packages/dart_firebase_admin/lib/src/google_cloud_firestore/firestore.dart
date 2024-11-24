@@ -37,7 +37,8 @@ part 'firestore_api_request_internal.dart';
 part 'collection_group.dart';
 
 class Firestore {
-  Firestore(this.app, {Settings? settings}) : _settings = settings ?? Settings();
+  Firestore(this.app, {Settings? settings})
+      : _settings = settings ?? Settings();
 
   /// Returns the Database ID for this Firestore instance.
   String get _databaseId => _settings.databaseId ?? '(default)';
@@ -57,7 +58,6 @@ class Firestore {
   // TODO bulkWriter
   // TODO bundle
   // TODO getAll
-  // TODO runTransaction
   // TODO recursiveDelete
 
   /// Fetches the root collections that are associated with this Firestore
@@ -198,17 +198,30 @@ class Firestore {
     return reader.get();
   }
 
-  ///Executes the given updateFunction and commits the changes applied within the transaction.
-  ///You can use the transaction object passed to 'updateFunction' to read and modify Firestore documents under lock. You have to perform all reads before before you perform any write.
-  ///Transactions can be performed as read-only or read-write transactions. By default, transactions are executed in read-write mode.
-  ///A read-write transaction obtains a pessimistic lock on all documents that are read during the transaction. These locks block other transactions, batched writes, and other non-transactional writes from changing that document. Any writes in a read-write transactions are committed once 'updateFunction' resolves, which also releases all locks.
-  ///If a read-write transaction fails with contention, the transaction is retried up to five times. The updateFunction is invoked once for each attempt.
-  ///Read-only transactions do not lock documents. They can be used to read documents at a consistent snapshot in time, which may be up to 60 seconds in the past. Read-only transactions are not retried.
-  ///Transactions time out after 60 seconds if no documents are read. Transactions that are not committed within than 270 seconds are also aborted. Any remaining locks are released when a transaction times out.
+  /// Executes the given updateFunction and commits the changes applied within
+  /// the transaction.
+  /// You can use the transaction object passed to 'updateFunction' to read and
+  /// modify Firestore documents under lock. You have to perform all reads
+  /// before before you perform any write.
+  /// Transactions can be performed as read-only or read-write transactions. By
+  /// default, transactions are executed in read-write mode.
+  /// A read-write transaction obtains a pessimistic lock on all documents that
+  /// are read during the transaction. These locks block other transactions,
+  /// batched writes, and other non-transactional writes from changing that
+  /// document. Any writes in a read-write transactions are committed once
+  /// 'updateFunction' resolves, which also releases all locks.
+  /// If a read-write transaction fails with contention, the transaction is
+  /// retried up to five times. The updateFunction is invoked once for each
+  /// attempt.
+  /// Read-only transactions do not lock documents. They can be used to read
+  /// documents at a consistent snapshot in time, which may be up to 60 seconds
+  /// in the past. Read-only transactions are not retried.
+  /// Transactions time out after 60 seconds if no documents are read.
+  /// Transactions that are not committed within than 270 seconds are also
+  /// aborted. Any remaining locks are released when a transaction times out.
   Future<T> runTransaction<T>(
     TransactionHandler<T> updateFuntion, {
     TransactionOptions? transactionOptions,
-    Duration timeout = const Duration(seconds: 30),
   }) {
     if (transactionOptions != null) {}
 
@@ -315,7 +328,8 @@ class ReadOnlyTransactionOptions extends TransactionOptions {
 }
 
 class ReadWriteTransactionOptions extends TransactionOptions {
-  ReadWriteTransactionOptions({int maxAttempts = 5}) : _maxAttempts = maxAttempts;
+  ReadWriteTransactionOptions({int maxAttempts = 5})
+      : _maxAttempts = maxAttempts;
 
   final int _maxAttempts;
 

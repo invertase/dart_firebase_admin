@@ -16,10 +16,11 @@
     "Webpush",
     "webush"
   ],
-  "dart.lineLength": 150,
+  "editor.wordWrapColumn": 80,
+  "dart.lineLength": 80,
   "[dart]": {
       "editor.rulers": [
-          150
+          80
       ],
   }
 }

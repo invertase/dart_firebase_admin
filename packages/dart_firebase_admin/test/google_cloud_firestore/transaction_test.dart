@@ -51,18 +51,56 @@ void main() {
         () async {
           final DocumentReference<Map<String, dynamic>> docRef1 = await initializeTest('simpleDocument');
           final DocumentReference<Map<String, dynamic>> docRef2 = await initializeTest('simpleDocument2');
+          final DocumentReference<Map<String, dynamic>> docRef3 = await initializeTest('simpleDocument3');
 
           await docRef1.set({'value': 42});
           await docRef2.set({'value': 44});
+          await docRef3.set({'value': 'foo'});
 
           expect(
             await firestore.runTransaction(
               (transaction) async {
-                final snapshot = await transaction.getAll([docRef1, docRef2]);
+                final snapshot = await transaction.getAll([docRef1, docRef2, docRef3]);
                 return Future.value(snapshot).then((v) => v.map((e) => e.data()!['value']).toList());
               },
             ),
-            [42, 44],
+            [42, 44, 'foo'],
+          );
+        },
+      );
+
+      test(
+        'getAll documents with FieldMask in a transaction',
+        () async {
+          final DocumentReference<Map<String, dynamic>> docRef1 = await initializeTest('simpleDocument');
+          final DocumentReference<Map<String, dynamic>> docRef2 = await initializeTest('simpleDocument2');
+          final DocumentReference<Map<String, dynamic>> docRef3 = await initializeTest('simpleDocument3');
+
+          await docRef1.set({'value': 42, 'otherValue': 'bar'});
+          await docRef2.set({'value': 44, 'otherValue': 'bar'});
+          await docRef3.set({'value': 'foo', 'otherValue': 'bar'});
+
+          expect(
+            await firestore.runTransaction(
+              (transaction) async {
+                final snapshot = await transaction.getAll(
+                  [
+                    docRef1,
+                    docRef2,
+                    docRef3,
+                  ],
+                  fieldMasks: [
+                    FieldPath(['value']),
+                  ],
+                );
+                return Future.value(snapshot).then((v) => v.map((e) => e.data()!).toList());
+              },
+            ),
+            [
+              {'value': 42},
+              {'value': 44},
+              {'value': 'foo'}
+            ],
           );
         },
       );
@@ -186,7 +224,7 @@ void main() {
       );
 
       test(
-        'delete a document in a transaction',
+        'delete a existing document in a transaction',
         () async {
           final DocumentReference<Map<String, dynamic>> docRef = await initializeTest('simpleDocument');
 
@@ -201,6 +239,40 @@ void main() {
           expect(
             await docRef.get(),
             isA<DocumentSnapshot<Map<String, dynamic>>>().having((e) => e.exists, 'exists', false),
+          );
+        },
+      );
+
+      test(
+        'delete a non existing document in a transaction',
+        () async {
+          final DocumentReference<Map<String, dynamic>> docRef = await initializeTest('simpleDocument');
+
+          expect(
+            await firestore.runTransaction(
+              (transaction) async {
+                transaction.delete(docRef);
+              },
+            ),
+            null,
+          );
+        },
+      );
+
+      test(
+        'delete a non existing document with existing precondition in a transaction',
+        () async {
+          final DocumentReference<Map<String, dynamic>> docRef = await initializeTest('simpleDocument');
+          final precondition = Precondition.exists(true);
+          expect(
+            () async {
+              await firestore.runTransaction(
+                (transaction) async {
+                  transaction.delete(docRef, precondition: precondition);
+                },
+              );
+            },
+            throwsA(isA<FirebaseFirestoreAdminException>().having((e) => e.errorCode.statusCode, 'statusCode', StatusCode.notFound)),
           );
         },
       );
