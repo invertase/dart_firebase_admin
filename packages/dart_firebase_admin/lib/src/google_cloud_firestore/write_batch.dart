@@ -11,8 +11,7 @@ class WriteResult {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        other is WriteResult && writeTime == other.writeTime;
+    return identical(this, other) || other is WriteResult && writeTime == other.writeTime;
   }
 
   @override
@@ -89,14 +88,10 @@ class WriteBatch {
   /// });
   /// ```
   Future<List<WriteResult>> commit([String? transactionId]) async {
-    print(
-        'committing batch with ${_operations.length} operations and ID $transactionId');
-
     final response = await _commit(transactionId: transactionId);
 
     return [
-      for (final writeResult
-          in response.writeResults ?? <firestore1.WriteResult>[])
+      for (final writeResult in response.writeResults ?? <firestore1.WriteResult>[])
         WriteResult._(
           Timestamp._fromString(
             writeResult.updateTime ?? response.commitTime!,
@@ -166,13 +161,11 @@ class WriteBatch {
 
     _verifyNotCommited();
 
-    final transform =
-        _DocumentTransform.fromObject(documentReference, firestoreData);
+    final transform = _DocumentTransform.fromObject(documentReference, firestoreData);
     transform.validate();
 
     firestore1.Write op() {
-      final document =
-          DocumentSnapshot._fromObject(documentReference, firestoreData);
+      final document = DocumentSnapshot._fromObject(documentReference, firestoreData);
 
       final write = document._toWriteProto();
       if (transform.transforms.isNotEmpty) {

@@ -32,12 +32,12 @@ class _DocumentReader<T> {
   final _retreivedDocuments = <String, DocumentSnapshot<DocumentData>>{};
 
   /// Invokes the BatchGetDocuments RPC and returns the results.
-  Future<List<DocumentSnapshot<T>>> get(String requestTag) async {
-    return _get(requestTag).then((value) => value.result);
+  Future<List<DocumentSnapshot<T>>> get() async {
+    return _get().then((value) => value.result);
   }
 
-  Future<_BatchGetResponse<T>> _get(String requestTag) async {
-    await _fetchDocuments(requestTag);
+  Future<_BatchGetResponse<T>> _get() async {
+    await _fetchDocuments();
 
     // BatchGetDocuments doesn't preserve document order. We use the request
     // order to sort the resulting documents.
@@ -62,7 +62,7 @@ class _DocumentReader<T> {
     return _BatchGetResponse<T>(orderedDocuments, _retrievedTransactionId);
   }
 
-  Future<void> _fetchDocuments(String requestTag) async {
+  Future<void> _fetchDocuments() async {
     if (_outstandingDocuments.isEmpty) return;
 
     final request = firestore1.BatchGetDocumentsRequest(
@@ -122,10 +122,9 @@ class _DocumentReader<T> {
           // Only retry if we made progress.
           resultCount > 0 &&
           // Don't retry permanent errors.
-          StatusCode.batchGetRetryCodes
-              .contains(firestoreError.errorCode.statusCode);
+          StatusCode.batchGetRetryCodes.contains(firestoreError.errorCode.statusCode);
       if (shoulRetry) {
-        return _fetchDocuments(requestTag);
+        return _fetchDocuments();
       } else {
         rethrow;
       }

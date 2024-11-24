@@ -1,18 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:firebaseapis/firestore/v1.dart' as firestore1;
 import 'package:firebaseapis/firestore/v1beta1.dart' as firestore1beta1;
 import 'package:firebaseapis/firestore/v1beta2.dart' as firestore1beta2;
-import 'package:firebaseapis/shared.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
-import '../../messaging.dart';
 import '../app.dart';
 import '../object_utils.dart';
 import 'backoff.dart';
@@ -29,7 +26,6 @@ part 'path.dart';
 part 'reference.dart';
 part 'serializer.dart';
 part 'timestamp.dart';
-part 'transaction.dart';
 part 'transaction.dart';
 
 part 'types.dart';
@@ -191,7 +187,6 @@ class Firestore {
     }
 
     final fieldMask = _parseFieldMask(readOptions);
-    final tag = requestTag();
 
     final reader = _DocumentReader(
       firestore: this,
@@ -200,7 +195,7 @@ class Firestore {
       fieldMask: fieldMask,
     );
 
-    return reader.get(tag);
+    return reader.get();
   }
 
   ///Executes the given updateFunction and commits the changes applied within the transaction.
@@ -210,89 +205,16 @@ class Firestore {
   ///If a read-write transaction fails with contention, the transaction is retried up to five times. The updateFunction is invoked once for each attempt.
   ///Read-only transactions do not lock documents. They can be used to read documents at a consistent snapshot in time, which may be up to 60 seconds in the past. Read-only transactions are not retried.
   ///Transactions time out after 60 seconds if no documents are read. Transactions that are not committed within than 270 seconds are also aborted. Any remaining locks are released when a transaction times out.
-  Future<T> runTransactionRemake<T>(
-    TransactionHandlerRemake<T> updateFuntion, {
+  Future<T> runTransaction<T>(
+    TransactionHandler<T> updateFuntion, {
     TransactionOptions? transactionOptions,
     Duration timeout = const Duration(seconds: 30),
   }) {
-    final tag = requestTag();
     if (transactionOptions != null) {}
 
-    final transaction = NewTransaction(this, tag, transactionOptions);
+    final transaction = Transaction(this, transactionOptions);
 
     return transaction._runTransaction(updateFuntion);
-  }
-
-  Future<T> runTransaction<T>(
-    /// - Returns: A Future that resolves with the result of the transaction.
-    /// - Returns: A Future that resolves with the result of the transaction.
-    TransactionHandler<T> transactionHandler, {
-    int maxAttempts = 5,
-    Duration timeout = const Duration(seconds: 30),
-  }) async {
-    if (maxAttempts <= 0) {
-      return Future.error(
-        FirebaseFirestoreAdminException(
-          FirestoreClientErrorCode.failedPrecondition,
-          'Transaction max attemps must be > 0.',
-        ),
-      );
-    }
-    return Future<T>(() async {
-      var attempts = 1;
-      while (true) {
-        try {
-          return await _runTransaction(transactionHandler);
-        } on FirebaseFirestoreAdminException catch (firebaseError) {
-          if (firebaseError.errorCode == FirestoreClientErrorCode.aborted ||
-              firebaseError.errorCode == FirestoreClientErrorCode.unavailable ||
-              firebaseError.errorCode == FirestoreClientErrorCode.internal) {
-            if (attempts < maxAttempts) {
-              attempts += 1;
-            } else {
-              return Future.error(
-                FirebaseFirestoreAdminException(
-                  FirestoreClientErrorCode.failedPrecondition,
-                  'Transaction max atempts exceded.',
-                ),
-              );
-            }
-          } else {
-            return Future.error(firebaseError);
-          }
-        } catch (e) {
-          return Future.error(e);
-        }
-      }
-    }).timeout(
-      timeout,
-      onTimeout: () => Future.error(
-        FirebaseFirestoreAdminException(
-          FirestoreClientErrorCode.deadlineExceeded,
-          'Transaction timout.',
-        ),
-      ),
-    );
-  }
-
-  Future<T> _runTransaction<T>(
-    TransactionHandler<T> transactionHandler,
-  ) async {
-    final transactionRequest = firestore1.BeginTransactionRequest();
-
-    return _client.v1(
-      (client) async {
-        final transactionResponse =
-            await client.projects.databases.documents.beginTransaction(transactionRequest, _formattedDatabaseName).catchError(_handleException);
-
-        final transactionId = transactionResponse.transaction;
-        final transaction = Transaction(this, transactionId!);
-        final result = await transactionHandler(transaction);
-        await transaction._transactionWriteBatch.commit(transactionId).catchError(_handleException);
-
-        return result;
-      },
-    );
   }
 }
 

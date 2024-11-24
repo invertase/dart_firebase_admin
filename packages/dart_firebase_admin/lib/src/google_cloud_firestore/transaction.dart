@@ -1,12 +1,35 @@
 part of 'firestore.dart';
 
+class ReadOptions {
+  ReadOptions({this.fieldMask});
+
+  /// Specifies the set of fields to return and reduces the amount of data
+  /// transmitted by the backend.
+  ///
+  /// Adding a field mask does not filter results. Documents do not need to
+  /// contain values for all the fields in the mask to be part of the result
+  /// set.
+  final List<FieldMask>? fieldMask;
+}
+
+List<FieldPath>? _parseFieldMask(ReadOptions? readOptions) {
+  return readOptions?.fieldMask?.map(FieldPath.fromArgument).toList();
+}
+
+class _TransactionResult<T> {
+  _TransactionResult({this.transaction, required this.result});
+
+  final String? transaction;
+  final T result;
+}
+
 /// A reference to a transaction.
 ///
 /// The Transaction object passed to a transaction's updateFunction provides
 /// the methods to read and write data within the transaction context. See
 /// [Firestore.runTransaction].
-class NewTransaction {
-  NewTransaction(
+class Transaction {
+  Transaction(
     Firestore firestore,
     TransactionOptions? transactionOptions,
   ) {
@@ -62,10 +85,45 @@ class NewTransaction {
     if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
       throw Exception(readAfterWriteErrorMsg);
     }
-    return withLazyStartedTransaction<T>(
+    return _withLazyStartedTransaction<DocumentReference<T>, DocumentSnapshot<T>>(
       docRef,
       resultFn: _getSingleFn,
     );
+  }
+
+  /// Retrieves multiple documents from Firestore provided in [docsdocumentRefsRefs].
+  /// Holds a pessimistic lock on all returned documents.
+  Future<List<DocumentSnapshot<T>>> getAll<T>(
+    List<DocumentReference<T>> docsdocumentRefsRefs, {
+    List<FieldMask>? fieldMasks,
+  }) async {
+    if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
+      throw Exception(readAfterWriteErrorMsg);
+    }
+    return _withLazyStartedTransaction<List<DocumentReference<T>>, List<DocumentSnapshot<T>>>(
+      docsdocumentRefsRefs,
+      resultFn: _getBatchFn<T>,
+    );
+  }
+
+  Future<_TransactionResult<List<DocumentSnapshot<T>>>> _getBatchFn<T>(
+    List<DocumentReference<T>> docsdocumentRefs, {
+    String? transactionId,
+    Timestamp? readTime,
+    firestore1.TransactionOptions? transactionOptions,
+    List<FieldPath>? fieldMask,
+  }) async {
+    final reader = _DocumentReader(
+      firestore: _firestore,
+      documents: docsdocumentRefs,
+      fieldMask: fieldMask,
+      transactionId: transactionId,
+      readTime: readTime,
+      transactionOptions: transactionOptions,
+    );
+
+    final result = await reader._get();
+    return _TransactionResult(transaction: result.transaction, result: result.result);
   }
 
   //TODO support SetOptions to include merge parameter
@@ -97,37 +155,36 @@ class NewTransaction {
     );
   }
 
-  Future<Map<String, dynamic>> _getSingleFn<T>(
+  Future<_TransactionResult<DocumentSnapshot<T>>> _getSingleFn<T>(
     DocumentReference<T> docRef, {
-    Timestamp? readTime,
     String? transactionId,
+    Timestamp? readTime,
     firestore1.TransactionOptions? transactionOptions,
+    List<FieldPath>? fieldMask,
   }) async {
     final reader = _DocumentReader(
       firestore: _firestore,
       documents: [docRef],
-      fieldMask: null,
+      fieldMask: fieldMask,
       transactionId: transactionId,
       readTime: readTime,
       transactionOptions: transactionOptions,
     );
-    final result = await reader._get(_requestTag);
-    return {
-      'transaction': result.transaction,
-      'result': result.result.single,
-    };
+    final result = await reader._get();
+    return _TransactionResult(transaction: result.transaction, result: result.result.single);
   }
 
   /// Given a function that performs a read operation, ensures that the first one
   /// is provided with new transaction options and all subsequent ones are queued
   /// upon the resulting transaction ID.
-  Future<DocumentSnapshot<T>> withLazyStartedTransaction<T>(
-    DocumentReference<T> docRef, {
-    required Future<Map<String, dynamic>> Function(
-      DocumentReference<T> docRef, {
+  Future<TResult> _withLazyStartedTransaction<T, TResult>(
+    T docRef, {
+    required Future<_TransactionResult<TResult>> Function(
+      T docRef, {
       String? transactionId,
       Timestamp? readTime,
       firestore1.TransactionOptions? transactionOptions,
+      List<FieldPath>? fieldMask,
     }) resultFn,
   }) {
     if (_transactionIdPromise != null) {
@@ -138,12 +195,12 @@ class NewTransaction {
           .then(
             (transactionId) => resultFn(docRef, transactionId: transactionId),
           )
-          .then((r) => r['result'] as DocumentSnapshot<T>);
+          .then((r) => r.result);
     } else {
       if (_readOnlyReadTime != null) {
         // We do not start a transaction for read-only transactions
         // do not set _prevTransactionId
-        return resultFn(docRef, readTime: _readOnlyReadTime).then((r) => r['result'] as DocumentSnapshot<T>);
+        return resultFn(docRef, readTime: _readOnlyReadTime).then((r) => r.result);
       } else {
         // This is the first read of the transaction so we create the appropriate
         // options for lazily starting the transaction inside this first read op
@@ -159,20 +216,21 @@ class NewTransaction {
         // Ensure the _transactionIdPromise is set synchronously so that
         // subsequent operations will not race to start another transaction
         _transactionIdPromise = resultPromise.then((r) {
-          if (r['transaction'] == null) {
+          if (r.transaction case final _transaction?) {
+            return _transaction;
+          } else {
             // Illegal state
             // The read operation was provided with new transaction options but did not return a transaction ID
             // Rejecting here will cause all queued reads to reject
             throw Exception(
-              'Transaction ID was missing from server response',
+              'Transaction ID was missing from server response.',
             );
           }
-          return r['transaction'] as String;
         });
 
         return resultPromise.then(
           (r) {
-            return r['result'] as DocumentSnapshot<T>;
+            return r.result;
           },
         );
       }
@@ -180,7 +238,7 @@ class NewTransaction {
   }
 
   Future<T> _runTransaction<T>(
-    TransactionHandlerRemake<T> updateFunction,
+    TransactionHandler<T> updateFunction,
   ) async {
     // No backoff is set for readonly transactions (i.e. attempts == 1)
     if (_writeBatch == null) {
@@ -209,7 +267,7 @@ class NewTransaction {
   }
 
   Future<T> _runTransactionOnce<T>(
-    TransactionHandlerRemake<T> updateFunction,
+    TransactionHandler<T> updateFunction,
   ) async {
     try {
       final result = await updateFunction(this);
@@ -283,9 +341,9 @@ class NewTransaction {
   }
 }
 
-/// The [TransactionHandlerRemake] may be executed multiple times; it should be able
+/// The [TransactionHandler] may be executed multiple times; it should be able
 /// to handle multiple executions.
-typedef TransactionHandlerRemake<T> = Future<T> Function(NewTransaction transaction);
+typedef TransactionHandler<T> = Future<T> Function(Transaction transaction);
 
 /// Delays further operations based on the provided error.
 Future<void> maybeBackoff(

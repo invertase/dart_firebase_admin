@@ -1,6 +1,5 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
-import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
   final admin = FirebaseAdminApp.initializeApp(
@@ -22,7 +21,7 @@ Future<void> main() async {
   //   await transaction.get(docRef);
   // });
 
-  await firestore.runTransactionRemake((transaction) async {
+  await firestore.runTransaction((transaction) async {
     transaction.set(docRef, {
       'name': 'John Doe',
       'age': 30,
