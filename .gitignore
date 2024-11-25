@@ -30,7 +30,3 @@ pubspec.lock
 service-account.json
 
 **/pubspec_overrides.yaml
-packages/dart_firebase_admin/example/key.json
-packages/dart_firebase_admin/test/google_cloud_firestore/util/helpers.dart
-.gitignore
-packages/dart_firebase_admin/test/google_cloud_firestore/util/helpers.dart

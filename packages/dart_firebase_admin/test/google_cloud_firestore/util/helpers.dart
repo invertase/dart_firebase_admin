@@ -5,7 +5,7 @@ import 'package:dart_firebase_admin/src/app.dart';
 import 'package:http/http.dart';
 import 'package:test/test.dart';
 
-const projectId = 'cronometropassaros';
+const projectId = 'dart-firebase-admin';
 
 FirebaseAdminApp createApp({
   FutureOr<void> Function()? tearDown,

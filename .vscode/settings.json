@@ -15,12 +15,5 @@
     "totp",
     "Webpush",
     "webush"
-  ],
-  "editor.wordWrapColumn": 80,
-  "dart.lineLength": 80,
-  "[dart]": {
-      "editor.rulers": [
-          80
-      ],
-  }
+  ]
 }
