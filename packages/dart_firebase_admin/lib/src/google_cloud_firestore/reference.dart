@@ -1049,7 +1049,7 @@ base class Query<T> {
   /// field values relative to the order of the query. The order of the provided
   /// values must match the order of the order by clauses of the query.
   ///
-  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
+  /// - [snapshot]: The snapshot
   ///   of the document the query results should end before.
   Query<T> endBeforeDocument(DocumentSnapshot<Object?> snapshot) {
     final (endAt, fieldOrders) = _cursorFromValues(
@@ -1569,7 +1569,7 @@ base class Query<T> {
   /// This function returns a new (immutable) instance of the Query (rather than
   /// modify the existing instance) to impose the field mask.
   ///
-  /// - [fieldPath]: The field to sort by.
+  /// - [path]: The field to sort by.
   /// - [descending] (false by default) Whether to obtain documents in descending order.
   ///
   /// ```dart
