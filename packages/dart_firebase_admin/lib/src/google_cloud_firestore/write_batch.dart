@@ -11,8 +11,7 @@ class WriteResult {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        other is WriteResult && writeTime == other.writeTime;
+    return identical(this, other) || other is WriteResult && writeTime == other.writeTime;
   }
 
   @override
@@ -88,12 +87,11 @@ class WriteBatch {
   ///   console.log('Successfully executed batch.');
   /// });
   /// ```
-  Future<List<WriteResult>> commit() async {
-    final response = await _commit(transactionId: null);
+  Future<List<WriteResult>> commit([String? transactionId]) async {
+    final response = await _commit(transactionId: transactionId);
 
     return [
-      for (final writeResult
-          in response.writeResults ?? <firestore1.WriteResult>[])
+      for (final writeResult in response.writeResults ?? <firestore1.WriteResult>[])
         WriteResult._(
           Timestamp._fromString(
             writeResult.updateTime ?? response.commitTime!,
@@ -118,6 +116,12 @@ class WriteBatch {
         firestore._formattedDatabaseName,
       );
     });
+  }
+
+  ///Resets the WriteBatch and dequeues all pending operations.
+  void reset() {
+    _operations.clear();
+    _commited = false;
   }
 
   /// Deletes a document from the database.
@@ -157,13 +161,11 @@ class WriteBatch {
 
     _verifyNotCommited();
 
-    final transform =
-        _DocumentTransform.fromObject(documentReference, firestoreData);
+    final transform = _DocumentTransform.fromObject(documentReference, firestoreData);
     transform.validate();
 
     firestore1.Write op() {
-      final document =
-          DocumentSnapshot._fromObject(documentReference, firestoreData);
+      final document = DocumentSnapshot._fromObject(documentReference, firestoreData);
 
       final write = document._toWriteProto();
       if (transform.transforms.isNotEmpty) {

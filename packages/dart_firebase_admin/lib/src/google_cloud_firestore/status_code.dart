@@ -50,5 +50,12 @@ enum StatusCode {
 
   static const commitRetryCodes = resourceExhaustedUnavailable;
 
+  static const batchGetRetryCodes = <StatusCode>[
+    StatusCode.deadlineExceeded,
+    StatusCode.resourceExhausted,
+    StatusCode.internal,
+    StatusCode.unavailable,
+  ];
+
   final int value;
 }
