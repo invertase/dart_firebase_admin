@@ -9,12 +9,15 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
   @override
   Future<void> verify(String token) async {
     // Signature checks skipped for emulator; no need to fetch public keys.
+
     try {
       verifyJwtSignature(
         token,
         SecretKey(''),
       );
     } on JWTInvalidException catch (e) {
+      // Emulator tokens have "alg": "none"
+      if (e.message == 'unknown algorithm') return;
       if (e.message == 'invalid signature') return;
       rethrow;
     }
@@ -122,11 +125,23 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
           'no-matching-kid-error',
         );
       }
-      verifyJwtSignature(
-        token,
-        RSAPublicKey.cert(publicKey),
-        issueAt: Duration.zero, // Any past date should be valid
-      );
+
+      try {
+        verifyJwtSignature(
+          token,
+          RSAPublicKey.cert(publicKey),
+          issueAt: Duration.zero, // Any past date should be valid
+        );
+      } catch (e, stackTrace) {
+        Error.throwWithStackTrace(
+          JwtError(
+            JwtErrorCode.invalidSignature,
+            'Error while verifying signature of Firebase ID token: $e',
+          ),
+          stackTrace,
+        );
+      }
+
       // At this point most JWTException's should have been caught in
       // verifyJwtSignature, but we could still get some from JWT.decode above
     } on JWTException catch (e) {
@@ -166,14 +181,6 @@ void verifyJwtSignature(
         JwtErrorCode.tokenExpired,
         'The provided token has expired. Get a fresh token from your '
         'client app and try again.',
-      ),
-      stackTrace,
-    );
-  } catch (e, stackTrace) {
-    Error.throwWithStackTrace(
-      JwtError(
-        JwtErrorCode.invalidSignature,
-        'Error while verifying signature of Firebase ID token: $e',
       ),
       stackTrace,
     );
