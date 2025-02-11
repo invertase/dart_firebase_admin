@@ -251,7 +251,7 @@ class TokenProvider {
   factory TokenProvider.fromMap(Map<dynamic, dynamic> map) {
     return TokenProvider(
       identities: map['identities']! as Map<String, Object?>,
-      signInProvider: map['sign_in_provider']! as String,
+      signInProvider: map['sign_in_provider'] as String?,
       signInSecondFactor: map['sign_in_second_factor'] as String?,
       secondFactorIdentifier: map['second_factor_identifier'] as String?,
       tenant: map['tenant'] as String?,
