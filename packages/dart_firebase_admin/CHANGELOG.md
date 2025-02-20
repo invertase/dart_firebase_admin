@@ -1,3 +1,9 @@
+## Unreleased patch
+
+- Bump intl to `0.20.0`
+- Added Transaction support (thanks to @evandrobubiak)
+- Firebase Emulators now obtain port information from the environment ; if available (thanks to @dinko7)
+
 ## 0.4.0 - 2024-09-11
 
 - Added `firestore.listCollections()` and `doc.listCollections()`

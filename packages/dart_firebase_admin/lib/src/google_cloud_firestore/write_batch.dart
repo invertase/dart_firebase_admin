@@ -88,8 +88,8 @@ class WriteBatch {
   ///   console.log('Successfully executed batch.');
   /// });
   /// ```
-  Future<List<WriteResult>> commit() async {
-    final response = await _commit(transactionId: null);
+  Future<List<WriteResult>> commit([String? transactionId]) async {
+    final response = await _commit(transactionId: transactionId);
 
     return [
       for (final writeResult
@@ -118,6 +118,12 @@ class WriteBatch {
         firestore._formattedDatabaseName,
       );
     });
+  }
+
+  ///Resets the WriteBatch and dequeues all pending operations.
+  void reset() {
+    _operations.clear();
+    _commited = false;
   }
 
   /// Deletes a document from the database.
