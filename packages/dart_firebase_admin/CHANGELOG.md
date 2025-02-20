@@ -1,6 +1,7 @@
 ## Unreleased patch
 
 - Bump intl to `0.20.0`
+- Added Transaction support (thanks to @evandrobubiak)
 
 ## 0.4.0 - 2024-09-11
 
