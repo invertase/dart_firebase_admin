@@ -1,23 +1,28 @@
+import 'dart:convert';
+
 import 'package:dart_firebase_admin/src/messaging.dart';
 import 'package:firebaseapis/fcm/v1.dart' as fmc1;
-import 'package:firebaseapis/fcm/v1.dart';
+import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 import '../google_cloud_firestore/util/helpers.dart';
+import '../mock.dart';
 
 class ProjectsMessagesResourceMock extends Mock
-    implements ProjectsMessagesResource {}
+    implements fmc1.ProjectsMessagesResource {}
 
 class FirebaseMessagingRequestHandlerMock extends Mock
     implements FirebaseMessagingRequestHandler {}
 
 class FirebaseCloudMessagingApiMock extends Mock
-    implements FirebaseCloudMessagingApi {}
+    implements fmc1.FirebaseCloudMessagingApi {}
 
-class ProjectsResourceMock extends Mock implements ProjectsResource {}
+class ProjectsResourceMock extends Mock implements fmc1.ProjectsResource {}
 
-class SendMessageRequestFake extends Fake implements SendMessageRequest {}
+extension on Object? {
+  T cast<T>() => this as T;
+}
 
 void main() {
   late Messaging messaging;
@@ -27,9 +32,7 @@ void main() {
   final projectResourceMock = ProjectsResourceMock();
   final messagingApiMock = FirebaseCloudMessagingApiMock();
 
-  setUpAll(() {
-    registerFallbackValue(SendMessageRequestFake());
-  });
+  setUpAll(registerFallbacks);
 
   void mockV1<T>() {
     when(() => requestHandler.v1<T>(any())).thenAnswer((invocation) async {
@@ -56,6 +59,73 @@ void main() {
     reset(messagingApiMock);
   });
 
+  group('Error handling', () {
+    for (final (:code, :error) in [
+      (code: 400, error: MessagingClientErrorCode.invalidArgument),
+      (code: 401, error: MessagingClientErrorCode.authenticationError),
+      (code: 403, error: MessagingClientErrorCode.authenticationError),
+      (code: 500, error: MessagingClientErrorCode.internalError),
+      (code: 503, error: MessagingClientErrorCode.serverUnavailable),
+      (code: 505, error: MessagingClientErrorCode.unknownError),
+    ]) {
+      test('converts $code codes into errors', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(Stream.value(utf8.encode('')), code),
+          ),
+        );
+
+        final app = createApp(client: clientMock);
+        final handler = Messaging(app);
+
+        await expectLater(
+          () => handler.send(TokenMessage(token: '123')),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having((e) => e.errorCode, 'errorCode', error),
+          ),
+        );
+      });
+    }
+
+    for (final MapEntry(key: messagingError, value: code)
+        in messagingServerToClientCode.entries) {
+      test('converts $messagingError error codes', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'message': messagingError},
+                  }),
+                ),
+              ),
+              400,
+              headers: {
+                'content-type': 'application/json',
+              },
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock);
+        final handler = Messaging(app);
+
+        await expectLater(
+          () => handler.send(TokenMessage(token: '123')),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having((e) => e.errorCode, 'errorCode', code)
+                .having((e) => e.code, 'code', 'messaging/${code.code}'),
+          ),
+        );
+      });
+    }
+  });
+
   group('Messaging.send', () {
     setUp(() => mockV1<String>());
 
@@ -74,7 +144,7 @@ void main() {
         ..called(1);
       verifyNoMoreInteractions(messages);
 
-      final request = capture.captured.first as SendMessageRequest;
+      final request = capture.captured.first as fmc1.SendMessageRequest;
       final parent = capture.captured.last as String;
 
       expect(request.message?.topic, 'test');
@@ -90,6 +160,11 @@ void main() {
         () => messaging.send(TopicMessage(topic: 'test')),
         throwsA(
           isA<FirebaseMessagingAdminException>()
+              .having(
+                (e) => e.errorCode,
+                'errorCode',
+                MessagingClientErrorCode.internalError,
+              )
               .having((e) => e.message, 'message', 'No name in response'),
         ),
       );
@@ -108,9 +183,59 @@ void main() {
       final capture = verify(() => messages.send(captureAny(), captureAny()))
         ..called(1);
 
-      final request = capture.captured.first as SendMessageRequest;
+      final request = capture.captured.first as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
+    });
+
+    test('supports booleans', () async {
+      when(() => messages.send(any(), any())).thenAnswer(
+        (_) => Future.value(fmc1.Message(name: 'test')),
+      );
+
+      await messaging.send(
+        TopicMessage(
+          topic: 'test',
+          apns: ApnsConfig(
+            payload: ApnsPayload(
+              aps: Aps(
+                contentAvailable: true,
+                mutableContent: true,
+                sound: CriticalSound(critical: true, name: 'default'),
+              ),
+            ),
+          ),
+          webpush: WebpushConfig(
+            notification: WebpushNotification(renotify: true),
+          ),
+        ),
+      );
+
+      final capture = verify(() => messages.send(captureAny(), captureAny()))
+        ..called(1);
+      final request = capture.captured.first as fmc1.SendMessageRequest;
+
+      expect(
+        request.message!.apns!.payload!['aps']!
+            .cast<Map<Object?, Object?>>()['content-available'],
+        1,
+      );
+      expect(
+        request.message!.apns!.payload!['aps']!
+            .cast<Map<Object?, Object?>>()['mutable-content'],
+        1,
+      );
+      expect(
+        request.message!.apns!.payload!['aps']!
+            .cast<Map<Object?, Object?>>()['sound']
+            .cast<Map<Object?, Object?>>()['critical'],
+        1,
+      );
+
+      expect(
+        request.message!.webpush!.notification!['renotify'],
+        1,
+      );
     });
   });
 
@@ -146,7 +271,8 @@ void main() {
     test('works', () async {
       when(() => messages.send(any(), any())).thenAnswer(
         (i) {
-          final request = i.positionalArguments.first as SendMessageRequest;
+          final request =
+              i.positionalArguments.first as fmc1.SendMessageRequest;
           switch (request.message?.topic) {
             case 'test':
               // Voluntary cause "test" to resolve after "test2"
@@ -185,11 +311,11 @@ void main() {
         ..called(2);
       verifyNoMoreInteractions(messages);
 
-      var request = capture.captured.first as SendMessageRequest;
+      var request = capture.captured.first as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, null);
 
-      request = capture.captured[1] as SendMessageRequest;
+      request = capture.captured[1] as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, null);
     });
@@ -199,20 +325,20 @@ void main() {
         (i) => Future.value(fmc1.Message(name: 'test')),
       );
 
-      await messaging.sendEach([
+      await messaging.sendEach(dryRun: true, [
         TopicMessage(topic: 'test'),
         TopicMessage(topic: 'test2'),
-      ], dryRun: true);
+      ]);
 
       final capture = verify(() => messages.send(captureAny(), any()))
         ..called(2);
       verifyNoMoreInteractions(messages);
 
-      var request = capture.captured.first as SendMessageRequest;
+      var request = capture.captured.first as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
 
-      request = capture.captured[1] as SendMessageRequest;
+      request = capture.captured[1] as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
     });

@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:dart_firebase_admin/auth.dart';
+import 'package:http/http.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 import '../google_cloud_firestore/util/helpers.dart';
+import '../mock.dart';
 
 const _uid = Uuid();
 
@@ -10,12 +15,50 @@ void main() {
   late Auth auth;
 
   setUp(() {
-    final sdk = createApp();
+    final sdk = createApp(tearDown: () => cleanup(auth));
     sdk.useEmulator();
     auth = Auth(sdk);
   });
 
-  tearDown(() => cleanup(auth));
+  setUpAll(registerFallbacks);
+
+  group('Error handling', () {
+    for (final MapEntry(key: messagingError, value: code)
+        in authServerToClientCode.entries) {
+      test('converts $messagingError error codes', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'message': messagingError},
+                  }),
+                ),
+              ),
+              400,
+              headers: {
+                'content-type': 'application/json',
+              },
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock);
+        final handler = Auth(app);
+
+        await expectLater(
+          () => handler.getUser('123'),
+          throwsA(
+            isA<FirebaseAuthAdminException>()
+                .having((e) => e.errorCode, 'errorCode', code)
+                .having((e) => e.code, 'code', 'auth/${code.code}'),
+          ),
+        );
+      });
+    }
+  });
 
   group('createUser', () {
     test('supports no specified uid', () async {
@@ -142,6 +185,28 @@ void main() {
       );
 
       expect(user.uid, importUser.uid);
+    });
+  });
+
+  group('updateUser', () {
+    test('supports updating email', () async {
+      final user = await auth.createUser(
+        CreateRequest(
+          email: 'testuser@example.com',
+        ),
+      );
+
+      final updatedUser = await auth.updateUser(
+        user.uid,
+        UpdateRequest(
+          email: 'updateduser@example.com',
+        ),
+      );
+
+      expect(updatedUser.email, equals('updateduser@example.com'));
+
+      final user2 = await auth.getUserByEmail(updatedUser.email!);
+      expect(user2.uid, equals(user.uid));
     });
   });
 }

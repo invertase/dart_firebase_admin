@@ -1,3 +1,27 @@
+## Unreleased patch
+
+- Bump intl to `0.20.0`
+- Added Transaction support (thanks to @evandrobubiak)
+- Firebase Emulators now obtain port information from the environment ; if available (thanks to @dinko7)
+
+## 0.4.0 - 2024-09-11
+
+- Added `firestore.listCollections()` and `doc.listCollections()`
+- Fixes some errors incorrectly coming back as "unknown".
+- `Apns` parameters are no-longer required
+- Fixes argument error in FMC when sending booleans
+- Renamed various error codes to remove duplicates and removed
+  unused codes.
+- Fixes crash when updating users (thanks to @HeySreelal)
+- Marked various classes that cannot be extended as base/final.
+- Added a default constructor on `Timestamp` (thanks to @KKimj)
+- Fixes the `Auth.verifyIdToken()` implementation by adding the
+    token signature verification part. 
+
+## 0.3.1
+
+ - **FEAT**: Use GOOGLE_APPLICATION_CREDENTIALS if json value (#32).
+
 ## 0.3.0 - 2024-01-02
 
 - **Breaking**: Removed the value `toJson` methods on objects.

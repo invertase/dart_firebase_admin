@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -5,11 +7,13 @@ import 'package:firebaseapis/firestore/v1.dart' as firestore1;
 import 'package:firebaseapis/firestore/v1beta1.dart' as firestore1beta1;
 import 'package:firebaseapis/firestore/v1beta2.dart' as firestore1beta2;
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:googleapis_auth/googleapis_auth.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
 import '../app.dart';
 import '../object_utils.dart';
+import 'backoff.dart';
+import 'status_code.dart';
 import 'util.dart';
 
 part 'convert.dart';
@@ -23,11 +27,13 @@ part 'reference.dart';
 part 'serializer.dart';
 part 'timestamp.dart';
 part 'transaction.dart';
+
 part 'types.dart';
 part 'write_batch.dart';
 part 'document_change.dart';
 part 'filter.dart';
 part 'firestore_exception.dart';
+part 'firestore_api_request_internal.dart';
 part 'collection_group.dart';
 
 class Firestore {
@@ -51,10 +57,30 @@ class Firestore {
   // TODO batch
   // TODO bulkWriter
   // TODO bundle
-  // TODO listCollections
   // TODO getAll
-  // TODO runTransaction
   // TODO recursiveDelete
+
+  /// Fetches the root collections that are associated with this Firestore
+  /// database.
+  ///
+  /// Returns a Promise that resolves with an array of CollectionReferences.
+  ///
+  /// ```dart
+  /// firestore.listCollections().then((collections) {
+  ///   for (final collection in collections) {
+  ///     print('Found collection with id: ${collection.id}');
+  ///   }
+  /// });
+  /// ```
+  Future<List<CollectionReference<DocumentData>>> listCollections() {
+    final rootDocument = DocumentReference._(
+      firestore: this,
+      path: _ResourcePath.empty,
+      converter: _jsonConverter,
+    );
+
+    return rootDocument.listCollections();
+  }
 
   /// Gets a [DocumentReference] instance that
   /// refers to the document at the specified path.
@@ -161,7 +187,6 @@ class Firestore {
     }
 
     final fieldMask = _parseFieldMask(readOptions);
-    final tag = requestTag();
 
     final reader = _DocumentReader(
       firestore: this,
@@ -170,7 +195,39 @@ class Firestore {
       fieldMask: fieldMask,
     );
 
-    return reader.get(tag);
+    return reader.get();
+  }
+
+  /// Executes the given updateFunction and commits the changes applied within
+  /// the transaction.
+  /// You can use the transaction object passed to 'updateFunction' to read and
+  /// modify Firestore documents under lock. You have to perform all reads
+  /// before before you perform any write.
+  /// Transactions can be performed as read-only or read-write transactions. By
+  /// default, transactions are executed in read-write mode.
+  /// A read-write transaction obtains a pessimistic lock on all documents that
+  /// are read during the transaction. These locks block other transactions,
+  /// batched writes, and other non-transactional writes from changing that
+  /// document. Any writes in a read-write transactions are committed once
+  /// 'updateFunction' resolves, which also releases all locks.
+  /// If a read-write transaction fails with contention, the transaction is
+  /// retried up to five times. The updateFunction is invoked once for each
+  /// attempt.
+  /// Read-only transactions do not lock documents. They can be used to read
+  /// documents at a consistent snapshot in time, which may be up to 60 seconds
+  /// in the past. Read-only transactions are not retried.
+  /// Transactions time out after 60 seconds if no documents are read.
+  /// Transactions that are not committed within than 270 seconds are also
+  /// aborted. Any remaining locks are released when a transaction times out.
+  Future<T> runTransaction<T>(
+    TransactionHandler<T> updateFuntion, {
+    TransactionOptions? transactionOptions,
+  }) {
+    if (transactionOptions != null) {}
+
+    final transaction = Transaction(this, transactionOptions);
+
+    return transaction._runTransaction(updateFuntion);
   }
 }
 
@@ -206,9 +263,9 @@ class _FirestoreHttpClient {
   // TODO refactor with auth
   // TODO is it fine to use AuthClient?
   Future<R> _run<R>(
-    Future<R> Function(AutoRefreshingAuthClient client) fn,
+    Future<R> Function(Client client) fn,
   ) {
-    return _firestoreGuard(() => app.credential.client.then(fn));
+    return _firestoreGuard(() => app.client.then(fn));
   }
 
   Future<R> v1<R>(
@@ -249,4 +306,36 @@ class _FirestoreHttpClient {
       ),
     );
   }
+}
+
+sealed class TransactionOptions {
+  bool get readOnly;
+
+  int get maxAttempts;
+}
+
+class ReadOnlyTransactionOptions extends TransactionOptions {
+  ReadOnlyTransactionOptions({Timestamp? readTime}) : _readTime = readTime;
+  @override
+  bool readOnly = true;
+
+  @override
+  int get maxAttempts => 1;
+
+  Timestamp? get readTime => _readTime;
+
+  final Timestamp? _readTime;
+}
+
+class ReadWriteTransactionOptions extends TransactionOptions {
+  ReadWriteTransactionOptions({int maxAttempts = 5})
+      : _maxAttempts = maxAttempts;
+
+  final int _maxAttempts;
+
+  @override
+  bool readOnly = false;
+
+  @override
+  int get maxAttempts => _maxAttempts;
 }

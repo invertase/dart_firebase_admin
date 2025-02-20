@@ -34,7 +34,7 @@ class WriteBatch {
   /// Create a document with the provided object values. This will fail the batch
   /// if a document exists at its location.
   ///
-  /// - [documentRef]: A reference to the document to be created.
+  /// - [ref]: A reference to the document to be created.
   /// - [data] The object to serialize as the document.
   ///
   /// Throws if the provided input is not a valid Firestore document.
@@ -88,8 +88,8 @@ class WriteBatch {
   ///   console.log('Successfully executed batch.');
   /// });
   /// ```
-  Future<List<WriteResult>> commit() async {
-    final response = await _commit(transactionId: null);
+  Future<List<WriteResult>> commit([String? transactionId]) async {
+    final response = await _commit(transactionId: transactionId);
 
     return [
       for (final writeResult
@@ -118,6 +118,12 @@ class WriteBatch {
         firestore._formattedDatabaseName,
       );
     });
+  }
+
+  ///Resets the WriteBatch and dequeues all pending operations.
+  void reset() {
+    _operations.clear();
+    _commited = false;
   }
 
   /// Deletes a document from the database.

@@ -1,34 +1,77 @@
 part of '../messaging.dart';
 
+/// Messaging server to client enum error codes.
+@internal
+const messagingServerToClientCode = {
+  /* GENERIC ERRORS */
+  // Generic invalid message parameter provided.
+  'InvalidParameters': MessagingClientErrorCode.invalidArgument,
+  // Mismatched sender ID.
+  'MismatchSenderId': MessagingClientErrorCode.mismatchedCredential,
+  // FCM server unavailable.
+  'Unavailable': MessagingClientErrorCode.serverUnavailable,
+  // FCM server internal error.
+  'InternalServerError': MessagingClientErrorCode.internalError,
+
+  /* SEND ERRORS */
+  // Invalid registration token format.
+  'InvalidRegistration': MessagingClientErrorCode.invalidRegistrationToken,
+  // Registration token is not registered.
+  'NotRegistered': MessagingClientErrorCode.registrationTokenNotRegistered,
+  // Registration token does not match restricted package name.
+  'InvalidPackageName': MessagingClientErrorCode.invalidPackageName,
+  // Message payload size limit exceeded.
+  'MessageTooBig': MessagingClientErrorCode.payloadSizeLimitExceeded,
+  // Invalid key in the data message payload.
+  'InvalidDataKey': MessagingClientErrorCode.invalidDataPayloadKey,
+  // Invalid time to live option.
+  'InvalidTtl': MessagingClientErrorCode.invalidOptions,
+  // Device message rate exceeded.
+  'DeviceMessageRateExceeded':
+      MessagingClientErrorCode.deviceMessageRateExceeded,
+  // Topics message rate exceeded.
+  'TopicsMessageRateExceeded':
+      MessagingClientErrorCode.topicsMessageRateExceeded,
+  // Invalid APNs credentials.
+  'InvalidApnsCredential': MessagingClientErrorCode.thirdPartyAuthError,
+
+  /* FCM v1 canonical error codes */
+  'NOT_FOUND': MessagingClientErrorCode.registrationTokenNotRegistered,
+  'PERMISSION_DENIED': MessagingClientErrorCode.mismatchedCredential,
+  'RESOURCE_EXHAUSTED': MessagingClientErrorCode.messageRateExceeded,
+  'UNAUTHENTICATED': MessagingClientErrorCode.thirdPartyAuthError,
+
+  /* FCM v1 new error codes */
+  'APNS_AUTH_ERROR': MessagingClientErrorCode.thirdPartyAuthError,
+  'INTERNAL': MessagingClientErrorCode.internalError,
+  'INVALID_ARGUMENT': MessagingClientErrorCode.invalidArgument,
+  'QUOTA_EXCEEDED': MessagingClientErrorCode.messageRateExceeded,
+  'SENDER_ID_MISMATCH': MessagingClientErrorCode.mismatchedCredential,
+  'THIRD_PARTY_AUTH_ERROR': MessagingClientErrorCode.thirdPartyAuthError,
+  'UNAVAILABLE': MessagingClientErrorCode.serverUnavailable,
+  'UNREGISTERED': MessagingClientErrorCode.registrationTokenNotRegistered,
+  'UNSPECIFIED_ERROR': MessagingClientErrorCode.unknownError,
+};
+
 class FirebaseMessagingAdminException extends FirebaseAdminException
     implements Exception {
   FirebaseMessagingAdminException(
     this.errorCode, [
     String? message,
-  ]) : super('messaging', errorCode.name, message ?? errorCode.message);
+  ]) : super('messaging', errorCode.code, message ?? errorCode.message);
 
   @internal
-  factory FirebaseMessagingAdminException.fromServerError(
-    fmc1.DetailedApiRequestError error,
-  ) {
-    return FirebaseMessagingAdminException(
-      MessagingClientErrorCode.fromCode(error.message),
-    );
-  }
-
-  @internal
-  factory FirebaseMessagingAdminException.fromTopicManagementServerError({
+  factory FirebaseMessagingAdminException.fromServerError({
     required String serverErrorCode,
     String? message,
     Object? rawServerResponse,
   }) {
     // If not found, default to unknown error.
-    final clientCodeKey =
-        _topicMgtServerToClientCode[serverErrorCode] ?? 'UNKNOWN_ERROR';
-    final error = MessagingClientErrorCode.fromCode(clientCodeKey);
+    final error = messagingServerToClientCode[serverErrorCode] ??
+        MessagingClientErrorCode.unknownError;
     message ??= error.message;
 
-    if (error == MessagingClientErrorCode.unknown &&
+    if (error == MessagingClientErrorCode.unknownError &&
         rawServerResponse != null) {
       try {
         message += ' Raw server response: "${jsonEncode(rawServerResponse)}"';
@@ -46,97 +89,122 @@ class FirebaseMessagingAdminException extends FirebaseAdminException
   String toString() => 'FirebaseMessagingAdminException: $code: $message';
 }
 
-/// Topic management (IID) server to client enum error codes.
-const _topicMgtServerToClientCode = {
-  /* TOPIC SUBSCRIPTION MANAGEMENT ERRORS */
-  'NOT_FOUND': 'REGISTRATION_TOKEN_NOT_REGISTERED',
-  'INVALID_ARGUMENT': 'INVALID_REGISTRATION_TOKEN',
-  'TOO_MANY_TOPICS': 'TOO_MANY_TOPICS',
-  'RESOURCE_EXHAUSTED': 'TOO_MANY_TOPICS',
-  'PERMISSION_DENIED': 'AUTHENTICATION_ERROR',
-  'DEADLINE_EXCEEDED': 'SERVER_UNAVAILABLE',
-  'INTERNAL': 'INTERNAL_ERROR',
-  'UNKNOWN': 'UNKNOWN_ERROR',
-};
-
+/// Messaging client error codes and their default messages.
 enum MessagingClientErrorCode {
-  internal(
-    code: 'INTERNAL',
-    'Internal server error.',
-  ),
-
   invalidArgument(
-    code: 'INVALID_ARGUMENT',
-    'One or more arguments specified in the request were invalid.',
+    code: 'invalid-argument',
+    message: 'Invalid argument provided.',
   ),
-
-  quotaExceeded(
-    code: 'QUOTA_EXCEEDED',
-    'Sending limit exceeded for the message target.',
-  ),
-
-  senderIdMismatch(
-    code: 'SENDER_ID_MISMATCH',
-    'The authenticated sender ID is different from the sender ID for the registration token.',
-  ),
-
-  thirdPartyAuthError(
-    code: 'THIRD_PARTY_AUTH_ERROR',
-    'APNs certificate or web push auth key was invalid or missing.',
-  ),
-
-  unavailable(
-    code: 'UNAVAILABLE',
-    'Cloud Messaging service is temporarily unavailable.',
-  ),
-
-  unregistered(
-    code: 'UNREGISTERED',
-    'App instance was unregistered from FCM. '
-    'This usually means that the token used is no longer valid and a new one must be used.',
-  ),
-
-  authenticationError(
-    code: null,
-    'An error occurred when trying to authenticate to the FCM servers. '
-    'Make sure the credential used to authenticate this SDK has the proper permissions.',
-  ),
-  internalError(
-    code: null,
-    'An internal error occurred when trying to send the message to the FCM servers. '
-    'Please try again later.',
-  ),
-  invalidOptions(
-    code: null,
-    'Invalid message options were provided.',
+  invalidRecipient(
+    code: 'invalid-recipient',
+    message: 'Invalid message recipient provided.',
   ),
   invalidPayload(
-    code: null,
-    'Invalid message payload provided.',
+    code: 'invalid-payload',
+    message: 'Invalid message payload provided.',
+  ),
+  invalidDataPayloadKey(
+    code: 'invalid-data-payload-key',
+    message:
+        'The data message payload contains an invalid key. See the reference documentation '
+        'for the DataMessagePayload type for restricted keys.',
+  ),
+  payloadSizeLimitExceeded(
+    code: 'payload-size-limit-exceeded',
+    message:
+        'The provided message payload exceeds the FCM size limits. See the error documentation '
+        'for more details.',
+  ),
+  invalidOptions(
+    code: 'invalid-options',
+    message: 'Invalid message options provided.',
+  ),
+  invalidRegistrationToken(
+    code: 'invalid-registration-token',
+    message:
+        'Invalid registration token provided. Make sure it matches the registration token '
+        'the client app receives from registering with FCM.',
+  ),
+  registrationTokenNotRegistered(
+    code: 'registration-token-not-registered',
+    message:
+        'The provided registration token is not registered. A previously valid registration '
+        'token can be unregistered for a variety of reasons. See the error documentation for more '
+        'details. Remove this registration token and stop using it to send messages.',
+  ),
+  mismatchedCredential(
+    code: 'mismatched-credential',
+    message:
+        'The credential used to authenticate this SDK does not have permission to send '
+        'messages to the device corresponding to the provided registration token. Make sure the '
+        'credential and registration token both belong to the same Firebase project.',
+  ),
+  invalidPackageName(
+    code: 'invalid-package-name',
+    message:
+        'The message was addressed to a registration token whose package name does not match '
+        'the provided "restrictedPackageName" option.',
+  ),
+  deviceMessageRateExceeded(
+    code: 'device-message-rate-exceeded',
+    message:
+        'The rate of messages to a particular device is too high. Reduce the number of '
+        'messages sent to this device and do not immediately retry sending to this device.',
+  ),
+  topicsMessageRateExceeded(
+    code: 'topics-message-rate-exceeded',
+    message:
+        'The rate of messages to subscribers to a particular topic is too high. Reduce the '
+        'number of messages sent for this topic, and do not immediately retry sending to this topic.',
+  ),
+  messageRateExceeded(
+    code: 'message-rate-exceeded',
+    message: 'Sending limit exceeded for the message target.',
+  ),
+  thirdPartyAuthError(
+    code: 'third-party-auth-error',
+    message:
+        'A message targeted to an iOS device could not be sent because the required APNs '
+        'SSL certificate was not uploaded or has expired. Check the validity of your development '
+        'and production certificates.',
+  ),
+  tooManyTopics(
+    code: 'too-many-topics',
+    message:
+        'The maximum number of topics the provided registration token can be subscribed to '
+        'has been exceeded.',
+  ),
+  authenticationError(
+    code: 'authentication-error',
+    message:
+        'An error occurred when trying to authenticate to the FCM servers. Make sure the '
+        'credential used to authenticate this SDK has the proper permissions. See '
+        'https://firebase.google.com/docs/admin/setup for setup instructions.',
   ),
   serverUnavailable(
-    code: null,
-    'The FCM servers are temporarily unavailable. '
-    'Please try again later.',
+    code: 'server-unavailable',
+    message:
+        'The FCM server could not process the request in time. See the error documentation '
+        'for more details.',
   ),
-
-  unknown(
-    code: 'UNKNOWN_ERROR',
-    'Unknown error occurred.',
+  internalError(
+    code: 'internal-error',
+    message: 'An internal error has occurred. Please retry the request.',
+  ),
+  unknownError(
+    code: 'unknown-error',
+    message: 'An unknown server error was returned.',
   );
 
-  const MessagingClientErrorCode(
-    this.message, {
+  const MessagingClientErrorCode({
     required this.code,
+    required this.message,
   });
 
-  @internal
-  factory MessagingClientErrorCode.fromCode(String? code) {
-    if (code == null) return unknown;
-    return values.firstWhereOrNull((it) => it.code == code) ?? unknown;
-  }
+  /// The error code.
+  final String code;
 
-  final String? code;
+  /// The default error message.
   final String message;
 }
 
@@ -144,7 +212,14 @@ enum MessagingClientErrorCode {
 Never _handleException(Object exception, StackTrace stackTrace) {
   if (exception is fmc1.DetailedApiRequestError) {
     Error.throwWithStackTrace(
-      FirebaseMessagingAdminException.fromServerError(exception),
+      _createFirebaseError(
+        statusCode: exception.status,
+        body: switch (exception.jsonResponse) {
+          null => '',
+          final json => jsonEncode(json),
+        },
+        isJson: exception.jsonResponse != null,
+      ),
       stackTrace,
     );
   }

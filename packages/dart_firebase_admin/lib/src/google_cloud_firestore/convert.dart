@@ -16,7 +16,7 @@ void _assertValidProtobufValue(firestore1.Value proto) {
     proto.bytesValue,
   ];
 
-  if (values.whereNotNull().length != 1) {
+  if (values.nonNulls.length != 1) {
     throw ArgumentError.value(
       proto,
       'proto',

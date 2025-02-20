@@ -111,7 +111,7 @@ sealed class Filter {
   /// [Filter.and]. When applied to a [Query] it requires that documents must satisfy
   /// one of the provided [Filter]s.
   ///
-  /// - [filter]: The [Filter]s
+  /// - [filters]: The [Filter]s
   ///   for AND operation. These must be created with calls to [Filter.where],
   ///   [Filter.or], or [Filter.and].
   ///

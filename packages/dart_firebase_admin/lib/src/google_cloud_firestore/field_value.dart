@@ -116,7 +116,7 @@ abstract class _FieldTransform implements FieldValue {
 
   /// Performs input validation on the values of this field transform.
   ///
-  /// - [allowUndefined]: Whether to allow nested properties that are undefined
+  /// - `allowUndefined`: Whether to allow nested properties that are undefined
   void validate();
 
   /// The proto representation for this field transform.

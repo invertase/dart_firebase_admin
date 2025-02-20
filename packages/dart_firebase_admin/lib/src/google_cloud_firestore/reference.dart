@@ -1,16 +1,15 @@
 part of 'firestore.dart';
 
-class CollectionReference<T> extends Query<T> {
+final class CollectionReference<T> extends Query<T> {
   CollectionReference._({
     required super.firestore,
-    required _QualifiedResourcePath path,
+    required _ResourcePath path,
     required _FirestoreDataConverter<T> converter,
   }) : super._(
           queryOptions: _QueryOptions.forCollectionQuery(path, converter),
         );
 
-  _QualifiedResourcePath get _resourcePath =>
-      _queryOptions.parentPath._append(id) as _QualifiedResourcePath;
+  _ResourcePath get _resourcePath => _queryOptions.parentPath._append(id);
 
   /// The last path element of the referenced collection.
   String get id => _queryOptions.collectionId;
@@ -23,13 +22,13 @@ class CollectionReference<T> extends Query<T> {
   /// final documentRef = collectionRef.parent;
   /// print('Parent name: ${documentRef.path}');
   /// ```
-  DocumentReference<T>? get parent {
+  DocumentReference<DocumentData>? get parent {
     if (!_queryOptions.parentPath.isDocument) return null;
 
-    return DocumentReference<T>._(
+    return DocumentReference<DocumentData>._(
       firestore: firestore,
-      path: _queryOptions.parentPath as _QualifiedResourcePath,
-      converter: _queryOptions.converter,
+      path: _queryOptions.parentPath,
+      converter: _jsonConverter,
     );
   }
 
@@ -62,7 +61,7 @@ class CollectionReference<T> extends Query<T> {
     }
 
     if (!identical(_queryOptions.converter, _jsonConverter) &&
-        path._parent() != _resourcePath) {
+        path.parent() != _resourcePath) {
       throw ArgumentError.value(
         documentPath,
         'documentPath',
@@ -156,15 +155,15 @@ class CollectionReference<T> extends Query<T> {
 }
 
 @immutable
-class DocumentReference<T> implements _Serializable {
+final class DocumentReference<T> implements _Serializable {
   const DocumentReference._({
     required this.firestore,
-    required _QualifiedResourcePath path,
+    required _ResourcePath path,
     required _FirestoreDataConverter<T> converter,
   })  : _converter = converter,
         _path = path;
 
-  final _QualifiedResourcePath _path;
+  final _ResourcePath _path;
   final _FirestoreDataConverter<T> _converter;
   final Firestore firestore;
 
@@ -187,7 +186,7 @@ class DocumentReference<T> implements _Serializable {
   CollectionReference<T> get parent {
     return CollectionReference<T>._(
       firestore: firestore,
-      path: _path._parent()!,
+      path: _path.parent()!,
       converter: _converter,
     );
   }
@@ -200,6 +199,40 @@ class DocumentReference<T> implements _Serializable {
           firestore._databaseId,
         )
         ._formattedName;
+  }
+
+  /// Fetches the subcollections that are direct children of this document.
+  ///
+  /// ```dart
+  /// final documentRef = firestore.doc('col/doc');
+  ///
+  /// documentRef.listCollections().then((collections) {
+  ///   for (final collection in collections) {
+  ///     print('Found subcollection with id: ${collection.id}');
+  ///   }
+  /// });
+  /// ```
+  Future<List<CollectionReference<DocumentData>>> listCollections() {
+    return this.firestore._client.v1((a) async {
+      final request = firestore1.ListCollectionIdsRequest(
+        // Setting `pageSize` to an arbitrarily large value lets the backend cap
+        // the page size (currently to 300). Note that the backend rejects
+        // MAX_INT32 (b/146883794).
+        pageSize: (math.pow(2, 16) - 1).toInt(),
+      );
+
+      final result = await a.projects.databases.documents.listCollectionIds(
+        request,
+        this._formattedName,
+      );
+
+      final ids = result.collectionIds ?? [];
+      ids.sort((a, b) => a.compareTo(b));
+
+      return [
+        for (final id in ids) collection(id),
+      ];
+    });
   }
 
   /// Changes the de/serializing mechanism for this [DocumentReference].
@@ -220,7 +253,7 @@ class DocumentReference<T> implements _Serializable {
   }
 
   Future<DocumentSnapshot<T>> get() async {
-    final result = await firestore.getAll([this], null);
+    final result = await firestore.getAll([this]);
     return result.single;
   }
 
@@ -416,10 +449,6 @@ class _QueryCursor {
 
   @override
   bool operator ==(Object other) {
-    // if (other is! _QueryCursor) return false;
-
-    // print(_valuesEqual(values, other.values));
-
     return other is _QueryCursor &&
         runtimeType == other.runtimeType &&
         before == other.before &&
@@ -510,11 +539,11 @@ class _QueryOptions<T> with _$QueryOptions<T> {
 
   /// Returns query options for a single-collection query.
   factory _QueryOptions.forCollectionQuery(
-    _QualifiedResourcePath collectionRef,
+    _ResourcePath collectionRef,
     _FirestoreDataConverter<T> converter,
   ) {
     return _QueryOptions<T>(
-      parentPath: collectionRef._parent()!,
+      parentPath: collectionRef.parent()!,
       collectionId: collectionRef.id!,
       converter: converter,
       allDescendants: false,
@@ -709,7 +738,7 @@ class _FieldFilterInternal implements _FilterInternal {
 }
 
 @immutable
-class Query<T> {
+base class Query<T> {
   const Query._({
     required this.firestore,
     required _QueryOptions<T> queryOptions,
@@ -1020,7 +1049,7 @@ class Query<T> {
   /// field values relative to the order of the query. The order of the provided
   /// values must match the order of the order by clauses of the query.
   ///
-  /// - [fieldValuesOrDocumentSnapshot]: The snapshot
+  /// - [snapshot]: The snapshot
   ///   of the document the query results should end before.
   Query<T> endBeforeDocument(DocumentSnapshot<Object?> snapshot) {
     final (endAt, fieldOrders) = _cursorFromValues(
@@ -1146,7 +1175,7 @@ class Query<T> {
 
           return finalDoc.build();
         })
-        .whereNotNull()
+        .nonNulls
         // Specifying fieldsProto should cause the builder to create a query snapshot.
         .cast<QueryDocumentSnapshot<T>>()
         .toList();
@@ -1502,7 +1531,7 @@ class Query<T> {
   /// ```dart
   /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
-  /// query.orderBy('foo', 'desc').get().then((querySnapshot) {
+  /// query.orderBy('foo', descending: true).get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
   ///     print('Found document at ${documentSnapshot.ref.path}');
   ///   });
@@ -1540,13 +1569,13 @@ class Query<T> {
   /// This function returns a new (immutable) instance of the Query (rather than
   /// modify the existing instance) to impose the field mask.
   ///
-  /// - [fieldPath]: The field to sort by.
+  /// - [path]: The field to sort by.
   /// - [descending] (false by default) Whether to obtain documents in descending order.
   ///
   /// ```dart
   /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 42);
   ///
-  /// query.orderBy('foo', 'desc').get().then((querySnapshot) {
+  /// query.orderBy('foo', descending: true).get().then((querySnapshot) {
   ///   querySnapshot.forEach((documentSnapshot) {
   ///     print('Found document at ${documentSnapshot.ref.path}');
   ///   });

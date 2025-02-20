@@ -257,7 +257,22 @@ class WebpushNotificationAction {
       'action': action,
       'icon': icon,
       'title': title,
-    };
+    }._cleanProto();
+  }
+}
+
+extension on Map<String, Object?> {
+  Map<String, Object?> _cleanProto() {
+    for (final entry in entries) {
+      switch (entry.value) {
+        case true:
+          this[entry.key] = 1;
+        case false:
+          this[entry.key] = 0;
+      }
+    }
+
+    return this;
   }
 }
 
@@ -368,7 +383,7 @@ class WebpushNotification {
       'timestamp': timestamp,
       'vibrate': vibrate,
       if (customData case final customData?) ...customData,
-    };
+    }._cleanProto();
   }
 }
 
@@ -422,7 +437,7 @@ class ApnsPayload {
     return {
       'aps': aps._toProto(),
       if (customData case final customData?) ...customData,
-    };
+    }._cleanProto();
   }
 }
 
@@ -430,13 +445,13 @@ class ApnsPayload {
 /// that is part of APNs messages.
 class Aps {
   Aps({
-    required this.alert,
-    required this.badge,
-    required this.sound,
-    required this.contentAvailable,
-    required this.mutableContent,
-    required this.category,
-    required this.threadId,
+    this.alert,
+    this.badge,
+    this.sound,
+    this.contentAvailable,
+    this.mutableContent,
+    this.category,
+    this.threadId,
   });
 
   /// Alert to be included in the message. This may be a string or an object of
@@ -472,7 +487,7 @@ class Aps {
       'mutable-content': mutableContent,
       'category': category,
       'thread-id': threadId,
-    };
+    }._cleanProto();
   }
 }
 
@@ -516,7 +531,7 @@ class ApsAlert {
       'subtitle-loc-args': subtitleLocArgs,
       'action-loc-key': actionLocKey,
       'launch-image': launchImage,
-    };
+    }._cleanProto();
   }
 }
 
@@ -542,7 +557,7 @@ class CriticalSound {
       'critical': critical,
       'name': name,
       'volume': volume,
-    };
+    }._cleanProto();
   }
 }
 
@@ -1263,77 +1278,6 @@ class MessagingTopicResponse {
   /// The message ID for a successfully received request which FCM will attempt to
   /// deliver to all subscribed devices.
   final num messageId;
-}
-
-/// Interface representing the server response from the
-/// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic]
-/// methods.
-///
-/// See
-/// [Manage topics from the server](https://firebase.google.com/docs/cloud-messaging/manage-topics)
-/// for code samples and detailed documentation.
-@internal
-class MessagingTopicManagementResponse {
-  /// Interface representing the server response from the
-  /// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic]
-  /// methods.
-  ///
-  /// See
-  /// [Manage topics from the server](https://firebase.google.com/docs/cloud-messaging/manage-topics)
-  /// for code samples and detailed documentation.
-  MessagingTopicManagementResponse._({
-    required this.failureCount,
-    required this.successCount,
-    required this.errors,
-  });
-
-  factory MessagingTopicManagementResponse._fromResponse(Object? response) {
-    // Add the success and failure counts.
-    var successCount = 0;
-    var failureCount = 0;
-    final errors = <FirebaseArrayIndexError>[];
-
-    if (response case {'results': final List<Object?> results}) {
-      results.forEachIndexed((index, tokenManagementResult) {
-        // Map the FCM server's error strings to actual error objects.
-        if (tokenManagementResult case {'error': final String error}) {
-          failureCount += 1;
-          final newError =
-              FirebaseMessagingAdminException.fromTopicManagementServerError(
-            serverErrorCode: error,
-            rawServerResponse: error,
-          );
-
-          errors.add(
-            FirebaseArrayIndexError(
-              index: index,
-              error: newError,
-            ),
-          );
-        } else {
-          successCount += 1;
-        }
-      });
-    }
-
-    return MessagingTopicManagementResponse._(
-      successCount: successCount,
-      failureCount: failureCount,
-      errors: [],
-    );
-  }
-
-  /// The number of registration tokens that could not be subscribed to the topic
-  /// and resulted in an error.
-  final int failureCount;
-
-  /// The number of registration tokens that were successfully subscribed to the
-  /// topic.
-  final int successCount;
-
-  /// An array of errors corresponding to the provided registration token(s). The
-  /// length of this array will be equal to [MessagingTopicManagementResponse.failureCount].
-  final List<FirebaseArrayIndexError> errors;
 }
 
 /// Interface representing the server response from the

@@ -5,632 +5,601 @@ class FirebaseAuthAdminException extends FirebaseAdminException
   FirebaseAuthAdminException(
     this.errorCode, [
     String? message,
-  ]) : super('auth', errorCode.name, message ?? errorCode.message);
+  ]) : super('auth', errorCode.code, message ?? errorCode.message);
 
-  factory FirebaseAuthAdminException.fromServerError(
-    auth1.DetailedApiRequestError error,
-  ) {
-    final code =
-        _authServerToClientCode(error.message) ?? AuthClientErrorCode.unknown;
-    return FirebaseAuthAdminException(code);
+  factory FirebaseAuthAdminException.fromServerError({
+    required String serverErrorCode,
+    Object? rawServerResponse,
+  }) {
+    // serverErrorCode could contain additional details:
+    // ERROR_CODE : Detailed message which can also contain colons
+    final colonSeparator = serverErrorCode.indexOf(':');
+    String? customMessage;
+    if (colonSeparator != -1) {
+      customMessage = serverErrorCode.substring(colonSeparator + 1).trim();
+      serverErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
+    }
+    // If not found, default to internal error.
+    final error = authServerToClientCode[serverErrorCode] ??
+        AuthClientErrorCode.internalError;
+    // Server detailed message should have highest priority.
+    customMessage = customMessage ?? error.message;
+
+    if (error == AuthClientErrorCode.internalError &&
+        rawServerResponse != null) {
+      try {
+        customMessage +=
+            ' Raw server response: "${jsonEncode(rawServerResponse)}"';
+      } catch (e) {
+        // Ignore JSON parsing error.
+      }
+    }
+
+    return FirebaseAuthAdminException(error, customMessage);
   }
 
   final AuthClientErrorCode errorCode;
 
   @override
-  String toString() => 'FirebaseAuthAdminException: $code: $message';
+  String toString() => 'firebaseAuthAdminException: $code: $message';
 }
 
-/// An enum representing possible error codes.
+/// Auth server to client enum error codes.
+@internal
+const authServerToClientCode = {
+  // Feature being configured or used requires a billing account.
+  'BILLING_NOT_ENABLED': AuthClientErrorCode.billingNotEnabled,
+  // Claims payload is too large.
+  'CLAIMS_TOO_LARGE': AuthClientErrorCode.claimsTooLarge,
+  // Configuration being added already exists.
+  'CONFIGURATION_EXISTS': AuthClientErrorCode.configurationExists,
+  // Configuration not found.
+  'CONFIGURATION_NOT_FOUND': AuthClientErrorCode.configurationNotFound,
+  // Provided credential has insufficient permissions.
+  'INSUFFICIENT_PERMISSION': AuthClientErrorCode.insufficientPermission,
+  // Provided configuration has invalid fields.
+  'INVALID_CONFIG': AuthClientErrorCode.invalidConfig,
+  // Provided configuration identifier is invalid.
+  'INVALID_CONFIG_ID': AuthClientErrorCode.invalidProviderId,
+  // ActionCodeSettings missing continue URL.
+  'INVALID_CONTINUE_URI': AuthClientErrorCode.invalidContinueUri,
+  // Dynamic link domain in provided ActionCodeSettings is not authorized.
+  'INVALID_DYNAMIC_LINK_DOMAIN': AuthClientErrorCode.invalidDynamicLinkDomain,
+  // uploadAccount provides an email that already exists.
+  'DUPLICATE_EMAIL': AuthClientErrorCode.emailAlreadyExists,
+  // uploadAccount provides a localId that already exists.
+  'DUPLICATE_LOCAL_ID': AuthClientErrorCode.uidAlreadyExists,
+  // Request specified a multi-factor enrollment ID that already exists.
+  'DUPLICATE_MFA_ENROLLMENT_ID':
+      AuthClientErrorCode.secondFactorUidAlreadyExists,
+  // setAccountInfo email already exists.
+  'EMAIL_EXISTS': AuthClientErrorCode.emailAlreadyExists,
+  // /'accounts':sndOobCode for password reset when user is not AuthClientErrorCode.found.
+  'EMAIL_NOT_FOUND': AuthClientErrorCode.emailNotFound,
+  // Reserved claim name.
+  'FORBIDDEN_CLAIM': AuthClientErrorCode.forbiddenClaim,
+  // Invalid claims provided.
+  'INVALID_CLAIMS': AuthClientErrorCode.invalidClaims,
+  // Invalid session cookie duration.
+  'INVALID_DURATION': AuthClientErrorCode.invalidSessionCookieDuration,
+  // Invalid email provided.
+  'INVALID_EMAIL': AuthClientErrorCode.invalidEmail,
+  // Invalid new email provided.
+  'INVALID_NEW_EMAIL': AuthClientErrorCode.invalidNewEmail,
+  // Invalid tenant display name. This can be thrown on CreateTenant and UpdateTenant.
+  'INVALID_DISPLAY_NAME': AuthClientErrorCode.invalidDisplayName,
+  // Invalid ID token provided.
+  'INVALID_ID_TOKEN': AuthClientErrorCode.invalidIdToken,
+  // Invalid tenant/parent resource name.
+  'INVALID_NAME': AuthClientErrorCode.invalidName,
+  // OIDC configuration has an invalid OAuth client ID.
+  'INVALID_OAUTH_CLIENT_ID': AuthClientErrorCode.invalidOauthClientId,
+  // Invalid page token.
+  'INVALID_PAGE_SELECTION': AuthClientErrorCode.invalidPageToken,
+  // Invalid phone number.
+  'INVALID_PHONE_NUMBER': AuthClientErrorCode.invalidPhoneNumber,
+  // Invalid agent project. Either agent project doesn't exist or didn't enable multi-tenancy.
+  'INVALID_PROJECT_ID': AuthClientErrorCode.invalidProjectId,
+  // Invalid provider ID.
+  'INVALID_PROVIDER_ID': AuthClientErrorCode.invalidProviderId,
+  // Invalid testing phone number.
+  'INVALID_TESTING_PHONE_NUMBER': AuthClientErrorCode.invalidTestingPhoneNumber,
+  // Invalid tenant type.
+  'INVALID_TENANT_TYPE': AuthClientErrorCode.invalidTenantType,
+  // Missing Android package name.
+  'MISSING_ANDROID_PACKAGE_NAME': AuthClientErrorCode.missingAndroidPackageName,
+  // Missing configuration.
+  'MISSING_CONFIG': AuthClientErrorCode.missingConfig,
+  // Missing configuration identifier.
+  'MISSING_CONFIG_ID': AuthClientErrorCode.missingProviderId,
+  // Missing tenant display 'name': his can be thrown on CreateTenant and AuthClientErrorCode.updateTenant.
+  'MISSING_DISPLAY_NAME': AuthClientErrorCode.missingDisplayName,
+  // Email is required for the specified action. For example a multi-factor user requires
+  // a verified email.
+  'MISSING_EMAIL': AuthClientErrorCode.missingEmail,
+  // Missing iOS bundle ID.
+  'MISSING_IOS_BUNDLE_ID': AuthClientErrorCode.missingIosBundleId,
+  // Missing OIDC issuer.
+  'MISSING_ISSUER': AuthClientErrorCode.missingIssuer,
+  // No localId provided (deleteAccount missing localId).
+  'MISSING_LOCAL_ID': AuthClientErrorCode.missingUid,
+  // OIDC configuration is missing an OAuth client ID.
+  'MISSING_OAUTH_CLIENT_ID': AuthClientErrorCode.missingOauthClientId,
+  // Missing provider ID.
+  'MISSING_PROVIDER_ID': AuthClientErrorCode.missingProviderId,
+  // Missing SAML RP config.
+  'MISSING_SAML_RELYING_PARTY_CONFIG':
+      AuthClientErrorCode.missingSamlRelyingPartyConfig,
+  // Empty user list in uploadAccount.
+  'MISSING_USER_ACCOUNT': AuthClientErrorCode.missingUid,
+  // Password auth disabled in console.
+  'OPERATION_NOT_ALLOWED': AuthClientErrorCode.operationNotAllowed,
+  // Provided credential has insufficient permissions.
+  'PERMISSION_DENIED': AuthClientErrorCode.insufficientPermission,
+  // Phone number already exists.
+  'PHONE_NUMBER_EXISTS': AuthClientErrorCode.phoneNumberAlreadyExists,
+  // Project not found.
+  'PROJECT_NOT_FOUND': AuthClientErrorCode.projectNotFound,
+  // In multi-tenancy 'context': reject creation quota AuthClientErrorCode.exceed.
+  'QUOTA_EXCEEDED': AuthClientErrorCode.quotaExceeded,
+  // Currently only 5 second factors can be set on the same user.
+  'SECOND_FACTOR_LIMIT_EXCEEDED': AuthClientErrorCode.secondFactorLimitExceeded,
+  // Tenant not found.
+  'TENANT_NOT_FOUND': AuthClientErrorCode.tenantNotFound,
+  // Tenant ID mismatch.
+  'TENANT_ID_MISMATCH': AuthClientErrorCode.mismatchingTenantId,
+  // Token expired error.
+  'TOKEN_EXPIRED': AuthClientErrorCode.idTokenExpired,
+  // Continue URL provided in ActionCodeSettings has a domain that is not whitelisted.
+  'UNAUTHORIZED_DOMAIN': AuthClientErrorCode.unauthorizedDomain,
+  // A multi-factor user requires a supported first factor.
+  'UNSUPPORTED_FIRST_FACTOR': AuthClientErrorCode.unsupportedFirstFactor,
+  // The request specified an unsupported type of second factor.
+  'UNSUPPORTED_SECOND_FACTOR': AuthClientErrorCode.unsupportedSecondFactor,
+  // Operation is not supported in a multi-tenant context.
+  'UNSUPPORTED_TENANT_OPERATION':
+      AuthClientErrorCode.unsupportedTenantOperation,
+  // A verified email is required for the specified action. For example a multi-factor user
+  // requires a verified email.
+  'UNVERIFIED_EMAIL': AuthClientErrorCode.unverifiedEmail,
+  // User on which action is to be performed is not found.
+  'USER_NOT_FOUND': AuthClientErrorCode.userNotFound,
+  // User record is disabled.
+  'USER_DISABLED': AuthClientErrorCode.userDisabled,
+  // Password provided is too weak.
+  'WEAK_PASSWORD': AuthClientErrorCode.invalidPassword,
+  // Unrecognized reCAPTCHA action.
+  'INVALID_RECAPTCHA_ACTION': AuthClientErrorCode.invalidRecaptchaAction,
+  // Unrecognized reCAPTCHA enforcement state.
+  'INVALID_RECAPTCHA_ENFORCEMENT_STATE':
+      AuthClientErrorCode.invalidRecaptchaEnforcementState,
+  // reCAPTCHA is not enabled for account defender.
+  'RECAPTCHA_NOT_ENABLED': AuthClientErrorCode.recaptchaNotEnabled,
+};
 
-extension AuthClientErrorCodeExtension on AuthClientErrorCode {
-  String? get message => _authClientCodeMessage(this);
-}
-
+/// Auth client error codes and their default messages.
 enum AuthClientErrorCode {
-  unknown,
-  billingNotEnabled,
-  claimsTooLarge,
-  configurationExists,
-  configurationNotFound,
-  idTokenExpired,
-  invalidArgument,
-  invalidConfig,
-  emailAlreadyExists,
-  emailNotFound,
-  forbiddenClaim,
-  invalidIdToken,
-  idTokenRevoked,
-  internalError,
-  invalidClaims,
-  invalidContinueUri,
-  invalidCreationTime,
-  invalidCredential,
-  invalidDisabledField,
-  invalidDisplayName,
-  invalidDynamicLinkDomain,
-  invalidEmailVerified,
-  invalidEmail,
-  invalidEnrolledFactors,
-  invalidEnrollmentTime,
-  invalidHashAlgorithm,
-  invalidHashBlockSize,
-  invalidHashDerivedKeyLength,
-  invalidHashKey,
-  invalidHashMemoryCost,
-  invalidHashParallelization,
-  invalidHashRounds,
-  invalidHashSaltSeparator,
-  invalidLastSignInTime,
-  invalidName,
-  invalidOauthClientId,
-  invalidPageToken,
-  invalidPassword,
-  invalidPasswordHash,
-  invalidPasswordSalt,
-  invalidPhoneNumber,
-  invalidPhotoUrl,
-  invalidProjectId,
-  invalidProviderData,
-  invalidProviderId,
-  invalidProviderUid,
-  invalidOauthResponseType,
-  invalidSessionCookieDuration,
-  invalidTenantId,
-  invalidTenantType,
-  invalidTestingPhoneNumber,
-  invalidUid,
-  invalidUserImport,
-  invalidTokensValidAfterTime,
-  mismatchingTenantId,
-  missingAndroidPackageName,
-  missingConfig,
-  missingContinueUri,
-  missingDisplayName,
-  missingEmail,
-  missingIosBundleId,
-  missingIssuer,
-  missingHashAlgorithm,
-  missingOauthClientId,
-  missingOauthClientSecret,
-  missingProviderId,
-  missingSamlRelyingPartyConfig,
-  maximumTestPhoneNumberExceeded,
-  maximumUserCountExceeded,
-  missingUid,
-  operationNotAllowed,
-  phoneNumberAlreadyExists,
-  projectNotFound,
-  insufficientPermission,
-  quotaExceeded,
-  secondFactorLimitExceeded,
-  secondFactorUidAlreadyExists,
-  sessionCookieExpired,
-  sessionCookieRevoked,
-  tenantNotFound,
-  uidAlreadyExists,
-  unauthorizedDomain,
-  unsupportedFirstFactor,
-  unsupportedSecondFactor,
-  unsupportedTenantOperation,
-  unverifiedEmail,
-  userNotFound,
-  notFound,
-  userDisabled,
-  userNotDisabled;
-}
-
-String? _authClientCodeMessage(AuthClientErrorCode code) {
-  switch (code) {
-    case AuthClientErrorCode.billingNotEnabled:
-      return 'Feature requires billing to be enabled.';
-
-    case AuthClientErrorCode.claimsTooLarge:
-      return 'Developer claims maximum payload size exceeded.';
-
-    case AuthClientErrorCode.configurationExists:
-      return 'A configuration already exists with the provided identifier.';
-
-    case AuthClientErrorCode.configurationNotFound:
-      return 'There is no configuration corresponding to the provided identifier.';
-
-    case AuthClientErrorCode.idTokenExpired:
-      return 'The provided Firebase ID token is expired.';
-
-    case AuthClientErrorCode.invalidArgument:
-      return 'Invalid argument provided.';
-
-    case AuthClientErrorCode.invalidConfig:
-      return 'The provided configuration is invalid.';
-
-    case AuthClientErrorCode.emailAlreadyExists:
-      return 'The email address is already in use by another account.';
-
-    case AuthClientErrorCode.emailNotFound:
-      return 'There is no user record corresponding to the provided email.';
-
-    case AuthClientErrorCode.forbiddenClaim:
-      return 'The specified developer claim is reserved and cannot be specified.';
-
-    case AuthClientErrorCode.invalidIdToken:
-      return 'The provided ID token is not a valid Firebase ID token.';
-
-    case AuthClientErrorCode.idTokenRevoked:
-      return 'The Firebase ID token has been revoked.';
-
-    case AuthClientErrorCode.internalError:
-      return 'An internal error has occurred.';
-
-    case AuthClientErrorCode.invalidClaims:
-      return 'The provided custom claim attributes are invalid.';
-
-    case AuthClientErrorCode.invalidContinueUri:
-      return 'The continue URL must be a valid URL string.';
-
-    case AuthClientErrorCode.invalidCreationTime:
-      return 'The creation time must be a valid UTC date string.';
-
-    case AuthClientErrorCode.invalidCredential:
-      return 'Invalid credential object provided.';
-
-    case AuthClientErrorCode.invalidDisabledField:
-      return 'The disabled field must be a boolean.';
-
-    case AuthClientErrorCode.invalidDisplayName:
-      return 'The displayName field must be a valid string.';
-
-    case AuthClientErrorCode.invalidDynamicLinkDomain:
-      return 'The provided dynamic link domain is not configured or authorized for the current project.';
-
-    case AuthClientErrorCode.invalidEmailVerified:
-      return 'The emailVerified field must be a boolean.';
-
-    case AuthClientErrorCode.invalidEmail:
-      return 'The email address is improperly formatted.';
-
-    case AuthClientErrorCode.invalidEnrolledFactors:
-      return 'The enrolled factors must be a valid array of MultiFactorInfo objects.';
-
-    case AuthClientErrorCode.invalidEnrollmentTime:
-      return 'The second factor enrollment time must be a valid UTC date string.';
-
-    case AuthClientErrorCode.invalidHashAlgorithm:
-      return 'The hash algorithm must match one of the strings in the list of supported algorithms.';
-
-    case AuthClientErrorCode.invalidHashBlockSize:
-      return 'The hash block size must be a valid number.';
-
-    case AuthClientErrorCode.invalidHashDerivedKeyLength:
-      return 'The hash derived key length must be a valid number.';
-
-    case AuthClientErrorCode.invalidHashKey:
-      return 'The hash key must a valid byte buffer.';
-
-    case AuthClientErrorCode.invalidHashMemoryCost:
-      return 'The hash memory cost must be a valid number.';
-
-    case AuthClientErrorCode.invalidHashParallelization:
-      return 'The hash parallelization must be a valid number.';
-
-    case AuthClientErrorCode.invalidHashRounds:
-      return 'The hash rounds must be a valid number.';
-
-    case AuthClientErrorCode.invalidHashSaltSeparator:
-      return 'The hashing algorithm salt separator field must be a valid byte buffer.';
-
-    case AuthClientErrorCode.invalidLastSignInTime:
-      return 'The last sign-in time must be a valid UTC date string.';
-
-    case AuthClientErrorCode.invalidName:
-      return 'The resource name provided is invalid.';
-
-    case AuthClientErrorCode.invalidOauthClientId:
-      return 'The provided OAuth client ID is invalid.';
-
-    case AuthClientErrorCode.invalidPageToken:
-      return 'The page token must be a valid non-empty string.';
-
-    case AuthClientErrorCode.invalidPassword:
-      return 'The password must be a string with at least 6 characters.';
-
-    case AuthClientErrorCode.invalidPasswordHash:
-      return 'The password hash must be a valid byte buffer.';
-
-    case AuthClientErrorCode.invalidPasswordSalt:
-      return 'The password salt must be a valid byte buffer.';
-
-    case AuthClientErrorCode.invalidPhoneNumber:
-      return 'The phone number must be a non-empty E.164 standard compliant identifier string.';
-
-    case AuthClientErrorCode.invalidPhotoUrl:
-      return 'The photoURL field must be a valid URL.';
-
-    case AuthClientErrorCode.invalidProjectId:
-      return "Invalid parent project. Either parent project doesn't exist or didn't enable multi-tenancy.";
-
-    case AuthClientErrorCode.invalidProviderData:
-      return 'The providerData must be a valid array of UserInfo objects.';
-
-    case AuthClientErrorCode.invalidProviderId:
-      return 'The providerId must be a valid supported provider identifier string.';
-
-    case AuthClientErrorCode.invalidProviderUid:
-      return 'The providerUid must be a valid provider uid string.';
-
-    case AuthClientErrorCode.invalidOauthResponseType:
-      return 'Only exactly one OAuth responseType should be set to true.';
-
-    case AuthClientErrorCode.invalidSessionCookieDuration:
-      return 'The session cookie duration must be a valid number in milliseconds between 5 minutes and 2 weeks.';
-
-    case AuthClientErrorCode.invalidTenantId:
-      return 'The tenant ID must be a valid non-empty string.';
-
-    case AuthClientErrorCode.invalidTenantType:
-      return 'Tenant type must be either "full_service" or "lightweight".';
-
-    case AuthClientErrorCode.invalidTestingPhoneNumber:
-      return 'Invalid testing phone number or invalid test code provided.';
-
-    case AuthClientErrorCode.invalidUid:
-      return 'The uid must be a non-empty string with at most 128 characters.';
-
-    case AuthClientErrorCode.invalidUserImport:
-      return 'The user record to import is invalid.';
-
-    case AuthClientErrorCode.invalidTokensValidAfterTime:
-      return 'The tokensValidAfterTime must be a valid UTC number in seconds.';
-
-    case AuthClientErrorCode.mismatchingTenantId:
-      return 'User tenant ID does not match with the current TenantAwareAuth tenant ID.';
-
-    case AuthClientErrorCode.missingAndroidPackageName:
-      return 'An Android Package Name must be provided if the Android App is required to be installed.';
-
-    case AuthClientErrorCode.missingConfig:
-      return 'The provided configuration is missing required attributes.';
-
-    case AuthClientErrorCode.missingContinueUri:
-      return 'A valid continue URL must be provided in the request.';
-
-    case AuthClientErrorCode.missingDisplayName:
-      return 'The resource being created or edited is missing a valid display name.';
-
-    case AuthClientErrorCode.missingEmail:
-      return 'The email is required for the specified action. For example, a multi-factor user requires a verified email.';
-
-    case AuthClientErrorCode.missingIosBundleId:
-      return 'The request is missing an iOS Bundle ID.';
-
-    case AuthClientErrorCode.missingIssuer:
-      return 'The OAuth/OIDC configuration issuer must not be empty.';
-
-    case AuthClientErrorCode.missingHashAlgorithm:
-      return 'Importing users with password hashes requires that the hashing algorithm and its parameters be provided.';
-
-    case AuthClientErrorCode.missingOauthClientId:
-      return 'The OAuth/OIDC configuration client ID must not be empty.';
-
-    case AuthClientErrorCode.missingOauthClientSecret:
-      return 'The OAuth configuration client secret is required to enable OIDC code flow.';
-
-    case AuthClientErrorCode.missingProviderId:
-      return 'A valid provider ID must be provided in the request.';
-
-    case AuthClientErrorCode.missingSamlRelyingPartyConfig:
-      return 'The SAML configuration provided is missing a relying party configuration.';
-
-    case AuthClientErrorCode.maximumTestPhoneNumberExceeded:
-      return 'The maximum allowed number of test phone number / code pairs has been exceeded.';
-
-    case AuthClientErrorCode.maximumUserCountExceeded:
-      return 'The maximum allowed number of users to import has been exceeded.';
-
-    case AuthClientErrorCode.missingUid:
-      return 'A uid identifier is required for the current operation.';
-
-    case AuthClientErrorCode.operationNotAllowed:
-      return 'The given sign-in provider is disabled for this Firebase project. Enable it in the Firebase console, under the sign-in method tab of the Auth section.';
-
-    case AuthClientErrorCode.phoneNumberAlreadyExists:
-      return 'The user with the provided phone number already exists.';
-
-    case AuthClientErrorCode.projectNotFound:
-      return 'No Firebase project was found for the provided credential.';
-
-    case AuthClientErrorCode.insufficientPermission:
-      return 'Credential implementation provided to initializeApp() via the "credential" property  has insufficient permission to access the requested resource. See https://firebase.google.com/docs/admin/setup for details on how to authenticate this SDK with appropriate permissions.';
-
-    case AuthClientErrorCode.quotaExceeded:
-      return 'The project quota for the specified operation has been exceeded.';
-
-    case AuthClientErrorCode.secondFactorLimitExceeded:
-      return 'The maximum number of allowed second factors on a user has been exceeded.';
-
-    case AuthClientErrorCode.secondFactorUidAlreadyExists:
-      return 'The specified second factor "uid" already exists.';
-
-    case AuthClientErrorCode.sessionCookieExpired:
-      return 'The Firebase session cookie is expired.';
-
-    case AuthClientErrorCode.sessionCookieRevoked:
-      return 'The Firebase session cookie has been revoked.';
-
-    case AuthClientErrorCode.tenantNotFound:
-      return 'There is no tenant corresponding to the provided identifier.';
-
-    case AuthClientErrorCode.uidAlreadyExists:
-      return 'The user with the provided uid already exists.';
-
-    case AuthClientErrorCode.unauthorizedDomain:
-      return 'The domain of the continue URL is not whitelisted. Whitelist the domain in the Firebase console.';
-
-    case AuthClientErrorCode.unsupportedFirstFactor:
-      return 'A multi-factor user requires a supported first factor.';
-
-    case AuthClientErrorCode.unsupportedSecondFactor:
-      return 'The request specified an unsupported type of second factor.';
-
-    case AuthClientErrorCode.unsupportedTenantOperation:
-      return 'This operation is not supported in a multi-tenant context.';
-
-    case AuthClientErrorCode.unverifiedEmail:
-      return 'A verified email is required for the specified action. For example, a multi-factor user requires a verified email.';
-
-    case AuthClientErrorCode.userNotFound:
-      return 'There is no user record corresponding to the provided identifier.';
-
-    case AuthClientErrorCode.notFound:
-      return 'The requested resource was not found.';
-
-    case AuthClientErrorCode.userDisabled:
-      return 'The user record is disabled.';
-
-    case AuthClientErrorCode.userNotDisabled:
-      return 'The user must be disabled in order to bulk delete it (or you must pass force=true).';
-
-    case AuthClientErrorCode.unknown:
-      return null;
-  }
-}
-
-AuthClientErrorCode? _authServerToClientCode(String? serverCode) {
-  switch (serverCode) {
-    case 'BILLING_NOT_ENABLED':
-      return AuthClientErrorCode.billingNotEnabled;
-
-    /// Claims payload is too large.
-    case 'CLAIMS_TOO_LARGE':
-      return AuthClientErrorCode.claimsTooLarge;
-
-    /// Configuration being added already exists.
-    case 'CONFIGURATION_EXISTS':
-      return AuthClientErrorCode.configurationExists;
-
-    /// Configuration not found.
-    case 'CONFIGURATION_NOT_FOUND':
-      return AuthClientErrorCode.configurationNotFound;
-
-    /// Provided credential has insufficient permissions.
-    case 'INSUFFICIENT_PERMISSION':
-      return AuthClientErrorCode.insufficientPermission;
-
-    /// Provided configuration has invalid fields.
-    case 'INVALID_CONFIG':
-      return AuthClientErrorCode.invalidConfig;
-
-    /// Provided configuration identifier is invalid.
-    case 'INVALID_CONFIG_ID':
-      return AuthClientErrorCode.invalidProviderId;
-
-    /// ActionCodeSettings missing continue URL.
-    case 'INVALID_CONTINUE_URI':
-      return AuthClientErrorCode.invalidContinueUri;
-
-    /// Dynamic link domain in provided ActionCodeSettings is not authorized.
-    case 'INVALID_DYNAMIC_LINK_DOMAIN':
-      return AuthClientErrorCode.invalidDynamicLinkDomain;
-
-    /// uploadAccount provides an email that already exists.
-    case 'DUPLICATE_EMAIL':
-      return AuthClientErrorCode.emailAlreadyExists;
-
-    /// uploadAccount provides a localId that already exists.
-    case 'DUPLICATE_LOCAL_ID':
-      return AuthClientErrorCode.uidAlreadyExists;
-
-    /// Request specified a multi-factor enrollment ID that already exists.
-    case 'DUPLICATE_MFA_ENROLLMENT_ID':
-      return AuthClientErrorCode.secondFactorUidAlreadyExists;
-
-    /// setAccountInfo email already exists.
-    case 'EMAIL_EXISTS':
-      return AuthClientErrorCode.emailAlreadyExists;
-
-    /// accounts:sendOobCode for password reset when user is not found.
-    case 'EMAIL_NOT_FOUND':
-      return AuthClientErrorCode.emailNotFound;
-
-    /// Reserved claim name.
-    case 'FORBIDDEN_CLAIM':
-      return AuthClientErrorCode.forbiddenClaim;
-
-    /// Invalid claims provided.
-    case 'INVALID_CLAIMS':
-      return AuthClientErrorCode.invalidClaims;
-
-    /// Invalid session cookie duration.
-    case 'INVALID_DURATION':
-      return AuthClientErrorCode.invalidSessionCookieDuration;
-
-    /// Invalid email provided.
-    case 'INVALID_EMAIL':
-      return AuthClientErrorCode.invalidEmail;
-
-    /// Invalid tenant display name. This can be thrown on CreateTenant and UpdateTenant.
-    case 'INVALID_DISPLAY_NAME':
-      return AuthClientErrorCode.invalidDisplayName;
-
-    /// Invalid ID token provided.
-    case 'INVALID_ID_TOKEN':
-      return AuthClientErrorCode.invalidIdToken;
-
-    /// Invalid tenant/parent resource name.
-    case 'INVALID_NAME':
-      return AuthClientErrorCode.invalidName;
-
-    /// OIDC configuration has an invalid OAuth client ID.
-    case 'INVALID_OAUTH_CLIENT_ID':
-      return AuthClientErrorCode.invalidOauthClientId;
-
-    /// Invalid page token.
-    case 'INVALID_PAGE_SELECTION':
-      return AuthClientErrorCode.invalidPageToken;
-
-    /// Invalid phone number.
-    case 'INVALID_PHONE_NUMBER':
-      return AuthClientErrorCode.invalidPhoneNumber;
-
-    /// Invalid agent project. Either agent project doesn't exist or didn't enable multi-tenancy.
-    case 'INVALID_PROJECT_ID':
-      return AuthClientErrorCode.invalidProjectId;
-
-    /// Invalid provider ID.
-    case 'INVALID_PROVIDER_ID':
-      return AuthClientErrorCode.invalidProviderId;
-
-    /// Invalid service account.
-    case 'INVALID_SERVICE_ACCOUNT':
-      return AuthClientErrorCode.unknown;
-
-    /// Invalid testing phone number.
-    case 'INVALID_TESTING_PHONE_NUMBER':
-      return AuthClientErrorCode.invalidTestingPhoneNumber;
-
-    /// Invalid tenant type.
-    case 'INVALID_TENANT_TYPE':
-      return AuthClientErrorCode.invalidTenantType;
-
-    /// Missing Android package name.
-    case 'MISSING_ANDROID_PACKAGE_NAME':
-      return AuthClientErrorCode.missingAndroidPackageName;
-
-    /// Missing configuration.
-    case 'MISSING_CONFIG':
-      return AuthClientErrorCode.missingConfig;
-
-    /// Missing configuration identifier.
-    case 'MISSING_CONFIG_ID':
-      return AuthClientErrorCode.missingProviderId;
-
-    /// Missing tenant display name: This can be thrown on CreateTenant and UpdateTenant.
-    case 'MISSING_DISPLAY_NAME':
-      return AuthClientErrorCode.missingDisplayName;
-
-    /// Email is required for the specified action. For example a multi-factor user requires
-    /// a verified email.
-    case 'MISSING_EMAIL':
-      return AuthClientErrorCode.missingEmail;
-
-    /// Missing iOS bundle ID.
-    case 'MISSING_IOS_BUNDLE_ID':
-      return AuthClientErrorCode.missingIosBundleId;
-
-    /// Missing OIDC issuer.
-    case 'MISSING_ISSUER':
-      return AuthClientErrorCode.missingIssuer;
-
-    /// No localId provided (deleteAccount missing localId).
-    case 'MISSING_LOCAL_ID':
-      return AuthClientErrorCode.missingUid;
-
-    /// OIDC configuration is missing an OAuth client ID.
-    case 'MISSING_OAUTH_CLIENT_ID':
-      return AuthClientErrorCode.missingOauthClientId;
-
-    /// Missing provider ID.
-    case 'MISSING_PROVIDER_ID':
-      return AuthClientErrorCode.missingProviderId;
-
-    /// Missing SAML RP config.
-    case 'MISSING_SAML_RELYING_PARTY_CONFIG':
-      return AuthClientErrorCode.missingSamlRelyingPartyConfig;
-
-    /// Empty user list in uploadAccount.
-    case 'MISSING_USER_ACCOUNT':
-      return AuthClientErrorCode.missingUid;
-
-    /// Password auth disabled in console.
-    case 'OPERATION_NOT_ALLOWED':
-      return AuthClientErrorCode.operationNotAllowed;
-
-    /// Provided credential has insufficient permissions.
-    case 'PERMISSION_DENIED':
-      return AuthClientErrorCode.insufficientPermission;
-
-    /// Phone number already exists.
-    case 'PHONE_NUMBER_EXISTS':
-      return AuthClientErrorCode.phoneNumberAlreadyExists;
-
-    /// Project not found.
-    case 'PROJECT_NOT_FOUND':
-      return AuthClientErrorCode.projectNotFound;
-
-    /// In multi-tenancy context: project creation quota exceeded.
-    case 'QUOTA_EXCEEDED':
-      return AuthClientErrorCode.quotaExceeded;
-
-    /// Currently only 5 second factors can be set on the same user.
-    case 'SECOND_FACTOR_LIMIT_EXCEEDED':
-      return AuthClientErrorCode.secondFactorLimitExceeded;
-
-    /// Tenant not found.
-    case 'TENANT_NOT_FOUND':
-      return AuthClientErrorCode.tenantNotFound;
-
-    /// Tenant ID mismatch.
-    case 'TENANT_ID_MISMATCH':
-      return AuthClientErrorCode.mismatchingTenantId;
-
-    /// Token expired error.
-    case 'TOKEN_EXPIRED':
-      return AuthClientErrorCode.idTokenExpired;
-
-    /// Continue URL provided in ActionCodeSettings has a domain that is not whitelisted.
-    case 'UNAUTHORIZED_DOMAIN':
-      return AuthClientErrorCode.unauthorizedDomain;
-
-    /// A multi-factor user requires a supported first factor.
-    case 'UNSUPPORTED_FIRST_FACTOR':
-      return AuthClientErrorCode.unsupportedFirstFactor;
-
-    /// The request specified an unsupported type of second factor.
-    case 'UNSUPPORTED_SECOND_FACTOR':
-      return AuthClientErrorCode.unsupportedSecondFactor;
-
-    /// Operation is not supported in a multi-tenant context.
-    case 'UNSUPPORTED_TENANT_OPERATION':
-      return AuthClientErrorCode.unsupportedTenantOperation;
-
-    /// A verified email is required for the specified action. For example a multi-factor user
-    /// requires a verified email.
-    case 'UNVERIFIED_EMAIL':
-      return AuthClientErrorCode.unverifiedEmail;
-
-    /// User on which action is to be performed is not found.
-    case 'USER_NOT_FOUND':
-      return AuthClientErrorCode.userNotFound;
-
-    /// User record is disabled.
-    case 'USER_DISABLED':
-      return AuthClientErrorCode.userDisabled;
-
-    /// Password provided is too weak.
-    case 'WEAK_PASSWORD':
-      return AuthClientErrorCode.invalidPassword;
-  }
-
-  return null;
+  authBlockingTokenExpired(
+    code: 'auth-blocking-token-expired',
+    message: 'The provided Firebase Auth Blocking token is expired.',
+  ),
+  billingNotEnabled(
+    code: 'billing-not-enabled',
+    message: 'Feature requires billing to be enabled.',
+  ),
+  claimsTooLarge(
+    code: 'claims-too-large',
+    message: 'Developer claims maximum payload size exceeded.',
+  ),
+  configurationExists(
+    code: 'configuration-exists',
+    message: 'A configuration already exists with the provided identifier.',
+  ),
+  configurationNotFound(
+    code: 'configuration-not-found',
+    message:
+        'There is no configuration corresponding to the provided identifier.',
+  ),
+  idTokenExpired(
+    code: 'id-token-expired',
+    message: 'The provided Firebase ID token is expired.',
+  ),
+  invalidArgument(
+    code: 'argument-error',
+    message: 'Invalid argument provided.',
+  ),
+  invalidConfig(
+    code: 'invalid-config',
+    message: 'The provided configuration is invalid.',
+  ),
+  emailAlreadyExists(
+    code: 'email-already-exists',
+    message: 'The email address is already in use by another account.',
+  ),
+  emailNotFound(
+    code: 'email-not-found',
+    message: 'There is no user record corresponding to the provided email.',
+  ),
+  forbiddenClaim(
+    code: 'reserved-claim',
+    message:
+        'The specified developer claim is reserved and cannot be specified.',
+  ),
+  invalidIdToken(
+    code: 'invalid-id-token',
+    message: 'The provided ID token is not a valid Firebase ID token.',
+  ),
+  idTokenRevoked(
+    code: 'id-token-revoked',
+    message: 'The Firebase ID token has been revoked.',
+  ),
+  internalError(
+    code: 'internal-error',
+    message: 'An internal error has occurred.',
+  ),
+  invalidClaims(
+    code: 'invalid-claims',
+    message: 'The provided custom claim attributes are invalid.',
+  ),
+  invalidContinueUri(
+    code: 'invalid-continue-uri',
+    message: 'The continue URL must be a valid URL string.',
+  ),
+  invalidCreationTime(
+    code: 'invalid-creation-time',
+    message: 'The creation time must be a valid UTC date string.',
+  ),
+  invalidCredential(
+    code: 'invalid-credential',
+    message: 'Invalid credential object provided.',
+  ),
+  invalidDisabledField(
+    code: 'invalid-disabled-field',
+    message: 'The disabled field must be a boolean.',
+  ),
+  invalidDisplayName(
+    code: 'invalid-display-name',
+    message: 'The displayName field must be a valid string.',
+  ),
+  invalidDynamicLinkDomain(
+    code: 'invalid-dynamic-link-domain',
+    message: 'The provided dynamic link domain is not configured or authorized '
+        'for the current project.',
+  ),
+  invalidEmailVerified(
+    code: 'invalid-email-verified',
+    message: 'The emailVerified field must be a boolean.',
+  ),
+  invalidEmail(
+    code: 'invalid-email',
+    message: 'The email address is improperly formatted.',
+  ),
+  invalidNewEmail(
+    code: 'invalid-new-email',
+    message: 'The new email address is improperly formatted.',
+  ),
+  invalidEnrolledFactors(
+    code: 'invalid-enrolled-factors',
+    message:
+        'The enrolled factors must be a valid array of MultiFactorInfo objects.',
+  ),
+  invalidEnrollmentTime(
+    code: 'invalid-enrollment-time',
+    message:
+        'The second factor enrollment time must be a valid UTC date string.',
+  ),
+  invalidHashAlgorithm(
+    code: 'invalid-hash-algorithm',
+    message: 'The hash algorithm must match one of the strings in the list of '
+        'supported algorithms.',
+  ),
+  invalidHashBlockSize(
+    code: 'invalid-hash-block-size',
+    message: 'The hash block size must be a valid number.',
+  ),
+  invalidHashDerivedKeyLength(
+    code: 'invalid-hash-derived-key-length',
+    message: 'The hash derived key length must be a valid number.',
+  ),
+  invalidHashKey(
+    code: 'invalid-hash-key',
+    message: 'The hash key must a valid byte buffer.',
+  ),
+  invalidHashMemoryCost(
+    code: 'invalid-hash-memory-cost',
+    message: 'The hash memory cost must be a valid number.',
+  ),
+  invalidHashParallelization(
+    code: 'invalid-hash-parallelization',
+    message: 'The hash parallelization must be a valid number.',
+  ),
+  invalidHashRounds(
+    code: 'invalid-hash-rounds',
+    message: 'The hash rounds must be a valid number.',
+  ),
+  invalidHashSaltSeparator(
+    code: 'invalid-hash-salt-separator',
+    message:
+        'The hashing algorithm salt separator field must be a valid byte buffer.',
+  ),
+  invalidLastSignInTime(
+    code: 'invalid-last-sign-in-time',
+    message: 'The last sign-in time must be a valid UTC date string.',
+  ),
+  invalidName(
+    code: 'invalid-name',
+    message: 'The resource name provided is invalid.',
+  ),
+  invalidOauthClientId(
+    code: 'invalid-oauth-client-id',
+    message: 'The provided OAuth client ID is invalid.',
+  ),
+  invalidPageToken(
+    code: 'invalid-page-token',
+    message: 'The page token must be a valid non-empty string.',
+  ),
+  invalidPassword(
+    code: 'invalid-password',
+    message: 'The password must be a string with at least 6 characters.',
+  ),
+  invalidPasswordHash(
+    code: 'invalid-password-hash',
+    message: 'The password hash must be a valid byte buffer.',
+  ),
+  invalidPasswordSalt(
+    code: 'invalid-password-salt',
+    message: 'The password salt must be a valid byte buffer.',
+  ),
+  invalidPhoneNumber(
+    code: 'invalid-phone-number',
+    message:
+        'The phone number must be a non-empty E.164 standard compliant identifier '
+        'string.',
+  ),
+  invalidPhotoUrl(
+    code: 'invalid-photo-url',
+    message: 'The photoURL field must be a valid URL.',
+  ),
+  invalidProjectId(
+    code: 'invalid-project-id',
+    message: 'Invalid parent project. '
+        "Either parent project doesn't exist or didn't enable multi-tenancy.",
+  ),
+  invalidProviderData(
+    code: 'invalid-provider-data',
+    message: 'The providerData must be a valid array of UserInfo objects.',
+  ),
+  invalidProviderId(
+    code: 'invalid-provider-id',
+    message:
+        'The providerId must be a valid supported provider identifier string.',
+  ),
+  invalidProviderUid(
+    code: 'invalid-provider-uid',
+    message: 'The providerUid must be a valid provider uid string.',
+  ),
+  invalidOauthResponseType(
+    code: 'invalid-oauth-responsetype',
+    message: 'Only exactly one OAuth responseType should be set to true.',
+  ),
+  invalidSessionCookieDuration(
+    code: 'invalid-session-cookie-duration',
+    message:
+        'The session cookie duration must be a valid number in milliseconds '
+        'between 5 minutes and 2 weeks.',
+  ),
+  invalidTenantId(
+    code: 'invalid-tenant-id',
+    message: 'The tenant ID must be a valid non-empty string.',
+  ),
+  invalidTenantType(
+    code: 'invalid-tenant-type',
+    message: 'Tenant type must be either "full_service" or "lightweight".',
+  ),
+  invalidTestingPhoneNumber(
+    code: 'invalid-testing-phone-number',
+    message: 'Invalid testing phone number or invalid test code provided.',
+  ),
+  invalidUid(
+    code: 'invalid-uid',
+    message: 'The uid must be a non-empty string with at most 128 characters.',
+  ),
+  invalidUserImport(
+    code: 'invalid-user-import',
+    message: 'The user record to import is invalid.',
+  ),
+  invalidTokensValidAfterTime(
+    code: 'invalid-tokens-valid-after-time',
+    message: 'The tokensValidAfterTime must be a valid UTC number in seconds.',
+  ),
+  mismatchingTenantId(
+    code: 'mismatching-tenant-id',
+    message:
+        'User tenant ID does not match with the current TenantAwareAuth tenant ID.',
+  ),
+  missingAndroidPackageName(
+    code: 'missing-android-pkg-name',
+    message: 'An Android Package Name must be provided if the Android App is '
+        'required to be installed.',
+  ),
+  missingConfig(
+    code: 'missing-config',
+    message: 'The provided configuration is missing required attributes.',
+  ),
+  missingContinueUri(
+    code: 'missing-continue-uri',
+    message: 'A valid continue URL must be provided in the request.',
+  ),
+  missingDisplayName(
+    code: 'missing-display-name',
+    message:
+        'The resource being created or edited is missing a valid display name.',
+  ),
+  missingEmail(
+    code: 'missing-email',
+    message:
+        'The email is required for the specified action. For example, a multi-factor user '
+        'requires a verified email.',
+  ),
+  missingIosBundleId(
+    code: 'missing-ios-bundle-id',
+    message: 'The request is missing an iOS Bundle ID.',
+  ),
+  missingIssuer(
+    code: 'missing-issuer',
+    message: 'The OAuth/OIDC configuration issuer must not be empty.',
+  ),
+  missingHashAlgorithm(
+    code: 'missing-hash-algorithm',
+    message: 'Importing users with password hashes requires that the hashing '
+        'algorithm and its parameters be provided.',
+  ),
+  missingOauthClientId(
+    code: 'missing-oauth-client-id',
+    message: 'The OAuth/OIDC configuration client ID must not be empty.',
+  ),
+  missingOauthClientSecret(
+    code: 'missing-oauth-client-secret',
+    message:
+        'The OAuth configuration client secret is required to enable OIDC code flow.',
+  ),
+  missingProviderId(
+    code: 'missing-provider-id',
+    message: 'A valid provider ID must be provided in the request.',
+  ),
+  missingSamlRelyingPartyConfig(
+    code: 'missing-saml-relying-party-config',
+    message:
+        'The SAML configuration provided is missing a relying party configuration.',
+  ),
+  maximumTestPhoneNumberExceeded(
+    code: 'test-phone-number-limit-exceeded',
+    message:
+        'The maximum allowed number of test phone number / code pairs has been exceeded.',
+  ),
+  maximumUserCountExceeded(
+    code: 'maximum-user-count-exceeded',
+    message: 'The maximum allowed number of users to import has been exceeded.',
+  ),
+  missingUid(
+    code: 'missing-uid',
+    message: 'A uid identifier is required for the current operation.',
+  ),
+  operationNotAllowed(
+    code: 'operation-not-allowed',
+    message:
+        'The given sign-in provider is disabled for this Firebase project. '
+        'Enable it in the Firebase console, under the sign-in method tab of the '
+        'Auth section.',
+  ),
+  phoneNumberAlreadyExists(
+    code: 'phone-number-already-exists',
+    message: 'The user with the provided phone number already exists.',
+  ),
+  projectNotFound(
+    code: 'project-not-found',
+    message: 'No Firebase project was found for the provided credential.',
+  ),
+  insufficientPermission(
+    code: 'insufficient-permission',
+    message:
+        'Credential implementation provided to initializeApp() via the "credential" property '
+        'has insufficient permission to access the requested resource. See '
+        'https://firebase.google.com/docs/admin/setup for details on how to authenticate this SDK '
+        'with appropriate permissions.',
+  ),
+  quotaExceeded(
+    code: 'quota-exceeded',
+    message: 'The project quota for the specified operation has been exceeded.',
+  ),
+  secondFactorLimitExceeded(
+    code: 'second-factor-limit-exceeded',
+    message:
+        'The maximum number of allowed second factors on a user has been exceeded.',
+  ),
+  secondFactorUidAlreadyExists(
+    code: 'second-factor-uid-already-exists',
+    message: 'The specified second factor "uid" already exists.',
+  ),
+  sessionCookieExpired(
+    code: 'session-cookie-expired',
+    message: 'The Firebase session cookie is expired.',
+  ),
+  sessionCookieRevoked(
+    code: 'session-cookie-revoked',
+    message: 'The Firebase session cookie has been revoked.',
+  ),
+  tenantNotFound(
+    code: 'tenant-not-found',
+    message: 'There is no tenant corresponding to the provided identifier.',
+  ),
+  uidAlreadyExists(
+    code: 'uid-already-exists',
+    message: 'The user with the provided uid already exists.',
+  ),
+  unauthorizedDomain(
+    code: 'unauthorized-continue-uri',
+    message:
+        'The domain of the continue URL is not whitelisted. Whitelist the domain in the '
+        'Firebase console.',
+  ),
+  unsupportedFirstFactor(
+    code: 'unsupported-first-factor',
+    message: 'A multi-factor user requires a supported first factor.',
+  ),
+  unsupportedSecondFactor(
+    code: 'unsupported-second-factor',
+    message: 'The request specified an unsupported type of second factor.',
+  ),
+  unsupportedTenantOperation(
+    code: 'unsupported-tenant-operation',
+    message: 'This operation is not supported in a multi-tenant context.',
+  ),
+  unverifiedEmail(
+    code: 'unverified-email',
+    message:
+        'A verified email is required for the specified action. For example, a multi-factor user '
+        'requires a verified email.',
+  ),
+  userNotFound(
+    code: 'user-not-found',
+    message:
+        'There is no user record corresponding to the provided identifier.',
+  ),
+  notFound(
+    code: 'not-found',
+    message: 'The requested resource was not found.',
+  ),
+  userDisabled(
+    code: 'user-disabled',
+    message: 'The user record is disabled.',
+  ),
+  userNotDisabled(
+    code: 'user-not-disabled',
+    message:
+        'The user must be disabled in order to bulk delete it (or you must pass force=true).',
+  ),
+  invalidRecaptchaAction(
+    code: 'invalid-recaptcha-action',
+    message: 'reCAPTCHA action must be "BLOCK".',
+  ),
+  invalidRecaptchaEnforcementState(
+    code: 'invalid-recaptcha-enforcement-state',
+    message:
+        'reCAPTCHA enforcement state must be either "OFF", "AUDIT" or "ENFORCE".',
+  ),
+  recaptchaNotEnabled(
+    code: 'recaptcha-not-enabled',
+    message: 'reCAPTCHA enterprise is not enabled.',
+  );
+
+  const AuthClientErrorCode({
+    required this.code,
+    required this.message,
+  });
+
+  final String code;
+  final String message;
 }
 
 /// A generic guard wrapper for API calls to handle exceptions.
@@ -652,7 +621,10 @@ R _authGuard<R>(R Function() cb) {
 Never _handleException(Object exception, StackTrace stackTrace) {
   if (exception is auth1.DetailedApiRequestError) {
     Error.throwWithStackTrace(
-      FirebaseAuthAdminException.fromServerError(exception),
+      FirebaseAuthAdminException.fromServerError(
+        serverErrorCode: exception.message ?? '',
+        rawServerResponse: exception.jsonResponse,
+      ),
       stackTrace,
     );
   }

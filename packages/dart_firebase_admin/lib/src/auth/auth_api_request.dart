@@ -728,6 +728,8 @@ abstract class _AbstractAuthRequestHandler {
       phoneNumber: properties.phoneNumber?.value,
       // Will be null if deleted or set to null. "deleteAttribute" will take over
       photoUrl: properties.photoURL?.value,
+      // The UID of the user to be updated.
+      localId: uid,
     );
 
     final response = await _httpClient.setAccountInfo(request);
@@ -750,7 +752,6 @@ class _AuthHttpClient {
   _AuthHttpClient(this.app);
 
   // TODO handle tenants
-  // TODO needs to send "owner" as bearer token when using the emulator
   final FirebaseAdminApp app;
 
   String _buildParent() => 'projects/${app.projectId}';
@@ -1012,9 +1013,9 @@ class _AuthHttpClient {
   }
 
   Future<R> _run<R>(
-    Future<R> Function(AutoRefreshingAuthClient client) fn,
+    Future<R> Function(Client client) fn,
   ) {
-    return _authGuard(() => app.credential.client.then(fn));
+    return _authGuard(() => app.client.then(fn));
   }
 
   Future<R> v1<R>(
