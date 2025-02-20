@@ -35,7 +35,8 @@ class Transaction {
   ) {
     _firestore = firestore;
 
-    _maxAttempts = transactionOptions?.maxAttempts ?? defaultMaxTransactionsAttempts;
+    _maxAttempts =
+        transactionOptions?.maxAttempts ?? defaultMaxTransactionsAttempts;
 
     switch (transactionOptions) {
       case ReadOnlyTransactionOptions():
@@ -50,9 +51,11 @@ class Transaction {
   static const int defaultMaxTransactionsAttempts = 5;
 
   //Error message for transactional reads that were executed after performing writes.
-  static const String readAfterWriteErrorMsg = 'Firestore transactions require all reads to be executed before all writes.';
+  static const String readAfterWriteErrorMsg =
+      'Firestore transactions require all reads to be executed before all writes.';
 
-  static const String readOnlyWriteErrorMsg = 'Firestore read-only transactions cannot execute writes.';
+  static const String readOnlyWriteErrorMsg =
+      'Firestore read-only transactions cannot execute writes.';
 
   late final Firestore _firestore;
 
@@ -91,7 +94,8 @@ class Transaction {
     if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
       throw Exception(readAfterWriteErrorMsg);
     }
-    return _withLazyStartedTransaction<DocumentReference<T>, DocumentSnapshot<T>>(
+    return _withLazyStartedTransaction<DocumentReference<T>,
+        DocumentSnapshot<T>>(
       docRef,
       fieldMask: null,
       resultFn: _getSingleFn,
@@ -115,7 +119,8 @@ class Transaction {
     if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
       throw Exception(readAfterWriteErrorMsg);
     }
-    return _withLazyStartedTransaction<List<DocumentReference<T>>, List<DocumentSnapshot<T>>>(
+    return _withLazyStartedTransaction<List<DocumentReference<T>>,
+        List<DocumentSnapshot<T>>>(
       documentsRefs,
       fieldMask: fieldMasks,
       resultFn: _getBatchFn<T>,
@@ -162,7 +167,9 @@ class Transaction {
   ///
   /// A [Precondition] restricting this update.
   ///
-  void update(DocumentReference<dynamic> documentRef, Map<Object?, Object?> data, {Precondition? precondition}) {
+  void update(
+      DocumentReference<dynamic> documentRef, Map<Object?, Object?> data,
+      {Precondition? precondition}) {
     if (_writeBatch == null) {
       throw Exception(readOnlyWriteErrorMsg);
     }
@@ -170,7 +177,8 @@ class Transaction {
     _writeBatch.update(
       documentRef,
       {
-        for (final entry in data.entries) FieldPath.from(entry.key): entry.value,
+        for (final entry in data.entries)
+          FieldPath.from(entry.key): entry.value,
       },
       precondition: precondition,
     );
@@ -180,7 +188,8 @@ class Transaction {
   ///
   /// A delete for a non-existing document is treated as a success (unless
   /// [precondition] is specified, in which case it throws a [FirebaseFirestoreAdminException] with [FirestoreClientErrorCode.notFound]).
-  void delete(DocumentReference<Map<String, dynamic>> documentRef, {Precondition? precondition}) {
+  void delete(DocumentReference<Map<String, dynamic>> documentRef,
+      {Precondition? precondition}) {
     if (_writeBatch == null) {
       throw Exception(readOnlyWriteErrorMsg);
     }
@@ -233,7 +242,8 @@ class Transaction {
     // If there are any locks held, then rollback will eventually release them.
     // Rollback can be done concurrently thereby reducing latency caused by
     // otherwise blocking.
-    final rollBackRequest = firestore1.RollbackRequest(transaction: transactionId);
+    final rollBackRequest =
+        firestore1.RollbackRequest(transaction: transactionId);
     return _firestore._client.v1((client) {
       return client.projects.databases.documents
           .rollback(
@@ -264,25 +274,31 @@ class Transaction {
       // response because we are not starting a new transaction
       return _transactionIdPromise!
           .then(
-            (transactionId) => resultFn(docRef, transactionId: transactionId, fieldMask: fieldMask),
+            (transactionId) => resultFn(docRef,
+                transactionId: transactionId, fieldMask: fieldMask),
           )
           .then((r) => r.result);
     } else {
       if (_readOnlyReadTime != null) {
         // We do not start a transaction for read-only transactions
         // do not set _prevTransactionId
-        return resultFn(docRef, readTime: _readOnlyReadTime, fieldMask: fieldMask).then((r) => r.result);
+        return resultFn(docRef,
+                readTime: _readOnlyReadTime, fieldMask: fieldMask)
+            .then((r) => r.result);
       } else {
         // This is the first read of the transaction so we create the appropriate
         // options for lazily starting the transaction inside this first read op
         final opts = firestore1.TransactionOptions();
         if (_writeBatch != null) {
-          opts.readWrite = _prevTransactionId == null ? firestore1.ReadWrite() : firestore1.ReadWrite(retryTransaction: _prevTransactionId);
+          opts.readWrite = _prevTransactionId == null
+              ? firestore1.ReadWrite()
+              : firestore1.ReadWrite(retryTransaction: _prevTransactionId);
         } else {
           opts.readOnly = firestore1.ReadOnly();
         }
 
-        final resultPromise = resultFn(docRef, transactionOptions: opts, fieldMask: fieldMask);
+        final resultPromise =
+            resultFn(docRef, transactionOptions: opts, fieldMask: fieldMask);
 
         // Ensure the _transactionIdPromise is set synchronously so that
         // subsequent operations will not race to start another transaction
@@ -324,7 +340,8 @@ class Transaction {
       transactionOptions: transactionOptions,
     );
     final result = await reader._get();
-    return _TransactionResult(transaction: result.transaction, result: result.result.single);
+    return _TransactionResult(
+        transaction: result.transaction, result: result.result.single);
   }
 
   Future<_TransactionResult<List<DocumentSnapshot<T>>>> _getBatchFn<T>(
@@ -344,7 +361,8 @@ class Transaction {
     );
 
     final result = await reader._get();
-    return _TransactionResult(transaction: result.transaction, result: result.result);
+    return _TransactionResult(
+        transaction: result.transaction, result: result.result);
   }
 
   Future<T> _runTransaction<T>(

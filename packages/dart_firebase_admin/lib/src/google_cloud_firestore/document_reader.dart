@@ -122,7 +122,8 @@ class _DocumentReader<T> {
           // Only retry if we made progress.
           resultCount > 0 &&
           // Don't retry permanent errors.
-          StatusCode.batchGetRetryCodes.contains(firestoreError.errorCode.statusCode);
+          StatusCode.batchGetRetryCodes
+              .contains(firestoreError.errorCode.statusCode);
       if (shoulRetry) {
         return _fetchDocuments();
       } else {
