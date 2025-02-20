@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:meta/meta.dart';
+
+@internal
 class ExponentialBackoffSetting {
   const ExponentialBackoffSetting({
     this.initialDelayMs,
@@ -23,8 +26,7 @@ class ExponentialBackoffSetting {
 /// added to the base delay. This prevents clients from accidentally
 /// synchronizing their delays causing spikes of load to the backend.
 ///
-/// @private
-/// @internal
+@internal
 class ExponentialBackoff {
   ExponentialBackoff({
     ExponentialBackoffSetting options = const ExponentialBackoffSetting(),
@@ -33,12 +35,12 @@ class ExponentialBackoff {
         maxDelayMs = options.maxDelayMs ?? defaultBackOffMaxDelayMs,
         jitterFactor = options.jitterFactor ?? defaultJitterFactor;
 
-  static const defaultBackOffInitialDelayMs = 100;
-  static const defaultBackOffFactor = 2.0;
-  static const defaultBackOffMaxDelayMs = 10000;
-  static const defaultJitterFactor = 0.5;
+  static const defaultBackOffInitialDelayMs = 1000;
+  static const defaultBackOffFactor = 1.5;
+  static const defaultBackOffMaxDelayMs = 60 * 1000;
+  static const defaultJitterFactor = 1.0;
 
-  static const maxRetryAttempts = 25;
+  static const maxRetryAttempts = 10;
 
   final int initialDelayMs;
   final double backoffFactor;
