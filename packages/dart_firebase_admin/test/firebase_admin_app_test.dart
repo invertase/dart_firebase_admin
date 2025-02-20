@@ -60,7 +60,9 @@ void main() {
           expect(
             app.authApiHost,
             Uri.http(
-                firebaseAuthEmulatorHost, 'identitytoolkit.googleapis.com/'),
+              firebaseAuthEmulatorHost,
+              'identitytoolkit.googleapis.com/',
+            ),
           );
           expect(
             app.firestoreApiHost,
