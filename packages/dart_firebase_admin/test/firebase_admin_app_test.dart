@@ -19,6 +19,24 @@ void main() {
       );
     });
 
+    test('useEmulator() sets the apiHost to the emulator', () {
+      final app = FirebaseAdminApp.initializeApp(
+        'dart-firebase-admin',
+        Credential.fromApplicationDefaultCredentials(),
+      );
+
+      app.useEmulator();
+
+      expect(
+        app.authApiHost,
+        Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/'),
+      );
+      expect(
+        app.firestoreApiHost,
+        Uri.http('127.0.0.1:8080', '/'),
+      );
+    });
+
     test(
         'useEmulator() uses environment variables to set apiHost to the emulator',
         () async {
