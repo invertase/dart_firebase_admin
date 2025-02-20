@@ -1,4 +1,4 @@
-## Unreleased minor
+## Unreleased patch
 
 - Bump intl to `0.20.0`
 
