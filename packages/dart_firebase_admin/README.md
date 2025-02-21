@@ -215,7 +215,7 @@ print(user.data()?['age']);
 | Timestamp                                        | ✅  |
 | querySnapshot.docsChange                         | ⚠️  |
 | query.onSnapshot                                 | ❌  |
-| runTransaction                                   | ❌  |
+| runTransaction                                   | ✅  |
 | BundleBuilder                                    | ❌  |
 
 ## Auth
