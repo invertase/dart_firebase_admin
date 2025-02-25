@@ -43,8 +43,7 @@ jobs:
       # - name: Analyze
       #   run: dart analyze
 
-      - run: mkdir -p $HOME/.config/gcloud
-      - run: echo $CREDS > $HOME/.config/gcloud/application_default_credentials.json
+      - run: echo Foo > $HOME/.config/gcloud/application_default_credentials.json
         env:
           CREDS: ${{ secrets.CREDS }}
       - run: cat $HOME/.config/gcloud/application_default_credentials.json
