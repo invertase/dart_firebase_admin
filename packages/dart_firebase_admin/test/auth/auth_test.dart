@@ -71,25 +71,6 @@ void main() {
         });
         expect(decodedToken.firebase.signInProvider, 'password');
       });
-
-      test('using emulator', () async {
-        final app = createApp();
-        final auth = Auth(app);
-
-        final token = await getIdToken();
-        final decodedToken = await auth.verifyIdToken(token);
-
-        expect(decodedToken.aud, 'dart-firebase-admin');
-        expect(decodedToken.uid, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-        expect(decodedToken.sub, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-        expect(decodedToken.email, 'foo@google.com');
-        expect(decodedToken.emailVerified, false);
-        expect(decodedToken.phoneNumber, isNull);
-        expect(decodedToken.firebase.identities, {
-          'email': ['foo@google.com'],
-        });
-        expect(decodedToken.firebase.signInProvider, 'password');
-      });
     });
   });
 }
