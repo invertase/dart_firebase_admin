@@ -97,7 +97,6 @@ class Transaction {
     return _withLazyStartedTransaction<DocumentReference<T>,
         DocumentSnapshot<T>>(
       docRef,
-      fieldMask: null,
       resultFn: _getSingleFn,
     );
   }
@@ -168,8 +167,10 @@ class Transaction {
   /// A [Precondition] restricting this update.
   ///
   void update(
-      DocumentReference<dynamic> documentRef, Map<Object?, Object?> data,
-      {Precondition? precondition}) {
+    DocumentReference<dynamic> documentRef,
+    Map<Object?, Object?> data, {
+    Precondition? precondition,
+  }) {
     if (_writeBatch == null) {
       throw Exception(readOnlyWriteErrorMsg);
     }
@@ -188,8 +189,10 @@ class Transaction {
   ///
   /// A delete for a non-existing document is treated as a success (unless
   /// [precondition] is specified, in which case it throws a [FirebaseFirestoreAdminException] with [FirestoreClientErrorCode.notFound]).
-  void delete(DocumentReference<Map<String, dynamic>> documentRef,
-      {Precondition? precondition}) {
+  void delete(
+    DocumentReference<Map<String, dynamic>> documentRef, {
+    Precondition? precondition,
+  }) {
     if (_writeBatch == null) {
       throw Exception(readOnlyWriteErrorMsg);
     }
@@ -274,17 +277,22 @@ class Transaction {
       // response because we are not starting a new transaction
       return _transactionIdPromise!
           .then(
-            (transactionId) => resultFn(docRef,
-                transactionId: transactionId, fieldMask: fieldMask),
+            (transactionId) => resultFn(
+              docRef,
+              transactionId: transactionId,
+              fieldMask: fieldMask,
+            ),
           )
           .then((r) => r.result);
     } else {
       if (_readOnlyReadTime != null) {
         // We do not start a transaction for read-only transactions
         // do not set _prevTransactionId
-        return resultFn(docRef,
-                readTime: _readOnlyReadTime, fieldMask: fieldMask)
-            .then((r) => r.result);
+        return resultFn(
+          docRef,
+          readTime: _readOnlyReadTime,
+          fieldMask: fieldMask,
+        ).then((r) => r.result);
       } else {
         // This is the first read of the transaction so we create the appropriate
         // options for lazily starting the transaction inside this first read op
@@ -341,7 +349,9 @@ class Transaction {
     );
     final result = await reader._get();
     return _TransactionResult(
-        transaction: result.transaction, result: result.result.single);
+      transaction: result.transaction,
+      result: result.result.single,
+    );
   }
 
   Future<_TransactionResult<List<DocumentSnapshot<T>>>> _getBatchFn<T>(
@@ -362,7 +372,9 @@ class Transaction {
 
     final result = await reader._get();
     return _TransactionResult(
-        transaction: result.transaction, result: result.result);
+      transaction: result.transaction,
+      result: result.result,
+    );
   }
 
   Future<T> _runTransaction<T>(

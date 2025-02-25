@@ -127,6 +127,13 @@ class FirebaseTokenVerifier {
     required bool isEmulator,
     String? audience,
   }) {
+    Never throws(String message) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidArgument,
+        message,
+      );
+    }
+
     final header = fullDecodedToken.header ?? <String, dynamic>{};
     final payload = fullDecodedToken.payload as Map;
 
@@ -139,7 +146,6 @@ class FirebaseTokenVerifier {
     late final alg = header['alg'];
     late final sub = payload['sub'];
 
-    String? errorMessage;
     if (!isEmulator && !header.containsKey('kid')) {
       final isCustomToken = (payload['aud'] == _firebaseAudience);
 
@@ -149,53 +155,55 @@ class FirebaseTokenVerifier {
           d is Map &&
           d.containsKey('uid');
 
+      String message;
       if (isCustomToken) {
-        errorMessage = '${tokenInfo.verifyApiName} expects $_shortNameArticle '
+        message = '${tokenInfo.verifyApiName} expects $_shortNameArticle '
             '${tokenInfo.shortName}, but was given a custom token.';
       } else if (isLegacyCustomToken) {
-        errorMessage = '${tokenInfo.verifyApiName} expects $_shortNameArticle '
+        message = '${tokenInfo.verifyApiName} expects $_shortNameArticle '
             '${tokenInfo.shortName}, but was given a legacy custom token.';
       } else {
-        errorMessage = '${tokenInfo.jwtName} has no "kid" claim.';
+        message = '${tokenInfo.jwtName} has no "kid" claim.';
       }
 
-      errorMessage += verifyJwtTokenDocsMessage;
+      throws(message);
     } else if (!isEmulator && alg != _algorithmRS256) {
-      errorMessage = '${tokenInfo.jwtName} has incorrect algorithm. '
+      throws('${tokenInfo.jwtName} has incorrect algorithm. '
           'Expected "$_algorithmRS256" but got "$alg".'
-          '$verifyJwtTokenDocsMessage';
+          '$verifyJwtTokenDocsMessage');
     } else if (audience != null &&
         !(payload['aud'] as String).contains(audience)) {
-      errorMessage =
-          '${tokenInfo.jwtName} has incorrect "aud" (audience) claim. '
-          'Expected "$audience" but got "${payload['aud']}".'
-          '$verifyJwtTokenDocsMessage';
+      throws(
+        '${tokenInfo.jwtName} has incorrect "aud" (audience) claim. '
+        'Expected "$audience" but got "${payload['aud']}".'
+        '$verifyJwtTokenDocsMessage',
+      );
     } else if (audience == null && payload['aud'] != projectId) {
-      errorMessage =
-          '${tokenInfo.jwtName} has incorrect "aud" (audience) claim. '
-          'Expected "$projectId" but got "${payload['aud']}".'
-          '$projectIdMatchMessage$verifyJwtTokenDocsMessage';
+      throws(
+        '${tokenInfo.jwtName} has incorrect "aud" (audience) claim. '
+        'Expected "$projectId" but got "${payload['aud']}".'
+        '$projectIdMatchMessage$verifyJwtTokenDocsMessage',
+      );
     } else if (payload['iss'] != '$issuer$projectId') {
-      errorMessage = '${tokenInfo.jwtName} has incorrect "iss" (issuer) claim. '
-          'Expected "$issuer$projectId" but got "${payload['iss']}".'
-          '$projectIdMatchMessage$verifyJwtTokenDocsMessage';
+      throws(
+        '${tokenInfo.jwtName} has incorrect "iss" (issuer) claim. '
+        'Expected "$issuer$projectId" but got "${payload['iss']}".'
+        '$projectIdMatchMessage$verifyJwtTokenDocsMessage',
+      );
     } else if (sub is! String) {
-      errorMessage = '${tokenInfo.jwtName} has no "sub" (subject) claim.'
-          '$verifyJwtTokenDocsMessage';
+      throws(
+        '${tokenInfo.jwtName} has no "sub" (subject) claim.'
+        '$verifyJwtTokenDocsMessage',
+      );
     } else if (sub.isEmpty) {
-      errorMessage =
-          '${tokenInfo.jwtName} has an empty string "sub" (subject) claim.'
-          '$verifyJwtTokenDocsMessage';
+      throws(
+        '${tokenInfo.jwtName} has an empty string "sub" (subject) claim.'
+        '$verifyJwtTokenDocsMessage',
+      );
     } else if (sub.length > 128) {
-      errorMessage =
-          '${tokenInfo.jwtName} has "sub" (subject) claim longer than 128 characters.'
-          '$verifyJwtTokenDocsMessage';
-    }
-
-    if (errorMessage != null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidArgument,
-        errorMessage,
+      throws(
+        '${tokenInfo.jwtName} has "sub" (subject) claim longer than 128 characters.'
+        '$verifyJwtTokenDocsMessage',
       );
     }
   }
@@ -248,15 +256,12 @@ class TokenProvider {
   });
 
   @internal
-  factory TokenProvider.fromMap(Map<dynamic, dynamic> map) {
-    return TokenProvider(
-      identities: map['identities']! as Map<String, Object?>,
-      signInProvider: map['sign_in_provider'] as String?,
-      signInSecondFactor: map['sign_in_second_factor'] as String?,
-      secondFactorIdentifier: map['second_factor_identifier'] as String?,
-      tenant: map['tenant'] as String?,
-    );
-  }
+  TokenProvider.fromMap(Map<Object?, Object?> map)
+      : identities = Map.from(map['identities']! as Map),
+        signInProvider = map['sign_in_provider']! as String,
+        signInSecondFactor = map['sign_in_second_factor'] as String?,
+        secondFactorIdentifier = map['second_factor_identifier'] as String?,
+        tenant = map['tenant'] as String?;
 
   /// Provider-specific identity details corresponding
   /// to the provider used to sign in the user.

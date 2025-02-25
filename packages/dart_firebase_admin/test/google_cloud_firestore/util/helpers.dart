@@ -10,13 +10,15 @@ const projectId = 'dart-firebase-admin';
 FirebaseAdminApp createApp({
   FutureOr<void> Function()? tearDown,
   Client? client,
+  bool useEmulator = true,
 }) {
   final credential = Credential.fromApplicationDefaultCredentials();
   final app = FirebaseAdminApp.initializeApp(
     projectId,
     credential,
     client: client,
-  )..useEmulator();
+  );
+  if (useEmulator) app.useEmulator();
 
   addTearDown(() async {
     if (tearDown != null) {
@@ -28,8 +30,14 @@ FirebaseAdminApp createApp({
   return app;
 }
 
-Firestore createFirestore([Settings? settings]) {
-  final firestore = Firestore(createApp(), settings: settings);
+Firestore createFirestore({
+  Settings? settings,
+  bool useEmulator = true,
+}) {
+  final firestore = Firestore(
+    createApp(useEmulator: useEmulator),
+    settings: settings,
+  );
 
   addTearDown(() async {
     final collections = await firestore.listCollections();
