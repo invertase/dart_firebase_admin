@@ -2,6 +2,9 @@ firebase-debug.log
 ui-debug.log
 firestore-debug.log
 
+node_modules
+packages/dart_firebase_admin/test/client/package-lock.json
+
 build
 coverage
 
