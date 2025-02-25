@@ -1,6 +1,7 @@
 ## Unreleased patch
 
 - Bump intl to `0.20.0`
+- Fixed `verifyIdToken` (thanks to @jtdLab)
 - Added Transaction support (thanks to @evandrobubiak)
 - Firebase Emulators now obtain port information from the environment ; if available (thanks to @dinko7)
 
