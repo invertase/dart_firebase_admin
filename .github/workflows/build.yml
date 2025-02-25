@@ -43,6 +43,9 @@ jobs:
       - name: Analyze
         run: dart analyze
 
+      - run: echo $CREDS > $HOME/.config/gcloud/application_default_credentials.json
+      - run: ls $HOME/.config/gcloud/application_default_credentials.json
+
       - name: Run tests
         run: ${{github.workspace}}/scripts/coverage.sh
 
