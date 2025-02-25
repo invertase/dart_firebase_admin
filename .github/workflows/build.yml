@@ -19,10 +19,10 @@ jobs:
         working-directory: packages/dart_firebase_admin
 
     steps:
-      # - uses: actions/checkout@v3.1.0
-      #   with:
-      #     fetch-depth: 2
-      # - uses: actions/setup-node@v4
+      - uses: actions/checkout@v3.1.0
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
       # - uses: subosito/flutter-action@v2.7.1
       #   with:
       #     channel: master
