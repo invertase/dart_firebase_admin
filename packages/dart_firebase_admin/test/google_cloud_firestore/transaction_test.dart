@@ -99,7 +99,7 @@ void main() {
                     docRef3,
                   ],
                   fieldMasks: [
-                    FieldPath(['value']),
+                    FieldPath(const ['value']),
                   ],
                 );
                 return Future.value(snapshot)
@@ -109,7 +109,7 @@ void main() {
             [
               {'value': 42},
               {'value': 44},
-              {'value': 'foo'}
+              {'value': 'foo'},
             ],
           );
         },
@@ -171,10 +171,13 @@ void main() {
                 },
               );
             },
-            throwsA(isA<FirebaseFirestoreAdminException>().having(
+            throwsA(
+              isA<FirebaseFirestoreAdminException>().having(
                 (e) => e.errorCode.statusCode,
                 'statusCode',
-                StatusCode.notFound)),
+                StatusCode.notFound,
+              ),
+            ),
           );
         },
       );
@@ -191,8 +194,11 @@ void main() {
 
           await firestore.runTransaction(
             (transaction) async {
-              transaction.update(docRef, {'value': 44},
-                  precondition: precondition);
+              transaction.update(
+                docRef,
+                {'value': 44},
+                precondition: precondition,
+              );
             },
           );
 
@@ -202,15 +208,21 @@ void main() {
             () async {
               await firestore.runTransaction(
                 (transaction) async {
-                  transaction.update(docRef, {'value': 46},
-                      precondition: precondition);
+                  transaction.update(
+                    docRef,
+                    {'value': 46},
+                    precondition: precondition,
+                  );
                 },
               );
             },
-            throwsA(isA<FirebaseFirestoreAdminException>().having(
+            throwsA(
+              isA<FirebaseFirestoreAdminException>().having(
                 (e) => e.errorCode.statusCode,
                 'statusCode',
-                StatusCode.failedPrecondition)),
+                StatusCode.failedPrecondition,
+              ),
+            ),
           );
         },
       );
@@ -299,10 +311,13 @@ void main() {
                 },
               );
             },
-            throwsA(isA<FirebaseFirestoreAdminException>().having(
+            throwsA(
+              isA<FirebaseFirestoreAdminException>().having(
                 (e) => e.errorCode.statusCode,
                 'statusCode',
-                StatusCode.notFound)),
+                StatusCode.notFound,
+              ),
+            ),
           );
         },
       );
@@ -314,8 +329,11 @@ void main() {
               await initializeTest('simpleDocument');
 
           final writeResult = await docRef.set({'value': 42});
-          var precondition = Precondition.timestamp(Timestamp.fromDate(
-              DateTime.now().subtract(const Duration(days: 1))));
+          var precondition = Precondition.timestamp(
+            Timestamp.fromDate(
+              DateTime.now().subtract(const Duration(days: 1)),
+            ),
+          );
 
           expect(
             () async {
@@ -325,10 +343,13 @@ void main() {
                 },
               );
             },
-            throwsA(isA<FirebaseFirestoreAdminException>().having(
+            throwsA(
+              isA<FirebaseFirestoreAdminException>().having(
                 (e) => e.errorCode.statusCode,
                 'statusCode',
-                StatusCode.failedPrecondition)),
+                StatusCode.failedPrecondition,
+              ),
+            ),
           );
 
           expect(

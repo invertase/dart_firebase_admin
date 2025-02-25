@@ -191,7 +191,6 @@ class Firestore {
     final reader = _DocumentReader(
       firestore: this,
       documents: documents,
-      transactionId: null,
       fieldMask: fieldMask,
     );
 

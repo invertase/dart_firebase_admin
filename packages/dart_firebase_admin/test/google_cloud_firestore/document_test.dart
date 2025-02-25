@@ -120,7 +120,7 @@ void main() {
     });
 
     test('Supports BigInt', () async {
-      final firestore = createFirestore(Settings(useBigInt: true));
+      final firestore = createFirestore(settings: Settings(useBigInt: true));
 
       await firestore.doc('collectionId/bigInt').set({
         'foo': BigInt.from(9223372036854775807),
