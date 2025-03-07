@@ -62,7 +62,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
       );
       await expectLater(
         PublicKeySignatureVerifier(keyFetcher).verify(token),
-        throwsA(isA<JwtError>()),
+        throwsA(isA<JwtException>()),
       );
     });
     test('invalid kid should throw', () async {
@@ -76,7 +76,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
       );
       await expectLater(
         PublicKeySignatureVerifier(keyFetcher).verify(token),
-        throwsA(isA<JwtError>()),
+        throwsA(isA<JwtException>()),
       );
     });
   });

@@ -4,6 +4,8 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
+const ALGORITHM_RS256 = 'RS256';
+
 /// Class for verifying unsigned (emulator) JWTs.
 class EmulatorSignatureVerifier implements SignatureVerifier {
   @override
@@ -90,11 +92,19 @@ class UrlKeyFetcher implements KeyFetcher {
   }
 }
 
+class JwksFetcher implements KeyFetcher {
+  JwksFetcher(String jwksUrl);
+}
+
 class PublicKeySignatureVerifier implements SignatureVerifier {
   PublicKeySignatureVerifier(this.keyFetcher);
 
   PublicKeySignatureVerifier.withCertificateUrl(Uri clientCert)
       : this(UrlKeyFetcher(clientCert));
+
+  static PublicKeySignatureVerifier withJwksUrl(String jwksUrl) {
+    return PublicKeySignatureVerifier(JwksFetcher(jwksUrl));
+  }
 
   final KeyFetcher keyFetcher;
 
@@ -110,7 +120,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       final kid = jwt.header?['kid'] as String?;
 
       if (kid == null) {
-        throw JwtError(
+        throw JwtException(
           JwtErrorCode.noKidInHeader,
           'no-kid-in-header-error',
         );
@@ -120,7 +130,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       final publicKey = publicKeys[kid];
 
       if (publicKey == null) {
-        throw JwtError(
+        throw JwtException(
           JwtErrorCode.noMatchingKid,
           'no-matching-kid-error',
         );
@@ -134,7 +144,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
         );
       } catch (e, stackTrace) {
         Error.throwWithStackTrace(
-          JwtError(
+          JwtException(
             JwtErrorCode.invalidSignature,
             'Error while verifying signature of Firebase ID token: $e',
           ),
@@ -145,7 +155,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       // At this point most JWTException's should have been caught in
       // verifyJwtSignature, but we could still get some from JWT.decode above
     } on JWTException catch (e) {
-      throw JwtError(
+      throw JwtException(
         JwtErrorCode.unknown,
         e is JWTUndefinedException ? e.message : '${e.runtimeType}: e.message',
       );
@@ -154,6 +164,26 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
 }
 
 sealed class SecretOrPublicKey {}
+
+/// Decodes general purpose Firebase JWTs.
+///
+/// [jwtToken] - JWT token to be decoded.
+///
+/// Returns a decoded token containing the header and payload.
+Future<DecodedToken> decodeJwt(String jwtToken) async {
+  // const fullDecodedToken: any = jwt.decode(jwtToken, {
+  //   complete: true,
+  // });
+
+  // if (!fullDecodedToken) {
+  //   return Promise.reject(new JwtError(JwtErrorCode.INVALID_ARGUMENT,
+  //     'Decoding token failed.'));
+  // }
+
+  // const header = fullDecodedToken?.header;
+  // const payload = fullDecodedToken?.payload;
+  // return Promise.resolve({ header, payload });
+}
 
 @internal
 void verifyJwtSignature(
@@ -177,7 +207,7 @@ void verifyJwtSignature(
     );
   } on JWTExpiredException catch (e, stackTrace) {
     Error.throwWithStackTrace(
-      JwtError(
+      JwtException(
         JwtErrorCode.tokenExpired,
         'The provided token has expired. Get a fresh token from your '
         'client app and try again.',
@@ -188,8 +218,8 @@ void verifyJwtSignature(
 }
 
 /// Jwt error code structure.
-class JwtError extends Error {
-  JwtError(this.code, this.message);
+class JwtException implements Exception {
+  JwtException(this.code, this.message);
 
   final JwtErrorCode code;
   final String message;

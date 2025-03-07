@@ -8,21 +8,18 @@ import 'package:meta/meta.dart';
 
 import '../../dart_firebase_admin.dart';
 
-/// Creates a new CryptoSigner instance for the given app. If the app has been initialized with a
-/// service account credential, creates a ServiceAccountSigner.
-@internal
-CryptoSigner cryptoSignerFromApp(FirebaseAdminApp app) {
-  final credential = app.credential;
-  final serviceAccountCredentials = credential.serviceAccountCredentials;
-  if (serviceAccountCredentials != null) {
-    return _ServiceAccountSigner(serviceAccountCredentials);
-  }
-
-  return _IAMSigner(app);
-}
-
 @internal
 abstract class CryptoSigner {
+  static CryptoSigner fromApp(FirebaseAdminApp app) {
+    final credential = app.credential;
+    final serviceAccountCredentials = credential.serviceAccountCredentials;
+    if (serviceAccountCredentials != null) {
+      return _ServiceAccountSigner(serviceAccountCredentials);
+    }
+
+    return _IAMSigner(app);
+  }
+
   /// The name of the signing algorithm.
   String get algorithm;
 

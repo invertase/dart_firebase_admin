@@ -116,7 +116,7 @@ class FirebaseTokenVerifier {
           isEmulator ? EmulatorSignatureVerifier() : _signatureVerifier;
       await verifier.verify(token);
       // ignore: avoid_catching_errors
-    } on JwtError catch (error, stackTrace) {
+    } on JwtException catch (error, stackTrace) {
       Error.throwWithStackTrace(_mapJwtErrorToAuthError(error), stackTrace);
     }
   }
@@ -209,7 +209,7 @@ class FirebaseTokenVerifier {
   }
 
   /// Maps JwtError to FirebaseAuthError
-  Object _mapJwtErrorToAuthError(JwtError error) {
+  Object _mapJwtErrorToAuthError(JwtException error) {
     final verifyJwtTokenDocsMessage = ' See ${tokenInfo.url} '
         'for details on how to retrieve $_shortNameArticle ${tokenInfo.shortName}.';
     if (error.code == JwtErrorCode.tokenExpired) {
