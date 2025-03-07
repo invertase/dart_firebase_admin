@@ -73,7 +73,7 @@ class _IAMSigner implements CryptoSigner {
   Future<Uint8List> sign(Uint8List buffer) async {
     final serviceAccount = await getAccountId();
 
-    final response = await http.post(
+    final response = await (await app.client).post(
       Uri.parse(
         'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$serviceAccount:signBlob',
       ),
@@ -88,7 +88,9 @@ class _IAMSigner implements CryptoSigner {
     }
 
     // Response from IAM is base64 encoded. Decode it into a buffer and return.
-    return base64Decode(response.body);
+    return base64Decode(
+      (jsonDecode(response.body) as Map)['signedBlob'] as String,
+    );
   }
 }
 
