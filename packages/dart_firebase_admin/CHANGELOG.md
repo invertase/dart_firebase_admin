@@ -4,6 +4,7 @@
 - Fixed `verifyIdToken` (thanks to @jtdLab)
 - Added Transaction support (thanks to @evandrobubiak)
 - Firebase Emulators now obtain port information from the environment ; if available (thanks to @dinko7)
+- Fixed errors in `createCustomToken()` when using default application credentials (thanks to @aemelyanovff)
 
 ## 0.4.0 - 2024-09-11
 
