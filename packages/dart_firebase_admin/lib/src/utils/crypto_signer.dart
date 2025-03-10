@@ -5,7 +5,9 @@ import 'package:crypto/crypto.dart';
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
-
+import 'package:pem/pem.dart';
+import 'package:asn1lib/asn1lib.dart';
+import 'package:pointycastle/export.dart' as pointy;
 import '../../dart_firebase_admin.dart';
 
 @internal
@@ -104,11 +106,64 @@ class _ServiceAccountSigner implements CryptoSigner {
 
   @override
   Future<Uint8List> sign(Uint8List buffer) async {
-    final key = utf8.encode(credential.privateKey);
-    final hmac = Hmac(sha256, key);
-    final digest = hmac.convert(buffer);
+    final signer = pointy.Signer('SHA-256/RSA');
+    final privateParams = pointy.PrivateKeyParameter<pointy.RSAPrivateKey>(
+      parseRSAPrivateKey(credential.privateKey),
+    );
 
-    return Uint8List.fromList(digest.bytes);
+    signer.init(true, privateParams); // `true` for signing mode
+
+    final signature = signer.generateSignature(buffer) as pointy.RSASignature;
+
+    return signature.bytes;
+
+    // print(credential.privateKey);
+    // final key = utf8.encode(credential.privateKey);
+    // final hmac = Hmac(sha256, key);
+    // final digest = hmac.convert(buffer);
+
+    // return Uint8List.fromList(digest.bytes);
+  }
+
+  /// Parses a PEM private key into an `RSAPrivateKey`
+  pointy.RSAPrivateKey parseRSAPrivateKey(String pemStr) {
+    final pem = PemCodec(PemLabel.privateKey).decode(pemStr);
+
+    var asn1Parser = ASN1Parser(Uint8List.fromList(pem));
+    final topLevelSeq = asn1Parser.nextObject() as ASN1Sequence;
+    final privateKey = topLevelSeq.elements[2];
+
+    asn1Parser = ASN1Parser(privateKey.contentBytes());
+    final pkSeq = asn1Parser.nextObject() as ASN1Sequence;
+
+    final modulus = pkSeq.elements[1] as ASN1Integer;
+    final privateExponent = pkSeq.elements[3] as ASN1Integer;
+    final p = pkSeq.elements[4] as ASN1Integer;
+    final q = pkSeq.elements[5] as ASN1Integer;
+
+    return pointy.RSAPrivateKey(
+      modulus.valueAsBigInteger,
+      privateExponent.valueAsBigInteger,
+      p.valueAsBigInteger,
+      q.valueAsBigInteger,
+    );
+
+    // final keyBytes = PemCodec(PemLabel.privateKey).decode(pemStr);
+    // // final base64Key = pem
+    // //     .replaceAll("-----BEGIN PRIVATE KEY-----", "")
+    // //     .replaceAll("-----END PRIVATE KEY-----", "")
+    // //     .replaceAll("\n", "")
+    // //     .replaceAll("\r", "");
+
+    // // final keyBytes = base64Decode(base64Key);
+    // final asn1Parser = ASN1Parser(Uint8List.fromList(keyBytes));
+    // final topLevelSeq = asn1Parser.nextObject() as ASN1Sequence;
+    // final keySeq = topLevelSeq.elements![2] as ASN1Sequence;
+
+    // final modulus = (keySeq.elements![0] as ASN1Integer).integer;
+    // final privateExponent = (keySeq.elements![3] as ASN1Integer).integer;
+
+    // return RSAPrivateKey(modulus!, privateExponent!, null, null);
   }
 }
 

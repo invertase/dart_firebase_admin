@@ -7,10 +7,10 @@ import 'ap_check_api_internal.dart';
 import 'app_check_api.dart';
 
 // Audience to use for Firebase App Check Custom tokens
-const FIREBASE_APP_CHECK_AUDIENCE =
+const firebaseAppCheckAudience =
     'https://firebaseappcheck.googleapis.com/google.firebase.appcheck.v1.TokenExchangeService';
 
-const ONE_MINUTE_IN_SECONDS = 60;
+const oneMinuteInSeconds = 60;
 
 /// Class for generating Firebase App Check tokens.
 @internal
@@ -32,24 +32,28 @@ class AppCheckTokenGenerator {
     try {
       final account = await signer.getAccountId();
 
-      final header = {
+      var header = {
         'alg': signer.algorithm,
         'typ': 'JWT',
       };
       final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
-      final body = {
+      var body = {
         'iss': account,
         'sub': account,
         'app_id': appId,
-        'aud': FIREBASE_APP_CHECK_AUDIENCE,
-        'exp': iat + (ONE_MINUTE_IN_SECONDS * 5),
+        'aud': firebaseAppCheckAudience,
+        'exp': iat + (oneMinuteInSeconds * 5),
         'iat': iat,
       };
+
       final token = '${_encodeSegment(header)}.${_encodeSegment(body)}';
 
       final signature = await signer.sign(utf8.encode(token));
 
-      return '$token.${_encodeSegmentBuffer(signature)}';
+      // print('HEre -----');
+      final res = '$token.${_encodeSegmentBuffer(signature)}';
+      // print(res);
+      return res;
     } on CryptoSignerException catch (err) {
       throw _appCheckErrorFromCryptoSignerError(err);
     }
@@ -60,9 +64,13 @@ class AppCheckTokenGenerator {
   }
 
   String _encodeSegmentBuffer(List<int> buffer) {
-    final base64 = base64Encode(buffer);
+    final base64 = _toWebSafeBase64(buffer);
 
     return base64.replaceAll(RegExp(r'=+$'), '');
+  }
+
+  String _toWebSafeBase64(List<int> data) {
+    return base64Encode(data).replaceAll('/', '_').replaceAll('+', '-');
   }
 }
 

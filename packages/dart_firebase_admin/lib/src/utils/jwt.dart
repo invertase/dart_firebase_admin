@@ -4,7 +4,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
-const ALGORITHM_RS256 = 'RS256';
+const algorithmRS256 = 'RS256';
 
 /// Class for verifying unsigned (emulator) JWTs.
 class EmulatorSignatureVerifier implements SignatureVerifier {
@@ -93,7 +93,82 @@ class UrlKeyFetcher implements KeyFetcher {
 }
 
 class JwksFetcher implements KeyFetcher {
-  JwksFetcher(String jwksUrl);
+  JwksFetcher(this.jwksUrl);
+  final Uri jwksUrl;
+  Map<String, String>? _publicKeys;
+  int _publicKeysExpireAt = 0;
+  static const int hourInMilliseconds = 6 * 60 * 60 * 1000; // 6 hours
+
+  @override
+  Future<Map<String, String>> fetchPublicKeys() async {
+    if (_shouldRefresh) return refresh();
+
+    return _publicKeys!;
+  }
+
+  bool get _shouldRefresh {
+    return _publicKeys == null ||
+        _publicKeysExpireAt <= DateTime.now().millisecondsSinceEpoch;
+  }
+
+  Future<Map<String, String>> refresh() async {
+    try {
+      final response = await http.get(jwksUrl);
+      if (response.statusCode != 200) {
+        throw Exception('Failed to fetch JWKS');
+      }
+
+      final jwks = jsonDecode(response.body) as Map<String, dynamic>;
+      final keys = (jwks['keys'] as List).map((e) => e as Map<String, dynamic>);
+
+      // Reset expire time
+      _publicKeysExpireAt = 0;
+
+      // Extract signing keys
+      final newKeys = <String, String>{};
+      for (final key in keys) {
+        final kid = key['kid'] as String?;
+        final n = key['n'] as String?;
+        final e = key['e'] as String?;
+        if (key['use'] == 'sig' && kid != null && n != null && e != null) {
+          newKeys[kid] = _generatePemFromJwk(n, e);
+        }
+      }
+
+      // Set new expiration time
+      _publicKeysExpireAt =
+          DateTime.now().millisecondsSinceEpoch + hourInMilliseconds;
+      _publicKeys = newKeys;
+
+      return newKeys;
+    } catch (e) {
+      throw Exception('Error fetching JSON Web Keys: $e');
+    }
+  }
+
+  /// Converts JWK { n, e } to PEM format
+  String _generatePemFromJwk(String n, String e) {
+    final modulus = base64UrlNormalize(n);
+    final exponent = base64UrlNormalize(e);
+
+    final publicKeyPem = '''
+-----BEGIN PUBLIC KEY-----
+$modulus
+$exponent
+-----END PUBLIC KEY-----
+''';
+    return publicKeyPem;
+  }
+
+  /// Normalizes Base64URL encoding (adds padding if missing)
+  String base64UrlNormalize(String base64Str) {
+    final output =
+        StringBuffer(base64Str.replaceAll('-', '+').replaceAll('_', '/'));
+    while (output.length % 4 != 0) {
+      output.write('=');
+    }
+    return base64.encode(base64.decode(output.toString()));
+  }
 }
 
 class PublicKeySignatureVerifier implements SignatureVerifier {
@@ -102,7 +177,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
   PublicKeySignatureVerifier.withCertificateUrl(Uri clientCert)
       : this(UrlKeyFetcher(clientCert));
 
-  static PublicKeySignatureVerifier withJwksUrl(String jwksUrl) {
+  factory PublicKeySignatureVerifier.withJwksUrl(Uri jwksUrl) {
     return PublicKeySignatureVerifier(JwksFetcher(jwksUrl));
   }
 
@@ -171,18 +246,12 @@ sealed class SecretOrPublicKey {}
 ///
 /// Returns a decoded token containing the header and payload.
 Future<DecodedToken> decodeJwt(String jwtToken) async {
-  // const fullDecodedToken: any = jwt.decode(jwtToken, {
-  //   complete: true,
-  // });
+  final fullDecodedToken = JWT.decode(jwtToken);
 
-  // if (!fullDecodedToken) {
-  //   return Promise.reject(new JwtError(JwtErrorCode.INVALID_ARGUMENT,
-  //     'Decoding token failed.'));
-  // }
-
-  // const header = fullDecodedToken?.header;
-  // const payload = fullDecodedToken?.payload;
-  // return Promise.resolve({ header, payload });
+  return DecodedToken(
+    header: fullDecodedToken.header ?? {},
+    payload: Map.from(fullDecodedToken.payload as Map),
+  );
 }
 
 @internal

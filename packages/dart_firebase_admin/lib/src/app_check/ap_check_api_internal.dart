@@ -1,38 +1,3 @@
-// /*!
-//  * @license
-//  * Copyright 2021 Google Inc.
-//  *
-//  * Licensed under the Apache License, Version 2.0 (the "License");
-//  * you may not use this file except in compliance with the License.
-//  * You may obtain a copy of the License at
-//  *
-//  *   http://www.apache.org/licenses/LICENSE-2.0
-//  *
-//  * Unless required by applicable law or agreed to in writing, software
-//  * distributed under the License is distributed on an "AS IS" BASIS,
-//  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  * See the License for the specific language governing permissions and
-//  * limitations under the License.
-//  */
-
-// import { App } from '../app';
-// import { FirebaseApp } from '../app/firebase-app';
-// import {
-//   HttpRequestConfig, HttpClient, RequestResponseError, AuthorizedHttpClient, RequestResponse
-// } from '../utils/api-request';
-// import { PrefixedFirebaseError } from '../utils/error';
-// import * as utils from '../utils/index';
-// import * as validator from '../utils/validator';
-// import { AppCheckToken } from './app-check-api'
-
-// // App Check backend constants
-// const FIREBASE_APP_CHECK_V1_API_URL_FORMAT = 'https://firebaseappcheck.googleapis.com/v1/projects/{projectId}/apps/{appId}:exchangeCustomToken';
-// const ONE_TIME_USE_TOKEN_VERIFICATION_URL_FORMAT = 'https://firebaseappcheck.googleapis.com/v1beta/projects/{projectId}:verifyAppCheckToken';
-
-// const FIREBASE_APP_CHECK_CONFIG_HEADERS = {
-//   'X-Firebase-Client': `fire-admin-node/${utils.getSdkVersion()}`
-// };
-
 import 'package:firebaseapis/firebaseappcheck/v1beta.dart' as appcheck1;
 import 'package:meta/meta.dart';
 
@@ -54,7 +19,6 @@ class AppCheckApiClient {
     return fn(
       appcheck1.FirebaseappcheckApi(
         await app.client,
-        rootUrl: app.authApiHost.toString(),
       ),
     );
   }

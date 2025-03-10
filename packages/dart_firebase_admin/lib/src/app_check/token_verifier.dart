@@ -5,8 +5,8 @@ import '../utils/jwt.dart';
 import 'ap_check_api_internal.dart';
 import 'app_check_api.dart';
 
-const APP_CHECK_ISSUER = 'https://firebaseappcheck.googleapis.com/';
-const JWKS_URL = 'https://firebaseappcheck.googleapis.com/v1/jwks';
+const appCheckIssuer = 'https://firebaseappcheck.googleapis.com/';
+const jwksUrl = 'https://firebaseappcheck.googleapis.com/v1/jwks';
 
 /// Class for verifying Firebase App Check tokens.
 ///
@@ -15,11 +15,8 @@ class AppCheckTokenVerifier {
   AppCheckTokenVerifier(this.app);
 
   final FirebaseAdminApp app;
-  final _signatureVerifier = PublicKeySignatureVerifier.withJwksUrl(JWKS_URL);
-
-  // constructor(private readonly app: App) {
-  // this.signatureVerifier = PublicKeySignatureVerifier.withJwksUrl(JWKS_URL, app.options.httpAgent);
-  // }
+  final _signatureVerifier =
+      PublicKeySignatureVerifier.withJwksUrl(Uri.parse(jwksUrl));
 
   Future<DecodedAppCheckToken> verifyToken(String token) async {
     final decoded = await _decodeAndVerify(token, app.projectId);
@@ -63,15 +60,15 @@ class AppCheckTokenVerifier {
     final scopedProjectId = 'projects/$projectId';
 
     String? errorMessage;
-    if (header['alg'] case final alg && != ALGORITHM_RS256) {
+    if (header['alg'] case final alg && != algorithmRS256) {
       errorMessage =
-          'The provided App Check token has incorrect algorithm. Expected "$ALGORITHM_RS256" but got "$alg".';
+          'The provided App Check token has incorrect algorithm. Expected "$algorithmRS256" but got "$alg".';
     } else if (payload['aud'] case final List<Object?> aud
         when !aud.contains(scopedProjectId)) {
       errorMessage =
           'The provided App Check token has incorrect "aud" (audience) claim. Expected "$scopedProjectId" but got "$aud".$projectIdMatchMessage';
     } else if (payload['iss'] case final iss
-        when iss is! String || !iss.startsWith(APP_CHECK_ISSUER)) {
+        when iss is! String || !iss.startsWith(appCheckIssuer)) {
       errorMessage =
           'The provided App Check token has incorrect "iss" (issuer) claim.';
     } else if (payload['sub'] case final sub when sub is! String) {
