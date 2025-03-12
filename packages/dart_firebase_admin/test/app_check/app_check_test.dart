@@ -18,7 +18,6 @@ void main() {
     test('e2e', () async {
       final token = await appCheck
           .createToken('1:559949546715:android:13025aec6cc3243d0ab8fe');
-      // final token2 = await appCheck.createToken('dart-firebase-admin');
 
       await appCheck.verifyToken(token.token);
     });

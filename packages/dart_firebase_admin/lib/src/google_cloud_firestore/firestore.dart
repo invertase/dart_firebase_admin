@@ -3,10 +3,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
-import 'package:firebaseapis/firestore/v1.dart' as firestore1;
-import 'package:firebaseapis/firestore/v1beta1.dart' as firestore1beta1;
-import 'package:firebaseapis/firestore/v1beta2.dart' as firestore1beta2;
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:googleapis/firestore/v1.dart' as firestore1;
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
@@ -16,25 +14,24 @@ import 'backoff.dart';
 import 'status_code.dart';
 import 'util.dart';
 
+part 'collection_group.dart';
 part 'convert.dart';
 part 'document.dart';
+part 'document_change.dart';
 part 'document_reader.dart';
 part 'field_value.dart';
+part 'filter.dart';
 part 'firestore.freezed.dart';
+part 'firestore_api_request_internal.dart';
+part 'firestore_exception.dart';
 part 'geo_point.dart';
 part 'path.dart';
 part 'reference.dart';
 part 'serializer.dart';
 part 'timestamp.dart';
 part 'transaction.dart';
-
 part 'types.dart';
 part 'write_batch.dart';
-part 'document_change.dart';
-part 'filter.dart';
-part 'firestore_exception.dart';
-part 'firestore_api_request_internal.dart';
-part 'collection_group.dart';
 
 class Firestore {
   Firestore(this.app, {Settings? settings})
@@ -273,32 +270,6 @@ class _FirestoreHttpClient {
     return _run(
       (client) => fn(
         firestore1.FirestoreApi(
-          client,
-          rootUrl: app.firestoreApiHost.toString(),
-        ),
-      ),
-    );
-  }
-
-  Future<R> v1Beta1<R>(
-    Future<R> Function(firestore1beta1.FirestoreApi client) fn,
-  ) async {
-    return _run(
-      (client) => fn(
-        firestore1beta1.FirestoreApi(
-          client,
-          rootUrl: app.firestoreApiHost.toString(),
-        ),
-      ),
-    );
-  }
-
-  Future<R> v1Beta2<R>(
-    Future<R> Function(firestore1beta2.FirestoreApi client) fn,
-  ) async {
-    return _run(
-      (client) => fn(
-        firestore1beta2.FirestoreApi(
           client,
           rootUrl: app.firestoreApiHost.toString(),
         ),

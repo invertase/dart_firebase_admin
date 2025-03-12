@@ -4,6 +4,8 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
+import '../app.dart';
+
 const algorithmRS256 = 'RS256';
 
 /// Class for verifying unsigned (emulator) JWTs.
@@ -93,8 +95,9 @@ class UrlKeyFetcher implements KeyFetcher {
 }
 
 class JwksFetcher implements KeyFetcher {
-  JwksFetcher(this.jwksUrl);
+  JwksFetcher(this.jwksUrl, this.app);
   final Uri jwksUrl;
+  final FirebaseAdminApp app;
   Map<String, String>? _publicKeys;
   int _publicKeysExpireAt = 0;
   static const int hourInMilliseconds = 6 * 60 * 60 * 1000; // 6 hours
@@ -116,6 +119,10 @@ class JwksFetcher implements KeyFetcher {
       final response = await http.get(jwksUrl);
       if (response.statusCode != 200) {
         throw Exception('Failed to fetch JWKS');
+      }
+
+      String fromWebSafeBase64(String data) {
+        return data.replaceAll('_', '/').replaceAll('-', '+');
       }
 
       final jwks = jsonDecode(response.body) as Map<String, dynamic>;
@@ -155,19 +162,13 @@ class JwksFetcher implements KeyFetcher {
 -----BEGIN PUBLIC KEY-----
 $modulus
 $exponent
------END PUBLIC KEY-----
-''';
+-----END PUBLIC KEY-----''';
     return publicKeyPem;
   }
 
   /// Normalizes Base64URL encoding (adds padding if missing)
   String base64UrlNormalize(String base64Str) {
-    final output =
-        StringBuffer(base64Str.replaceAll('-', '+').replaceAll('_', '/'));
-    while (output.length % 4 != 0) {
-      output.write('=');
-    }
-    return base64.encode(base64.decode(output.toString()));
+    return base64Str.replaceAll('_', '/').replaceAll('-', '+');
   }
 }
 
@@ -177,8 +178,9 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
   PublicKeySignatureVerifier.withCertificateUrl(Uri clientCert)
       : this(UrlKeyFetcher(clientCert));
 
-  factory PublicKeySignatureVerifier.withJwksUrl(Uri jwksUrl) {
-    return PublicKeySignatureVerifier(JwksFetcher(jwksUrl));
+  factory PublicKeySignatureVerifier.withJwksUrl(
+      Uri jwksUrl, FirebaseAdminApp app) {
+    return PublicKeySignatureVerifier(JwksFetcher(jwksUrl, app));
   }
 
   final KeyFetcher keyFetcher;
