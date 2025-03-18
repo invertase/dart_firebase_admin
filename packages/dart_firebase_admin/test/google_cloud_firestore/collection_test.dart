@@ -9,6 +9,20 @@ void main() {
 
     setUp(() async => firestore = await createFirestore());
 
+    test('supports + in collection name', () async {
+      final a = firestore
+          .collection('/collection+a/lF1kvtRAYMqmdInT7iJK/subcollection');
+
+      expect(a.path, 'collection+a/lF1kvtRAYMqmdInT7iJK/subcollection');
+
+      await a.add({'foo': 'bar'});
+
+      final results = await a.get();
+
+      expect(results.docs.length, 1);
+      expect(results.docs.first.data(), {'foo': 'bar'});
+    });
+
     test('has doc() method', () {
       final collection = firestore.collection('colId');
 
