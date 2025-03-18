@@ -1,5 +1,5 @@
 import 'package:googleapis/firebaseappcheck/v1.dart' as appcheck1;
-import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1Beta;
+import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1_beta;
 import 'package:meta/meta.dart';
 
 import '../app.dart';
@@ -21,9 +21,9 @@ class AppCheckApiClient {
   }
 
   Future<R> _v1Beta<R>(
-    Future<R> Function(appcheck1Beta.FirebaseappcheckApi client) fn,
+    Future<R> Function(appcheck1_beta.FirebaseappcheckApi client) fn,
   ) async {
-    return fn(appcheck1Beta.FirebaseappcheckApi(await app.client));
+    return fn(appcheck1_beta.FirebaseappcheckApi(await app.client));
   }
 
   /// Exchange a signed custom token to App Check token
@@ -51,7 +51,7 @@ class AppCheckApiClient {
   Future<bool> verifyReplayProtection(String token) {
     return _v1Beta((client) async {
       final response = await client.projects.verifyAppCheckToken(
-        appcheck1Beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(
+        appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(
           appCheckToken: token,
         ),
         'projects/${app.projectId}',

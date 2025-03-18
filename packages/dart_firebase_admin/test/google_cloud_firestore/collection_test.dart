@@ -7,7 +7,7 @@ void main() {
   group('Collection interface', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createFirestore());
+    setUp(() async => firestore = await createFirestore());
 
     test('has doc() method', () {
       final collection = firestore.collection('colId');
@@ -73,6 +73,7 @@ void main() {
 
       final documentSnapshot = await documentRef.get();
 
+      expect(documentSnapshot.exists, isTrue);
       expect(documentSnapshot.data(), {'foo': 'bar'});
     });
 

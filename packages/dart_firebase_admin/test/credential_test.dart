@@ -72,15 +72,20 @@ void main() {
       test(
           'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
           () {
-        final fakeServiceAccount = {
-          'GOOGLE_APPLICATION_CREDENTIALS': '''
+        final dir = Directory.current.createTempSync();
+        addTearDown(() => dir.deleteSync(recursive: true));
+        final file = File('${dir.path}/service-account.json');
+        file.writeAsStringSync('''
 {
   "type": "service_account",
   "client_id": "id",
   "private_key": ${jsonEncode(_fakeRSAKey)},
   "client_email": "foo@bar.com"
 }
-''',
+''');
+
+        final fakeServiceAccount = {
+          'GOOGLE_APPLICATION_CREDENTIALS': file.path,
         };
         final credential = runZoned(
           Credential.fromApplicationDefaultCredentials,

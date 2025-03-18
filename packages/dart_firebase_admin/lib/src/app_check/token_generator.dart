@@ -32,12 +32,12 @@ class AppCheckTokenGenerator {
     try {
       final account = await signer.getAccountId();
 
-      var header = {
+      final header = {
         'alg': signer.algorithm,
         'typ': 'JWT',
       };
       final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
-      var body = {
+      final body = {
         'iss': account,
         'sub': account,
         'app_id': appId,
@@ -50,10 +50,7 @@ class AppCheckTokenGenerator {
 
       final signature = await signer.sign(utf8.encode(token));
 
-      // print('HEre -----');
-      final res = '$token.${_encodeSegmentBuffer(signature)}';
-      // print(res);
-      return res;
+      return '$token.${_encodeSegmentBuffer(signature)}';
     } on CryptoSignerException catch (err) {
       throw _appCheckErrorFromCryptoSignerError(err);
     }

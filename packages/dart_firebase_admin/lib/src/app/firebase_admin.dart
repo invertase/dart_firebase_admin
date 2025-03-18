@@ -20,6 +20,8 @@ class FirebaseAdminApp {
   Uri authApiHost = Uri.https('identitytoolkit.googleapis.com', '/');
   @internal
   Uri firestoreApiHost = Uri.https('firestore.googleapis.com', '/');
+  @internal
+  String tasksEmulatorHost = 'https://cloudfunctions.googleapis.com/';
 
   /// Use the Firebase Emulator Suite to run the app locally.
   void useEmulator() {
@@ -35,6 +37,10 @@ class FirebaseAdminApp {
       env['FIRESTORE_EMULATOR_HOST'] ?? '127.0.0.1:8080',
       '/',
     );
+    tasksEmulatorHost = Uri.http(
+      env['CLOUD_TASKS_EMULATOR_HOST'] ?? '127.0.0.1:5001',
+      '/',
+    ).toString();
   }
 
   @internal

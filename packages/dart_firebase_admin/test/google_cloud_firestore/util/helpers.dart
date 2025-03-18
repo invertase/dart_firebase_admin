@@ -30,26 +30,36 @@ FirebaseAdminApp createApp({
   return app;
 }
 
-Firestore createFirestore({
+Future<void> _recursivelyDeleteAllDocuments(Firestore firestore) async {
+  Future<void> handleCollection(CollectionReference<void> collection) async {
+    final docs = await collection.listDocuments();
+
+    for (final doc in docs) {
+      await doc.delete();
+
+      final subcollections = await doc.listCollections();
+      for (final subcollection in subcollections) {
+        await handleCollection(subcollection);
+      }
+    }
+  }
+
+  final collections = await firestore.listCollections();
+  for (final collection in collections) {
+    await handleCollection(collection);
+  }
+}
+
+Future<Firestore> createFirestore({
   Settings? settings,
   bool useEmulator = true,
-}) {
+}) async {
   final firestore = Firestore(
     createApp(useEmulator: useEmulator),
     settings: settings,
   );
 
-  addTearDown(() async {
-    final collections = await firestore.listCollections();
-
-    for (final collection in collections) {
-      final docs = await collection.get();
-
-      await Future.wait([
-        for (final doc in docs.docs) doc.ref.delete(),
-      ]);
-    }
-  });
+  addTearDown(() => _recursivelyDeleteAllDocuments(firestore));
 
   return firestore;
 }

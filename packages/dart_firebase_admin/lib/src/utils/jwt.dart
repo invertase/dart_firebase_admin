@@ -2,9 +2,8 @@ import 'dart:convert';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
+import 'package:jose/jose.dart';
 import 'package:meta/meta.dart';
-
-import '../app.dart';
 
 const algorithmRS256 = 'RS256';
 
@@ -41,7 +40,7 @@ abstract class SignatureVerifier {
 }
 
 abstract class KeyFetcher {
-  Future<Map<String, String>> fetchPublicKeys();
+  Future<JsonWebKeyStore> fetchPublicKeys();
 }
 
 class UrlKeyFetcher implements KeyFetcher {
@@ -49,11 +48,11 @@ class UrlKeyFetcher implements KeyFetcher {
 
   final Uri clientCert;
 
-  Map<String, String>? _publicKeys;
+  JsonWebKeyStore? _publicKeys;
   late DateTime _publicKeysExpireAt;
 
   @override
-  Future<Map<String, String>> fetchPublicKeys() async {
+  Future<JsonWebKeyStore> fetchPublicKeys() async {
     if (_shouldRefresh()) return refresh();
     return _publicKeys!;
   }
@@ -63,7 +62,7 @@ class UrlKeyFetcher implements KeyFetcher {
     return _publicKeysExpireAt.isBefore(DateTime.now());
   }
 
-  Future<Map<String, String>> refresh() async {
+  Future<JsonWebKeyStore> refresh() async {
     final response = await http.get(clientCert);
     final json = jsonDecode(response.body) as Map<String, Object?>;
     final error = json['error'];
@@ -90,20 +89,27 @@ class UrlKeyFetcher implements KeyFetcher {
         }
       }
     }
-    return _publicKeys = Map.from(json);
+
+    final store = _publicKeys = JsonWebKeyStore();
+
+    for (final entry in json.entries) {
+      final key = JsonWebKey.fromPem(entry.value! as String, keyId: entry.key);
+      store.addKey(key);
+    }
+
+    return store;
   }
 }
 
 class JwksFetcher implements KeyFetcher {
-  JwksFetcher(this.jwksUrl, this.app);
+  JwksFetcher(this.jwksUrl);
   final Uri jwksUrl;
-  final FirebaseAdminApp app;
-  Map<String, String>? _publicKeys;
+  JsonWebKeyStore? _publicKeys;
   int _publicKeysExpireAt = 0;
   static const int hourInMilliseconds = 6 * 60 * 60 * 1000; // 6 hours
 
   @override
-  Future<Map<String, String>> fetchPublicKeys() async {
+  Future<JsonWebKeyStore> fetchPublicKeys() async {
     if (_shouldRefresh) return refresh();
 
     return _publicKeys!;
@@ -114,61 +120,27 @@ class JwksFetcher implements KeyFetcher {
         _publicKeysExpireAt <= DateTime.now().millisecondsSinceEpoch;
   }
 
-  Future<Map<String, String>> refresh() async {
-    try {
-      final response = await http.get(jwksUrl);
-      if (response.statusCode != 200) {
-        throw Exception('Failed to fetch JWKS');
-      }
-
-      String fromWebSafeBase64(String data) {
-        return data.replaceAll('_', '/').replaceAll('-', '+');
-      }
-
-      final jwks = jsonDecode(response.body) as Map<String, dynamic>;
-      final keys = (jwks['keys'] as List).map((e) => e as Map<String, dynamic>);
-
-      // Reset expire time
-      _publicKeysExpireAt = 0;
-
-      // Extract signing keys
-      final newKeys = <String, String>{};
-      for (final key in keys) {
-        final kid = key['kid'] as String?;
-        final n = key['n'] as String?;
-        final e = key['e'] as String?;
-        if (key['use'] == 'sig' && kid != null && n != null && e != null) {
-          newKeys[kid] = _generatePemFromJwk(n, e);
-        }
-      }
-
-      // Set new expiration time
-      _publicKeysExpireAt =
-          DateTime.now().millisecondsSinceEpoch + hourInMilliseconds;
-      _publicKeys = newKeys;
-
-      return newKeys;
-    } catch (e) {
-      throw Exception('Error fetching JSON Web Keys: $e');
+  Future<JsonWebKeyStore> refresh() async {
+    final response = await http.get(jwksUrl);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch JWKS');
     }
-  }
 
-  /// Converts JWK { n, e } to PEM format
-  String _generatePemFromJwk(String n, String e) {
-    final modulus = base64UrlNormalize(n);
-    final exponent = base64UrlNormalize(e);
+    final jwks = jsonDecode(response.body) as Map<String, dynamic>;
+    final keys = JsonWebKeySet.fromJson(jwks).keys;
 
-    final publicKeyPem = '''
------BEGIN PUBLIC KEY-----
-$modulus
-$exponent
------END PUBLIC KEY-----''';
-    return publicKeyPem;
-  }
+    // Reset expire time
+    _publicKeysExpireAt = 0;
 
-  /// Normalizes Base64URL encoding (adds padding if missing)
-  String base64UrlNormalize(String base64Str) {
-    return base64Str.replaceAll('_', '/').replaceAll('-', '+');
+    // Extract signing keys
+    final store = _publicKeys = JsonWebKeyStore();
+    keys.forEach(store.addKey);
+
+    // Set new expiration time
+    _publicKeysExpireAt =
+        DateTime.now().millisecondsSinceEpoch + hourInMilliseconds;
+
+    return store;
   }
 }
 
@@ -178,9 +150,8 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
   PublicKeySignatureVerifier.withCertificateUrl(Uri clientCert)
       : this(UrlKeyFetcher(clientCert));
 
-  factory PublicKeySignatureVerifier.withJwksUrl(
-      Uri jwksUrl, FirebaseAdminApp app) {
-    return PublicKeySignatureVerifier(JwksFetcher(jwksUrl, app));
+  factory PublicKeySignatureVerifier.withJwksUrl(Uri jwksUrl) {
+    return PublicKeySignatureVerifier(JwksFetcher(jwksUrl));
   }
 
   final KeyFetcher keyFetcher;
@@ -203,22 +174,10 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
         );
       }
 
-      final publicKeys = await keyFetcher.fetchPublicKeys();
-      final publicKey = publicKeys[kid];
-
-      if (publicKey == null) {
-        throw JwtException(
-          JwtErrorCode.noMatchingKid,
-          'no-matching-kid-error',
-        );
-      }
+      final store = await keyFetcher.fetchPublicKeys();
 
       try {
-        verifyJwtSignature(
-          token,
-          RSAPublicKey.cert(publicKey),
-          issueAt: Duration.zero, // Any past date should be valid
-        );
+        await JsonWebToken.decodeAndVerify(token, store);
       } catch (e, stackTrace) {
         Error.throwWithStackTrace(
           JwtException(
