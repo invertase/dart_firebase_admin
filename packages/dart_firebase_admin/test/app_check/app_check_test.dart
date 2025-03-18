@@ -1,4 +1,4 @@
-import 'package:dart_firebase_admin/src/app_check/app_check.dart';
+import 'package:dart_firebase_admin/app_check.dart';
 import 'package:test/test.dart';
 
 import '../google_cloud_firestore/util/helpers.dart';

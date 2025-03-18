@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:googleapis/cloudtasks/v2.dart' as tasks2;
+import 'package:googleapis/fcm/v1.dart';
 import 'package:meta/meta.dart';
 
 import '../app.dart';
@@ -44,22 +45,10 @@ class FunctionsApiClient {
       if (extensionId != null) {
         resources.resourceId = 'ext-$extensionId-${resources.resourceId}';
       }
-      try {
-        final path =
-            'projects/${resources.projectId}/locations/${resources.locationId}/queues/${resources.resourceId}/tasks';
+      final path =
+          'projects/${resources.projectId}/locations/${resources.locationId}/queues/${resources.resourceId}/tasks';
 
-        await client.projects.locations.queues.tasks.delete(path);
-      } catch (e) {
-        //   if (err instanceof RequestResponseError) {
-        //     if (err.response.status === 404) {
-        //       // if no task with the provided ID exists, then ignore the delete.
-        //       return;
-        //     }
-        //     throw this.toFirebaseError(err);
-        //   } else {
-        //     throw err;
-        //   }
-      }
+      await client.projects.locations.queues.tasks.delete(path);
     });
   }
 
@@ -97,17 +86,15 @@ class FunctionsApiClient {
           ),
           path,
         );
-      } catch (e) {
-        //   if (err instanceof RequestResponseError) {
-        //     if (err.response.status === 409) {
-        //       throw new FirebaseFunctionsException('task-already-exists', `A task with ID ${opts?.id} already exists`);
-        //     } else {
-        //       throw this.toFirebaseError(err);
-        //     }
-        //   } else {
-        //     throw err;
-        //   }
-        // TODO
+      } on DetailedApiRequestError catch (e) {
+        if (e.status == 409) {
+          throw FirebaseFunctionsException(
+            FunctionsErrorCode.taskAlreadyExists,
+            'A task with ID ${opts?.id} already exists',
+          );
+        }
+
+        rethrow;
       }
     });
   }
