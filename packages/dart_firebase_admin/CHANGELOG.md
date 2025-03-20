@@ -5,6 +5,7 @@
 - Added Transaction support (thanks to @evandrobubiak)
 - Firebase Emulators now obtain port information from the environment ; if available (thanks to @dinko7)
 - Fix incorrect read of GOOGLE_APPLICATION_CREDENTIALS. It now correctly expects a file path instead of JSON
+- Added `AppCheck` and `SecurityRules` support
 
 ## 0.4.0 - 2024-09-11
 
