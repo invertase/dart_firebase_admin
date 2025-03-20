@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:asn1lib/asn1lib.dart';
+import 'package:googleapis/iamcredentials/v1.dart' as iam_credentials_v1;
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
@@ -9,6 +10,22 @@ import 'package:pem/pem.dart';
 import 'package:pointycastle/export.dart' as pointy;
 
 import '../../dart_firebase_admin.dart';
+
+Future<R> _v1<R>(
+  FirebaseAdminApp app,
+  Future<R> Function(iam_credentials_v1.IAMCredentialsApi client) fn,
+) async {
+  try {
+    return await fn(
+      iam_credentials_v1.IAMCredentialsApi(await app.client),
+    );
+  } on iam_credentials_v1.ApiRequestError catch (e) {
+    throw CryptoSignerException(
+      CryptoSignerErrorCode.serverError,
+      e.message ?? 'Unknown error',
+    );
+  }
+}
 
 @internal
 abstract class CryptoSigner {
@@ -72,22 +89,17 @@ class _IAMSigner implements CryptoSigner {
   Future<Uint8List> sign(Uint8List buffer) async {
     final serviceAccount = await getAccountId();
 
-    final response = await http.post(
-      Uri.parse(
-        'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$serviceAccount:signBlob',
-      ),
-      body: {'payload': base64Encode(buffer)},
-    );
-
-    if (response.statusCode != 200) {
-      throw CryptoSignerException(
-        CryptoSignerErrorCode.serverError,
-        response.body,
+    final response = await _v1(app, (client) {
+      return client.projects.serviceAccounts.signBlob(
+        iam_credentials_v1.SignBlobRequest(
+          payload: base64Encode(buffer),
+        ),
+        'projects/-/serviceAccounts/$serviceAccount',
       );
-    }
+    });
 
     // Response from IAM is base64 encoded. Decode it into a buffer and return.
-    return base64Decode(response.body);
+    return base64Decode(response.signedBlob!);
   }
 }
 

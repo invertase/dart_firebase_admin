@@ -19,8 +19,10 @@ void main() {
   final hasGoogleEnv =
       Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
 
-  group(skip: !hasGoogleEnv, 'AppCheck', () {
-    test('e2e', () async {
+  group('AppCheck', () {
+    test(
+        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        'e2e', () async {
       final token = await appCheck
           .createToken('1:559949546715:android:13025aec6cc3243d0ab8fe');
 
