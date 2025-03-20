@@ -7,7 +7,7 @@ void main() {
   group('query interface', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createFirestore());
+    setUp(() async => firestore = await createFirestore());
 
     test('overrides ==', () {
       final queryA = firestore.collection('col1');
@@ -193,7 +193,7 @@ void main() {
   group('where()', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createFirestore());
+    setUp(() async => firestore = await createFirestore());
 
     test('handles all operators', () {
       expect(WhereFilter.equal.proto, 'EQUAL');
@@ -387,7 +387,7 @@ void main() {
   group('orderBy', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createFirestore());
+    setUp(() async => firestore = await createFirestore());
 
     test('accepts asc', () async {
       final collection = firestore.collection('orderByAsc');
@@ -434,7 +434,7 @@ void main() {
   group('limit()', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createFirestore());
+    setUp(() async => firestore = await createFirestore());
 
     test('uses latest limit', () async {
       final collection = firestore.collection('limitLatest');
@@ -451,7 +451,7 @@ void main() {
   group('limitToLatest()', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createFirestore());
+    setUp(() async => firestore = await createFirestore());
 
     test('uses latest limit', () async {
       final collection = firestore.collection('limitLatest');

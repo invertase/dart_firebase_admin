@@ -77,4 +77,9 @@ abstract class FirebaseAdminException implements Exception {
   /// it generally does not convey meaningful information to end users,
   /// this message should not be displayed in your application.
   String get message => _message ?? _platformErrorCodeMessage(_code);
+
+  @override
+  String toString() {
+    return '$runtimeType($code, $message)';
+  }
 }

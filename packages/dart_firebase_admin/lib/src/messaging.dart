@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:firebaseapis/fcm/v1.dart' as fmc1;
+import 'package:googleapis/fcm/v1.dart' as fmc1;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 

@@ -6,7 +6,7 @@ _FirebaseTokenGenerator _createFirebaseTokenGenerator(
 }) {
   try {
     final signer =
-        app.isUsingEmulator ? _EmulatedSigner() : cryptoSignerFromApp(app);
+        app.isUsingEmulator ? _EmulatedSigner() : CryptoSigner.fromApp(app);
     return _FirebaseTokenGenerator(signer, tenantId: tenantId);
   } on CryptoSignerException catch (err, stackTrace) {
     Error.throwWithStackTrace(_handleCryptoSignerError(err), stackTrace);

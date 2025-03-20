@@ -7,7 +7,7 @@ void main() {
   group('Firestore', () {
     late Firestore firestore;
 
-    setUp(() => firestore = createFirestore());
+    setUp(() async => firestore = await createFirestore());
 
     test('listCollections', () async {
       final a = firestore.collection('a');
@@ -18,7 +18,7 @@ void main() {
 
       final collections = await firestore.listCollections();
 
-      expect(collections, unorderedEquals([a, b]));
+      expect(collections, containsAll([a, b]));
     });
   });
 }

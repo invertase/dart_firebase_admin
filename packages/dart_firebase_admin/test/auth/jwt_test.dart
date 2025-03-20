@@ -1,8 +1,6 @@
-import 'dart:convert';
-
-import 'package:asn1lib/asn1lib.dart';
 import 'package:dart_firebase_admin/src/utils/jwt.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:jose/jose.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -62,7 +60,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
       );
       await expectLater(
         PublicKeySignatureVerifier(keyFetcher).verify(token),
-        throwsA(isA<JwtError>()),
+        throwsA(isA<JwtException>()),
       );
     });
     test('invalid kid should throw', () async {
@@ -76,7 +74,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
       );
       await expectLater(
         PublicKeySignatureVerifier(keyFetcher).verify(token),
-        throwsA(isA<JwtError>()),
+        throwsA(isA<JwtException>()),
       );
     });
   });
@@ -84,9 +82,10 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
 
 class _TestKeyFetcher implements KeyFetcher {
   @override
-  Future<Map<String, String>> fetchPublicKeys() {
-    return Future.value({
-      'key1': _publicKeyAsCert('''
+  Future<JsonWebKeyStore> fetchPublicKeys() async {
+    final store = JsonWebKeyStore();
+
+    const key = '''
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo
 4lgOEePzNm0tRgeLezV6ffAt0gunVTLw7onLRnrq0/IzW7yWR7QkrmBL7jTKEn5u
@@ -96,23 +95,10 @@ kd3qqGElvW/VDL5AaWTg0nLVkjRo9z+40RQzuVaE8AkAFmxZzow3x+VJYKdjykkJ
 cKWTjpBP2dPwVZ4WWC+9aGVd+Gyn1o0CLelf4rEjGoXbAAEgAqeGUxrcIlbjXfbc
 mwIDAQAB
 -----END PUBLIC KEY-----
-'''),
-    });
-  }
-}
+''';
 
-String _publicKeyAsCert(String publicKey) {
-  final lines = LineSplitter.split(publicKey)
-      .map((line) => line.trim())
-      .where((line) => line.isNotEmpty)
-      .toList();
-  final base64 = lines.sublist(1, lines.length - 1).join();
-  final bytes = base64Decode(base64);
-  final certSequence = ASN1Sequence();
-  final root = ASN1Sequence()..add(certSequence);
-  for (var i = 0; i < 5; i++) {
-    certSequence.add(ASN1Integer.fromInt(0));
+    store.addKey(JsonWebKey.fromPem(key, keyId: 'key1'));
+
+    return store;
   }
-  certSequence.add(ASN1Object.fromBytes(bytes));
-  return '${lines.first}\n${base64Encode(root.encodedBytes)}\n${lines.last}';
 }

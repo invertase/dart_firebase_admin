@@ -92,9 +92,10 @@ class Credential {
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
     final maybeConfig = env['GOOGLE_APPLICATION_CREDENTIALS'];
-    if (maybeConfig != null) {
+    if (maybeConfig != null && File(maybeConfig).existsSync()) {
       try {
-        final decodedValue = jsonDecode(maybeConfig);
+        final text = File(maybeConfig).readAsStringSync();
+        final decodedValue = jsonDecode(text);
         if (decodedValue is Map) {
           creds = ServiceAccountCredentials.fromJson(decodedValue);
         }

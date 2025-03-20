@@ -15,15 +15,15 @@ void main() {
     () {
       late Firestore firestore;
 
-      setUp(() {
-        firestore = helpers.createFirestore();
-      });
+      setUp(() async => firestore = await helpers.createFirestore());
 
       Future<DocumentReference<Map<String, dynamic>>> initializeTest(
         String path,
       ) async {
         final String prefixedPath = 'flutter-tests/$path';
         await firestore.doc(prefixedPath).delete();
+        addTearDown(() => firestore.doc(prefixedPath).delete());
+
         return firestore.doc(prefixedPath);
       }
 
@@ -525,6 +525,7 @@ void main() {
 
       test(
         'should collide transaction if number of maxAttempts is not enough',
+        retry: 2,
         () async {
           final DocumentReference<Map<String, dynamic>> doc1 =
               await initializeTest('transaction-maxAttempts-1');

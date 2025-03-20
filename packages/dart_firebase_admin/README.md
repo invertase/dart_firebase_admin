@@ -17,9 +17,15 @@ Currently, only Firestore is available, with more to come (auth next).
   - [Usage](#usage-1)
   - [Supported features](#supported-features-1)
 - [Available features](#available-features)
-- [Messaging](#messaging)
+- [AppCheck](#appcheck)
   - [Usage](#usage-2)
   - [Supported features](#supported-features-2)
+- [Security rules](#security-rules)
+  - [Usage](#usage-3)
+  - [Supported features](#supported-features-3)
+- [Messaging](#messaging)
+  - [Usage](#usage-4)
+  - [Supported features](#supported-features-4)
 
 ## Getting started
 
@@ -276,6 +282,79 @@ final link = await auth.generatePasswordResetLink(
 | auth.getUsers                         | ✅  |
 | auth.createUser                       | ✅  |
 | auth.updateUser                       | ✅  |
+
+## AppCheck
+
+### Usage
+
+First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
+You should now have an instance of a `FirebaseAdminApp` object.
+
+Then, you can create an instance of `AppCheck` as followed:
+
+```dart
+final appCheck = AppCheck();
+```
+
+You can then use `ApPCheck` to interact with Firebase AppCheck. For example,
+this creates/verifies a token:
+
+```dart
+final token = await appCheck
+    .createToken('<my app id>');
+
+await appCheck.verifyToken(token.token);
+```
+
+### Supported features
+
+| AppCheck             |     |
+| -------------------- | --- |
+| AppCheck.createToken | ✅  |
+| AppCheck.verifyToken | ✅  |
+
+## Security rules
+
+### Usage
+
+First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
+You should now have an instance of a `FirebaseAdminApp` object.
+
+Then, you can create an instance of `SecurityRules` as followed:
+
+```dart
+final securityRules = SecurityRules();
+```
+
+You can then use `SecurityRules` to interact with Firebase SecurityRules. For example,
+this creates/verifies a token:
+
+```dart
+final ruleset = await securityRules.createRuleset(
+  RulesFile(
+    name: 'firestore.rules',
+    content: '<your security rules>',
+  ),
+);
+
+await securityRules.releaseFirestoreRuleset(ruleset.name);
+```
+
+### Supported features
+
+| SecurityRules                                   |     |
+| ----------------------------------------------- | --- |
+| SecurityRules.createRuleset                     | ✅  |
+| SecurityRules.getRuleset                        | ✅  |
+| SecurityRules.getFirestoreRuleset               | ✅  |
+| SecurityRules.getStorageRuleset                 | ✅  |
+| SecurityRules.releaseFirestoreRuleset           | ✅  |
+| SecurityRules.releaseFirestoreRulesetFromSource | ✅  |
+| SecurityRules.releaseStorageRuleset             | ✅  |
+| SecurityRules.releaseStorageRulesetFromSource   | ✅  |
+| SecurityRules.releaseStorageRuleset             | ✅  |
+| SecurityRules.deleteRuleset                     | ✅  |
+| SecurityRules.listRulesetMetadata               | ✅  |
 
 ## Messaging
 
