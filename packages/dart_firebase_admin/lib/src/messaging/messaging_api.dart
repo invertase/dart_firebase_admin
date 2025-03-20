@@ -480,13 +480,13 @@ class Aps {
 
   Map<String, Object?> _toProto() {
     return {
-      'alert': alert?._toProto(),
-      'badge': badge,
-      'sound': sound?._toProto(),
-      'content-available': contentAvailable,
-      'mutable-content': mutableContent,
-      'category': category,
-      'thread-id': threadId,
+      if (alert != null) 'alert': alert?._toProto(),
+      if (badge != null) 'badge': badge,
+      if (sound != null) 'sound': sound?._toProto(),
+      if (contentAvailable != null) 'content-available': contentAvailable,
+      if (mutableContent != null) 'mutable-content': mutableContent,
+      if (category != null) 'category': category,
+      if (threadId != null) 'thread-id': threadId,
     }._cleanProto();
   }
 }

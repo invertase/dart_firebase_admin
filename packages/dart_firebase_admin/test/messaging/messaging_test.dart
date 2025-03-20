@@ -237,6 +237,35 @@ void main() {
         1,
       );
     });
+
+    test('supports null alert/sound', () async {
+      when(() => messages.send(any(), any())).thenAnswer(
+        (_) => Future.value(fmc1.Message(name: 'test')),
+      );
+
+      await messaging.send(
+        TopicMessage(
+          topic: 'test',
+          apns: ApnsConfig(
+            payload: ApnsPayload(
+              aps: Aps(),
+            ),
+          ),
+          webpush: WebpushConfig(
+            notification: WebpushNotification(renotify: true),
+          ),
+        ),
+      );
+
+      final capture = verify(() => messages.send(captureAny(), captureAny()))
+        ..called(1);
+      final request = capture.captured.first as fmc1.SendMessageRequest;
+
+      expect(
+        request.message!.apns!.payload!['aps'],
+        <String, Object?>{},
+      );
+    });
   });
 
   group('sendEach', () {
