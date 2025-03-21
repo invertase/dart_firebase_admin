@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.4.1 - 2025-03-21
 
 - Bump intl to `0.20.0`
 - Fixed `verifyIdToken` (thanks to @jtdLab)
