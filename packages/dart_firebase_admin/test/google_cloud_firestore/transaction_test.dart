@@ -137,7 +137,7 @@ void main() {
       );
     });
 
-    test('update a non existingdocument in a transaction', () async {
+    test('update a non existing document in a transaction', () async {
       final DocumentReference<Map<String, dynamic>> docRef =
           await initializeTest('simpleDocument');
 
@@ -166,9 +166,9 @@ void main() {
       final DocumentReference<Map<String, dynamic>> docRef =
           await initializeTest('simpleDocument');
 
-      final setReult = await docRef.set({'value': 42});
+      final setResult = await docRef.set({'value': 42});
 
-      final precondition = Precondition.timestamp(setReult.writeTime);
+      final precondition = Precondition.timestamp(setResult.writeTime);
 
       await firestore.runTransaction(
         (transaction) async {
