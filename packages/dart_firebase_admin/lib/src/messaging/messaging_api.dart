@@ -453,6 +453,7 @@ class Aps {
     this.category,
     this.threadId,
     this.interruptionLevel,
+    this.soundRaw,
   });
 
   /// Alert to be included in the message. This may be a string or an object of
@@ -483,11 +484,15 @@ class Aps {
   /// Usually critical or time-sensitive.
   final String? interruptionLevel;
 
+  /// The sound name directly inserted as "sound": "sound_name" in the payload.
+  final String? soundRaw;
+
   Map<String, Object?> _toProto() {
     return {
       if (alert != null) 'alert': alert?._toProto(),
       if (badge != null) 'badge': badge,
-      if (sound != null) 'sound': sound?._toProto(),
+      if (sound != null || soundRaw != null)
+        'sound': sound?._toProto() ?? soundRaw,
       if (contentAvailable != null) 'content-available': contentAvailable,
       if (mutableContent != null) 'mutable-content': mutableContent,
       if (category != null) 'category': category,
