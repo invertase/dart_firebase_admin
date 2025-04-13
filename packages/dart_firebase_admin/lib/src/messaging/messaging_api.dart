@@ -452,6 +452,7 @@ class Aps {
     this.mutableContent,
     this.category,
     this.threadId,
+    this.interruptionLevel,
   });
 
   /// Alert to be included in the message. This may be a string or an object of
@@ -478,6 +479,10 @@ class Aps {
   /// An app-specific identifier for grouping notifications.
   final String? threadId;
 
+  /// Specifies the interruption level of the notification.
+  /// Usually critical or time-sensitive.
+  final String? interruptionLevel;
+
   Map<String, Object?> _toProto() {
     return {
       if (alert != null) 'alert': alert?._toProto(),
@@ -487,6 +492,7 @@ class Aps {
       if (mutableContent != null) 'mutable-content': mutableContent,
       if (category != null) 'category': category,
       if (threadId != null) 'thread-id': threadId,
+      if (interruptionLevel != null) 'interruption-level': interruptionLevel,
     }._cleanProto();
   }
 }
