@@ -402,8 +402,6 @@ await messaging.send(
 | TokenMessage                   | ✅  |
 | TopicMessage                   | ✅  |
 | ConditionMessage               | ✅  |
-| Messaging.sendAll              | ❌  |
-| Messaging.sendMulticast        | ❌  |
 
 ---
 

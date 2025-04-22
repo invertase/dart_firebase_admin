@@ -170,10 +170,4 @@ class Messaging {
       dryRun: dryRun,
     );
   }
-
-  // TODO uncomment code below when we figure out hot to send the subscription request
-  // TODO also unmark the response as internal
-  // TODO subscribeToTopic, unsubscribeFromTopic
-  // TODO sendAll – missing batch client implementation
-  // TODO sendMulticast - relies on sendAll
 }
