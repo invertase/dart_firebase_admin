@@ -231,8 +231,6 @@ sealed class FieldMask {
   factory FieldMask.fieldPath(FieldPath fieldPath) = _FieldPathFieldMask;
 }
 
-final _fieldPathRegex = RegExp(r'^[^*~/[\]]+$');
-
 class _StringFieldMask implements FieldMask {
   _StringFieldMask(this.path) {
     if (path.contains('..')) {
@@ -248,14 +246,6 @@ class _StringFieldMask implements FieldMask {
         path,
         'path',
         'must not start or end with "."',
-      );
-    }
-
-    if (!_fieldPathRegex.hasMatch(path)) {
-      throw ArgumentError.value(
-        path,
-        'path',
-        "Paths can't be empty and must not contain '*~/[]'.",
       );
     }
   }
