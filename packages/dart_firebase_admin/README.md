@@ -16,7 +16,6 @@ Currently, only Firestore is available, with more to come (auth next).
 - [Auth](#auth)
   - [Usage](#usage-1)
   - [Supported features](#supported-features-1)
-- [Available features](#available-features)
 - [AppCheck](#appcheck)
   - [Usage](#usage-2)
   - [Supported features](#supported-features-2)
@@ -249,8 +248,6 @@ final link = await auth.generatePasswordResetLink(
 ```
 
 ### Supported features
-
-## Available features
 
 | Auth                                  |     |
 | ------------------------------------- | --- |
