@@ -1,6 +1,6 @@
 ## 0.4.2 - Unreleased
 
-- Broader supported range of the `googleapis`, `googleapis_auth` and `pointycastle` dependencies.
+- Broader supported range of the `googleapis`, `googleapis_auth` and `pointycastle` dependencies. (thanks to @SkillDevs)
 
 ## 0.4.1 - 2025-03-21
 
