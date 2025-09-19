@@ -1,3 +1,7 @@
+## 0.4.2 - Unreleased
+
+- Broader supported range of the `googleapis`, `googleapis_auth` and `pointycastle` dependencies.
+
 ## 0.4.1 - 2025-03-21
 
 - Bump intl to `0.20.0`
