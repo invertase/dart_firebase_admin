@@ -5,8 +5,6 @@ about: >-
   existing one.
 title: ""
 labels: documentation, needs triage
-assignees:
-  - rrousselGit
 ---
 
 **Describe what scenario you think is uncovered by the existing examples/articles**
