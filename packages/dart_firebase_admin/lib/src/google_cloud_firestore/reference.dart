@@ -1680,6 +1680,187 @@ base class Query<T> {
 
   @override
   int get hashCode => Object.hash(runtimeType, _queryOptions);
+
+  /// Returns an [AggregateQuery] that can be used to execute a count
+  /// aggregation.
+  ///
+  /// The returned query, when executed, counts the documents in the result
+  /// set of this query without actually downloading the documents.
+  ///
+  /// ```dart
+  /// firestore.collection('cities').count().get().then(
+  ///   (res) => print(res.count),
+  ///   onError: (e) => print('Error completing: $e'),
+  /// );
+  /// ```
+  AggregateQuery count() {
+    return AggregateQuery._(
+      query: this,
+      aggregations: [
+        _AggregateField(
+          alias: 'count',
+          aggregation: firestore1.Aggregation(
+            count: firestore1.Count(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Represents an aggregation field to use in an aggregation query.
+@immutable
+class _AggregateField {
+  const _AggregateField({
+    required this.alias,
+    required this.aggregation,
+  });
+
+  final String alias;
+  final firestore1.Aggregation aggregation;
+
+  @override
+  bool operator ==(Object other) {
+    return other is _AggregateField &&
+        alias == other.alias &&
+        // For count aggregations, we just check that both have count set
+        ((aggregation.count != null && other.aggregation.count != null) ||
+            aggregation == other.aggregation);
+  }
+
+  @override
+  int get hashCode => Object.hash(alias, aggregation.count != null);
+}
+
+/// Calculates aggregations over an underlying query.
+@immutable
+class AggregateQuery {
+  const AggregateQuery._({
+    required this.query,
+    required this.aggregations,
+  });
+
+  /// The query whose aggregations will be calculated by this object.
+  final Query<Object?> query;
+
+  // For now, only supporting a single aggregation (count).
+  // But storing as a list for future multi aggregate queries.
+  @internal
+  final List<_AggregateField> aggregations;
+
+  /// Executes the aggregate query and returns the results as an
+  /// [AggregateQuerySnapshot].
+  ///
+  /// ```dart
+  /// firestore.collection('cities').count().get().then(
+  ///   (res) => print(res.count),
+  ///   onError: (e) => print('Error completing: $e'),
+  /// );
+  /// ```
+  Future<AggregateQuerySnapshot> get() async {
+    final firestore = query.firestore;
+
+    final aggregationQuery = firestore1.RunAggregationQueryRequest(
+      structuredAggregationQuery: firestore1.StructuredAggregationQuery(
+        structuredQuery: query._toStructuredQuery(),
+        aggregations: [
+          for (final field in aggregations)
+            firestore1.Aggregation(
+              alias: field.alias,
+              count: field.aggregation.count,
+            ),
+        ],
+      ),
+    );
+
+    final response = await firestore._client.v1((client) async {
+      return client.projects.databases.documents.runAggregationQuery(
+        aggregationQuery,
+        query._buildProtoParentPath(),
+      );
+    });
+
+    final results = <String, Object?>{};
+    Timestamp? readTime;
+
+    for (final result in response) {
+      if (result.result != null && result.result!.aggregateFields != null) {
+        for (final entry in result.result!.aggregateFields!.entries) {
+          final value = entry.value;
+          if (value.integerValue != null) {
+            results[entry.key] = int.parse(value.integerValue!);
+          } else if (value.doubleValue != null) {
+            results[entry.key] = value.doubleValue;
+          } else if (value.nullValue != null) {
+            results[entry.key] = null;
+          }
+        }
+      }
+
+      if (result.readTime != null) {
+        readTime = Timestamp._fromString(result.readTime!);
+      }
+    }
+
+    return AggregateQuerySnapshot._(
+      query: this,
+      readTime: readTime,
+      data: results,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is AggregateQuery &&
+        query == other.query &&
+        const ListEquality<_AggregateField>()
+            .equals(aggregations, other.aggregations);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        query,
+        const ListEquality<_AggregateField>().hash(aggregations),
+      );
+}
+
+/// The results of executing an aggregation query.
+@immutable
+class AggregateQuerySnapshot {
+  const AggregateQuerySnapshot._({
+    required this.query,
+    required this.readTime,
+    required this.data,
+  });
+
+  /// The query that was executed to produce this result.
+  final AggregateQuery query;
+
+  /// The time this snapshot was obtained.
+  final Timestamp? readTime;
+
+  /// The raw aggregation data, keyed by alias.
+  final Map<String, Object?> data;
+
+  /// The count of documents that match the query. Returns `null` if the
+  /// count aggregation was not performed.
+  int? get count => data['count'] as int?;
+
+  /// Gets an aggregate field by alias.
+  ///
+  /// - [alias]: The alias of the aggregate field to retrieve.
+  Object? getField(String alias) => data[alias];
+
+  @override
+  bool operator ==(Object other) {
+    return other is AggregateQuerySnapshot &&
+        query == other.query &&
+        readTime == other.readTime &&
+        const MapEquality<String, Object?>().equals(data, other.data);
+  }
+
+  @override
+  int get hashCode => Object.hash(query, readTime, data);
 }
 
 /// A QuerySnapshot contains zero or more [QueryDocumentSnapshot] objects
