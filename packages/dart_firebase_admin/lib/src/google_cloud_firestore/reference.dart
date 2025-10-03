@@ -1681,6 +1681,48 @@ base class Query<T> {
   @override
   int get hashCode => Object.hash(runtimeType, _queryOptions);
 
+  /// Returns an [AggregateQuery] that can be used to execute one or more
+  /// aggregation queries over the result set of this query.
+  ///
+  /// ## Limitations
+  /// - Aggregation queries are only supported through direct server response
+  /// - Cannot be used with real-time listeners or offline queries
+  /// - Must complete within 60 seconds or returns DEADLINE_EXCEEDED error
+  /// - For sum() and average(), non-numeric values are ignored
+  /// - When combining aggregations on different fields, only documents
+  ///   containing all those fields are included
+  ///
+  /// ```dart
+  /// firestore.collection('cities').aggregate(
+  ///   AggregateField.count(),
+  ///   AggregateField.sum('population'),
+  ///   AggregateField.average('population'),
+  /// ).get().then(
+  ///   (res) {
+  ///     print(res.count);
+  ///     print(res.getSum('population'));
+  ///     print(res.getAverage('population'));
+  ///   },
+  ///   onError: (e) => print('Error completing: $e'),
+  /// );
+  /// ```
+  AggregateQuery aggregate(
+    AggregateField aggregateField1, [
+    AggregateField? aggregateField2,
+    AggregateField? aggregateField3,
+  ]) {
+    final fields = [
+      aggregateField1,
+      if (aggregateField2 != null) aggregateField2,
+      if (aggregateField3 != null) aggregateField3,
+    ];
+
+    return AggregateQuery._(
+      query: this,
+      aggregations: fields.map((field) => field._toInternal()).toList(),
+    );
+  }
+
   /// Returns an [AggregateQuery] that can be used to execute a count
   /// aggregation.
   ///
@@ -1694,24 +1736,129 @@ base class Query<T> {
   /// );
   /// ```
   AggregateQuery count() {
-    return AggregateQuery._(
-      query: this,
-      aggregations: [
-        _AggregateField(
-          alias: 'count',
-          aggregation: firestore1.Aggregation(
-            count: firestore1.Count(),
+    return aggregate(AggregateField.count());
+  }
+}
+
+/// Defines an aggregation that can be performed by Firestore.
+@immutable
+class AggregateField {
+  const AggregateField._({
+    required this.fieldPath,
+    required this.alias,
+    required this.type,
+  });
+
+  /// The field to aggregate on, or null for count aggregations.
+  final String? fieldPath;
+
+  /// The alias to use for this aggregation result.
+  final String alias;
+
+  /// The type of aggregation.
+  final _AggregateType type;
+
+  /// Creates a count aggregation.
+  ///
+  /// Count aggregations provide the number of documents that match the query.
+  /// The result can be accessed using [AggregateQuerySnapshot.count].
+  factory AggregateField.count() {
+    return const AggregateField._(
+      fieldPath: null,
+      alias: 'count',
+      type: _AggregateType.count,
+    );
+  }
+
+  /// Creates a sum aggregation for the specified field.
+  ///
+  /// - [field]: The field to sum across all matching documents.
+  ///
+  /// The result can be accessed using [AggregateQuerySnapshot.getSum].
+  factory AggregateField.sum(String field) {
+    return AggregateField._(
+      fieldPath: field,
+      alias: 'sum_$field',
+      type: _AggregateType.sum,
+    );
+  }
+
+  /// Creates an average aggregation for the specified field.
+  ///
+  /// - [field]: The field to average across all matching documents.
+  ///
+  /// The result can be accessed using [AggregateQuerySnapshot.getAverage].
+  factory AggregateField.average(String field) {
+    return AggregateField._(
+      fieldPath: field,
+      alias: 'avg_$field',
+      type: _AggregateType.average,
+    );
+  }
+
+  /// Converts this public field to the internal representation.
+  _AggregateFieldInternal _toInternal() {
+    firestore1.Aggregation aggregation;
+    switch (type) {
+      case _AggregateType.count:
+        aggregation = firestore1.Aggregation(
+          count: firestore1.Count(),
+        );
+        break;
+      case _AggregateType.sum:
+        aggregation = firestore1.Aggregation(
+          sum: firestore1.Sum(
+            field: firestore1.FieldReference(fieldPath: fieldPath!),
           ),
-        ),
-      ],
+        );
+        break;
+      case _AggregateType.average:
+        aggregation = firestore1.Aggregation(
+          avg: firestore1.Avg(
+            field: firestore1.FieldReference(fieldPath: fieldPath!),
+          ),
+        );
+        break;
+    }
+
+    return _AggregateFieldInternal(
+      alias: alias,
+      aggregation: aggregation,
     );
   }
 }
 
-/// Represents an aggregation field to use in an aggregation query.
+/// Creates a count aggregation.
+///
+/// Count aggregations provide the number of documents that match the query.
+/// The result can be accessed using [AggregateQuerySnapshot.count].
+AggregateField count() => AggregateField.count();
+
+/// Creates a sum aggregation for the specified field.
+///
+/// - [field]: The field to sum across all matching documents.
+///
+/// The result can be accessed using [AggregateQuerySnapshot.getSum].
+AggregateField sum(String field) => AggregateField.sum(field);
+
+/// Creates an average aggregation for the specified field.
+///
+/// - [field]: The field to average across all matching documents.
+///
+/// The result can be accessed using [AggregateQuerySnapshot.getAverage].
+AggregateField average(String field) => AggregateField.average(field);
+
+/// The type of aggregation to perform.
+enum _AggregateType {
+  count,
+  sum,
+  average,
+}
+
+/// Internal representation of an aggregation field.
 @immutable
-class _AggregateField {
-  const _AggregateField({
+class _AggregateFieldInternal {
+  const _AggregateFieldInternal({
     required this.alias,
     required this.aggregation,
   });
@@ -1721,15 +1868,19 @@ class _AggregateField {
 
   @override
   bool operator ==(Object other) {
-    return other is _AggregateField &&
+    return other is _AggregateFieldInternal &&
         alias == other.alias &&
         // For count aggregations, we just check that both have count set
         ((aggregation.count != null && other.aggregation.count != null) ||
-            aggregation == other.aggregation);
+         (aggregation.sum != null && other.aggregation.sum != null) ||
+         (aggregation.avg != null && other.aggregation.avg != null));
   }
 
   @override
-  int get hashCode => Object.hash(alias, aggregation.count != null);
+  int get hashCode => Object.hash(
+    alias,
+    aggregation.count != null || aggregation.sum != null || aggregation.avg != null,
+  );
 }
 
 /// Calculates aggregations over an underlying query.
@@ -1743,10 +1894,8 @@ class AggregateQuery {
   /// The query whose aggregations will be calculated by this object.
   final Query<Object?> query;
 
-  // For now, only supporting a single aggregation (count).
-  // But storing as a list for future multi aggregate queries.
   @internal
-  final List<_AggregateField> aggregations;
+  final List<_AggregateFieldInternal> aggregations;
 
   /// Executes the aggregate query and returns the results as an
   /// [AggregateQuerySnapshot].
@@ -1768,6 +1917,8 @@ class AggregateQuery {
             firestore1.Aggregation(
               alias: field.alias,
               count: field.aggregation.count,
+              sum: field.aggregation.sum,
+              avg: field.aggregation.avg,
             ),
         ],
       ),
@@ -1813,14 +1964,14 @@ class AggregateQuery {
   bool operator ==(Object other) {
     return other is AggregateQuery &&
         query == other.query &&
-        const ListEquality<_AggregateField>()
+        const ListEquality<_AggregateFieldInternal>()
             .equals(aggregations, other.aggregations);
   }
 
   @override
   int get hashCode => Object.hash(
         query,
-        const ListEquality<_AggregateField>().hash(aggregations),
+        const ListEquality<_AggregateFieldInternal>().hash(aggregations),
       );
 }
 
@@ -1845,6 +1996,35 @@ class AggregateQuerySnapshot {
   /// The count of documents that match the query. Returns `null` if the
   /// count aggregation was not performed.
   int? get count => data['count'] as int?;
+
+  /// Gets the sum for the specified field. Returns `null` if the
+  /// sum aggregation was not performed.
+  ///
+  /// - [field]: The field that was summed.
+  num? getSum(String field) {
+    final alias = 'sum_$field';
+    final value = data[alias];
+    if (value == null) return null;
+    if (value is int || value is double) return value as num;
+    // Handle case where sum might be returned as a string
+    if (value is String) return num.tryParse(value);
+    return null;
+  }
+
+  /// Gets the average for the specified field. Returns `null` if the
+  /// average aggregation was not performed.
+  ///
+  /// - [field]: The field that was averaged.
+  double? getAverage(String field) {
+    final alias = 'avg_$field';
+    final value = data[alias];
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    // Handle case where average might be returned as a string
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
 
   /// Gets an aggregate field by alias.
   ///

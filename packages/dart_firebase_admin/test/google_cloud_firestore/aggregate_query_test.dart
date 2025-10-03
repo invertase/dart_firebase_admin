@@ -190,5 +190,60 @@ void main() {
       expect(snapshot.getField('count'), equals(snapshot.count));
       expect(snapshot.getField('nonexistent'), isNull);
     });
+
+    test('sum() aggregation works correctly', () async {
+      await collection.add({'price': 10.5});
+      await collection.add({'price': 20.0});
+      await collection.add({'price': 15.5});
+
+      final snapshot = await collection.aggregate(
+        sum('price'),
+      ).get();
+
+      expect(snapshot.getSum('price'), equals(46.0));
+    });
+
+    test('average() aggregation works correctly', () async {
+      await collection.add({'score': 80});
+      await collection.add({'score': 90});
+      await collection.add({'score': 100});
+
+      final snapshot = await collection.aggregate(
+        average('score'),
+      ).get();
+
+      expect(snapshot.getAverage('score'), equals(90.0));
+    });
+
+    test('multiple aggregations work together', () async {
+      await collection.add({'value': 10, 'category': 'A'});
+      await collection.add({'value': 20, 'category': 'A'});
+      await collection.add({'value': 30, 'category': 'B'});
+      await collection.add({'value': 40, 'category': 'B'});
+
+      final snapshot = await collection
+          .where('category', WhereFilter.equal, 'A')
+          .aggregate(
+            count(),
+            sum('value'),
+            average('value'),
+          )
+          .get();
+
+      expect(snapshot.count, equals(2));
+      expect(snapshot.getSum('value'), equals(30));
+      expect(snapshot.getAverage('value'), equals(15.0));
+    });
+
+    test('aggregate() with single field works', () async {
+      await collection.add({'amount': 100});
+      await collection.add({'amount': 200});
+
+      final snapshot = await collection.aggregate(
+        count(),
+      ).get();
+
+      expect(snapshot.count, equals(2));
+    });
   });
 }
