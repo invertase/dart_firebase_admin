@@ -1694,9 +1694,9 @@ base class Query<T> {
   ///
   /// ```dart
   /// firestore.collection('cities').aggregate(
-  ///   AggregateField.count(),
-  ///   AggregateField.sum('population'),
-  ///   AggregateField.average('population'),
+  ///   count(),
+  ///   sum('population'),
+  ///   average('population'),
   /// ).get().then(
   ///   (res) {
   ///     print(res.count);
@@ -1828,31 +1828,53 @@ class AggregateField {
   }
 }
 
-/// Creates a count aggregation.
-///
-/// Count aggregations provide the number of documents that match the query.
-/// The result can be accessed using [AggregateQuerySnapshot.count].
-AggregateField count() => AggregateField.count();
-
-/// Creates a sum aggregation for the specified field.
-///
-/// - [field]: The field to sum across all matching documents.
-///
-/// The result can be accessed using [AggregateQuerySnapshot.getSum].
-AggregateField sum(String field) => AggregateField.sum(field);
-
-/// Creates an average aggregation for the specified field.
-///
-/// - [field]: The field to average across all matching documents.
-///
-/// The result can be accessed using [AggregateQuerySnapshot.getAverage].
-AggregateField average(String field) => AggregateField.average(field);
-
 /// The type of aggregation to perform.
 enum _AggregateType {
   count,
   sum,
   average,
+}
+
+/// Create a CountAggregateField object that can be used to compute
+/// the count of documents in the result set of a query.
+// ignore: camel_case_types
+class count extends AggregateField {
+  /// Creates a count aggregation.
+  const count() : super._(
+    fieldPath: null,
+    alias: 'count',
+    type: _AggregateType.count,
+  );
+}
+
+/// Create an object that can be used to compute the sum of a specified field
+/// over a range of documents in the result set of a query.
+// ignore: camel_case_types
+class sum extends AggregateField {
+  /// Creates a sum aggregation for the specified field.
+  sum(this.field) : super._(
+    fieldPath: field,
+    alias: 'sum_$field',
+    type: _AggregateType.sum,
+  );
+
+  /// The field to sum.
+  final String field;
+}
+
+/// Create an object that can be used to compute the average of a specified field
+/// over a range of documents in the result set of a query.
+// ignore: camel_case_types
+class average extends AggregateField {
+  /// Creates an average aggregation for the specified field.
+  average(this.field) : super._(
+    fieldPath: field,
+    alias: 'avg_$field',
+    type: _AggregateType.average,
+  );
+
+  /// The field to average.
+  final String field;
 }
 
 /// Internal representation of an aggregation field.
