@@ -11,7 +11,8 @@ void main() {
     setUp(() async {
       firestore = await createFirestore();
       collection = firestore.collection(
-          'aggregate-test-${DateTime.now().millisecondsSinceEpoch}',);
+        'aggregate-test-${DateTime.now().millisecondsSinceEpoch}',
+      );
     });
 
     test('count() on empty collection returns 0', () async {
@@ -180,7 +181,9 @@ void main() {
       ]);
       final orCount = await collection.whereFilter(orFilter).count().get();
       expect(
-          orCount.count, 3,); // {a: 1, b: 'x'}, {a: 2, b: 'y'}, {a: 1, b: 'y'}
+        orCount.count,
+        3,
+      ); // {a: 1, b: 'x'}, {a: 2, b: 'y'}, {a: 1, b: 'y'}
     });
 
     test('getField() returns correct values', () async {
@@ -457,7 +460,9 @@ void main() {
             await collection.orderBy('order').limit(3).average('value').get();
 
         expect(
-            snapshot.getAverage('value'), equals(20.0),); // (10 + 20 + 30) / 3
+          snapshot.getAverage('value'),
+          equals(20.0),
+        ); // (10 + 20 + 30) / 3
       });
 
       test('average() works with startAt and endAt', () async {
@@ -475,7 +480,9 @@ void main() {
             .get();
 
         expect(
-            snapshot.getAverage('value'), equals(30.0),); // (20 + 30 + 40) / 3
+          snapshot.getAverage('value'),
+          equals(30.0),
+        ); // (20 + 30 + 40) / 3
       });
 
       test('average() works with composite filters', () async {
@@ -495,8 +502,10 @@ void main() {
         final snapshot =
             await collection.whereFilter(filter).average('price').get();
 
-        expect(snapshot.getAverage('price'),
-            equals(150.0),); // (100 + 150 + 200) / 3
+        expect(
+          snapshot.getAverage('price'),
+          equals(150.0),
+        ); // (100 + 150 + 200) / 3
       });
 
       test('average() returns null for documents without the field', () async {
