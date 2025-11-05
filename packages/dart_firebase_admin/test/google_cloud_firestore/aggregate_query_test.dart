@@ -11,7 +11,7 @@ void main() {
     setUp(() async {
       firestore = await createFirestore();
       collection = firestore.collection(
-          'aggregate-test-${DateTime.now().millisecondsSinceEpoch}');
+          'aggregate-test-${DateTime.now().millisecondsSinceEpoch}',);
     });
 
     test('count() on empty collection returns 0', () async {
@@ -180,7 +180,7 @@ void main() {
       ]);
       final orCount = await collection.whereFilter(orFilter).count().get();
       expect(
-          orCount.count, 3); // {a: 1, b: 'x'}, {a: 2, b: 'y'}, {a: 1, b: 'y'}
+          orCount.count, 3,); // {a: 1, b: 'x'}, {a: 2, b: 'y'}, {a: 1, b: 'y'}
     });
 
     test('getField() returns correct values', () async {
@@ -198,7 +198,7 @@ void main() {
 
       final snapshot = await collection
           .aggregate(
-            sum('price'),
+            const sum('price'),
           )
           .get();
 
@@ -212,7 +212,7 @@ void main() {
 
       final snapshot = await collection
           .aggregate(
-            average('score'),
+            const average('score'),
           )
           .get();
 
@@ -228,9 +228,9 @@ void main() {
       final snapshot = await collection
           .where('category', WhereFilter.equal, 'A')
           .aggregate(
-            count(),
-            sum('value'),
-            average('value'),
+            const count(),
+            const sum('value'),
+            const average('value'),
           )
           .get();
 
@@ -245,7 +245,7 @@ void main() {
 
       final snapshot = await collection
           .aggregate(
-            count(),
+            const count(),
           )
           .get();
 
@@ -386,7 +386,7 @@ void main() {
         final snapshot = await collection.average('score').get();
         // Average on empty collection returns null (can't divide by zero)
         final avg = snapshot.getAverage('score');
-        expect(avg == null || avg!.isNaN, isTrue);
+        expect(avg == null || avg.isNaN, isTrue);
       });
 
       test('average() returns correct average for integer values', () async {
@@ -457,7 +457,7 @@ void main() {
             await collection.orderBy('order').limit(3).average('value').get();
 
         expect(
-            snapshot.getAverage('value'), equals(20.0)); // (10 + 20 + 30) / 3
+            snapshot.getAverage('value'), equals(20.0),); // (10 + 20 + 30) / 3
       });
 
       test('average() works with startAt and endAt', () async {
@@ -475,7 +475,7 @@ void main() {
             .get();
 
         expect(
-            snapshot.getAverage('value'), equals(30.0)); // (20 + 30 + 40) / 3
+            snapshot.getAverage('value'), equals(30.0),); // (20 + 30 + 40) / 3
       });
 
       test('average() works with composite filters', () async {
@@ -496,7 +496,7 @@ void main() {
             await collection.whereFilter(filter).average('price').get();
 
         expect(snapshot.getAverage('price'),
-            equals(150.0)); // (100 + 150 + 200) / 3
+            equals(150.0),); // (100 + 150 + 200) / 3
       });
 
       test('average() returns null for documents without the field', () async {
@@ -527,8 +527,8 @@ void main() {
 
         final snapshot = await collection
             .aggregate(
-              sum('value'),
-              average('value'),
+              const sum('value'),
+              const average('value'),
             )
             .get();
 
@@ -544,9 +544,9 @@ void main() {
         final snapshot = await collection
             .where('category', WhereFilter.equal, 'A')
             .aggregate(
-              count(),
-              sum('price'),
-              average('price'),
+              const count(),
+              const sum('price'),
+              const average('price'),
             )
             .get();
 
@@ -563,9 +563,9 @@ void main() {
         // Test with up to 3 aggregations (max allowed by aggregate method)
         final snapshot = await collection
             .aggregate(
-              sum('price'),
-              average('price'),
-              sum('quantity'),
+              const sum('price'),
+              const average('price'),
+              const sum('quantity'),
             )
             .get();
 
@@ -598,9 +598,9 @@ void main() {
         final collectionGroup = firestore.collectionGroup('items');
         final snapshot = await collectionGroup
             .aggregate(
-              count(),
-              sum('price'),
-              average('price'),
+              const count(),
+              const sum('price'),
+              const average('price'),
             )
             .get();
 
@@ -671,9 +671,9 @@ void main() {
 
         final snapshot = await collection
             .aggregate(
-              count(),
-              sum('value'),
-              average('value'),
+              const count(),
+              const sum('value'),
+              const average('value'),
             )
             .get();
 
