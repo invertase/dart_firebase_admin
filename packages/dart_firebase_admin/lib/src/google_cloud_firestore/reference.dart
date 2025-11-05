@@ -1738,6 +1738,42 @@ base class Query<T> {
   AggregateQuery count() {
     return aggregate(AggregateField.count());
   }
+
+  /// Returns an [AggregateQuery] that can be used to execute a sum
+  /// aggregation on the specified field.
+  ///
+  /// The returned query, when executed, calculates the sum of all values
+  /// for the specified field across all documents in the result set.
+  ///
+  /// - [field]: The field to sum across all matching documents.
+  ///
+  /// ```dart
+  /// firestore.collection('products').sum('price').get().then(
+  ///   (res) => print(res.getSum('price')),
+  ///   onError: (e) => print('Error completing: $e'),
+  /// );
+  /// ```
+  AggregateQuery sum(String field) {
+    return aggregate(AggregateField.sum(field));
+  }
+
+  /// Returns an [AggregateQuery] that can be used to execute an average
+  /// aggregation on the specified field.
+  ///
+  /// The returned query, when executed, calculates the average of all values
+  /// for the specified field across all documents in the result set.
+  ///
+  /// - [field]: The field to average across all matching documents.
+  ///
+  /// ```dart
+  /// firestore.collection('products').average('price').get().then(
+  ///   (res) => print(res.getAverage('price')),
+  ///   onError: (e) => print('Error completing: $e'),
+  /// );
+  /// ```
+  AggregateQuery average(String field) {
+    return aggregate(AggregateField.average(field));
+  }
 }
 
 /// Defines an aggregation that can be performed by Firestore.
@@ -1840,11 +1876,12 @@ enum _AggregateType {
 // ignore: camel_case_types
 class count extends AggregateField {
   /// Creates a count aggregation.
-  const count() : super._(
-    fieldPath: null,
-    alias: 'count',
-    type: _AggregateType.count,
-  );
+  const count()
+      : super._(
+          fieldPath: null,
+          alias: 'count',
+          type: _AggregateType.count,
+        );
 }
 
 /// Create an object that can be used to compute the sum of a specified field
@@ -1852,11 +1889,12 @@ class count extends AggregateField {
 // ignore: camel_case_types
 class sum extends AggregateField {
   /// Creates a sum aggregation for the specified field.
-  sum(this.field) : super._(
-    fieldPath: field,
-    alias: 'sum_$field',
-    type: _AggregateType.sum,
-  );
+  sum(this.field)
+      : super._(
+          fieldPath: field,
+          alias: 'sum_$field',
+          type: _AggregateType.sum,
+        );
 
   /// The field to sum.
   final String field;
@@ -1867,11 +1905,12 @@ class sum extends AggregateField {
 // ignore: camel_case_types
 class average extends AggregateField {
   /// Creates an average aggregation for the specified field.
-  average(this.field) : super._(
-    fieldPath: field,
-    alias: 'avg_$field',
-    type: _AggregateType.average,
-  );
+  average(this.field)
+      : super._(
+          fieldPath: field,
+          alias: 'avg_$field',
+          type: _AggregateType.average,
+        );
 
   /// The field to average.
   final String field;
@@ -1894,15 +1933,17 @@ class _AggregateFieldInternal {
         alias == other.alias &&
         // For count aggregations, we just check that both have count set
         ((aggregation.count != null && other.aggregation.count != null) ||
-         (aggregation.sum != null && other.aggregation.sum != null) ||
-         (aggregation.avg != null && other.aggregation.avg != null));
+            (aggregation.sum != null && other.aggregation.sum != null) ||
+            (aggregation.avg != null && other.aggregation.avg != null));
   }
 
   @override
   int get hashCode => Object.hash(
-    alias,
-    aggregation.count != null || aggregation.sum != null || aggregation.avg != null,
-  );
+        alias,
+        aggregation.count != null ||
+            aggregation.sum != null ||
+            aggregation.avg != null,
+      );
 }
 
 /// Calculates aggregations over an underlying query.

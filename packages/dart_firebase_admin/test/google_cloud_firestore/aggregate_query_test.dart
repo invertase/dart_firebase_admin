@@ -196,9 +196,11 @@ void main() {
       await collection.add({'price': 20.0});
       await collection.add({'price': 15.5});
 
-      final snapshot = await collection.aggregate(
-        sum('price'),
-      ).get();
+      final snapshot = await collection
+          .aggregate(
+            sum('price'),
+          )
+          .get();
 
       expect(snapshot.getSum('price'), equals(46.0));
     });
@@ -208,9 +210,11 @@ void main() {
       await collection.add({'score': 90});
       await collection.add({'score': 100});
 
-      final snapshot = await collection.aggregate(
-        average('score'),
-      ).get();
+      final snapshot = await collection
+          .aggregate(
+            average('score'),
+          )
+          .get();
 
       expect(snapshot.getAverage('score'), equals(90.0));
     });
@@ -239,11 +243,445 @@ void main() {
       await collection.add({'amount': 100});
       await collection.add({'amount': 200});
 
-      final snapshot = await collection.aggregate(
-        count(),
-      ).get();
+      final snapshot = await collection
+          .aggregate(
+            count(),
+          )
+          .get();
 
       expect(snapshot.count, equals(2));
+    });
+
+    // Tests for the convenience sum() method
+    group('sum() convenience method', () {
+      test('sum() on empty collection returns 0', () async {
+        final snapshot = await collection.sum('price').get();
+        // Sum on empty collection returns 0, not null
+        expect(snapshot.getSum('price'), equals(0));
+      });
+
+      test('sum() returns correct sum for numeric values', () async {
+        await collection.add({'price': 10});
+        await collection.add({'price': 20});
+        await collection.add({'price': 30});
+
+        final snapshot = await collection.sum('price').get();
+        expect(snapshot.getSum('price'), equals(60));
+      });
+
+      test('sum() works with double values', () async {
+        await collection.add({'amount': 10.5});
+        await collection.add({'amount': 20.25});
+        await collection.add({'amount': 15.75});
+
+        final snapshot = await collection.sum('amount').get();
+        expect(snapshot.getSum('amount'), equals(46.5));
+      });
+
+      test('sum() works with mixed int and double values', () async {
+        await collection.add({'value': 10});
+        await collection.add({'value': 20.5});
+        await collection.add({'value': 15});
+
+        final snapshot = await collection.sum('value').get();
+        expect(snapshot.getSum('value'), equals(45.5));
+      });
+
+      test('sum() works with filtered query', () async {
+        await collection.add({'price': 10, 'category': 'A'});
+        await collection.add({'price': 20, 'category': 'B'});
+        await collection.add({'price': 30, 'category': 'A'});
+        await collection.add({'price': 40, 'category': 'B'});
+
+        final snapshot = await collection
+            .where('category', WhereFilter.equal, 'A')
+            .sum('price')
+            .get();
+
+        expect(snapshot.getSum('price'), equals(40));
+      });
+
+      test('sum() works with complex queries', () async {
+        await collection.add({'price': 10, 'inStock': true});
+        await collection.add({'price': 20, 'inStock': false});
+        await collection.add({'price': 30, 'inStock': true});
+        await collection.add({'price': 40, 'inStock': true});
+        await collection.add({'price': 50, 'inStock': false});
+
+        final snapshot = await collection
+            .where('inStock', WhereFilter.equal, true)
+            .where('price', WhereFilter.greaterThanOrEqual, 20)
+            .sum('price')
+            .get();
+
+        expect(snapshot.getSum('price'), equals(70)); // 30 + 40
+      });
+
+      test('sum() works with orderBy and limit', () async {
+        await collection.add({'value': 5, 'order': 1});
+        await collection.add({'value': 10, 'order': 2});
+        await collection.add({'value': 15, 'order': 3});
+        await collection.add({'value': 20, 'order': 4});
+        await collection.add({'value': 25, 'order': 5});
+
+        final snapshot =
+            await collection.orderBy('order').limit(3).sum('value').get();
+
+        expect(snapshot.getSum('value'), equals(30)); // 5 + 10 + 15
+      });
+
+      test('sum() works with startAt and endAt', () async {
+        await collection.add({'value': 10, 'order': 1});
+        await collection.add({'value': 20, 'order': 2});
+        await collection.add({'value': 30, 'order': 3});
+        await collection.add({'value': 40, 'order': 4});
+        await collection.add({'value': 50, 'order': 5});
+
+        final snapshot = await collection
+            .orderBy('order')
+            .startAt([2])
+            .endAt([4])
+            .sum('value')
+            .get();
+
+        expect(snapshot.getSum('value'), equals(90)); // 20 + 30 + 40
+      });
+
+      test('sum() works with composite filters', () async {
+        await collection.add({'price': 10, 'category': 'A', 'available': true});
+        await collection
+            .add({'price': 20, 'category': 'B', 'available': false});
+        await collection.add({'price': 30, 'category': 'A', 'available': true});
+        await collection.add({'price': 40, 'category': 'B', 'available': true});
+
+        final filter = Filter.and([
+          Filter.where('available', WhereFilter.equal, true),
+          Filter.or([
+            Filter.where('category', WhereFilter.equal, 'A'),
+            Filter.where('price', WhereFilter.greaterThanOrEqual, 40),
+          ]),
+        ]);
+
+        final snapshot =
+            await collection.whereFilter(filter).sum('price').get();
+
+        expect(snapshot.getSum('price'), equals(80)); // 10 + 30 + 40
+      });
+
+      test('sum() returns null for documents without the field', () async {
+        await collection.add({'price': 10});
+        await collection.add({'other': 20}); // missing 'price' field
+        await collection.add({'price': 30});
+
+        final snapshot = await collection.sum('price').get();
+
+        // Sum should only include documents with the field
+        expect(snapshot.getSum('price'), equals(40));
+      });
+    });
+
+    // Tests for the convenience average() method
+    group('average() convenience method', () {
+      test('average() on empty collection returns null or NaN', () async {
+        final snapshot = await collection.average('score').get();
+        // Average on empty collection returns null (can't divide by zero)
+        final avg = snapshot.getAverage('score');
+        expect(avg == null || avg!.isNaN, isTrue);
+      });
+
+      test('average() returns correct average for integer values', () async {
+        await collection.add({'score': 80});
+        await collection.add({'score': 90});
+        await collection.add({'score': 100});
+
+        final snapshot = await collection.average('score').get();
+        expect(snapshot.getAverage('score'), equals(90.0));
+      });
+
+      test('average() works with double values', () async {
+        await collection.add({'rating': 4.5});
+        await collection.add({'rating': 3.5});
+        await collection.add({'rating': 5.0});
+
+        final snapshot = await collection.average('rating').get();
+        expect(snapshot.getAverage('rating'), closeTo(4.333, 0.001));
+      });
+
+      test('average() works with mixed int and double values', () async {
+        await collection.add({'value': 10});
+        await collection.add({'value': 20.5});
+        await collection.add({'value': 15.5});
+
+        final snapshot = await collection.average('value').get();
+        expect(snapshot.getAverage('value'), closeTo(15.333, 0.001));
+      });
+
+      test('average() works with filtered query', () async {
+        await collection.add({'score': 80, 'category': 'A'});
+        await collection.add({'score': 60, 'category': 'B'});
+        await collection.add({'score': 90, 'category': 'A'});
+        await collection.add({'score': 70, 'category': 'B'});
+
+        final snapshot = await collection
+            .where('category', WhereFilter.equal, 'A')
+            .average('score')
+            .get();
+
+        expect(snapshot.getAverage('score'), equals(85.0));
+      });
+
+      test('average() works with complex queries', () async {
+        await collection.add({'score': 50, 'passed': false});
+        await collection.add({'score': 80, 'passed': true});
+        await collection.add({'score': 90, 'passed': true});
+        await collection.add({'score': 70, 'passed': true});
+        await collection.add({'score': 40, 'passed': false});
+
+        final snapshot = await collection
+            .where('passed', WhereFilter.equal, true)
+            .where('score', WhereFilter.greaterThanOrEqual, 75)
+            .average('score')
+            .get();
+
+        expect(snapshot.getAverage('score'), equals(85.0)); // (80 + 90) / 2
+      });
+
+      test('average() works with orderBy and limit', () async {
+        await collection.add({'value': 10, 'order': 1});
+        await collection.add({'value': 20, 'order': 2});
+        await collection.add({'value': 30, 'order': 3});
+        await collection.add({'value': 40, 'order': 4});
+        await collection.add({'value': 50, 'order': 5});
+
+        final snapshot =
+            await collection.orderBy('order').limit(3).average('value').get();
+
+        expect(
+            snapshot.getAverage('value'), equals(20.0)); // (10 + 20 + 30) / 3
+      });
+
+      test('average() works with startAt and endAt', () async {
+        await collection.add({'value': 10, 'order': 1});
+        await collection.add({'value': 20, 'order': 2});
+        await collection.add({'value': 30, 'order': 3});
+        await collection.add({'value': 40, 'order': 4});
+        await collection.add({'value': 50, 'order': 5});
+
+        final snapshot = await collection
+            .orderBy('order')
+            .startAt([2])
+            .endAt([4])
+            .average('value')
+            .get();
+
+        expect(
+            snapshot.getAverage('value'), equals(30.0)); // (20 + 30 + 40) / 3
+      });
+
+      test('average() works with composite filters', () async {
+        await collection.add({'price': 100, 'category': 'A', 'premium': true});
+        await collection.add({'price': 50, 'category': 'B', 'premium': false});
+        await collection.add({'price': 150, 'category': 'A', 'premium': true});
+        await collection.add({'price': 200, 'category': 'B', 'premium': true});
+
+        final filter = Filter.and([
+          Filter.where('premium', WhereFilter.equal, true),
+          Filter.or([
+            Filter.where('category', WhereFilter.equal, 'A'),
+            Filter.where('price', WhereFilter.greaterThanOrEqual, 200),
+          ]),
+        ]);
+
+        final snapshot =
+            await collection.whereFilter(filter).average('price').get();
+
+        expect(snapshot.getAverage('price'),
+            equals(150.0)); // (100 + 150 + 200) / 3
+      });
+
+      test('average() returns null for documents without the field', () async {
+        await collection.add({'score': 80});
+        await collection.add({'other': 90}); // missing 'score' field
+        await collection.add({'score': 100});
+
+        final snapshot = await collection.average('score').get();
+
+        // Average should only include documents with the field
+        expect(snapshot.getAverage('score'), equals(90.0));
+      });
+
+      test('average() with single document', () async {
+        await collection.add({'value': 42});
+
+        final snapshot = await collection.average('value').get();
+        expect(snapshot.getAverage('value'), equals(42.0));
+      });
+    });
+
+    // Combined tests for sum(), average(), and count()
+    group('combined aggregations', () {
+      test('sum() and average() work together', () async {
+        await collection.add({'value': 10});
+        await collection.add({'value': 20});
+        await collection.add({'value': 30});
+
+        final snapshot = await collection
+            .aggregate(
+              sum('value'),
+              average('value'),
+            )
+            .get();
+
+        expect(snapshot.getSum('value'), equals(60));
+        expect(snapshot.getAverage('value'), equals(20.0));
+      });
+
+      test('count(), sum(), and average() work together', () async {
+        await collection.add({'price': 10, 'category': 'A'});
+        await collection.add({'price': 20, 'category': 'A'});
+        await collection.add({'price': 30, 'category': 'B'});
+
+        final snapshot = await collection
+            .where('category', WhereFilter.equal, 'A')
+            .aggregate(
+              count(),
+              sum('price'),
+              average('price'),
+            )
+            .get();
+
+        expect(snapshot.count, equals(2));
+        expect(snapshot.getSum('price'), equals(30));
+        expect(snapshot.getAverage('price'), equals(15.0));
+      });
+
+      test('multiple sum() and average() aggregations', () async {
+        await collection.add({'price': 10, 'quantity': 5});
+        await collection.add({'price': 20, 'quantity': 3});
+        await collection.add({'price': 15, 'quantity': 4});
+
+        // Test with up to 3 aggregations (max allowed by aggregate method)
+        final snapshot = await collection
+            .aggregate(
+              sum('price'),
+              average('price'),
+              sum('quantity'),
+            )
+            .get();
+
+        expect(snapshot.getSum('price'), equals(45));
+        expect(snapshot.getSum('quantity'), equals(12));
+        expect(snapshot.getAverage('price'), equals(15.0));
+      });
+
+      test('sum() and average() on different fields', () async {
+        await collection.add({'price': 10, 'quantity': 5});
+        await collection.add({'price': 20, 'quantity': 3});
+        await collection.add({'price': 15, 'quantity': 4});
+
+        // Test average on quantity separately
+        final snapshot = await collection.average('quantity').get();
+        expect(snapshot.getAverage('quantity'), equals(4.0));
+      });
+
+      test('aggregations work with collection groups', () async {
+        final doc1 = collection.doc('doc1');
+        final doc2 = collection.doc('doc2');
+
+        await doc1.set({'type': 'parent'});
+        await doc2.set({'type': 'parent'});
+
+        await doc1.collection('items').add({'price': 10});
+        await doc1.collection('items').add({'price': 20});
+        await doc2.collection('items').add({'price': 30});
+
+        final collectionGroup = firestore.collectionGroup('items');
+        final snapshot = await collectionGroup
+            .aggregate(
+              count(),
+              sum('price'),
+              average('price'),
+            )
+            .get();
+
+        expect(snapshot.count, equals(3));
+        expect(snapshot.getSum('price'), equals(60));
+        expect(snapshot.getAverage('price'), equals(20.0));
+      });
+    });
+
+    // Edge case tests
+    group('edge cases', () {
+      test('sum() with zero values', () async {
+        await collection.add({'value': 0});
+        await collection.add({'value': 0});
+        await collection.add({'value': 0});
+
+        final snapshot = await collection.sum('value').get();
+        expect(snapshot.getSum('value'), equals(0));
+      });
+
+      test('average() with zero values', () async {
+        await collection.add({'value': 0});
+        await collection.add({'value': 0});
+        await collection.add({'value': 0});
+
+        final snapshot = await collection.average('value').get();
+        expect(snapshot.getAverage('value'), equals(0.0));
+      });
+
+      test('sum() with negative values', () async {
+        await collection.add({'value': -10});
+        await collection.add({'value': 20});
+        await collection.add({'value': -5});
+
+        final snapshot = await collection.sum('value').get();
+        expect(snapshot.getSum('value'), equals(5));
+      });
+
+      test('average() with negative values', () async {
+        await collection.add({'value': -10});
+        await collection.add({'value': 20});
+        await collection.add({'value': -20});
+
+        final snapshot = await collection.average('value').get();
+        expect(snapshot.getAverage('value'), closeTo(-3.333, 0.001));
+      });
+
+      test('sum() with very large numbers', () async {
+        await collection.add({'value': 1000000000});
+        await collection.add({'value': 2000000000});
+        await collection.add({'value': 3000000000});
+
+        final snapshot = await collection.sum('value').get();
+        expect(snapshot.getSum('value'), equals(6000000000));
+      });
+
+      test('average() with very small numbers', () async {
+        await collection.add({'value': 0.001});
+        await collection.add({'value': 0.002});
+        await collection.add({'value': 0.003});
+
+        final snapshot = await collection.average('value').get();
+        expect(snapshot.getAverage('value'), closeTo(0.002, 0.0001));
+      });
+
+      test('aggregations provide consistent readTime', () async {
+        await collection.add({'value': 10});
+
+        final snapshot = await collection
+            .aggregate(
+              count(),
+              sum('value'),
+              average('value'),
+            )
+            .get();
+
+        expect(snapshot.readTime, isNotNull);
+        expect(snapshot.count, equals(1));
+        expect(snapshot.getSum('value'), equals(10));
+        expect(snapshot.getAverage('value'), equals(10.0));
+      });
     });
   });
 }
