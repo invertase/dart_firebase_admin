@@ -1745,7 +1745,8 @@ base class Query<T> {
   /// The returned query, when executed, calculates the sum of all values
   /// for the specified field across all documents in the result set.
   ///
-  /// - [field]: The field to sum across all matching documents.
+  /// - [field]: The field to sum across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
   ///
   /// ```dart
   /// firestore.collection('products').sum('price').get().then(
@@ -1753,7 +1754,11 @@ base class Query<T> {
   ///   onError: (e) => print('Error completing: $e'),
   /// );
   /// ```
-  AggregateQuery sum(String field) {
+  AggregateQuery sum(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
     return aggregate(AggregateField.sum(field));
   }
 
@@ -1763,7 +1768,8 @@ base class Query<T> {
   /// The returned query, when executed, calculates the average of all values
   /// for the specified field across all documents in the result set.
   ///
-  /// - [field]: The field to average across all matching documents.
+  /// - [field]: The field to average across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
   ///
   /// ```dart
   /// firestore.collection('products').average('price').get().then(
@@ -1771,7 +1777,11 @@ base class Query<T> {
   ///   onError: (e) => print('Error completing: $e'),
   /// );
   /// ```
-  AggregateQuery average(String field) {
+  AggregateQuery average(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
     return aggregate(AggregateField.average(field));
   }
 }
@@ -1799,26 +1809,40 @@ class AggregateField {
 
   /// Creates a sum aggregation for the specified field.
   ///
-  /// - [field]: The field to sum across all matching documents.
+  /// - [field]: The field to sum across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
   ///
   /// The result can be accessed using [AggregateQuerySnapshot.getSum].
-  factory AggregateField.sum(String field) {
+  factory AggregateField.sum(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
+    final fieldPath = FieldPath.from(field);
+    final fieldName = fieldPath._formattedName;
     return AggregateField._(
-      fieldPath: field,
-      alias: 'sum_$field',
+      fieldPath: fieldName,
+      alias: 'sum_$fieldName',
       type: _AggregateType.sum,
     );
   }
 
   /// Creates an average aggregation for the specified field.
   ///
-  /// - [field]: The field to average across all matching documents.
+  /// - [field]: The field to average across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
   ///
   /// The result can be accessed using [AggregateQuerySnapshot.getAverage].
-  factory AggregateField.average(String field) {
+  factory AggregateField.average(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
+    final fieldPath = FieldPath.from(field);
+    final fieldName = fieldPath._formattedName;
     return AggregateField._(
-      fieldPath: field,
-      alias: 'avg_$field',
+      fieldPath: fieldName,
+      alias: 'avg_$fieldName',
       type: _AggregateType.average,
     );
   }

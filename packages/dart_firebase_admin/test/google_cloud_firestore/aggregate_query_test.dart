@@ -692,5 +692,165 @@ void main() {
         expect(snapshot.getAverage('value'), equals(10.0));
       });
     });
+
+    group('FieldPath support', () {
+      test('sum() works with FieldPath for nested fields', () async {
+        await collection.add({
+          'product': {'price': 10}
+        });
+        await collection.add({
+          'product': {'price': 20}
+        });
+        await collection.add({
+          'product': {'price': 15}
+        });
+
+        final snapshot =
+            await collection.sum(FieldPath(['product', 'price'])).get();
+
+        expect(snapshot.getSum('product.price'), equals(45));
+      });
+
+      test('average() works with FieldPath for nested fields', () async {
+        await collection.add({
+          'product': {'price': 10}
+        });
+        await collection.add({
+          'product': {'price': 20}
+        });
+        await collection.add({
+          'product': {'price': 15}
+        });
+
+        final snapshot =
+            await collection.average(FieldPath(['product', 'price'])).get();
+
+        expect(snapshot.getAverage('product.price'), equals(15.0));
+      });
+
+      test('AggregateField.sum() works with FieldPath', () async {
+        await collection.add({
+          'nested': {'value': 100}
+        });
+        await collection.add({
+          'nested': {'value': 200}
+        });
+
+        final snapshot = await collection
+            .aggregate(AggregateField.sum(FieldPath(['nested', 'value'])))
+            .get();
+
+        expect(snapshot.getSum('nested.value'), equals(300));
+      });
+
+      test('AggregateField.average() works with FieldPath', () async {
+        await collection.add({
+          'nested': {'score': 85}
+        });
+        await collection.add({
+          'nested': {'score': 90}
+        });
+        await collection.add({
+          'nested': {'score': 95}
+        });
+
+        final snapshot = await collection
+            .aggregate(AggregateField.average(FieldPath(['nested', 'score'])))
+            .get();
+
+        expect(snapshot.getAverage('nested.score'), equals(90.0));
+      });
+
+      test('combined aggregations work with FieldPath', () async {
+        await collection.add({
+          'data': {'price': 10, 'quantity': 5}
+        });
+        await collection.add({
+          'data': {'price': 20, 'quantity': 3}
+        });
+
+        final snapshot = await collection
+            .aggregate(
+              AggregateField.sum(FieldPath(['data', 'price'])),
+              AggregateField.average(FieldPath(['data', 'quantity'])),
+            )
+            .get();
+
+        expect(snapshot.getSum('data.price'), equals(30));
+        expect(snapshot.getAverage('data.quantity'), equals(4.0));
+      });
+
+      test('FieldPath works with deeply nested fields', () async {
+        await collection.add({
+          'level1': {
+            'level2': {
+              'level3': {'value': 42}
+            }
+          }
+        });
+        await collection.add({
+          'level1': {
+            'level2': {
+              'level3': {'value': 58}
+            }
+          }
+        });
+
+        final snapshot = await collection
+            .sum(FieldPath(['level1', 'level2', 'level3', 'value']))
+            .get();
+
+        expect(snapshot.getSum('level1.level2.level3.value'), equals(100));
+      });
+
+      test('FieldPath and String fields can be mixed', () async {
+        await collection.add({
+          'price': 10,
+          'nested': {'cost': 5}
+        });
+        await collection.add({
+          'price': 20,
+          'nested': {'cost': 10}
+        });
+
+        final snapshot = await collection
+            .aggregate(
+              const sum('price'),
+              AggregateField.sum(FieldPath(['nested', 'cost'])),
+            )
+            .get();
+
+        expect(snapshot.getSum('price'), equals(30));
+        expect(snapshot.getSum('nested.cost'), equals(15));
+      });
+
+      test('AggregateField.sum() rejects invalid field types', () {
+        expect(
+          () => AggregateField.sum(123),
+          throwsA(isA<AssertionError>()),
+        );
+      });
+
+      test('AggregateField.average() rejects invalid field types', () {
+        expect(
+          () => AggregateField.average(123),
+          throwsA(isA<AssertionError>()),
+        );
+      });
+
+      test('Query.sum() rejects invalid field types', () {
+        expect(
+          () => collection.sum(123),
+          throwsA(isA<AssertionError>()),
+        );
+      });
+
+      test('Query.average() rejects invalid field types', () {
+        expect(
+          () => collection.average(123),
+          throwsA(isA<AssertionError>()),
+        );
+      });
+    });
   });
 }
