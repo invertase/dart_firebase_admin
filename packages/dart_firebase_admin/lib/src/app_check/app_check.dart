@@ -1,7 +1,7 @@
 import '../app.dart';
 import '../utils/crypto_signer.dart';
-import 'ap_check_api_internal.dart';
 import 'app_check_api.dart';
+import 'app_check_api_internal.dart';
 import 'token_generator.dart';
 import 'token_verifier.dart';
 
