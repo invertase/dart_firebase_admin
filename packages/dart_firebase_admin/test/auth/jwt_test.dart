@@ -3,38 +3,11 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:jose/jose.dart';
 import 'package:test/test.dart';
 
+import '../mock_service_account.dart';
+
 void main() {
   group('PublicKeySignatureVerifier', () {
-    final privateKey = RSAPrivateKey('''
------BEGIN PRIVATE KEY-----
-MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC7VJTUt9Us8cKj
-MzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu
-NMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ
-qgtzJ6GR3eqoYSW9b9UMvkBpZODSctWSNGj3P7jRFDO5VoTwCQAWbFnOjDfH5Ulg
-p2PKSQnSJP3AJLQNFNe7br1XbrhV//eO+t51mIpGSDCUv3E0DDFcWDTH9cXDTTlR
-ZVEiR2BwpZOOkE/Z0/BVnhZYL71oZV34bKfWjQIt6V/isSMahdsAASACp4ZTGtwi
-VuNd9tybAgMBAAECggEBAKTmjaS6tkK8BlPXClTQ2vpz/N6uxDeS35mXpqasqskV
-laAidgg/sWqpjXDbXr93otIMLlWsM+X0CqMDgSXKejLS2jx4GDjI1ZTXg++0AMJ8
-sJ74pWzVDOfmCEQ/7wXs3+cbnXhKriO8Z036q92Qc1+N87SI38nkGa0ABH9CN83H
-mQqt4fB7UdHzuIRe/me2PGhIq5ZBzj6h3BpoPGzEP+x3l9YmK8t/1cN0pqI+dQwY
-dgfGjackLu/2qH80MCF7IyQaseZUOJyKrCLtSD/Iixv/hzDEUPfOCjFDgTpzf3cw
-ta8+oE4wHCo1iI1/4TlPkwmXx4qSXtmw4aQPz7IDQvECgYEA8KNThCO2gsC2I9PQ
-DM/8Cw0O983WCDY+oi+7JPiNAJwv5DYBqEZB1QYdj06YD16XlC/HAZMsMku1na2T
-N0driwenQQWzoev3g2S7gRDoS/FCJSI3jJ+kjgtaA7Qmzlgk1TxODN+G1H91HW7t
-0l7VnL27IWyYo2qRRK3jzxqUiPUCgYEAx0oQs2reBQGMVZnApD1jeq7n4MvNLcPv
-t8b/eU9iUv6Y4Mj0Suo/AU8lYZXm8ubbqAlwz2VSVunD2tOplHyMUrtCtObAfVDU
-AhCndKaA9gApgfb3xw1IKbuQ1u4IF1FJl3VtumfQn//LiH1B3rXhcdyo3/vIttEk
-48RakUKClU8CgYEAzV7W3COOlDDcQd935DdtKBFRAPRPAlspQUnzMi5eSHMD/ISL
-DY5IiQHbIH83D4bvXq0X7qQoSBSNP7Dvv3HYuqMhf0DaegrlBuJllFVVq9qPVRnK
-xt1Il2HgxOBvbhOT+9in1BzA+YJ99UzC85O0Qz06A+CmtHEy4aZ2kj5hHjECgYEA
-mNS4+A8Fkss8Js1RieK2LniBxMgmYml3pfVLKGnzmng7H2+cwPLhPIzIuwytXywh
-2bzbsYEfYx3EoEVgMEpPhoarQnYPukrJO4gwE2o5Te6T5mJSZGlQJQj9q4ZB2Dfz
-et6INsK0oG8XVGXSpQvQh3RUYekCZQkBBFcpqWpbIEsCgYAnM3DQf3FJoSnXaMhr
-VBIovic5l0xFkEHskAjFTevO86Fsz1C2aSeRKSqGFoOQ0tmJzBEs1R6KqnHInicD
-TQrKhArgLXX4v3CddjfTRJkFWDbE/CkvKZNOrcf1nhaGCPspRJj2KUkj1Fhl9Cnc
-dn/RsYEONbwQSjIfMPkvxF+8HQ==
------END PRIVATE KEY-----
-''');
+    final privateKey = RSAPrivateKey(mockPrivateKey);
     final keyFetcher = _TestKeyFetcher();
     final payload = {
       'a': '1',
@@ -52,6 +25,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
       );
       await PublicKeySignatureVerifier(keyFetcher).verify(token);
     });
+
     test('no kid should throw', () async {
       final jwt = JWT(payload);
       final token = jwt.sign(
@@ -63,6 +37,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
         throwsA(isA<JwtException>()),
       );
     });
+
     test('invalid kid should throw', () async {
       final jwt = JWT(
         payload,
@@ -77,6 +52,191 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
         throwsA(isA<JwtException>()),
       );
     });
+
+    test('withCertificateUrl factory should create verifier', () {
+      final verifier = PublicKeySignatureVerifier.withCertificateUrl(
+        Uri.parse('https://example.com/certs'),
+      );
+      expect(verifier, isA<PublicKeySignatureVerifier>());
+    });
+
+    test('withJwksUrl factory should create verifier', () {
+      final verifier = PublicKeySignatureVerifier.withJwksUrl(
+        Uri.parse('https://example.com/jwks'),
+      );
+      expect(verifier, isA<PublicKeySignatureVerifier>());
+    });
+  });
+
+  group('EmulatorSignatureVerifier', () {
+    test('should verify emulator tokens without signature', () async {
+      final verifier = EmulatorSignatureVerifier();
+      final payload = {
+        'user_id': '123',
+        'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000,
+      };
+
+      // Create token with 'none' algorithm (emulator tokens)
+      final jwt = JWT(payload);
+      final token = jwt.sign(
+        SecretKey(''),
+        algorithm: JWTAlgorithm.HS256,
+        noIssueAt: true,
+      );
+
+      await expectLater(
+        verifier.verify(token),
+        completes,
+      );
+    });
+  });
+
+  group('decodeJwt', () {
+    test('should decode valid JWT', () async {
+      final payload = {
+        'sub': 'user123',
+        'name': 'John Doe',
+        'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      };
+      final jwt = JWT(payload, header: {'alg': 'HS256', 'typ': 'JWT'});
+      final token = jwt.sign(SecretKey('secret'));
+
+      final decoded = await decodeJwt(token);
+
+      expect(decoded.header['alg'], equals('HS256'));
+      expect(decoded.header['typ'], equals('JWT'));
+      expect(decoded.payload['sub'], equals('user123'));
+      expect(decoded.payload['name'], equals('John Doe'));
+    });
+
+    test('should handle payload with various types', () async {
+      final payload = {
+        'string': 'value',
+        'number': 42,
+        'bool': true,
+        'list': [1, 2, 3],
+        'map': {'nested': 'value'},
+      };
+      final jwt = JWT(payload);
+      final token = jwt.sign(SecretKey('secret'));
+
+      final decoded = await decodeJwt(token);
+
+      expect(decoded.payload['string'], equals('value'));
+      expect(decoded.payload['number'], equals(42));
+      expect(decoded.payload['bool'], equals(true));
+      expect(decoded.payload['list'], equals([1, 2, 3]));
+      expect(decoded.payload['map'], equals({'nested': 'value'}));
+    });
+  });
+
+  group('verifyJwtSignature', () {
+    test('should throw JwtException for expired tokens', () {
+      final payload = {
+        'sub': 'user123',
+        'exp': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .millisecondsSinceEpoch ~/
+            1000,
+        'iat': DateTime.now()
+                .subtract(const Duration(hours: 2))
+                .millisecondsSinceEpoch ~/
+            1000,
+      };
+      final jwt = JWT(payload);
+      final token = jwt.sign(SecretKey('secret'));
+
+      expect(
+        () => verifyJwtSignature(token, SecretKey('secret')),
+        throwsA(
+          isA<JwtException>().having(
+            (e) => e.code,
+            'code',
+            JwtErrorCode.tokenExpired,
+          ),
+        ),
+      );
+    });
+
+    test('should verify valid token with issuer', () {
+      final payload = {
+        'sub': 'user123',
+        'iss': 'https://example.com',
+        'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000,
+      };
+      final jwt = JWT(payload);
+      final token = jwt.sign(SecretKey('secret'));
+
+      expect(
+        () => verifyJwtSignature(
+          token,
+          SecretKey('secret'),
+          issuer: 'https://example.com',
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('should verify valid token with subject', () {
+      final payload = {
+        'sub': 'user123',
+        'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000,
+      };
+      final jwt = JWT(payload);
+      final token = jwt.sign(SecretKey('secret'));
+
+      expect(
+        () => verifyJwtSignature(
+          token,
+          SecretKey('secret'),
+          subject: 'user123',
+        ),
+        returnsNormally,
+      );
+    });
+  });
+
+  group('JwtException', () {
+    test('should create exception with code and message', () {
+      final exception = JwtException(
+        JwtErrorCode.invalidSignature,
+        'Invalid signature',
+      );
+
+      expect(exception.code, equals(JwtErrorCode.invalidSignature));
+      expect(exception.message, equals('Invalid signature'));
+    });
+  });
+
+  group('JwtErrorCode', () {
+    test('should have correct error code values', () {
+      expect(JwtErrorCode.invalidArgument.value, equals('invalid-argument'));
+      expect(JwtErrorCode.invalidCredential.value, equals('invalid-credential'));
+      expect(JwtErrorCode.tokenExpired.value, equals('token-expired'));
+      expect(JwtErrorCode.invalidSignature.value, equals('invalid-token'));
+      expect(JwtErrorCode.noMatchingKid.value, equals('no-matching-kid-error'));
+      expect(JwtErrorCode.noKidInHeader.value, equals('no-kid-error'));
+      expect(JwtErrorCode.keyFetchError.value, equals('key-fetch-error'));
+      expect(JwtErrorCode.unknown.value, equals('unknown'));
+    });
+  });
+
+  group('DecodedToken', () {
+    test('should create decoded token with header and payload', () {
+      final header = {'alg': 'RS256', 'kid': 'key1'};
+      final payload = {'sub': 'user123', 'name': 'John'};
+
+      final decoded = DecodedToken(header: header, payload: payload);
+
+      expect(decoded.header, equals(header));
+      expect(decoded.payload, equals(payload));
+    });
   });
 }
 
@@ -85,17 +245,8 @@ class _TestKeyFetcher implements KeyFetcher {
   Future<JsonWebKeyStore> fetchPublicKeys() async {
     final store = JsonWebKeyStore();
 
-    const key = '''
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo
-4lgOEePzNm0tRgeLezV6ffAt0gunVTLw7onLRnrq0/IzW7yWR7QkrmBL7jTKEn5u
-+qKhbwKfBstIs+bMY2Zkp18gnTxKLxoS2tFczGkPLPgizskuemMghRniWaoLcyeh
-kd3qqGElvW/VDL5AaWTg0nLVkjRo9z+40RQzuVaE8AkAFmxZzow3x+VJYKdjykkJ
-0iT9wCS0DRTXu269V264Vf/3jvredZiKRkgwlL9xNAwxXFg0x/XFw005UWVRIkdg
-cKWTjpBP2dPwVZ4WWC+9aGVd+Gyn1o0CLelf4rEjGoXbAAEgAqeGUxrcIlbjXfbc
-mwIDAQAB
------END PUBLIC KEY-----
-''';
+    // Public key corresponding to the test private key above
+    const key = mockPrivateKey;
 
     store.addKey(JsonWebKey.fromPem(key, keyId: 'key1'));
 
