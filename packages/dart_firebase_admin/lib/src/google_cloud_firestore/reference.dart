@@ -213,7 +213,7 @@ final class DocumentReference<T> implements _Serializable {
   /// });
   /// ```
   Future<List<CollectionReference<DocumentData>>> listCollections() {
-    return this.firestore._client.v1((a) async {
+    return firestore._client.v1((a) async {
       final request = firestore1.ListCollectionIdsRequest(
         // Setting `pageSize` to an arbitrarily large value lets the backend cap
         // the page size (currently to 300). Note that the backend rejects
@@ -223,7 +223,7 @@ final class DocumentReference<T> implements _Serializable {
 
       final result = await a.projects.databases.documents.listCollectionIds(
         request,
-        this._formattedName,
+        _formattedName,
       );
 
       final ids = result.collectionIds ?? [];
@@ -277,7 +277,7 @@ final class DocumentReference<T> implements _Serializable {
   /// });
   /// ```
   Future<WriteResult> create(T data) async {
-    final writeBatch = WriteBatch._(this.firestore)..create<T>(this, data);
+    final writeBatch = WriteBatch._(firestore)..create<T>(this, data);
 
     final results = await writeBatch.commit();
     return results.single;
@@ -288,7 +288,7 @@ final class DocumentReference<T> implements _Serializable {
   /// A delete for a non-existing document is treated as a success (unless
   /// [precondition] is specified).
   Future<WriteResult> delete([Precondition? precondition]) async {
-    final writeBatch = WriteBatch._(this.firestore)
+    final writeBatch = WriteBatch._(firestore)
       ..delete(this, precondition: precondition);
 
     final results = await writeBatch.commit();
@@ -298,7 +298,7 @@ final class DocumentReference<T> implements _Serializable {
   /// Writes to the document referred to by this DocumentReference. If the
   /// document does not yet exist, it will be created.
   Future<WriteResult> set(T data) async {
-    final writeBatch = WriteBatch._(this.firestore)..set(this, data);
+    final writeBatch = WriteBatch._(firestore)..set(this, data);
 
     final results = await writeBatch.commit();
     return results.single;
@@ -318,7 +318,7 @@ final class DocumentReference<T> implements _Serializable {
     Map<Object?, Object?> data, [
     Precondition? precondition,
   ]) async {
-    final writeBatch = WriteBatch._(this.firestore)
+    final writeBatch = WriteBatch._(firestore)
       ..update(
         this,
         {
@@ -835,7 +835,7 @@ base class Query<T> {
       }
 
       _validateQueryValue('$i', fieldValue);
-      cursor.values.add(this.firestore._serializer.encodeValue(fieldValue)!);
+      cursor.values.add(firestore._serializer.encodeValue(fieldValue)!);
     }
 
     return cursor;
@@ -1210,8 +1210,8 @@ base class Query<T> {
 
     // For limitToLast queries, the structured query has to be translated to a version with
     // reversed ordered, and flipped startAt/endAt to work properly.
-    if (this._queryOptions.limitType == LimitType.last) {
-      if (!this._queryOptions.hasFieldOrders) {
+    if (_queryOptions.limitType == LimitType.last) {
+      if (!_queryOptions.hasFieldOrders) {
         throw ArgumentError(
           'limitToLast() queries require specifying at least one orderBy() clause.',
         );
@@ -1270,17 +1270,17 @@ base class Query<T> {
     // Kindless queries select all descendant documents, so we remove the
     // collectionId field.
     if (!_queryOptions.kindless) {
-      structuredQuery.from![0].collectionId = this._queryOptions.collectionId;
+      structuredQuery.from![0].collectionId = _queryOptions.collectionId;
     }
 
     if (_queryOptions.filters.isNotEmpty) {
       structuredQuery.where = _CompositeFilterInternal(
-        filters: this._queryOptions.filters,
+        filters: _queryOptions.filters,
         op: _CompositeOperator.and,
       ).toProto();
     }
 
-    if (this._queryOptions.hasFieldOrders) {
+    if (_queryOptions.hasFieldOrders) {
       structuredQuery.orderBy =
           _queryOptions.fieldOrders.map((o) => o._toProto()).toList();
     }
@@ -1738,6 +1738,52 @@ base class Query<T> {
   AggregateQuery count() {
     return aggregate(AggregateField.count());
   }
+
+  /// Returns an [AggregateQuery] that can be used to execute a sum
+  /// aggregation on the specified field.
+  ///
+  /// The returned query, when executed, calculates the sum of all values
+  /// for the specified field across all documents in the result set.
+  ///
+  /// - [field]: The field to sum across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
+  ///
+  /// ```dart
+  /// firestore.collection('products').sum('price').get().then(
+  ///   (res) => print(res.getSum('price')),
+  ///   onError: (e) => print('Error completing: $e'),
+  /// );
+  /// ```
+  AggregateQuery sum(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
+    return aggregate(AggregateField.sum(field));
+  }
+
+  /// Returns an [AggregateQuery] that can be used to execute an average
+  /// aggregation on the specified field.
+  ///
+  /// The returned query, when executed, calculates the average of all values
+  /// for the specified field across all documents in the result set.
+  ///
+  /// - [field]: The field to average across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
+  ///
+  /// ```dart
+  /// firestore.collection('products').average('price').get().then(
+  ///   (res) => print(res.getAverage('price')),
+  ///   onError: (e) => print('Error completing: $e'),
+  /// );
+  /// ```
+  AggregateQuery average(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
+    return aggregate(AggregateField.average(field));
+  }
 }
 
 /// Defines an aggregation that can be performed by Firestore.
@@ -1748,15 +1794,6 @@ class AggregateField {
     required this.alias,
     required this.type,
   });
-
-  /// The field to aggregate on, or null for count aggregations.
-  final String? fieldPath;
-
-  /// The alias to use for this aggregation result.
-  final String alias;
-
-  /// The type of aggregation.
-  final _AggregateType type;
 
   /// Creates a count aggregation.
   ///
@@ -1772,29 +1809,52 @@ class AggregateField {
 
   /// Creates a sum aggregation for the specified field.
   ///
-  /// - [field]: The field to sum across all matching documents.
+  /// - [field]: The field to sum across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
   ///
   /// The result can be accessed using [AggregateQuerySnapshot.getSum].
-  factory AggregateField.sum(String field) {
+  factory AggregateField.sum(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
+    final fieldPath = FieldPath.from(field);
+    final fieldName = fieldPath._formattedName;
     return AggregateField._(
-      fieldPath: field,
-      alias: 'sum_$field',
+      fieldPath: fieldName,
+      alias: 'sum_$fieldName',
       type: _AggregateType.sum,
     );
   }
 
   /// Creates an average aggregation for the specified field.
   ///
-  /// - [field]: The field to average across all matching documents.
+  /// - [field]: The field to average across all matching documents. Can be a
+  ///   String or a [FieldPath] for nested fields.
   ///
   /// The result can be accessed using [AggregateQuerySnapshot.getAverage].
-  factory AggregateField.average(String field) {
+  factory AggregateField.average(Object field) {
+    assert(
+      field is String || field is FieldPath,
+      'field must be a String or FieldPath, got ${field.runtimeType}',
+    );
+    final fieldPath = FieldPath.from(field);
+    final fieldName = fieldPath._formattedName;
     return AggregateField._(
-      fieldPath: field,
-      alias: 'avg_$field',
+      fieldPath: fieldName,
+      alias: 'avg_$fieldName',
       type: _AggregateType.average,
     );
   }
+
+  /// The field to aggregate on, or null for count aggregations.
+  final String? fieldPath;
+
+  /// The alias to use for this aggregation result.
+  final String alias;
+
+  /// The type of aggregation.
+  final _AggregateType type;
 
   /// Converts this public field to the internal representation.
   _AggregateFieldInternal _toInternal() {
@@ -1804,21 +1864,18 @@ class AggregateField {
         aggregation = firestore1.Aggregation(
           count: firestore1.Count(),
         );
-        break;
       case _AggregateType.sum:
         aggregation = firestore1.Aggregation(
           sum: firestore1.Sum(
-            field: firestore1.FieldReference(fieldPath: fieldPath!),
+            field: firestore1.FieldReference(fieldPath: fieldPath),
           ),
         );
-        break;
       case _AggregateType.average:
         aggregation = firestore1.Aggregation(
           avg: firestore1.Avg(
-            field: firestore1.FieldReference(fieldPath: fieldPath!),
+            field: firestore1.FieldReference(fieldPath: fieldPath),
           ),
         );
-        break;
     }
 
     return _AggregateFieldInternal(
@@ -1840,11 +1897,12 @@ enum _AggregateType {
 // ignore: camel_case_types
 class count extends AggregateField {
   /// Creates a count aggregation.
-  const count() : super._(
-    fieldPath: null,
-    alias: 'count',
-    type: _AggregateType.count,
-  );
+  const count()
+      : super._(
+          fieldPath: null,
+          alias: 'count',
+          type: _AggregateType.count,
+        );
 }
 
 /// Create an object that can be used to compute the sum of a specified field
@@ -1852,11 +1910,12 @@ class count extends AggregateField {
 // ignore: camel_case_types
 class sum extends AggregateField {
   /// Creates a sum aggregation for the specified field.
-  sum(this.field) : super._(
-    fieldPath: field,
-    alias: 'sum_$field',
-    type: _AggregateType.sum,
-  );
+  const sum(this.field)
+      : super._(
+          fieldPath: field,
+          alias: 'sum_$field',
+          type: _AggregateType.sum,
+        );
 
   /// The field to sum.
   final String field;
@@ -1867,11 +1926,12 @@ class sum extends AggregateField {
 // ignore: camel_case_types
 class average extends AggregateField {
   /// Creates an average aggregation for the specified field.
-  average(this.field) : super._(
-    fieldPath: field,
-    alias: 'avg_$field',
-    type: _AggregateType.average,
-  );
+  const average(this.field)
+      : super._(
+          fieldPath: field,
+          alias: 'avg_$field',
+          type: _AggregateType.average,
+        );
 
   /// The field to average.
   final String field;
@@ -1894,15 +1954,17 @@ class _AggregateFieldInternal {
         alias == other.alias &&
         // For count aggregations, we just check that both have count set
         ((aggregation.count != null && other.aggregation.count != null) ||
-         (aggregation.sum != null && other.aggregation.sum != null) ||
-         (aggregation.avg != null && other.aggregation.avg != null));
+            (aggregation.sum != null && other.aggregation.sum != null) ||
+            (aggregation.avg != null && other.aggregation.avg != null));
   }
 
   @override
   int get hashCode => Object.hash(
-    alias,
-    aggregation.count != null || aggregation.sum != null || aggregation.avg != null,
-  );
+        alias,
+        aggregation.count != null ||
+            aggregation.sum != null ||
+            aggregation.avg != null,
+      );
 }
 
 /// Calculates aggregations over an underlying query.
