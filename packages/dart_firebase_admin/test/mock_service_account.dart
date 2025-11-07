@@ -1,24 +1,34 @@
-// IMPORTANT: This is a publicly known test key from Google's documentation.
-// It is NOT a real private key and should ONLY be used for testing.
-// Source: https://github.com/googleapis/google-auth-library-nodejs/blob/main/test/fixtures/private.pem
-// This key is widely published in open source test suites and is safe to use.
+// IMPORTANT: this key has been specifically generated for this test suite.
 
 const mockPrivateKey = '''
 -----BEGIN RSA PRIVATE KEY-----
-MIICXQIBAAKBgQDzU+jLTzW6154Joezxrd2+5pCNYP0HcaMoYqEyXfNRpkNE7wrQ
-UEG830o4Qcaae2BhqZoujwSW7RkR6h0Fkd0WTR8h5J8rSGNHv/1jJoUUjP9iZ/5S
-FAyIIyEYfDPqtnA4iF1QWO2lXWlEFSuZjwM/8jBmeGzoiw17akNThIw8NwIDAQAB
-AoGATpboVloEAY/IdFX/QGOmfhTb1T3hG3lheBa695iOkO2BRo9qT7PMN6NqxlbA
-PX7ht0lfCfCZS+HSOg4CR50/6WXHMSmwlvcjGuDIDKWjviQTTYE77MlVBQHw9WzY
-PfiRBbtouyPGQtO4rk42zkIILC6exBZ1vKpRPOmTAnxrjCECQQD+56r6hYcS6GNp
-NOWyv0eVFMBX4iNWAsRf9JVVvGDz2rVuhnkNiN73vfffDWvSXkCydL1jFmalgdQD
-gm77UZQHAkEA9F+CauU0aZsJ1SthQ6H0sDQ+eNRUgnz4itnkSC2C20fZ3DaSpCMC
-0go81CcZOhftNO730ILqiS67C3d3rqLqUQJBAP10ROHMmz4Fq7MUUcClyPtHIuk/
-hXskTTZL76DMKmrN8NDxDLSUf38+eJRkt+z4osPOp/E6eN3gdXr32nox50kCQCl8
-hXGMU+eR0IuF/88xkY7Qb8KnmWlFuhQohZ7TSyHbAttl0GNZJkNuRYFm2duI8FZK
-M3wMnbCIZGy/7WuScOECQQCV+0yrf5dL1M2GHjJfwuTb00wRKalKQEH1v/kvE5vS
-FmdN7BPK5Ra50MaecMNoYqu9rmtyWRBn93dcvKrL57nY
------END RSA PRIVATE KEY-----''';
+MIIEowIBAAKCAQEA6xkrY7pxvazMDAesPtRqsnQN+7Nv1boCQeFP+crgJLZN9gnD
+vqiDCIqPOv0p/n687npEp1eGDJcL/ZxK/wXQqvonwUeTwZnglKSRL6W76zXyYiFa
+ibVLdHgg/KIUrlokS8/pWbFkI7kideTgQp+1vh3jUcdpq46tatPvINzZEj5xrV/2
+NSzyBSMNPrXsMEk9cEh8e3GkgGuitHVfLp5M4K/d31ezoBt1dZjtxKS7JI+OHya5
+C9Z208BllZNklUERK8lSw0EG1y1VahMl4mBpKpfswq1Dysv9JPv3hMEWt/S4864l
+dxN4VE5M6MB8hWFPq+f4UY7MhNkeYcNfyqgMxQIDAQABAoIBADmp1kEjSWOe/vtS
+ZHaSrkrv+UALznnrIkObanzXvGt0xaF72qWoel89cQ0kbEjuOBP8LFupNYlgAQJm
+8+QiPoC5U8ft8PlS70k2JiA8M9/ovvc/vA+7xnKeRmUAsjbjiDSKHe+weWHjtmaZ
+SUI+HxsvBIMZ+LqqB7IEoon6cUmuS+TBGeBtPUZkwtjhzAXeyy9xNKjEJ94NcPRo
+fIBIPGXMroc2fafbVsr+Wq931oficPEpjRd+JLkojHqcq/aY1sIWpYwNxu6jF9sm
+KsUUtrwsQL6s3vxwkuKd3X0XhEgJSQBxkY40BLFMLFR0gmoVzw3+OtfEagMiXzyb
+SAYbFk8CgYEA94lcWzOGGUijpQQKBwcNBo/kvcQ6h9NGlJ7ZUeuAyIIq4aRxGFBV
+yWnpKOFC7ywsNeoatLXXTiTe6Xq0JBkup3WZktsNe1BI2R1kX6PHHYBVMKXA02tX
+uGANaqg/A+ZYA2VMPdcRTNhgXgsJnj7mcDCKHdPYQHvLGqU5WRA185cCgYEA8yLw
+bb6oZ3YtMbBYYay0u3iqlN74GWqLwLH2ZovQIWnVYbYUNmJNTVhkHlShXWK3qKOY
+p26K67LBIRYRaseIH4e9hPROy1vsl4dkmd8FJfhsx8WXpa3/3pHw9hmbhmhhjVLo
+ABtQKxjLDa430mi3jFgcN7yn6B4qklpO6lmpngMCgYB8BAOTZbLvg+cIy4dCkhPC
+j+Dn+iHg3sbjutniIvz4d86IEdzfc5AnQrqf0ou4TAcyU8FhfCEMc4iCrQkHdN5c
+45w3aSvN9iEpNYKOL/2YGC2WG9UJlyPxqZ3PK8+2YncB7IRQDyoJt/Y/54PAFn9Z
+AdiQrQwQ8nSFOvYKWwbMrQKBgAhem4grmAB3wPaE64XxPAd4D+cwBbpaQJVRivnc
+tj1wNzg13FxC5gZTlJ62qxdb3pafixG4bG/Qp3VMHS1f0P/E3HFHN68oauyMbJof
+Yz37X0NBOgcqBjTTMUhHeWMXFMSYpgPa7NeO8u51oNZNZIQgRFhm1iDXaP/AvBa1
+H3GhAoGBAKGcU+cw5dx9jf4Dj3Xechknrl5aDdK5FNrIC4IJ20A4N3S+WQ1cQuRO
+QjJNH9ASKTmmuslFJZZcBX5ybnr9Eg3MUeCyaru1CSWubrKraMo71mgzTexZOtV5
+nlc5+GKKhkC/Vp5ZNE04kdT+35eMZUTbv1/d3Y5TzUIGd6QwtPtM
+-----END RSA PRIVATE KEY-----
+''';
 
 const mockClientEmail = 'test@test-project.iam.gserviceaccount.com';
 const mockProjectId = 'test-project';
