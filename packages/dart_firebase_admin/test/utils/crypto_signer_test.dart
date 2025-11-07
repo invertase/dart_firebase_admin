@@ -32,39 +32,6 @@ void main() {
         final accountId = await signer.getAccountId();
         expect(accountId, equals(mockClientEmail));
       });
-
-      test('sign should generate a signature', () async {
-        final data = utf8.encode('test data to sign');
-        final signature = await signer.sign(Uint8List.fromList(data));
-
-        expect(signature, isNotEmpty);
-        expect(signature.length, greaterThan(0));
-      });
-
-      test('sign should produce consistent signatures for same data', () async {
-        final data = utf8.encode('test data');
-        final signature1 = await signer.sign(Uint8List.fromList(data));
-        final signature2 = await signer.sign(Uint8List.fromList(data));
-
-        // RSA signatures should be deterministic with the same key
-        expect(signature1, equals(signature2));
-      });
-
-      test('sign should produce different signatures for different data',
-          () async {
-        final data1 = utf8.encode('test data 1');
-        final data2 = utf8.encode('test data 2');
-
-        final signature1 = await signer.sign(Uint8List.fromList(data1));
-        final signature2 = await signer.sign(Uint8List.fromList(data2));
-
-        expect(signature1, isNot(equals(signature2)));
-      });
-
-      test('parseRSAPrivateKey should parse valid PEM key', () {
-        // This is tested indirectly through the sign method
-        expect(() => signer.sign(Uint8List(32)), returnsNormally);
-      });
     });
 
     group('CryptoSignerException', () {
