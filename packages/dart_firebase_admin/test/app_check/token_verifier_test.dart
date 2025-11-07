@@ -1,15 +1,25 @@
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/src/app_check/ap_check_api_internal.dart';
 import 'package:dart_firebase_admin/src/app_check/token_verifier.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:test/test.dart';
+
+import '../mock_service_account.dart';
 
 void main() {
   group('AppCheckTokenVerifier', () {
     late AppCheckTokenVerifier verifier;
-    const projectId = 'test-project';
+    late FirebaseAdminApp app;
 
     setUp(() {
-      verifier = AppCheckTokenVerifier(MockFirebaseApp(projectId: projectId));
+      app = FirebaseAdminApp.initializeApp(
+        '$mockProjectId-token-verifier',
+        Credential.fromServiceAccountParams(
+          clientId: 'test-client-id',
+          privateKey: mockPrivateKey,
+          email: mockClientEmail,
+        ),
+      );
+      verifier = AppCheckTokenVerifier(app);
     });
 
     group('_verifyContent', () {
@@ -17,14 +27,14 @@ void main() {
         final decodedToken = MockDecodedToken(
           header: {'alg': 'HS256'},
           payload: {
-            'aud': ['projects/$projectId'],
+            'aud': ['projects/$mockProjectId'],
             'iss': 'https://firebaseappcheck.googleapis.com/',
             'sub': 'app-id',
           },
         );
 
         expect(
-          () => verifier.verifyContentForTesting(decodedToken, projectId),
+          () => verifier.verifyContentForTesting(decodedToken, mockProjectId),
           throwsA(
             isA<FirebaseAppCheckException>().having(
               (e) => e.message,
@@ -46,7 +56,7 @@ void main() {
         );
 
         expect(
-          () => verifier.verifyContentForTesting(decodedToken, projectId),
+          () => verifier.verifyContentForTesting(decodedToken, mockProjectId),
           throwsA(
             isA<FirebaseAppCheckException>().having(
               (e) => e.message,
@@ -61,14 +71,14 @@ void main() {
         final decodedToken = MockDecodedToken(
           header: {'alg': 'RS256'},
           payload: {
-            'aud': ['projects/$projectId'],
+            'aud': ['projects/$mockProjectId'],
             'iss': 'https://wrong-issuer.com/',
             'sub': 'app-id',
           },
         );
 
         expect(
-          () => verifier.verifyContentForTesting(decodedToken, projectId),
+          () => verifier.verifyContentForTesting(decodedToken, mockProjectId),
           throwsA(
             isA<FirebaseAppCheckException>().having(
               (e) => e.message,
@@ -83,13 +93,13 @@ void main() {
         final decodedToken = MockDecodedToken(
           header: {'alg': 'RS256'},
           payload: {
-            'aud': ['projects/$projectId'],
+            'aud': ['projects/$mockProjectId'],
             'iss': 'https://firebaseappcheck.googleapis.com/',
           },
         );
 
         expect(
-          () => verifier.verifyContentForTesting(decodedToken, projectId),
+          () => verifier.verifyContentForTesting(decodedToken, mockProjectId),
           throwsA(
             isA<FirebaseAppCheckException>().having(
               (e) => e.message,
@@ -104,14 +114,14 @@ void main() {
         final decodedToken = MockDecodedToken(
           header: {'alg': 'RS256'},
           payload: {
-            'aud': ['projects/$projectId'],
+            'aud': ['projects/$mockProjectId'],
             'iss': 'https://firebaseappcheck.googleapis.com/',
             'sub': '',
           },
         );
 
         expect(
-          () => verifier.verifyContentForTesting(decodedToken, projectId),
+          () => verifier.verifyContentForTesting(decodedToken, mockProjectId),
           throwsA(
             isA<FirebaseAppCheckException>().having(
               (e) => e.message,
@@ -126,21 +136,24 @@ void main() {
         final decodedToken = MockDecodedToken(
           header: {'alg': 'RS256'},
           payload: {
-            'aud': ['projects/$projectId'],
+            'aud': ['projects/$mockProjectId'],
             'iss': 'https://firebaseappcheck.googleapis.com/123456',
             'sub': 'app-id',
           },
         );
 
         expect(
-          () => verifier.verifyContentForTesting(decodedToken, projectId),
+          () => verifier.verifyContentForTesting(decodedToken, mockProjectId),
           returnsNormally,
         );
       });
     });
 
     test('appCheckIssuer constant should be correct', () {
-      expect(appCheckIssuer, equals('https://firebaseappcheck.googleapis.com/'));
+      expect(
+        appCheckIssuer,
+        equals('https://firebaseappcheck.googleapis.com/'),
+      );
     });
 
     test('jwksUrl constant should be correct', () {
@@ -153,12 +166,6 @@ void main() {
 }
 
 // Mock classes for testing
-class MockFirebaseApp {
-  MockFirebaseApp({required this.projectId});
-
-  final String projectId;
-}
-
 class MockDecodedToken {
   MockDecodedToken({required this.header, required this.payload});
 
@@ -168,7 +175,10 @@ class MockDecodedToken {
 
 // Extension to expose private methods for testing
 extension AppCheckTokenVerifierTest on AppCheckTokenVerifier {
-  void verifyContentForTesting(MockDecodedToken decodedToken, String projectId) {
+  void verifyContentForTesting(
+    MockDecodedToken decodedToken,
+    String projectId,
+  ) {
     // We're calling the private _verifyContent method indirectly through reflection
     // or by copying the logic here for testing
     final header = decodedToken.header;

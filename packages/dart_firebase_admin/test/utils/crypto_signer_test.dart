@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/src/utils/crypto_signer.dart';
-import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:test/test.dart';
 
 import '../mock_service_account.dart';
@@ -13,14 +13,15 @@ void main() {
       late CryptoSigner signer;
 
       setUp(() {
-        final credentials = ServiceAccountCredentials.fromJson({
-          'private_key': mockPrivateKey,
-          'client_email': mockClientEmail,
-          'type': 'service_account',
-        });
-        signer = CryptoSigner.fromApp(
-          MockFirebaseApp(serviceAccountCredentials: credentials),
+        final app = FirebaseAdminApp.initializeApp(
+          '$mockProjectId-crypto',
+          Credential.fromServiceAccountParams(
+            clientId: 'test-client-id',
+            privateKey: mockPrivateKey,
+            email: mockClientEmail,
+          ),
         );
+        signer = CryptoSigner.fromApp(app);
       });
 
       test('algorithm should be RS256', () {
@@ -111,30 +112,4 @@ void main() {
       });
     });
   });
-}
-
-// Mock FirebaseAdminApp for testing
-class MockFirebaseApp implements dynamic {
-  MockFirebaseApp({this.serviceAccountCredentials});
-
-  final ServiceAccountCredentials? serviceAccountCredentials;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) {
-    if (invocation.memberName == #credential) {
-      return MockCredential(serviceAccountCredentials);
-    }
-    return super.noSuchMethod(invocation);
-  }
-}
-
-class MockCredential implements dynamic {
-  MockCredential(this.serviceAccountCredentials);
-
-  final ServiceAccountCredentials? serviceAccountCredentials;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) {
-    return super.noSuchMethod(invocation);
-  }
 }

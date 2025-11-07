@@ -6,7 +6,10 @@ void main() {
   group('AppCheckErrorCode', () {
     test('should have correct error code values', () {
       expect(AppCheckErrorCode.aborted.code, equals('aborted'));
-      expect(AppCheckErrorCode.invalidArgument.code, equals('invalid-argument'));
+      expect(
+        AppCheckErrorCode.invalidArgument.code,
+        equals('invalid-argument'),
+      );
       expect(
         AppCheckErrorCode.invalidCredential.code,
         equals('invalid-credential'),
@@ -51,7 +54,7 @@ void main() {
         'Test error message',
       );
 
-      expect(exception.code, equals('invalid-argument'));
+      expect(exception.code, equals('app-check/invalid-argument'));
       expect(exception.message, equals('Test error message'));
     });
 
@@ -60,8 +63,9 @@ void main() {
         AppCheckErrorCode.permissionDenied,
       );
 
-      expect(exception.code, equals('permission-denied'));
-      expect(exception.message, isNull);
+      expect(exception.code, equals('app-check/permission-denied'));
+      // Base class provides a default message when none is specified
+      expect(exception.message, isNotEmpty);
     });
 
     test('fromJwtException should handle tokenExpired error', () {
@@ -70,10 +74,9 @@ void main() {
         'Token expired',
       );
 
-      final exception =
-          FirebaseAppCheckException.fromJwtException(jwtError);
+      final exception = FirebaseAppCheckException.fromJwtException(jwtError);
 
-      expect(exception.code, equals('app-check-token-expired'));
+      expect(exception.code, equals('app-check/app-check-token-expired'));
       expect(
         exception.message,
         contains('The provided App Check token has expired'),
@@ -86,10 +89,9 @@ void main() {
         'Invalid signature',
       );
 
-      final exception =
-          FirebaseAppCheckException.fromJwtException(jwtError);
+      final exception = FirebaseAppCheckException.fromJwtException(jwtError);
 
-      expect(exception.code, equals('invalid-argument'));
+      expect(exception.code, equals('app-check/invalid-argument'));
       expect(
         exception.message,
         contains('The provided App Check token has invalid signature'),
@@ -102,10 +104,9 @@ void main() {
         'No matching kid',
       );
 
-      final exception =
-          FirebaseAppCheckException.fromJwtException(jwtError);
+      final exception = FirebaseAppCheckException.fromJwtException(jwtError);
 
-      expect(exception.code, equals('invalid-argument'));
+      expect(exception.code, equals('app-check/invalid-argument'));
       expect(
         exception.message,
         contains('The provided App Check token has "kid" claim which does not'),
@@ -118,10 +119,9 @@ void main() {
         'Unknown error',
       );
 
-      final exception =
-          FirebaseAppCheckException.fromJwtException(jwtError);
+      final exception = FirebaseAppCheckException.fromJwtException(jwtError);
 
-      expect(exception.code, equals('invalid-argument'));
+      expect(exception.code, equals('app-check/invalid-argument'));
       expect(exception.message, equals('Unknown error'));
     });
   });

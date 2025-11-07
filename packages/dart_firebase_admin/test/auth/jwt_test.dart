@@ -74,7 +74,9 @@ void main() {
       final payload = {
         'user_id': '123',
         'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+        'exp': DateTime.now()
+                .add(const Duration(hours: 1))
+                .millisecondsSinceEpoch ~/
             1000,
       };
 
@@ -83,7 +85,6 @@ void main() {
       final token = jwt.sign(
         SecretKey(''),
         algorithm: JWTAlgorithm.HS256,
-        noIssueAt: true,
       );
 
       await expectLater(
@@ -165,7 +166,9 @@ void main() {
         'sub': 'user123',
         'iss': 'https://example.com',
         'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+        'exp': DateTime.now()
+                .add(const Duration(hours: 1))
+                .millisecondsSinceEpoch ~/
             1000,
       };
       final jwt = JWT(payload);
@@ -185,7 +188,9 @@ void main() {
       final payload = {
         'sub': 'user123',
         'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+        'exp': DateTime.now()
+                .add(const Duration(hours: 1))
+                .millisecondsSinceEpoch ~/
             1000,
       };
       final jwt = JWT(payload);
@@ -217,7 +222,10 @@ void main() {
   group('JwtErrorCode', () {
     test('should have correct error code values', () {
       expect(JwtErrorCode.invalidArgument.value, equals('invalid-argument'));
-      expect(JwtErrorCode.invalidCredential.value, equals('invalid-credential'));
+      expect(
+        JwtErrorCode.invalidCredential.value,
+        equals('invalid-credential'),
+      );
       expect(JwtErrorCode.tokenExpired.value, equals('token-expired'));
       expect(JwtErrorCode.invalidSignature.value, equals('invalid-token'));
       expect(JwtErrorCode.noMatchingKid.value, equals('no-matching-kid-error'));
