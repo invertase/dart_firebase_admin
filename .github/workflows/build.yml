@@ -10,9 +10,27 @@ on:
     # runs the CI everyday at 10AM
     - cron: "0 10 * * *"
 
+  workflow_dispatch:
+    inputs:
+      dart_version:
+        description: 'Dart version to test'
+        required: false
+        default: 'stable'
+      os:
+        description: 'Operating system'
+        required: false
+        default: 'ubuntu-latest'
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  lint:
+    name: Lint (Dart ${{ matrix.dart-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        dart-version: [stable, beta]
 
     defaults:
       run:
@@ -20,19 +38,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3.1.0
-        with:
-          fetch-depth: 2
-      - uses: actions/setup-node@v4
+
       - uses: subosito/flutter-action@v2.7.1
         with:
-          channel: master
-      - name: Add pub cache bin to PATH
-        run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-      - name: Add pub cache to PATH
-        run: echo "PUB_CACHE="$HOME/.pub-cache"" >> $GITHUB_ENV
+          channel: ${{ matrix.dart-version }}
 
-      - name: Install firebase CLI
-        run: npm install -g firebase-tools
+      - name: Cache pub dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ runner.os == 'Windows' && '~\AppData\Local\Pub\Cache' || '~/.pub-cache' }}
+          key: ${{ runner.os }}-pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-${{ matrix.dart-version }}-
+            ${{ runner.os }}-pub-
 
       - name: Install dependencies
         run: dart pub get && cd example && dart pub get && cd -
@@ -43,13 +62,206 @@ jobs:
       - name: Analyze
         run: dart analyze
 
-      - run: mkdir $HOME/.config/gcloud -p
-      - run: echo $CREDS > $HOME/.config/gcloud/application_default_credentials.json
-        env:
-          CREDS: ${{ secrets.CREDS }}
+  test:
+    name: Test (Dart ${{ matrix.dart-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
 
-      - name: Run tests
-        run: ${{github.workspace}}/scripts/coverage.sh
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        dart-version: [stable, beta]
+
+    defaults:
+      run:
+        working-directory: packages/dart_firebase_admin
+
+    steps:
+      - uses: actions/checkout@v3.1.0
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+
+      - uses: subosito/flutter-action@v2.7.1
+        with:
+          channel: ${{ matrix.dart-version }}
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ runner.os == 'Windows' && '~\AppData\Local\Pub\Cache' || '~/.pub-cache' }}
+          key: ${{ runner.os }}-pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-${{ matrix.dart-version }}-
+            ${{ runner.os }}-pub-
+
+      - name: Cache Firebase CLI
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators
+          restore-keys: |
+            ${{ runner.os }}-firebase-
+
+      - name: Add pub cache bin to PATH
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            echo "$USERPROFILE\AppData\Local\Pub\Cache\bin" >> $GITHUB_PATH
+            echo "PUB_CACHE=$USERPROFILE\AppData\Local\Pub\Cache" >> $GITHUB_ENV
+          else
+            echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+            echo "PUB_CACHE=$HOME/.pub-cache" >> $GITHUB_ENV
+          fi
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Install dependencies
+        run: dart pub get && cd example && dart pub get && cd -
+
+      - name: Setup gcloud credentials
+        shell: bash
+        run: |
+          mkdir -p $HOME/.config/gcloud
+          echo '${{ secrets.CREDS }}' > $HOME/.config/gcloud/application_default_credentials.json
+
+      - name: Run tests with coverage
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            bash ${{ github.workspace }}/scripts/coverage.sh
+          else
+            ${{ github.workspace }}/scripts/coverage.sh
+          fi
+
+      - name: Check coverage threshold and generate report
+        if: matrix.os == 'ubuntu-latest' && matrix.dart-version == 'stable'
+        id: coverage
+        shell: bash
+        run: |
+          dart pub global activate coverage
+
+          # Generate coverage report
+          dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage.lcov --packages=.dart_tool/package_config.json --report-on=lib
+
+          # Calculate total coverage
+          TOTAL_LINES=$(grep -E "^(DA|LF):" coverage.lcov | grep "^LF:" | awk -F: '{sum+=$2} END {print sum}')
+          HIT_LINES=$(grep -E "^(DA|LH):" coverage.lcov | grep "^LH:" | awk -F: '{sum+=$2} END {print sum}')
+
+          if [ "$TOTAL_LINES" -gt 0 ]; then
+            COVERAGE_PCT=$(awk "BEGIN {printf \"%.2f\", ($HIT_LINES/$TOTAL_LINES)*100}")
+          else
+            COVERAGE_PCT="0.00"
+          fi
+
+          echo "coverage=${COVERAGE_PCT}" >> $GITHUB_OUTPUT
+          echo "total_lines=${TOTAL_LINES}" >> $GITHUB_OUTPUT
+          echo "hit_lines=${HIT_LINES}" >> $GITHUB_OUTPUT
+
+          echo "Coverage: ${COVERAGE_PCT}% (${HIT_LINES}/${TOTAL_LINES} lines)"
+
+          # Check threshold
+          if (( $(echo "$COVERAGE_PCT < 40" | bc -l) )); then
+            echo "status=❌ Coverage ${COVERAGE_PCT}% is below 40% threshold" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "status=✅ Coverage ${COVERAGE_PCT}% meets 40% threshold" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment coverage on PR
+        if: matrix.os == 'ubuntu-latest' && matrix.dart-version == 'stable' && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const coverage = '${{ steps.coverage.outputs.coverage }}';
+            const status = '${{ steps.coverage.outputs.status }}';
+            const hitLines = '${{ steps.coverage.outputs.hit_lines }}';
+            const totalLines = '${{ steps.coverage.outputs.total_lines }}';
+
+            const body = `## Coverage Report
+
+            ${status}
+
+            **Coverage:** ${coverage}%
+            **Lines Covered:** ${hitLines}/${totalLines}
+
+            _Minimum threshold: 40%_`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Coverage Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
 
       - name: Upload coverage to codecov
-        run: curl -s https://codecov.io/bash | bash
+        if: matrix.os == 'ubuntu-latest' && matrix.dart-version == 'stable'
+        uses: codecov/codecov-action@v3
+        with:
+          files: packages/dart_firebase_admin/coverage.lcov
+          flags: unittests
+          fail_ci_if_error: true
+
+  build:
+    name: Build verification (Dart ${{ matrix.dart-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [lint, test]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        dart-version: [stable, beta]
+
+    defaults:
+      run:
+        working-directory: packages/dart_firebase_admin
+
+    steps:
+      - uses: actions/checkout@v3.1.0
+
+      - uses: subosito/flutter-action@v2.7.1
+        with:
+          channel: ${{ matrix.dart-version }}
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ runner.os == 'Windows' && '~\AppData\Local\Pub\Cache' || '~/.pub-cache' }}
+          key: ${{ runner.os }}-pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-${{ matrix.dart-version }}-
+            ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        run: dart pub get && cd example && dart pub get && cd -
+
+      - name: Verify package
+        run: dart pub publish --dry-run
