@@ -1,5 +1,5 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:dart_firebase_admin/src/app_check/ap_check_api_internal.dart';
+import 'package:dart_firebase_admin/src/app_check/app_check_api_internal.dart';
 import 'package:dart_firebase_admin/src/app_check/token_verifier.dart';
 import 'package:test/test.dart';
 

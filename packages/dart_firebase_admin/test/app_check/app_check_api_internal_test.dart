@@ -1,4 +1,4 @@
-import 'package:dart_firebase_admin/src/app_check/ap_check_api_internal.dart';
+import 'package:dart_firebase_admin/src/app_check/app_check_api_internal.dart';
 import 'package:dart_firebase_admin/src/utils/jwt.dart';
 import 'package:test/test.dart';
 
