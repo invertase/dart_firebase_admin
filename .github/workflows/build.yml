@@ -200,11 +200,12 @@ jobs:
 
       - name: Upload coverage to codecov
         if: matrix.dart-version == 'stable'
+        continue-on-error: true
         uses: codecov/codecov-action@v3
         with:
           files: packages/dart_firebase_admin/coverage.lcov
           flags: unittests
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   build:
     name: Build verification (Dart ${{ matrix.dart-version }})
