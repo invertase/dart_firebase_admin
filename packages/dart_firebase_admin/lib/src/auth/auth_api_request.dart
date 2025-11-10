@@ -824,7 +824,8 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
         'enableEmailLinkSignin': response.enableEmailLinkSignin,
       if (response.enableAnonymousUser != null)
         'enableAnonymousUser': response.enableAnonymousUser,
-      if (response.mfaConfig != null) 'mfaConfig': _mfaConfigToJson(response.mfaConfig!),
+      if (response.mfaConfig != null)
+        'mfaConfig': _mfaConfigToJson(response.mfaConfig!),
       if (response.testPhoneNumbers != null)
         'testPhoneNumbers': response.testPhoneNumbers,
       if (response.smsRegionConfig != null)
@@ -835,7 +836,8 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
         'passwordPolicyConfig':
             _passwordPolicyConfigToJson(response.passwordPolicyConfig!),
       if (response.emailPrivacyConfig != null)
-        'emailPrivacyConfig': _emailPrivacyConfigToJson(response.emailPrivacyConfig!),
+        'emailPrivacyConfig':
+            _emailPrivacyConfigToJson(response.emailPrivacyConfig!),
     };
   }
 
@@ -900,7 +902,8 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
                     null)
                   'containsUppercaseCharacter':
                       version.customStrengthOptions!.containsUppercaseCharacter,
-                if (version.customStrengthOptions!.containsNumericCharacter != null)
+                if (version.customStrengthOptions!.containsNumericCharacter !=
+                    null)
                   'containsNumericCharacter':
                       version.customStrengthOptions!.containsNumericCharacter,
                 if (version.customStrengthOptions!
@@ -1233,7 +1236,8 @@ class _AuthHttpClient {
   }
 
   /// Lists tenants with pagination.
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListTenantsResponse> listTenants({
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListTenantsResponse>
+      listTenants({
     required int maxResults,
     String? pageToken,
   }) {
@@ -1358,7 +1362,8 @@ class _AuthHttpClient {
     }
 
     if (options['mfaConfig'] != null) {
-      request.mfaConfig = _buildMfaConfig(options['mfaConfig'] as Map<String, dynamic>);
+      request.mfaConfig =
+          _buildMfaConfig(options['mfaConfig'] as Map<String, dynamic>);
     }
 
     if (options['testPhoneNumbers'] != null) {
@@ -1367,23 +1372,23 @@ class _AuthHttpClient {
     }
 
     if (options['smsRegionConfig'] != null) {
-      request.smsRegionConfig =
-          _buildSmsRegionConfig(options['smsRegionConfig'] as Map<String, dynamic>);
+      request.smsRegionConfig = _buildSmsRegionConfig(
+          options['smsRegionConfig'] as Map<String, dynamic>);
     }
 
     if (options['recaptchaConfig'] != null) {
-      request.recaptchaConfig =
-          _buildRecaptchaConfig(options['recaptchaConfig'] as Map<String, dynamic>);
+      request.recaptchaConfig = _buildRecaptchaConfig(
+          options['recaptchaConfig'] as Map<String, dynamic>);
     }
 
     if (options['passwordPolicyConfig'] != null) {
-      request.passwordPolicyConfig =
-          _buildPasswordPolicyConfig(options['passwordPolicyConfig'] as Map<String, dynamic>);
+      request.passwordPolicyConfig = _buildPasswordPolicyConfig(
+          options['passwordPolicyConfig'] as Map<String, dynamic>);
     }
 
     if (options['emailPrivacyConfig'] != null) {
-      request.emailPrivacyConfig =
-          _buildEmailPrivacyConfig(options['emailPrivacyConfig'] as Map<String, dynamic>);
+      request.emailPrivacyConfig = _buildEmailPrivacyConfig(
+          options['emailPrivacyConfig'] as Map<String, dynamic>);
     }
 
     return request;
@@ -1409,9 +1414,10 @@ class _AuthHttpClient {
       final allowByDefault = config['allowByDefault'] as Map<String, dynamic>;
       smsConfig.allowByDefault =
           auth2.GoogleCloudIdentitytoolkitAdminV2AllowByDefault(
-        disallowedRegions: (allowByDefault['disallowedRegions'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList(),
+        disallowedRegions:
+            (allowByDefault['disallowedRegions'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList(),
       );
     }
 
@@ -1495,8 +1501,7 @@ class _AuthHttpClient {
     Map<String, dynamic> config,
   ) {
     return auth2.GoogleCloudIdentitytoolkitAdminV2EmailPrivacyConfig(
-      enableImprovedEmailPrivacy:
-          config['enableImprovedEmailPrivacy'] as bool?,
+      enableImprovedEmailPrivacy: config['enableImprovedEmailPrivacy'] as bool?,
     );
   }
 
