@@ -132,7 +132,7 @@ void main() {
           factorIds: ['phone'],
         ),
         testPhoneNumbers: {'+1234567890': '123456'},
-        smsRegionConfig: AllowByDefaultSmsRegionConfig(
+        smsRegionConfig: const AllowByDefaultSmsRegionConfig(
           disallowedRegions: ['US'],
         ),
         recaptchaConfig: RecaptchaConfig(

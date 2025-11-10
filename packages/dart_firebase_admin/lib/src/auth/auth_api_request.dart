@@ -1373,22 +1373,26 @@ class _AuthHttpClient {
 
     if (options['smsRegionConfig'] != null) {
       request.smsRegionConfig = _buildSmsRegionConfig(
-          options['smsRegionConfig'] as Map<String, dynamic>);
+        options['smsRegionConfig'] as Map<String, dynamic>,
+      );
     }
 
     if (options['recaptchaConfig'] != null) {
       request.recaptchaConfig = _buildRecaptchaConfig(
-          options['recaptchaConfig'] as Map<String, dynamic>);
+        options['recaptchaConfig'] as Map<String, dynamic>,
+      );
     }
 
     if (options['passwordPolicyConfig'] != null) {
       request.passwordPolicyConfig = _buildPasswordPolicyConfig(
-          options['passwordPolicyConfig'] as Map<String, dynamic>);
+        options['passwordPolicyConfig'] as Map<String, dynamic>,
+      );
     }
 
     if (options['emailPrivacyConfig'] != null) {
       request.emailPrivacyConfig = _buildEmailPrivacyConfig(
-          options['emailPrivacyConfig'] as Map<String, dynamic>);
+        options['emailPrivacyConfig'] as Map<String, dynamic>,
+      );
     }
 
     return request;
