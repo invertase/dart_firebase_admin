@@ -316,8 +316,6 @@ abstract class _AbstractAuthRequestHandler {
     );
 
     return _httpClient.v1((client) async {
-      // TODO handle tenant ID
-
       // Validate the ID token is a non-empty string.
       if (idToken.isEmpty) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidIdToken);
@@ -432,7 +430,6 @@ abstract class _AbstractAuthRequestHandler {
     }
 
     return _httpClient.v1((client) async {
-      // TODO handle tenants
       return client.projects.accounts_1.batchGet(
         app.projectId,
         maxResults: maxResults,
@@ -447,7 +444,6 @@ abstract class _AbstractAuthRequestHandler {
   ) async {
     assertIsUid(uid);
 
-    // TODO handle tenants
     return _httpClient.v1((client) async {
       return client.projects.accounts_1.delete(
         auth1.GoogleCloudIdentitytoolkitV1DeleteAccountRequest(localId: uid),
@@ -471,7 +467,6 @@ abstract class _AbstractAuthRequestHandler {
     }
 
     return _httpClient.v1((client) async {
-      // TODO handle tenants
       return client.projects.accounts_1.batchDelete(
         auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsRequest(
           localIds: uids,
@@ -493,7 +488,6 @@ abstract class _AbstractAuthRequestHandler {
           .toList();
       if (mfaInfo != null && mfaInfo.isEmpty) mfaInfo = null;
 
-      // TODO support tenants
       final response = await client.projects.accounts(
         auth1.GoogleCloudIdentitytoolkitV1SignUpRequest(
           disabled: properties.disabled,
@@ -525,7 +519,6 @@ abstract class _AbstractAuthRequestHandler {
       _accountsLookup(
     auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest request,
   ) async {
-    // TODO handle tenants
     return _httpClient.v1((client) async {
       final response = await client.accounts.lookup(request);
       final users = response.users;
@@ -636,7 +629,6 @@ abstract class _AbstractAuthRequestHandler {
       }
     }
 
-    // TODO handle tenants
     return _httpClient.v1((client) => client.accounts.lookup(request));
   }
 
@@ -742,16 +734,217 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
 
   // TODO getProjectConfig
   // TODO updateProjectConfig
-  // TODO getTenant
-  // TODO listTenants
-  // TODO deleteTenant
-  // TODO updateTenant
+
+  /// Looks up a tenant by tenant ID.
+  Future<Map<String, dynamic>> _getTenant(String tenantId) async {
+    if (tenantId.isEmpty) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidTenantId,
+        'Tenant ID must be a non-empty string.',
+      );
+    }
+
+    final response = await _httpClient.getTenant(tenantId);
+    return _tenantResponseToJson(response);
+  }
+
+  /// Lists tenants (single batch only) with a size of maxResults and starting from
+  /// the offset as specified by pageToken.
+  Future<Map<String, dynamic>> _listTenants({
+    int maxResults = 1000,
+    String? pageToken,
+  }) async {
+    final response = await _httpClient.listTenants(
+      maxResults: maxResults,
+      pageToken: pageToken,
+    );
+
+    final tenants = <Map<String, dynamic>>[];
+    if (response.tenants != null) {
+      for (final tenant in response.tenants!) {
+        tenants.add(_tenantResponseToJson(tenant));
+      }
+    }
+
+    return {
+      'tenants': tenants,
+      if (response.nextPageToken != null)
+        'nextPageToken': response.nextPageToken,
+    };
+  }
+
+  /// Deletes a tenant identified by a tenantId.
+  Future<void> _deleteTenant(String tenantId) async {
+    if (tenantId.isEmpty) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidTenantId,
+        'Tenant ID must be a non-empty string.',
+      );
+    }
+
+    await _httpClient.deleteTenant(tenantId);
+  }
+
+  /// Creates a new tenant with the properties provided.
+  Future<Map<String, dynamic>> _createTenant(
+    CreateTenantRequest tenantOptions,
+  ) async {
+    final request = Tenant._buildServerRequest(tenantOptions, true);
+    final response = await _httpClient.createTenant(request);
+    return _tenantResponseToJson(response);
+  }
+
+  /// Updates an existing tenant with the properties provided.
+  Future<Map<String, dynamic>> _updateTenant(
+    String tenantId,
+    UpdateTenantRequest tenantOptions,
+  ) async {
+    if (tenantId.isEmpty) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidTenantId,
+        'Tenant ID must be a non-empty string.',
+      );
+    }
+
+    final request = Tenant._buildServerRequest(tenantOptions, false);
+    final response = await _httpClient.updateTenant(tenantId, request);
+    return _tenantResponseToJson(response);
+  }
+
+  /// Helper method to convert tenant response to JSON format.
+  Map<String, dynamic> _tenantResponseToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2Tenant response,
+  ) {
+    return {
+      'name': response.name,
+      if (response.displayName != null) 'displayName': response.displayName,
+      if (response.allowPasswordSignup != null)
+        'allowPasswordSignup': response.allowPasswordSignup,
+      if (response.enableEmailLinkSignin != null)
+        'enableEmailLinkSignin': response.enableEmailLinkSignin,
+      if (response.enableAnonymousUser != null)
+        'enableAnonymousUser': response.enableAnonymousUser,
+      if (response.mfaConfig != null) 'mfaConfig': _mfaConfigToJson(response.mfaConfig!),
+      if (response.testPhoneNumbers != null)
+        'testPhoneNumbers': response.testPhoneNumbers,
+      if (response.smsRegionConfig != null)
+        'smsRegionConfig': _smsRegionConfigToJson(response.smsRegionConfig!),
+      if (response.recaptchaConfig != null)
+        'recaptchaConfig': _recaptchaConfigToJson(response.recaptchaConfig!),
+      if (response.passwordPolicyConfig != null)
+        'passwordPolicyConfig':
+            _passwordPolicyConfigToJson(response.passwordPolicyConfig!),
+      if (response.emailPrivacyConfig != null)
+        'emailPrivacyConfig': _emailPrivacyConfigToJson(response.emailPrivacyConfig!),
+    };
+  }
+
+  Map<String, dynamic> _mfaConfigToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2MultiFactorAuthConfig config,
+  ) {
+    return {
+      if (config.state != null) 'state': config.state,
+      if (config.enabledProviders != null)
+        'enabledProviders': config.enabledProviders,
+      if (config.providerConfigs != null)
+        'providerConfigs': config.providerConfigs,
+    };
+  }
+
+  Map<String, dynamic> _smsRegionConfigToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2SmsRegionConfig config,
+  ) {
+    return {
+      if (config.allowByDefault != null)
+        'allowByDefault': {
+          'disallowedRegions': config.allowByDefault!.disallowedRegions ?? [],
+        },
+      if (config.allowlistOnly != null)
+        'allowlistOnly': {
+          'allowedRegions': config.allowlistOnly!.allowedRegions ?? [],
+        },
+    };
+  }
+
+  Map<String, dynamic> _recaptchaConfigToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2RecaptchaConfig config,
+  ) {
+    return {
+      if (config.emailPasswordEnforcementState != null)
+        'emailPasswordEnforcementState': config.emailPasswordEnforcementState,
+      if (config.phoneEnforcementState != null)
+        'phoneEnforcementState': config.phoneEnforcementState,
+      if (config.useAccountDefender != null)
+        'useAccountDefender': config.useAccountDefender,
+    };
+  }
+
+  Map<String, dynamic> _passwordPolicyConfigToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyConfig config,
+  ) {
+    return {
+      if (config.passwordPolicyEnforcementState != null)
+        'passwordPolicyEnforcementState': config.passwordPolicyEnforcementState,
+      if (config.forceUpgradeOnSignin != null)
+        'forceUpgradeOnSignin': config.forceUpgradeOnSignin,
+      if (config.passwordPolicyVersions != null)
+        'passwordPolicyVersions': config.passwordPolicyVersions!.map((version) {
+          return {
+            if (version.customStrengthOptions != null)
+              'customStrengthOptions': {
+                if (version.customStrengthOptions!.containsLowercaseCharacter !=
+                    null)
+                  'containsLowercaseCharacter':
+                      version.customStrengthOptions!.containsLowercaseCharacter,
+                if (version.customStrengthOptions!.containsUppercaseCharacter !=
+                    null)
+                  'containsUppercaseCharacter':
+                      version.customStrengthOptions!.containsUppercaseCharacter,
+                if (version.customStrengthOptions!.containsNumericCharacter != null)
+                  'containsNumericCharacter':
+                      version.customStrengthOptions!.containsNumericCharacter,
+                if (version.customStrengthOptions!
+                        .containsNonAlphanumericCharacter !=
+                    null)
+                  'containsNonAlphanumericCharacter': version
+                      .customStrengthOptions!.containsNonAlphanumericCharacter,
+                if (version.customStrengthOptions!.minPasswordLength != null)
+                  'minPasswordLength':
+                      version.customStrengthOptions!.minPasswordLength,
+                if (version.customStrengthOptions!.maxPasswordLength != null)
+                  'maxPasswordLength':
+                      version.customStrengthOptions!.maxPasswordLength,
+              },
+          };
+        }).toList(),
+    };
+  }
+
+  Map<String, dynamic> _emailPrivacyConfigToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2EmailPrivacyConfig config,
+  ) {
+    return {
+      if (config.enableImprovedEmailPrivacy != null)
+        'enableImprovedEmailPrivacy': config.enableImprovedEmailPrivacy,
+    };
+  }
+}
+
+/// Tenant-aware request handler extending the abstract auth request handler.
+class _TenantAwareAuthRequestHandler extends _AbstractAuthRequestHandler {
+  _TenantAwareAuthRequestHandler(super.app, this.tenantId)
+      : _tenantHttpClient = _TenantAwareAuthHttpClient(app, tenantId);
+
+  final String tenantId;
+  final _TenantAwareAuthHttpClient _tenantHttpClient;
+
+  @override
+  _TenantAwareAuthHttpClient get _httpClient => _tenantHttpClient;
 }
 
 class _AuthHttpClient {
   _AuthHttpClient(this.app);
 
-  // TODO handle tenants
   final FirebaseAdminApp app;
 
   String _buildParent() => 'projects/${app.projectId}';
@@ -1012,6 +1205,317 @@ class _AuthHttpClient {
     });
   }
 
+  /// Gets a tenant by tenant ID.
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> getTenant(
+    String tenantId,
+  ) {
+    return v2((client) async {
+      if (tenantId.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidTenantId,
+          'Tenant ID must be a non-empty string.',
+        );
+      }
+
+      final response = await client.projects.tenants.get(
+        'projects/${app.projectId}/tenants/$tenantId',
+      );
+
+      if (response.name == null || response.name!.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: Unable to get tenant',
+        );
+      }
+
+      return response;
+    });
+  }
+
+  /// Lists tenants with pagination.
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListTenantsResponse> listTenants({
+    required int maxResults,
+    String? pageToken,
+  }) {
+    return v2((client) {
+      if (pageToken != null && pageToken.isEmpty) {
+        throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
+      }
+
+      const maxListTenantPageSize = 1000;
+      if (maxResults <= 0 || maxResults > maxListTenantPageSize) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidArgument,
+          'Required "maxResults" must be a positive non-zero number that does not exceed '
+          '$maxListTenantPageSize.',
+        );
+      }
+
+      return client.projects.tenants.list(
+        _buildParent(),
+        pageSize: maxResults,
+        pageToken: pageToken,
+      );
+    });
+  }
+
+  /// Deletes a tenant by tenant ID.
+  Future<auth2.GoogleProtobufEmpty> deleteTenant(String tenantId) {
+    return v2((client) async {
+      if (tenantId.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidTenantId,
+          'Tenant ID must be a non-empty string.',
+        );
+      }
+
+      return client.projects.tenants.delete(
+        'projects/${app.projectId}/tenants/$tenantId',
+      );
+    });
+  }
+
+  /// Creates a new tenant.
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> createTenant(
+    Map<String, dynamic> tenantOptions,
+  ) {
+    return v2((client) async {
+      final request = _buildTenantRequest(tenantOptions);
+
+      final response = await client.projects.tenants.create(
+        request,
+        _buildParent(),
+      );
+
+      final name = response.name;
+      final tenantId = Tenant._getTenantIdFromResourceName(name);
+      if (name == null || name.isEmpty || tenantId == null) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: Unable to create new tenant',
+        );
+      }
+
+      return response;
+    });
+  }
+
+  /// Updates an existing tenant.
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> updateTenant(
+    String tenantId,
+    Map<String, dynamic> tenantOptions,
+  ) {
+    return v2((client) async {
+      if (tenantId.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidTenantId,
+          'Tenant ID must be a non-empty string.',
+        );
+      }
+
+      final request = _buildTenantRequest(tenantOptions);
+      final updateMask = _generateUpdateMask(tenantOptions);
+
+      final response = await client.projects.tenants.patch(
+        request,
+        'projects/${app.projectId}/tenants/$tenantId',
+        updateMask: updateMask,
+      );
+
+      final name = response.name;
+      final responseTenantId = Tenant._getTenantIdFromResourceName(name);
+      if (name == null || name.isEmpty || responseTenantId == null) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: Unable to update tenant',
+        );
+      }
+
+      return response;
+    });
+  }
+
+  /// Builds a tenant request from a map of options.
+  auth2.GoogleCloudIdentitytoolkitAdminV2Tenant _buildTenantRequest(
+    Map<String, dynamic> options,
+  ) {
+    final request = auth2.GoogleCloudIdentitytoolkitAdminV2Tenant();
+
+    if (options['displayName'] != null) {
+      request.displayName = options['displayName'] as String;
+    }
+
+    if (options['allowPasswordSignup'] != null) {
+      request.allowPasswordSignup = options['allowPasswordSignup'] as bool;
+    }
+
+    if (options['enableEmailLinkSignin'] != null) {
+      request.enableEmailLinkSignin = options['enableEmailLinkSignin'] as bool;
+    }
+
+    if (options['enableAnonymousUser'] != null) {
+      request.enableAnonymousUser = options['enableAnonymousUser'] as bool;
+    }
+
+    if (options['mfaConfig'] != null) {
+      request.mfaConfig = _buildMfaConfig(options['mfaConfig'] as Map<String, dynamic>);
+    }
+
+    if (options['testPhoneNumbers'] != null) {
+      request.testPhoneNumbers =
+          Map<String, String>.from(options['testPhoneNumbers'] as Map);
+    }
+
+    if (options['smsRegionConfig'] != null) {
+      request.smsRegionConfig =
+          _buildSmsRegionConfig(options['smsRegionConfig'] as Map<String, dynamic>);
+    }
+
+    if (options['recaptchaConfig'] != null) {
+      request.recaptchaConfig =
+          _buildRecaptchaConfig(options['recaptchaConfig'] as Map<String, dynamic>);
+    }
+
+    if (options['passwordPolicyConfig'] != null) {
+      request.passwordPolicyConfig =
+          _buildPasswordPolicyConfig(options['passwordPolicyConfig'] as Map<String, dynamic>);
+    }
+
+    if (options['emailPrivacyConfig'] != null) {
+      request.emailPrivacyConfig =
+          _buildEmailPrivacyConfig(options['emailPrivacyConfig'] as Map<String, dynamic>);
+    }
+
+    return request;
+  }
+
+  auth2.GoogleCloudIdentitytoolkitAdminV2MultiFactorAuthConfig _buildMfaConfig(
+    Map<String, dynamic> config,
+  ) {
+    return auth2.GoogleCloudIdentitytoolkitAdminV2MultiFactorAuthConfig(
+      state: config['state'] as String?,
+      enabledProviders: (config['enabledProviders'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+    );
+  }
+
+  auth2.GoogleCloudIdentitytoolkitAdminV2SmsRegionConfig _buildSmsRegionConfig(
+    Map<String, dynamic> config,
+  ) {
+    final smsConfig = auth2.GoogleCloudIdentitytoolkitAdminV2SmsRegionConfig();
+
+    if (config['allowByDefault'] != null) {
+      final allowByDefault = config['allowByDefault'] as Map<String, dynamic>;
+      smsConfig.allowByDefault =
+          auth2.GoogleCloudIdentitytoolkitAdminV2AllowByDefault(
+        disallowedRegions: (allowByDefault['disallowedRegions'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList(),
+      );
+    }
+
+    if (config['allowlistOnly'] != null) {
+      final allowlistOnly = config['allowlistOnly'] as Map<String, dynamic>;
+      smsConfig.allowlistOnly =
+          auth2.GoogleCloudIdentitytoolkitAdminV2AllowlistOnly(
+        allowedRegions: (allowlistOnly['allowedRegions'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList(),
+      );
+    }
+
+    return smsConfig;
+  }
+
+  auth2.GoogleCloudIdentitytoolkitAdminV2RecaptchaConfig _buildRecaptchaConfig(
+    Map<String, dynamic> config,
+  ) {
+    return auth2.GoogleCloudIdentitytoolkitAdminV2RecaptchaConfig(
+      emailPasswordEnforcementState:
+          config['emailPasswordEnforcementState'] as String?,
+      phoneEnforcementState: config['phoneEnforcementState'] as String?,
+      useAccountDefender: config['useAccountDefender'] as bool?,
+    );
+  }
+
+  auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyConfig
+      _buildPasswordPolicyConfig(
+    Map<String, dynamic> config,
+  ) {
+    final policyConfig =
+        auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyConfig();
+
+    if (config['passwordPolicyEnforcementState'] != null) {
+      policyConfig.passwordPolicyEnforcementState =
+          config['passwordPolicyEnforcementState'] as String;
+    }
+
+    if (config['forceUpgradeOnSignin'] != null) {
+      policyConfig.forceUpgradeOnSignin =
+          config['forceUpgradeOnSignin'] as bool;
+    }
+
+    if (config['passwordPolicyVersions'] != null) {
+      policyConfig.passwordPolicyVersions =
+          (config['passwordPolicyVersions'] as List<dynamic>).map((version) {
+        final versionMap = version as Map<String, dynamic>;
+        return auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyVersion(
+          customStrengthOptions: versionMap['customStrengthOptions'] != null
+              ? _buildCustomStrengthOptions(
+                  versionMap['customStrengthOptions'] as Map<String, dynamic>,
+                )
+              : null,
+        );
+      }).toList();
+    }
+
+    return policyConfig;
+  }
+
+  auth2.GoogleCloudIdentitytoolkitAdminV2CustomStrengthOptions
+      _buildCustomStrengthOptions(
+    Map<String, dynamic> options,
+  ) {
+    return auth2.GoogleCloudIdentitytoolkitAdminV2CustomStrengthOptions(
+      containsLowercaseCharacter:
+          options['containsLowercaseCharacter'] as bool?,
+      containsUppercaseCharacter:
+          options['containsUppercaseCharacter'] as bool?,
+      containsNumericCharacter: options['containsNumericCharacter'] as bool?,
+      containsNonAlphanumericCharacter:
+          options['containsNonAlphanumericCharacter'] as bool?,
+      minPasswordLength: options['minPasswordLength'] as int?,
+      maxPasswordLength: options['maxPasswordLength'] as int?,
+    );
+  }
+
+  auth2.GoogleCloudIdentitytoolkitAdminV2EmailPrivacyConfig
+      _buildEmailPrivacyConfig(
+    Map<String, dynamic> config,
+  ) {
+    return auth2.GoogleCloudIdentitytoolkitAdminV2EmailPrivacyConfig(
+      enableImprovedEmailPrivacy:
+          config['enableImprovedEmailPrivacy'] as bool?,
+    );
+  }
+
+  /// Generates an update mask from the request options.
+  String _generateUpdateMask(Map<String, dynamic> options) {
+    final fields = <String>[];
+
+    for (final key in options.keys) {
+      // Don't traverse deep into testPhoneNumbers - replace the entire content
+      if (key == 'testPhoneNumbers') {
+        fields.add(key);
+      } else {
+        fields.add(key);
+      }
+    }
+
+    return fields.join(',');
+  }
+
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,
   ) {
@@ -1056,4 +1560,22 @@ class _AuthHttpClient {
       ),
     );
   }
+}
+
+/// Tenant-aware HTTP client that builds tenant-specific resource paths.
+class _TenantAwareAuthHttpClient extends _AuthHttpClient {
+  _TenantAwareAuthHttpClient(super.app, this.tenantId);
+
+  final String tenantId;
+
+  @override
+  String _buildParent() => 'projects/${app.projectId}/tenants/$tenantId';
+
+  @override
+  String _buildOAuthIpdParent(String parentId) =>
+      'projects/${app.projectId}/tenants/$tenantId/oauthIdpConfigs/$parentId';
+
+  @override
+  String _buildSamlParent(String parentId) =>
+      'projects/${app.projectId}/tenants/$tenantId/inboundSamlConfigs/$parentId';
 }
