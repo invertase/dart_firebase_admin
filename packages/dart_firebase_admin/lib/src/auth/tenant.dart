@@ -241,7 +241,8 @@ class Tenant {
 
     if (tenantOptions.emailSignInConfig != null) {
       final emailConfig = _EmailSignInConfig.buildServerRequest(
-          tenantOptions.emailSignInConfig!);
+        tenantOptions.emailSignInConfig!,
+      );
       request.addAll(emailConfig);
     }
 
@@ -255,7 +256,8 @@ class Tenant {
 
     if (tenantOptions.multiFactorConfig != null) {
       request['mfaConfig'] = _MultiFactorAuthConfig.buildServerRequest(
-          tenantOptions.multiFactorConfig!);
+        tenantOptions.multiFactorConfig!,
+      );
     }
 
     if (tenantOptions.testPhoneNumbers != null) {
@@ -269,7 +271,8 @@ class Tenant {
 
     if (tenantOptions.recaptchaConfig != null) {
       request['recaptchaConfig'] = _RecaptchaAuthConfig.buildServerRequest(
-          tenantOptions.recaptchaConfig!);
+        tenantOptions.recaptchaConfig!,
+      );
     }
 
     if (tenantOptions.passwordPolicyConfig != null) {

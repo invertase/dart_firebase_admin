@@ -1,6 +1,6 @@
 import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_auth/auth.dart' as auth;
+import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:test/test.dart';
 
 void main() {
@@ -194,9 +194,6 @@ FirebaseAdminApp _createMockApp() {
 }
 
 class _MockCredential implements Credential {
-  @override
-  Future<String> getAccessToken() async => 'mock-token';
-
   @override
   String? get serviceAccountId => null;
 
