@@ -9,6 +9,17 @@ class Auth extends _BaseAuth {
           authRequestHandler: _AuthRequestHandler(app),
         );
 
-  // TODO tenantManager
+  TenantManager? _tenantManager;
+
+  /// The [TenantManager] instance associated with the current project.
+  ///
+  /// This provides tenant management capabilities for multi-tenant applications.
+  /// Multi-tenancy support requires Google Cloud's Identity Platform (GCIP).
+  /// To learn more about GCIP, including pricing and features, see the
+  /// [GCIP documentation](https://cloud.google.com/identity-platform).
+  TenantManager get tenantManager {
+    return _tenantManager ??= TenantManager._(app);
+  }
+
   // TODO projectConfigManager
 }
