@@ -33,3 +33,6 @@ pubspec.lock
 service-account.json
 
 **/pubspec_overrides.yaml
+
+firebase-admin-node/
+nodejs-storage/
