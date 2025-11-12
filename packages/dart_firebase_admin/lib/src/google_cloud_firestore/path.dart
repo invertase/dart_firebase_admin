@@ -53,12 +53,12 @@ abstract class _Path<T extends _Path<Object?>> implements Comparable<_Path<T>> {
 
   /// Checks whether the current path is a prefix of the specified path.
   bool _isPrefixOf(_Path<T> other) {
-    if (other.segments.length < this.segments.length) {
+    if (other.segments.length < segments.length) {
       return false;
     }
 
-    for (var i = 0; i < this.segments.length; i++) {
-      if (this.segments[i] != other.segments[i]) {
+    for (var i = 0; i < segments.length; i++) {
+      if (segments[i] != other.segments[i]) {
         return false;
       }
     }
@@ -74,8 +74,8 @@ abstract class _Path<T extends _Path<Object?>> implements Comparable<_Path<T>> {
       if (compare != 0) return compare;
     }
 
-    if (this.segments.length < other.segments.length) return -1;
-    if (this.segments.length > other.segments.length) return 1;
+    if (segments.length < other.segments.length) return -1;
+    if (segments.length > other.segments.length) return 1;
 
     return 0;
   }

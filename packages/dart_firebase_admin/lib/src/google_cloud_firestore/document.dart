@@ -179,7 +179,7 @@ class DocumentSnapshot<T> {
   ///   }
   /// });
   /// ```
-  bool get exists => this._fieldsProto != null;
+  bool get exists => _fieldsProto != null;
 
   /// Retrieves all fields in the document as an object. Returns 'undefined' if
   /// the document doesn't exist.
@@ -196,7 +196,7 @@ class DocumentSnapshot<T> {
   /// });
   /// ```
   T? data() {
-    final fieldsProto = this._fieldsProto;
+    final fieldsProto = _fieldsProto;
     final fields = fieldsProto?.fields;
     if (fields == null || fieldsProto == null) return null;
 
@@ -245,7 +245,7 @@ class DocumentSnapshot<T> {
   }
 
   firestore1.Value? _protoField(FieldPath field) {
-    final fieldsProto = this._fieldsProto?.fields;
+    final fieldsProto = _fieldsProto?.fields;
     if (fieldsProto == null) return null;
     var fields = fieldsProto;
 
@@ -300,11 +300,11 @@ class _DocumentSnapshotBuilder<T> {
 
   DocumentSnapshot<T> build() {
     assert(
-      (this.fieldsProto != null) == (this.createTime != null),
+      (this.fieldsProto != null) == (createTime != null),
       'Create time should be set iff document exists.',
     );
     assert(
-      (this.fieldsProto != null) == (this.updateTime != null),
+      (this.fieldsProto != null) == (updateTime != null),
       'Update time should be set iff document exists.',
     );
 

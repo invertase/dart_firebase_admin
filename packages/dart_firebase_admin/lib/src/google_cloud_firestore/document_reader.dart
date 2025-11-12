@@ -90,7 +90,7 @@ class _DocumentReader<T> {
         DocumentSnapshot<DocumentData>? documentSnapshot;
 
         if (response.transaction?.isNotEmpty ?? false) {
-          this._retrievedTransactionId = response.transaction;
+          _retrievedTransactionId = response.transaction;
         }
 
         final found = response.found;

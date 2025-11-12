@@ -34,3 +34,4 @@ dev_dependencies:
 false_secrets:
  - /test/auth/jwt_test.dart
  - /test/client/get_id_token.js
+ - /test/mock_service_account.dart
