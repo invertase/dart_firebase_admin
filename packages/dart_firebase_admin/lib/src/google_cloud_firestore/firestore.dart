@@ -105,7 +105,7 @@ class Firestore {
 
     return DocumentReference._(
       firestore: this,
-      path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      path: path._toQualifiedResourcePath(app.options.projectId, _databaseId),
       converter: _jsonConverter,
     );
   }
@@ -132,7 +132,7 @@ class Firestore {
 
     return CollectionReference._(
       firestore: this,
-      path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      path: path._toQualifiedResourcePath(app.options.projectId, _databaseId),
       converter: _jsonConverter,
     );
   }

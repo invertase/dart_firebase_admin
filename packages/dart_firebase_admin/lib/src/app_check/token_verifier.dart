@@ -19,7 +19,7 @@ class AppCheckTokenVerifier {
       PublicKeySignatureVerifier.withJwksUrl(Uri.parse(jwksUrl));
 
   Future<DecodedAppCheckToken> verifyToken(String token) async {
-    final decoded = await _decodeAndVerify(token, app.projectId);
+    final decoded = await _decodeAndVerify(token, app.options.projectId);
 
     return DecodedAppCheckToken.fromMap(decoded.payload);
   }

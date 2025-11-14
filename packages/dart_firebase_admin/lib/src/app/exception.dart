@@ -83,3 +83,24 @@ abstract class FirebaseAdminException implements Exception {
     return '$runtimeType($code, $message)';
   }
 }
+
+/// App client error codes.
+class AppErrorCode {
+  static const appDeleted = 'app-deleted';
+  static const duplicateApp = 'duplicate-app';
+  static const invalidArgument = 'invalid-argument';
+  static const internalError = 'internal-error';
+  static const invalidAppName = 'invalid-app-name';
+  static const invalidAppOptions = 'invalid-app-options';
+  static const invalidCredential = 'invalid-credential';
+  static const networkError = 'network-error';
+  static const networkTimeout = 'network-timeout';
+  static const noApp = 'no-app';
+  static const unableToParseResponse = 'unable-to-parse-response';
+}
+
+/// Exception thrown for Firebase App-related errors.
+class FirebaseAppException extends FirebaseAdminException {
+  FirebaseAppException(String code, [String? message])
+      : super('app', code, message);
+}
