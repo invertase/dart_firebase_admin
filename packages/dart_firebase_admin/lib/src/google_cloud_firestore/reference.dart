@@ -86,7 +86,7 @@ final class CollectionReference<T> extends Query<T> {
   /// [DocumentSnapshot] whose [DocumentSnapshot.exists] property is `false`.
   Future<List<DocumentReference<T>>> listDocuments() async {
     final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
-      firestore.app.projectId,
+      firestore.app.options.projectId,
       firestore._databaseId,
     );
 
@@ -195,7 +195,7 @@ final class DocumentReference<T> implements _Serializable {
   String get _formattedName {
     return _path
         ._toQualifiedResourcePath(
-          firestore.app.projectId,
+          firestore.app.options.projectId,
           firestore._databaseId,
         )
         ._formattedName;
@@ -1190,7 +1190,7 @@ base class Query<T> {
   String _buildProtoParentPath() {
     return _queryOptions.parentPath
         ._toQualifiedResourcePath(
-          firestore.app.projectId,
+          firestore.app.options.projectId,
           firestore._databaseId,
         )
         ._formattedName;

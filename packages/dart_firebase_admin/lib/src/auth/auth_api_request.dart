@@ -333,7 +333,7 @@ abstract class _AbstractAuthRequestHandler {
 
       final response = await client.projects.createSessionCookie(
         request,
-        app.projectId,
+        app.options.projectId,
       );
 
       final sessionCookie = response.sessionCookie;
@@ -393,7 +393,7 @@ abstract class _AbstractAuthRequestHandler {
     return _httpClient.v1((client) async {
       final response = await client.projects.accounts_1.batchCreate(
         request,
-        app.projectId,
+        app.options.projectId,
       );
       // No error object is returned if no error encountered.
       // Rewrite response as UserImportResult and re-insert client previously detected errors.
@@ -434,7 +434,7 @@ abstract class _AbstractAuthRequestHandler {
     return _httpClient.v1((client) async {
       // TODO handle tenants
       return client.projects.accounts_1.batchGet(
-        app.projectId,
+        app.options.projectId,
         maxResults: maxResults,
         nextPageToken: pageToken,
       );
@@ -451,7 +451,7 @@ abstract class _AbstractAuthRequestHandler {
     return _httpClient.v1((client) async {
       return client.projects.accounts_1.delete(
         auth1.GoogleCloudIdentitytoolkitV1DeleteAccountRequest(localId: uid),
-        app.projectId,
+        app.options.projectId,
       );
     });
   }
@@ -477,7 +477,7 @@ abstract class _AbstractAuthRequestHandler {
           localIds: uids,
           force: force,
         ),
-        app.projectId,
+        app.options.projectId,
       );
     });
   }
@@ -506,7 +506,7 @@ abstract class _AbstractAuthRequestHandler {
           phoneNumber: properties.phoneNumber?.value,
           photoUrl: properties.photoURL?.value,
         ),
-        app.projectId,
+        app.options.projectId,
       );
 
       final localId = response.localId;

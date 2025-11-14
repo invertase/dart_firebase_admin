@@ -3,12 +3,7 @@ import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
-  final admin = FirebaseAdminApp.initializeApp(
-    'dart-firebase-admin',
-    Credential.fromApplicationDefaultCredentials(),
-  );
-
-  // // admin.useEmulator();
+  final admin = FirebaseAdmin.initializeApp();
 
   final messaging = Messaging(admin);
 

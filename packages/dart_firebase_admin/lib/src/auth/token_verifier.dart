@@ -75,7 +75,7 @@ class FirebaseTokenVerifier {
   }) async {
     final decoded = await _decodeAndVerify(
       jwtToken,
-      projectId: app.projectId,
+      projectId: app.options.projectId,
       isEmulator: isEmulator,
     );
 
