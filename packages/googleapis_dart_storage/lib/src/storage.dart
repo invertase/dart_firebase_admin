@@ -52,7 +52,10 @@ class Storage extends Service {
     var apiEndpoint = 'https://storage.$universe';
     var customEndpoint = false;
 
-    final emulatorHost = Platform.environment['STORAGE_EMULATOR_HOST'];
+    // Check Zone for test environment variables, fallback to Platform.environment
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final emulatorHost = env['STORAGE_EMULATOR_HOST'];
     if (emulatorHost != null) {
       apiEndpoint = Storage._sanitizeEndpoint(emulatorHost);
       customEndpoint = true;
