@@ -199,6 +199,10 @@ class RetryExecutor {
   /// Creates a [RetryExecutor] that automatically determines retry behavior
   /// based on preconditions and idempotency strategy.
   ///
+  /// [retryOptions] can be provided to explicitly set retry behavior.
+  /// Otherwise, retry behavior is computed based on [shouldRetryMutation] and
+  /// preconditions.
+  ///
   /// [shouldRetryMutation] determines if retries should be allowed based on
   /// preconditions. Use [shouldRetryObjectMutation] for object mutations or
   /// [shouldRetryBucketMutation] for bucket mutations.
@@ -207,13 +211,20 @@ class RetryExecutor {
   /// (unless disabled in [RetryOptions]).
   RetryExecutor(
     this.storage, {
+    RetryOptions? retryOptions,
     PreconditionOptions? preconditionOptions,
     PreconditionOptions? instancePreconditions,
     ShouldRetryMutationFn? shouldRetryMutation,
   })  : preconditionOptions =
             preconditionOptions ?? const PreconditionOptions(),
         instancePreconditions = instancePreconditions {
-    // Compute effective retry options based on preconditions and idempotency strategy
+    // If retryOptions is explicitly provided, use it directly
+    if (retryOptions != null) {
+      _effectiveRetry = retryOptions;
+      return;
+    }
+
+    // Otherwise, compute effective retry options based on preconditions and idempotency strategy
     final baseRetry = storage.retryOptions;
     if (shouldRetryMutation != null) {
       final allowRetry = shouldRetryMutation(
@@ -227,6 +238,17 @@ class RetryExecutor {
     } else {
       _effectiveRetry = baseRetry;
     }
+  }
+
+  /// Creates a [RetryExecutor] with retries explicitly disabled.
+  ///
+  /// Useful for non-idempotent operations that should not be retried.
+  factory RetryExecutor.withoutRetries(Storage storage) {
+    final noRetryOptions = storage.retryOptions.copyWith(
+      autoRetry: false,
+      maxRetries: 0,
+    );
+    return RetryExecutor(storage, retryOptions: noRetryOptions);
   }
 
   final Storage storage;

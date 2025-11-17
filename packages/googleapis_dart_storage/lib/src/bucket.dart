@@ -17,7 +17,7 @@ class BucketMetadata {
 }
 
 class BucketOptions {
-  final Object? crc32cGenerator;
+  final Crc32Generator? crc32cGenerator;
   final String? kmsKeyName;
   final Object? preconditionOpts;
   final String? userProject;
@@ -32,19 +32,45 @@ class BucketOptions {
     this.generation,
     this.softDeleted,
   });
+
+  BucketOptions copyWith({
+    Crc32Generator? crc32cGenerator,
+    String? kmsKeyName,
+    Object? preconditionOpts,
+    String? userProject,
+    int? generation,
+    bool? softDeleted,
+  }) {
+    return BucketOptions(
+      crc32cGenerator: crc32cGenerator ?? this.crc32cGenerator,
+      kmsKeyName: kmsKeyName ?? this.kmsKeyName,
+      preconditionOpts: preconditionOpts ?? this.preconditionOpts,
+      userProject: userProject ?? this.userProject,
+      generation: generation ?? this.generation,
+      softDeleted: softDeleted ?? this.softDeleted,
+    );
+  }
 }
 
 class Bucket extends ServiceObject<BucketMetadata> {
   @override
   final BucketMetadata metadata;
-
   final BucketOptions options;
+  final Acl acl;
+  final Acl aclDefault;
 
   Storage get storage => service as Storage;
 
   Bucket._(Storage storage, String name, [BucketOptions? options])
-      : options = options ?? const BucketOptions(),
+      : options = (options ?? const BucketOptions()).copyWith(
+          // Inherit from storage options crc32cGenerator (which has a default) if not specified in bucket options
+          crc32cGenerator:
+              options?.crc32cGenerator ?? storage.options.crc32cGenerator,
+        ),
+        // TODO: Whats this doing?
         metadata = BucketMetadata(storage_v1.Bucket()..name = name),
+        acl = Acl._bucketAcl(storage, name),
+        aclDefault = Acl._bucketDefaultObjectAcl(storage, name),
         super(service: storage, id: name);
 
   /// Add one or more lifecycle rules to this bucket.
@@ -83,8 +109,8 @@ class Bucket extends ServiceObject<BucketMetadata> {
   // }
 
   /// Create a [File] handle within this bucket.
-  File file(String name) {
-    return File._(this, name);
+  File file(String name, [FileOptions? options]) {
+    return File._(this, name, options);
   }
 
   @override

@@ -12,7 +12,7 @@ void main() {
     test('should create with default values', () {
       const options = StorageOptions();
       expect(options.apiEndpoint, isNull);
-      expect(options.crc32cGenerator, isNull);
+      expect(options.crc32cGenerator, isNotNull);
       expect(options.retryOptions, isNull);
       expect(options.authClient, isNull);
       expect(options.useAuthWithCustomEndpoint, isNull);

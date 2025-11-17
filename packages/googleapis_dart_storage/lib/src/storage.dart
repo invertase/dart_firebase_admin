@@ -2,21 +2,21 @@ part of '../googleapis_dart_storage.dart';
 
 class StorageOptions extends ServiceOptions {
   final String? apiEndpoint;
-  final Object? crc32cGenerator; // TODO
+  final Crc32Generator crc32cGenerator;
   final RetryOptions? retryOptions;
 
   const StorageOptions({
     this.apiEndpoint,
-    this.crc32cGenerator,
+    Crc32Generator? crc32cGenerator,
     this.retryOptions,
     super.authClient,
     super.useAuthWithCustomEndpoint,
     super.universeDomain,
-  });
+  }) : crc32cGenerator = crc32cGenerator ?? defaultCrc32cValidatorGenerator;
 
   StorageOptions copyWith({
     String? apiEndpoint,
-    Object? crc32cGenerator,
+    Crc32Generator? crc32cGenerator,
     RetryOptions? retryOptions,
     Future<http.Client>? authClient,
     bool? useAuthWithCustomEndpoint,
@@ -37,7 +37,6 @@ class StorageOptions extends ServiceOptions {
 class Storage extends Service {
   final StorageOptions options;
   final Object acl = {}; // TODO
-  final Object crc32cGenerator = {}; // TODO
 
   Storage(this.options)
       : super(
@@ -53,8 +52,8 @@ class Storage extends Service {
     var customEndpoint = false;
 
     // Check Zone for test environment variables, fallback to Platform.environment
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final env = Zone.current[envSymbol] as Map<String, String>? ??
+        io.Platform.environment;
     final emulatorHost = env['STORAGE_EMULATOR_HOST'];
     if (emulatorHost != null) {
       apiEndpoint = Storage._sanitizeEndpoint(emulatorHost);
