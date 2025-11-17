@@ -17,16 +17,7 @@ class MockObjectAccessControlsResource extends Mock
 class MockDefaultObjectAccessControlsResource extends Mock
     implements storage_v1.DefaultObjectAccessControlsResource {}
 
-// Mock list response classes
-// These need to match the return type of the list() methods
-// We'll use dynamic casting since the exact type isn't easily accessible
-class MockBucketAccessControlsListResponse {
-  List<storage_v1.BucketAccessControl>? items;
-}
-
-class MockObjectAccessControlsListResponse {
-  List<storage_v1.ObjectAccessControl>? items;
-}
+// No need for mock list response classes - use the real types from googleapis
 
 /// Test helper that creates a Storage instance with an injectable mock client
 class TestStorage extends Storage {
@@ -62,6 +53,12 @@ void main() {
   late MockBucketAccessControlsResource mockBucketAccessControls;
   late MockObjectAccessControlsResource mockObjectAccessControls;
   late MockDefaultObjectAccessControlsResource mockDefaultObjectAccessControls;
+
+  setUpAll(() {
+    // Register fallback values for mocktail
+    registerFallbackValue(storage_v1.BucketAccessControl());
+    registerFallbackValue(storage_v1.ObjectAccessControl());
+  });
 
   setUp(() {
     mockClient = MockStorageApi();
@@ -318,7 +315,7 @@ void main() {
     group('getAll', () {
       test('should call bucketAccessControls.list and return all entries',
           () async {
-        final mockResponse = MockBucketAccessControlsListResponse()
+        final mockResponse = storage_v1.BucketAccessControls()
           ..items = [
             storage_v1.BucketAccessControl()
               ..entity = 'user-1@example.com'
@@ -331,7 +328,7 @@ void main() {
         when(() => mockBucketAccessControls.list(
               any(),
               userProject: any(named: 'userProject'),
-            )).thenAnswer((_) async => mockResponse as dynamic);
+            )).thenAnswer((_) async => mockResponse);
 
         final result = await bucketAcl.getAll();
 
@@ -348,12 +345,12 @@ void main() {
       });
 
       test('should handle empty list', () async {
-        final mockResponse = MockBucketAccessControlsListResponse()..items = [];
+        final mockResponse = storage_v1.BucketAccessControls()..items = [];
 
         when(() => mockBucketAccessControls.list(
               any(),
               userProject: any(named: 'userProject'),
-            )).thenAnswer((_) async => mockResponse as dynamic);
+            )).thenAnswer((_) async => mockResponse);
 
         final result = await bucketAcl.getAll();
 
@@ -361,12 +358,12 @@ void main() {
       });
 
       test('should pass userProject parameter', () async {
-        final mockResponse = MockBucketAccessControlsListResponse()..items = [];
+        final mockResponse = storage_v1.BucketAccessControls()..items = [];
 
         when(() => mockBucketAccessControls.list(
               any(),
               userProject: any(named: 'userProject'),
-            )).thenAnswer((_) async => mockResponse as dynamic);
+            )).thenAnswer((_) async => mockResponse);
 
         await bucketAcl.getAll(userProject: 'my-project');
 
@@ -583,7 +580,7 @@ void main() {
 
     group('getAll', () {
       test('should call defaultObjectAccessControls.list', () async {
-        final mockResponse = MockObjectAccessControlsListResponse()
+        final mockResponse = storage_v1.ObjectAccessControls()
           ..items = [
             storage_v1.ObjectAccessControl()
               ..entity = 'user-1@example.com'
@@ -593,7 +590,7 @@ void main() {
         when(() => mockDefaultObjectAccessControls.list(
               any(),
               userProject: any(named: 'userProject'),
-            )).thenAnswer((_) async => mockResponse as dynamic);
+            )).thenAnswer((_) async => mockResponse);
 
         final result = await defaultObjectAcl.getAll();
 
@@ -908,7 +905,7 @@ void main() {
 
     group('getAll', () {
       test('should call objectAccessControls.list', () async {
-        final mockResponse = MockObjectAccessControlsListResponse()
+        final mockResponse = storage_v1.ObjectAccessControls()
           ..items = [
             storage_v1.ObjectAccessControl()
               ..entity = 'user-1@example.com'
@@ -920,7 +917,7 @@ void main() {
               any(),
               generation: any(named: 'generation'),
               userProject: any(named: 'userProject'),
-            )).thenAnswer((_) async => mockResponse as dynamic);
+            )).thenAnswer((_) async => mockResponse);
 
         final result = await objectAcl.getAll();
 
@@ -936,14 +933,14 @@ void main() {
       });
 
       test('should pass generation parameter', () async {
-        final mockResponse = MockObjectAccessControlsListResponse()..items = [];
+        final mockResponse = storage_v1.ObjectAccessControls()..items = [];
 
         when(() => mockObjectAccessControls.list(
               any(),
               any(),
               generation: any(named: 'generation'),
               userProject: any(named: 'userProject'),
-            )).thenAnswer((_) async => mockResponse as dynamic);
+            )).thenAnswer((_) async => mockResponse);
 
         await objectAcl.getAll(generation: 123);
 
@@ -959,7 +956,7 @@ void main() {
         final mockProjectTeam = storage_v1.ObjectAccessControlProjectTeam()
           ..projectNumber = '123456789'
           ..team = 'editors';
-        final mockResponse = MockObjectAccessControlsListResponse()
+        final mockResponse = storage_v1.ObjectAccessControls()
           ..items = [
             storage_v1.ObjectAccessControl()
               ..entity = 'user-1@example.com'
@@ -975,7 +972,7 @@ void main() {
               any(),
               generation: any(named: 'generation'),
               userProject: any(named: 'userProject'),
-            )).thenAnswer((_) async => mockResponse as dynamic);
+            )).thenAnswer((_) async => mockResponse);
 
         final result = await objectAcl.getAll();
 

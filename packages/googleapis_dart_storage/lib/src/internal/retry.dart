@@ -9,7 +9,7 @@ import '../../googleapis_dart_storage.dart' show Storage;
 /// Matches the Node SDK IdempotencyStrategy enum semantics.
 enum IdempotencyStrategy { retryAlways, retryConditional, retryNever }
 
-typedef RetryableErrorFn = bool Function(Object error);
+typedef RetryableErrorFn = bool Function(dynamic error);
 
 class RetryOptions {
   final bool autoRetry;
@@ -83,9 +83,9 @@ class DeleteOptions extends PreconditionOptions {
 
 /// Decide if an error should be retried, roughly mirroring Node's
 /// Util.shouldRetryRequest (status codes + JSON error reasons).
-bool defaultShouldRetryError(Object error) {
+bool defaultShouldRetryError(dynamic error) {
   if (error is! ApiError) return false;
-  final apiError = error as ApiError;
+  final apiError = error;
   final code = apiError.code;
   if (code != null && <int>[408, 429, 500, 502, 503, 504].contains(code)) {
     return true;
@@ -266,13 +266,17 @@ class RetryExecutor {
   Future<T> retry<T>(
     Future<T> Function(StorageApi client) operation, {
     RetryOptions? retryOptions,
-    bool Function(Object error)? classify,
+    bool Function(dynamic error)? classify,
   }) async {
     final options = retryOptions ?? _effectiveRetry;
     final client = await storage.client;
 
     if (!options.autoRetry || options.maxRetries <= 0) {
-      return operation(client);
+      try {
+        return await operation(client);
+      } catch (e) {
+        rethrow;
+      }
     }
 
     final errorClassifier = classify ?? defaultShouldRetryError;
@@ -290,8 +294,8 @@ class RetryExecutor {
           rethrow;
         }
 
-        final shouldRetry = errorClassifier(e as dynamic) ||
-            (options.retryableErrorFn?.call(e as dynamic) ?? false);
+        final shouldRetry = errorClassifier(e) ||
+            (options.retryableErrorFn?.call(e) ?? false);
         if (!shouldRetry) rethrow;
 
         if (delay > options.maxRetryDelay) {

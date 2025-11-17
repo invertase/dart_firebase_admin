@@ -1,11 +1,8 @@
-import 'package:meta/meta.dart';
-
 import 'api_error.dart';
 import 'retry.dart';
 import 'service.dart';
 
 /// Base class for resource objects (Bucket, File, etc.).
-@immutable
 abstract class ServiceObject<M> {
   final Service service;
   final String id;

@@ -92,7 +92,7 @@ class Acl {
     final executor = RetryExecutor.withoutRetries(_storage);
 
     try {
-      return executor.retry<AclEntry>(
+      return await executor.retry<AclEntry>(
         (client) async {
           switch (scope) {
             case AclScope.bucket:
@@ -135,6 +135,9 @@ class Acl {
         },
       );
     } catch (e) {
+      if (e is ApiError) {
+        rethrow;
+      }
       throw ApiError('Failed to add ACL entry for $entity', details: e);
     }
   }
@@ -192,7 +195,7 @@ class Acl {
     final executor = RetryExecutor(_storage);
 
     try {
-      return executor.retry<AclEntry>(
+      return await executor.retry<AclEntry>(
         (client) async {
           switch (scope) {
             case AclScope.bucket:
@@ -226,6 +229,9 @@ class Acl {
         },
       );
     } catch (e) {
+      if (e is ApiError) {
+        rethrow;
+      }
       throw ApiError('Failed to get ACL entry for $entity', details: e);
     }
   }
@@ -235,7 +241,7 @@ class Acl {
     final executor = RetryExecutor(_storage);
 
     try {
-      return executor.retry<List<AclEntry>>(
+      return await executor.retry<List<AclEntry>>(
         (client) async {
           switch (scope) {
             case AclScope.bucket:
@@ -272,6 +278,9 @@ class Acl {
         },
       );
     } catch (e) {
+      if (e is ApiError) {
+        rethrow;
+      }
       throw ApiError('Failed to list ACL entries', details: e);
     }
   }
@@ -285,49 +294,56 @@ class Acl {
   }) async {
     final executor = RetryExecutor(_storage);
 
-    return executor.retry<AclEntry>(
-      (client) async {
-        switch (scope) {
-          case AclScope.bucket:
-            final acl = storage_v1.BucketAccessControl()
-              ..role = role.toUpperCase();
-            final resp = await client.bucketAccessControls.update(
-              acl,
-              bucket,
-              entity,
-              userProject: userProject,
-            );
-            return _fromBucketAccessControl(resp);
-          case AclScope.bucketDefaultObject:
-            final acl = storage_v1.ObjectAccessControl()
-              ..role = role.toUpperCase();
-            final resp = await client.defaultObjectAccessControls.update(
-              acl,
-              bucket,
-              entity,
-              userProject: userProject,
-            );
-            return _fromObjectAccessControl(resp);
-          case AclScope.object:
-            if (object == null) {
-              throw ApiError(
-                'AclScope.object requires a non-null object name.',
+    try {
+      return await executor.retry<AclEntry>(
+        (client) async {
+          switch (scope) {
+            case AclScope.bucket:
+              final acl = storage_v1.BucketAccessControl()
+                ..role = role.toUpperCase();
+              final resp = await client.bucketAccessControls.update(
+                acl,
+                bucket,
+                entity,
+                userProject: userProject,
               );
-            }
-            final acl = storage_v1.ObjectAccessControl()
-              ..role = role.toUpperCase();
-            final resp = await client.objectAccessControls.update(
-              acl,
-              bucket,
-              object!,
-              entity,
-              generation: generation?.toString(),
-              userProject: userProject,
-            );
-            return _fromObjectAccessControl(resp);
-        }
-      },
-    );
+              return _fromBucketAccessControl(resp);
+            case AclScope.bucketDefaultObject:
+              final acl = storage_v1.ObjectAccessControl()
+                ..role = role.toUpperCase();
+              final resp = await client.defaultObjectAccessControls.update(
+                acl,
+                bucket,
+                entity,
+                userProject: userProject,
+              );
+              return _fromObjectAccessControl(resp);
+            case AclScope.object:
+              if (object == null) {
+                throw ApiError(
+                  'AclScope.object requires a non-null object name.',
+                );
+              }
+              final acl = storage_v1.ObjectAccessControl()
+                ..role = role.toUpperCase();
+              final resp = await client.objectAccessControls.update(
+                acl,
+                bucket,
+                object!,
+                entity,
+                generation: generation?.toString(),
+                userProject: userProject,
+              );
+              return _fromObjectAccessControl(resp);
+          }
+        },
+      );
+    } catch (e) {
+      if (e is ApiError) {
+        rethrow;
+      }
+      throw ApiError('Failed to update ACL entry for $entity', details: e);
+    }
   }
 
   AclEntry _fromBucketAccessControl(storage_v1.BucketAccessControl acl) {

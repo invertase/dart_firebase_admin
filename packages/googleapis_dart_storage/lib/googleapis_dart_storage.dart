@@ -18,10 +18,11 @@ export 'src/internal/api_error.dart';
 export 'src/internal/retry.dart';
 
 part 'src/acl.dart';
-part 'src/storage.dart';
 part 'src/bucket.dart';
-part 'src/file.dart';
 part 'src/crc32c.dart';
+part 'src/file.dart';
+part 'src/hmac_key.dart';
+part 'src/storage.dart';
 
 /// Symbol for accessing environment variables in tests via Zones.
 /// This allows tests to override Platform.environment values.

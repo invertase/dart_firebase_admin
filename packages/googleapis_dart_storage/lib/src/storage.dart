@@ -128,8 +128,13 @@ class Storage extends Service {
     throw UnimplementedError();
   }
 
-  Object hmacKey(String accessId, Object? options) {
-    throw UnimplementedError();
+  HmacKey hmacKey(String accessId, [HmacKeyOptions? options]) {
+    if (accessId.isEmpty) {
+      // TODO: Use exception class
+      throw Exception('Access ID is required');
+    }
+
+    return HmacKey._(this, accessId, options: options);
   }
 
   Future<void> getBucketsStream() {
