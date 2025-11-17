@@ -1,8 +1,19 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
 library;
 
-export 'src/googleapis_dart_storage_base.dart';
+import 'dart:io';
 
-// TODO: Export any libraries intended for clients of this package.
+import 'package:googleapis_auth/auth_io.dart' show AuthClient;
+import 'package:googleapis/storage/v1.dart' as storage_v1;
+import 'package:googleapis_dart_storage/src/internal/api_error.dart';
+import 'package:googleapis_dart_storage/src/internal/retry.dart';
+import 'package:googleapis_dart_storage/src/internal/service.dart';
+import 'package:http/http.dart' as http;
+
+import 'src/internal/service_object.dart';
+
+export 'src/internal/api_error.dart';
+export 'src/internal/retry.dart';
+
+part 'src/storage.dart';
+part 'src/bucket.dart';
+part 'src/file.dart';
