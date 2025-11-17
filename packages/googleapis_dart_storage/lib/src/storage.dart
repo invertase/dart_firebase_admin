@@ -104,8 +104,16 @@ class Storage extends Service {
     return Bucket._(this, name, options);
   }
 
-  Object channel(String id, String resourceId) {
-    throw UnimplementedError();
+  Channel channel(String id, String resourceId) {
+    if (id.isEmpty) {
+      throw ArgumentError('Channel ID is required');
+    }
+
+    if (resourceId.isEmpty) {
+      throw ArgumentError('Resource ID is required');
+    }
+
+    return Channel._(this, id, resourceId);
   }
 
   Future<void> createBucket() {

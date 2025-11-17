@@ -19,6 +19,7 @@ export 'src/internal/retry.dart';
 
 part 'src/acl.dart';
 part 'src/bucket.dart';
+part 'src/channel.dart';
 part 'src/crc32c.dart';
 part 'src/file.dart';
 part 'src/hmac_key.dart';

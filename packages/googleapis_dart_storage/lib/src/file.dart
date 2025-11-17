@@ -42,7 +42,11 @@ class FileOptions {
   }
 }
 
-class File extends ServiceObject<FileMetadata> {
+class File extends ServiceObject<FileMetadata>
+    with
+        GettableMixin<FileMetadata>,
+        SettableMixin<FileMetadata>,
+        DeletableMixin<FileMetadata> {
   File._(this.bucket, String name, [FileOptions? options])
       : options = (options ?? const FileOptions()).copyWith(
           // Inherit from bucket's storage options crc32cGenerator (which has a default) if not specified in file options

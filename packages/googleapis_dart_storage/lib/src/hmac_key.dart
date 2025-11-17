@@ -28,7 +28,11 @@ class SetHmacKeyMetadata extends storage_v1.HmacKeyMetadata {
 ///
 /// This class does not expose the secret; that is only returned at creation
 /// time by `projects.hmacKeys.create`.
-class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata> {
+class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata>
+    with
+        GettableMixin<storage_v1.HmacKeyMetadata>,
+        SettableMixin<storage_v1.HmacKeyMetadata>,
+        DeletableMixin<storage_v1.HmacKeyMetadata> {
   /// A reference to the [Storage] associated with this [HmacKey] instance.
   Storage get storage => service as Storage;
 
@@ -99,6 +103,9 @@ class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata> {
   ///
   /// The authenticated user must have `storage.hmacKeys.get` permission
   /// for the project in which the key exists.
+  ///
+  /// Note: This method has a different signature than the mixin's `getMetadata()`
+  /// (which takes no parameters), so both methods are available.
   Future<storage_v1.HmacKeyMetadata> getMetadata({String? userProject}) async {
     final executor = RetryExecutor(storage);
 

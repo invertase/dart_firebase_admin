@@ -1,13 +1,5 @@
-import 'dart:io';
-
-import 'package:meta/meta.dart';
-
 import 'package:http/http.dart' as http;
-import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:googleapis/storage/v1.dart' as storage_v1;
-
-import 'package:googleapis_dart_storage/src/internal/api_error.dart';
-import 'package:googleapis_dart_storage/src/internal/retry.dart';
 
 typedef RequestInterceptor = http.BaseRequest Function(http.BaseRequest);
 

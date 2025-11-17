@@ -52,7 +52,11 @@ class BucketOptions {
   }
 }
 
-class Bucket extends ServiceObject<BucketMetadata> {
+class Bucket extends ServiceObject<BucketMetadata>
+    with
+        GettableMixin<BucketMetadata>,
+        SettableMixin<BucketMetadata>,
+        DeletableMixin<BucketMetadata> {
   @override
   final BucketMetadata metadata;
   final BucketOptions options;
