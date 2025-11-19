@@ -1,5 +1,51 @@
 part of '../googleapis_dart_storage.dart';
 
+// TODO: Where should this go?
+abstract class WatchAllOptions {
+  final String? delimiter;
+  final int? maxResults;
+  final String? pageToken;
+  final String? prefix;
+  final String? projection;
+  final String? userProject;
+  final bool? versions;
+
+  const WatchAllOptions({
+    this.delimiter,
+    this.maxResults,
+    this.pageToken,
+    this.prefix,
+    this.projection,
+    this.userProject,
+    this.versions,
+  });
+}
+
+class CreateChannelConfig extends WatchAllOptions {
+  final String address;
+
+  const CreateChannelConfig({
+    required this.address,
+    super.delimiter,
+    super.maxResults,
+    super.pageToken,
+    super.prefix,
+    super.projection,
+    super.userProject,
+    super.versions,
+  });
+}
+
+class CreateChannelOptions {
+  final String? userProject;
+
+  const CreateChannelOptions({
+    this.userProject,
+  });
+}
+
+typedef ChannelMetadata = storage_v1.Channel;
+
 /// Create a channel object to interact with a Cloud Storage channel.
 ///
 /// See {@link https://cloud.google.com/storage/docs/object-change-notification| Object Change Notification}
@@ -9,22 +55,19 @@ part of '../googleapis_dart_storage.dart';
 /// final storage = Storage(options);
 /// final channel = storage.channel('id', 'resource-id');
 /// ```
-class Channel extends ServiceObject<storage_v1.Channel> {
+class Channel extends ServiceObject<ChannelMetadata> {
   /// A reference to the [Storage] associated with this [Channel] instance.
   Storage get storage => service as Storage;
 
-  /// Cached metadata containing the channel id and resourceId.
-  @override
-  late storage_v1.Channel metadata;
-
   Channel._(Storage storage, String id, String resourceId)
-      : super(service: storage, id: '') {
-    // An ID shouldn't be included in the API requests.
-    // RE: https://github.com/GoogleCloudPlatform/google-cloud-node/issues/1145
-    metadata = storage_v1.Channel()
-      ..id = id
-      ..resourceId = resourceId;
-  }
+      : super(
+          service: storage,
+          // Don't include an ID in the API requests: https://github.com/googleapis/google-cloud-node/issues/1145
+          id: '',
+          metadata: ChannelMetadata()
+            ..id = id
+            ..resourceId = resourceId,
+        );
 
   /// Stop this channel.
   ///
@@ -52,8 +95,4 @@ class Channel extends ServiceObject<storage_v1.Channel> {
       },
     );
   }
-
-  // Note: Channel does not use GettableMixin, SettableMixin, or DeletableMixin
-  // because it doesn't support get(), setMetadata(), or delete() operations.
-  // The base ServiceObject will throw UnimplementedError for these methods.
 }

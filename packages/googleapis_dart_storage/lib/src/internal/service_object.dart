@@ -2,57 +2,59 @@ import 'api_error.dart';
 import 'retry.dart';
 import 'service.dart';
 
+mixin CreatableMixin<M, T> on ServiceObject<M> {
+  Future<T> create(M metadata);
+}
+
 /// Mixin that provides the `get()` method for fetching metadata.
 ///
 /// Classes that support fetching metadata should use this mixin.
-/// This mixin also provides `exists()` and `getMetadata()` convenience methods.
+/// This mixin also provides `exists()` and `get()` convenience methods.
 ///
 /// Example:
 /// ```dart
-/// class MyObject extends ServiceObject<MyMetadata> with GettableMixin<MyMetadata> {
+/// class MyObject extends ServiceObject<MyMetadata> with GettableMixin<MyMetadata, MyObject> {
 ///   @override
-///   Future<MyMetadata> get() {
-///     // implementation
+///   Future<MyMetadata> getMetadata({String? userProject}) {
+///     // Make API call, set metadata, and return it
 ///   }
 /// }
 /// ```
-mixin GettableMixin<M> on ServiceObject<M> {
-  /// Fetch latest metadata from the API.
-  Future<M> get();
+mixin GettableMixin<M, T> on ServiceObject<M> {
+  /// Fetch metadata from the API and update this instance's metadata.
+  ///
+  /// This is the core method that makes the API request and sets `this.metadata`.
+  /// It mirrors the TypeScript implementation where getMetadata() makes the API
+  /// request directly and sets `this.metadata = body`.
+  ///
+  /// Subclasses must implement this method to make the actual API call.
+  /// After fetching metadata, they should call `setInstanceMetadata(metadata)`
+  /// to update this instance's metadata.
+  Future<M> getMetadata({String? userProject});
+
+  /// Fetch latest metadata from the API and return this instance.
+  ///
+  /// This calls [getMetadata()] to fetch and update metadata, then returns
+  /// this instance. This mirrors the TypeScript implementation where get()
+  /// calls getMetadata() internally and returns `self`.
+  Future<T> get({String? userProject}) async {
+    await getMetadata(userProject: userProject);
+    return this as T;
+  }
 
   /// Check if the underlying resource exists.
   ///
   /// Mirrors Node's ServiceObject.exists semantics: returns false on 404,
   /// rethrows other errors.
-  Future<bool> exists() async {
+  Future<bool> exists({String? userProject}) async {
     try {
-      await get();
+      await getMetadata(userProject: userProject);
       return true;
     } on ApiError catch (e) {
       if (e.code == 404) return false;
       rethrow;
     }
   }
-
-  /// Convenience alias that mirrors Node's getMetadata.
-  Future<M> getMetadata() => get();
-}
-
-/// Mixin that provides the `setMetadata()` method for updating metadata.
-///
-/// Classes that support updating metadata should use this mixin.
-/// Example:
-/// ```dart
-/// class MyObject extends ServiceObject<MyMetadata> with SettableMixin<MyMetadata> {
-///   @override
-///   Future<MyMetadata> setMetadata(MyMetadata metadata) {
-///     // implementation
-///   }
-/// }
-/// ```
-mixin SettableMixin<M> on ServiceObject<M> {
-  /// Persist metadata changes to the API.
-  Future<M> setMetadata(M metadata);
 }
 
 /// Mixin that provides the `delete()` method for deleting resources.
@@ -71,7 +73,14 @@ mixin DeletableMixin<M> on ServiceObject<M> {
   /// Delete this resource.
   ///
   /// Subclasses may override with more specific option types (e.g., [DeleteOptions]).
-  Future<void> delete({PreconditionOptions? options});
+  Future<void> delete({DeleteOptions? options});
+}
+
+mixin SettableMixin<M> on ServiceObject<M> {
+  /// Set the metadata for this resource.
+  ///
+  /// Subclasses may override with more specific option types (e.g., [SetMetadataOptions]).
+  Future<M> setMetadata(M metadata);
 }
 
 /// Base class for resource objects (Bucket, File, etc.).
@@ -89,10 +98,19 @@ mixin DeletableMixin<M> on ServiceObject<M> {
 /// try to call a method that isn't supported, you'll get a compile-time error.
 abstract class ServiceObject<M> {
   final Service service;
-  final String id;
+  String id;
+  M _metadata;
 
-  const ServiceObject({required this.service, required this.id});
+  ServiceObject({required this.service, required this.id, required M metadata})
+      : _metadata = metadata;
 
   /// The resource metadata type used by this object.
-  M get metadata;
+  M get metadata => _metadata;
+}
+
+// TODO: Check this is hidden from the public API
+extension ServiceObjectExtension<M> on ServiceObject<M> {
+  void setInstanceMetadata(M metadata) {
+    _metadata = metadata;
+  }
 }

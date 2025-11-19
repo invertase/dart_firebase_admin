@@ -7,6 +7,31 @@ class HmacKeyOptions {
   const HmacKeyOptions({this.projectId});
 }
 
+class CreateHmacKeyOptions {
+  final String? projectId;
+  final String? userProject;
+
+  const CreateHmacKeyOptions({this.projectId, this.userProject});
+}
+
+class GetHmacKeysOptions {
+  final String? projectId;
+  final String? serviceAccountEmail;
+  final bool? showDeletedKeys;
+  final int? maxResults;
+  final String? pageToken;
+  final String? userProject;
+
+  const GetHmacKeysOptions({
+    this.projectId,
+    this.userProject,
+    this.serviceAccountEmail,
+    this.showDeletedKeys,
+    this.maxResults,
+    this.pageToken,
+  });
+}
+
 enum HmacKeyState {
   active('ACTIVE'),
   inactive('INACTIVE'),
@@ -24,37 +49,37 @@ class SetHmacKeyMetadata extends storage_v1.HmacKeyMetadata {
       : super(state: state?.value);
 }
 
+typedef HmacKeyMetadata = storage_v1.HmacKeyMetadata;
+
 /// A handle to a single HMAC key, analogous to the Node.js HmacKey class.
 ///
 /// This class does not expose the secret; that is only returned at creation
 /// time by `projects.hmacKeys.create`.
-class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata>
+class HmacKey extends ServiceObject<HmacKeyMetadata>
     with
-        GettableMixin<storage_v1.HmacKeyMetadata>,
-        SettableMixin<storage_v1.HmacKeyMetadata>,
-        DeletableMixin<storage_v1.HmacKeyMetadata> {
+        GettableMixin<HmacKeyMetadata, HmacKey>,
+        DeletableMixin<HmacKeyMetadata> {
   /// A reference to the [Storage] associated with this [HmacKey] instance.
   Storage get storage => service as Storage;
 
   final String accessId;
-  final String? projectId;
-
-  /// Cached metadata; call [getMetadata] to refresh from the server.
-  @override
-  late storage_v1.HmacKeyMetadata metadata;
+  final String projectId;
 
   HmacKey._(Storage storage, this.accessId, {HmacKeyOptions? options})
-      : projectId = options?.projectId,
-        super(service: storage, id: accessId) {
-    if (projectId == null || projectId!.isEmpty) {
+      : projectId = options?.projectId ?? storage.options.projectId,
+        super(
+          service: storage,
+          id: accessId,
+          metadata: HmacKeyMetadata()
+            ..accessId = accessId
+            ..projectId = options?.projectId ?? storage.options.projectId,
+        ) {
+    if (projectId.isEmpty) {
       throw ApiError(
         'Project ID is required to work with HMAC keys. '
         'Provide HmacKeyOptions.projectId.',
       );
     }
-    metadata = storage_v1.HmacKeyMetadata()
-      ..accessId = accessId
-      ..projectId = options?.projectId;
   }
 
   /// Delete this HMAC key.
@@ -70,7 +95,7 @@ class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata>
       await executor.retry<void>(
         (client) async {
           await client.projects.hmacKeys.delete(
-            projectId!,
+            projectId,
             accessId,
           );
         },
@@ -106,30 +131,41 @@ class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata>
   ///
   /// Note: This method has a different signature than the mixin's `getMetadata()`
   /// (which takes no parameters), so both methods are available.
-  Future<storage_v1.HmacKeyMetadata> getMetadata({String? userProject}) async {
+  @override
+  Future<HmacKeyMetadata> getMetadata({String? userProject}) async {
     final executor = RetryExecutor(storage);
 
     try {
-      metadata = await executor.retry<storage_v1.HmacKeyMetadata>(
+      final metadata = await executor.retry<HmacKeyMetadata>(
         (client) async => await client.projects.hmacKeys.get(
-          projectId!,
+          projectId,
           accessId,
           userProject: userProject,
         ),
       );
+
+      setInstanceMetadata(metadata);
+      return metadata;
     } catch (e) {
       if (e is ApiError) {
         rethrow;
       }
       throw ApiError('Failed to get HMAC key metadata $accessId', details: e);
     }
-
-    return metadata;
   }
 
-  @override
-  Future<storage_v1.HmacKeyMetadata> get() async {
-    return await getMetadata();
+  /// Get the HMAC key metadata and return this instance.
+  ///
+  /// This follows the standard ServiceObject pattern: calls [getMetadata()]
+  /// to fetch and update metadata, then returns this instance.
+  ///
+  /// Note: This method has a different signature than the mixin's `get()` method
+  /// (no parameters vs. optional userProject), but it follows the same pattern
+  /// by calling [getMetadata()] internally.
+  // ignore: invalid_override
+  Future<HmacKey> get() async {
+    await getMetadata();
+    return this;
   }
 
   /// Helper for HMAC key mutations: only retry if idempotency strategy is retryAlways.
@@ -154,26 +190,26 @@ class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata>
   /// The [metadata] parameter should have [state] and/or [etag] set for updates.
   /// To use [SetHmacKeyMetadata], create an [HmacKeyMetadata] with the desired
   /// state and etag values.
-  @override
-  Future<storage_v1.HmacKeyMetadata> setMetadata(
-      storage_v1.HmacKeyMetadata updateMetadata) async {
+  Future<HmacKeyMetadata> setMetadata(HmacKeyMetadata updateMetadata) async {
     final executor = RetryExecutor(
       storage,
       shouldRetryMutation: _shouldRetryHmacKeyMutation,
     );
 
-    final request = storage_v1.HmacKeyMetadata()
+    final request = HmacKeyMetadata()
       ..state = updateMetadata.state
       ..etag = updateMetadata.etag;
 
     try {
-      metadata = await executor.retry<storage_v1.HmacKeyMetadata>(
+      final metadata = await executor.retry<HmacKeyMetadata>(
         (client) async => await client.projects.hmacKeys.update(
           request,
-          projectId!,
+          projectId,
           accessId,
         ),
       );
+      setInstanceMetadata(metadata);
+      return metadata;
     } catch (e) {
       if (e is ApiError) {
         rethrow;
@@ -181,7 +217,5 @@ class HmacKey extends ServiceObject<storage_v1.HmacKeyMetadata>
       throw ApiError('Failed to update HMAC key metadata $accessId',
           details: e);
     }
-
-    return metadata;
   }
 }

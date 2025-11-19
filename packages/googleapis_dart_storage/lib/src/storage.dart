@@ -34,15 +34,9 @@ class StorageOptions extends ServiceOptions {
   }
 }
 
-class Storage extends Service {
-  final StorageOptions options;
-  final Object acl = {}; // TODO
-
-  Storage(this.options)
-      : super(
-          _buildServiceConfig(options),
-          _buildMergedOptions(options),
-        );
+class Storage extends Service<StorageOptions> {
+  Storage(StorageOptions options)
+      : super(_buildServiceConfig(options), _buildMergedOptions(options));
 
   /// Calculate the API endpoint and whether it's a custom endpoint.
   static ({String apiEndpoint, bool customEndpoint}) _calculateEndpoint(
@@ -116,24 +110,140 @@ class Storage extends Service {
     return Channel._(this, id, resourceId);
   }
 
-  Future<void> createBucket() {
-    throw UnimplementedError();
+  Future<Bucket> createBucket(BucketMetadata bucket) async {
+    final executor = RetryExecutor.withoutRetries(this);
+
+    if (bucket.name == null) {
+      throw ArgumentError('Bucket name is required');
+    }
+
+    try {
+      return await executor.retry(
+        (client) async {
+          final inner = await client.buckets.insert(
+            bucket,
+            options.projectId,
+          );
+
+          final instance = this.bucket(bucket.name!);
+          instance.setMetadata(inner);
+          return instance;
+        },
+      );
+    } catch (e) {
+      throw ApiError('Failed to create bucket', details: e);
+    }
   }
 
-  Future<void> createHmacKey() {
-    throw UnimplementedError();
+  Future<HmacKey> createHmacKey(String serviceAccountEmail,
+      [CreateHmacKeyOptions? options]) async {
+    final executor = RetryExecutor.withoutRetries(this);
+
+    try {
+      return await executor.retry<HmacKey>(
+        (client) async {
+          final response = await client.projects.hmacKeys.create(
+            options?.projectId ?? this.options.projectId,
+            serviceAccountEmail,
+            userProject: options?.userProject,
+          );
+
+          final metadata = response.metadata;
+
+          if (metadata == null) {
+            throw ApiError(
+              'Failed to create HMAC key',
+              details: 'No metadata returned',
+            );
+          }
+
+          return HmacKey._(
+            this,
+            metadata.accessId!,
+            options: HmacKeyOptions(projectId: metadata.projectId),
+          );
+        },
+      );
+    } catch (e) {
+      throw ApiError('Failed to create HMAC key', details: e);
+    }
   }
 
-  Future<void> getBuckets() {
-    throw UnimplementedError();
+  Future<(Iterable<BucketMetadata> buckets, String? nextPageToken)> getBuckets(
+      [GetBucketsOptions? options]) async {
+    final executor = RetryExecutor.withoutRetries(this);
+
+    try {
+      return await executor.retry(
+        (client) async {
+          final response = await client.buckets.list(
+            options?.projectId ?? this.options.projectId,
+            maxResults: options?.maxResults,
+            pageToken: options?.pageToken,
+            prefix: options?.prefix,
+            projection: options?.projection?.name,
+            softDeleted: options?.softDeleted,
+            userProject: options?.userProject,
+          );
+
+          final nextPageToken = response.nextPageToken;
+
+          return (response.items ?? [], nextPageToken);
+        },
+      );
+    } catch (e) {
+      throw ApiError('Failed to get buckets', details: e);
+    }
   }
 
-  Future<void> getHmacKeys() {
-    throw UnimplementedError();
+  Future<(Iterable<HmacKey> keys, String? nextPageToken)> getHmacKeys(
+      [GetHmacKeysOptions? options]) async {
+    final executor = RetryExecutor.withoutRetries(this);
+
+    try {
+      return await executor.retry(
+        (client) async {
+          final response = await client.projects.hmacKeys.list(
+            options?.projectId ?? this.options.projectId,
+            serviceAccountEmail: options?.serviceAccountEmail,
+            showDeletedKeys: options?.showDeletedKeys,
+            maxResults: options?.maxResults,
+            pageToken: options?.pageToken,
+            userProject: options?.userProject,
+          );
+
+          final nextPageToken = response.nextPageToken;
+
+          final keys = response.items?.map(
+                (item) => HmacKey._(this, item.accessId!,
+                    options: HmacKeyOptions(projectId: item.projectId)),
+              ) ??
+              [];
+
+          return (keys, nextPageToken);
+        },
+      );
+    } catch (e) {
+      throw ApiError('Failed to get HMAC keys', details: e);
+    }
   }
 
-  Future<void> getServiceAccount() {
-    throw UnimplementedError();
+  Future<storage_v1.ServiceAccount> getServiceAccount(
+      [GetServiceAccountOptions? options]) async {
+    final executor = RetryExecutor.withoutRetries(this);
+
+    try {
+      return await executor.retry(
+        (client) async {
+          return client.projects.serviceAccount.get(
+            this.options.projectId,
+            userProject: options?.userProject,
+          );
+        },
+      );
+    } catch (e) {
+      throw ApiError('Failed to get service account', details: e);
+    }
   }
 
   HmacKey hmacKey(String accessId, [HmacKeyOptions? options]) {
@@ -144,12 +254,10 @@ class Storage extends Service {
 
     return HmacKey._(this, accessId, options: options);
   }
+}
 
-  Future<void> getBucketsStream() {
-    throw UnimplementedError();
-  }
+class GetServiceAccountOptions {
+  final String? userProject;
 
-  Future<void> getHmacKeysStream() {
-    throw UnimplementedError();
-  }
+  const GetServiceAccountOptions({this.userProject});
 }

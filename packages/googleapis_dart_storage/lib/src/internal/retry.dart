@@ -72,8 +72,12 @@ class DeleteOptions extends PreconditionOptions {
   /// If true, ignore 404 errors (treat as success if object doesn't exist).
   final bool ignoreNotFound;
 
+  /// The ID of the project which will be billed for the request.
+  final String? userProject;
+
   const DeleteOptions({
     this.ignoreNotFound = false,
+    this.userProject,
     super.ifGenerationMatch,
     super.ifGenerationNotMatch,
     super.ifMetagenerationMatch,
@@ -294,8 +298,8 @@ class RetryExecutor {
           rethrow;
         }
 
-        final shouldRetry = errorClassifier(e) ||
-            (options.retryableErrorFn?.call(e) ?? false);
+        final shouldRetry =
+            errorClassifier(e) || (options.retryableErrorFn?.call(e) ?? false);
         if (!shouldRetry) rethrow;
 
         if (delay > options.maxRetryDelay) {

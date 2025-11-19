@@ -11,6 +11,8 @@ dependencies:
   googleapis: ^15.0.0
   http: ^1.6.0
   meta: ^1.17.0
+  mime: ^2.0.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   lints: ^6.0.0

@@ -20,10 +20,13 @@ abstract class ServiceOptions {
   /// Used to construct the default API endpoint.
   final String? universeDomain;
 
+  final String projectId;
+
   const ServiceOptions({
     this.authClient,
     this.useAuthWithCustomEndpoint,
     this.universeDomain,
+    this.projectId = '{{projectId}}',
   });
 }
 
@@ -111,9 +114,9 @@ Future<storage_v1.StorageApi> _createStorageApi(
 }
 
 /// Base service class, roughly analogous to the Node `Service` type.
-abstract class Service {
+abstract class Service<T extends ServiceOptions> {
   final ServiceConfig config;
-  final ServiceOptions options;
+  final T options;
 
   /// The Storage API client from googleapis package.
   /// This handles all the low-level API calls to Google Cloud Storage.
