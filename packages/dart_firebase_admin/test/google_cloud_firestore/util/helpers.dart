@@ -7,13 +7,13 @@ import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
 
-FirebaseAdminApp createApp({
+FirebaseApp createApp({
   FutureOr<void> Function()? tearDown,
   Client? client,
   bool useEmulator = true,
 }) {
   final credential = Credential.fromApplicationDefaultCredentials();
-  final app = FirebaseAdminApp.initializeApp(
+  final app = FirebaseApp.initializeApp(
     projectId,
     credential,
     client: client,

@@ -79,7 +79,7 @@ class _DocumentReader<T> {
 
     var resultCount = 0;
     try {
-      final documents = await firestore._client.v1((client) async {
+      final documents = await firestore._client.v1((client, projectId) async {
         return client.projects.databases.documents.batchGet(
           request,
           firestore._formattedDatabaseName,

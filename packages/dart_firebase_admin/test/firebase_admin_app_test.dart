@@ -4,14 +4,14 @@ import 'package:dart_firebase_admin/src/app.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group(FirebaseAdminApp, () {
+  group(FirebaseApp, () {
     test('initializeApp() creates a new FirebaseAdminApp', () {
-      final app = FirebaseAdminApp.initializeApp(
+      final app = FirebaseApp.initializeApp(
         'dart-firebase-admin',
         Credential.fromApplicationDefaultCredentials(),
       );
 
-      expect(app, isA<FirebaseAdminApp>());
+      expect(app, isA<FirebaseApp>());
       expect(app.authApiHost, Uri.https('identitytoolkit.googleapis.com', '/'));
       expect(
         app.firestoreApiHost,
@@ -20,7 +20,7 @@ void main() {
     });
 
     test('useEmulator() sets the apiHost to the emulator', () {
-      final app = FirebaseAdminApp.initializeApp(
+      final app = FirebaseApp.initializeApp(
         'dart-firebase-admin',
         Credential.fromApplicationDefaultCredentials(),
       );
@@ -50,7 +50,7 @@ void main() {
       await runZoned(
         zoneValues: {envSymbol: testEnv},
         () async {
-          final app = FirebaseAdminApp.initializeApp(
+          final app = FirebaseApp.initializeApp(
             'dart-firebase-admin',
             Credential.fromApplicationDefaultCredentials(),
           );

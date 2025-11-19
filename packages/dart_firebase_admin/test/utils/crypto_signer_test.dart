@@ -10,7 +10,7 @@ void main() {
       late CryptoSigner signer;
 
       setUp(() {
-        final app = FirebaseAdminApp.initializeApp(
+        final app = FirebaseApp.initializeApp(
           '$mockProjectId-crypto',
           Credential.fromServiceAccountParams(
             clientId: 'test-client-id',

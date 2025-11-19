@@ -3,27 +3,28 @@ import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1_beta;
 import 'package:meta/meta.dart';
 
 import '../app.dart';
+import '../utils/base_http_client.dart';
 import '../utils/crypto_signer.dart';
 import '../utils/jwt.dart';
 import 'app_check_api.dart';
 
 /// Class that facilitates sending requests to the Firebase App Check backend API.
 @internal
-class AppCheckApiClient {
-  AppCheckApiClient(this.app);
-
-  final FirebaseAdminApp app;
+class AppCheckApiClient extends BaseHttpClient {
+  AppCheckApiClient(super.app);
 
   Future<R> _v1<R>(
-    Future<R> Function(appcheck1.FirebaseappcheckApi client) fn,
+    Future<R> Function(appcheck1.FirebaseappcheckApi client, String projectId) fn,
   ) async {
-    return fn(appcheck1.FirebaseappcheckApi(await app.client));
+    final projectId = await discoverProjectId();
+    return fn(appcheck1.FirebaseappcheckApi(await app.client), projectId);
   }
 
   Future<R> _v1Beta<R>(
-    Future<R> Function(appcheck1_beta.FirebaseappcheckApi client) fn,
+    Future<R> Function(appcheck1_beta.FirebaseappcheckApi client, String projectId) fn,
   ) async {
-    return fn(appcheck1_beta.FirebaseappcheckApi(await app.client));
+    final projectId = await discoverProjectId();
+    return fn(appcheck1_beta.FirebaseappcheckApi(await app.client), projectId);
   }
 
   /// Exchange a signed custom token to App Check token
@@ -33,12 +34,12 @@ class AppCheckApiClient {
   ///
   /// Returns a future that fulfills with a [AppCheckToken].
   Future<AppCheckToken> exchangeToken(String customToken, String appId) {
-    return _v1((client) async {
+    return _v1((client, projectId) async {
       final response = await client.projects.apps.exchangeCustomToken(
         appcheck1.GoogleFirebaseAppcheckV1ExchangeCustomTokenRequest(
           customToken: customToken,
         ),
-        'projects/${app.projectId}/apps/$appId',
+        'projects/$projectId/apps/$appId',
       );
 
       return AppCheckToken(
@@ -49,12 +50,12 @@ class AppCheckApiClient {
   }
 
   Future<bool> verifyReplayProtection(String token) {
-    return _v1Beta((client) async {
+    return _v1Beta((client, projectId) async {
       final response = await client.projects.verifyAppCheckToken(
         appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(
           appCheckToken: token,
         ),
-        'projects/${app.projectId}',
+        'projects/${projectId}',
       );
 
       return response.alreadyConsumed ?? false;

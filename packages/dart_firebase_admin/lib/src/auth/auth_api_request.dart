@@ -32,7 +32,7 @@ const _emailActionRequestTypes = {
 abstract class _AbstractAuthRequestHandler {
   _AbstractAuthRequestHandler(this.app) : _httpClient = _AuthHttpClient(app);
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   final _AuthHttpClient _httpClient;
 
   /// Generates the out of band email action link for the email specified using the action code settings provided.
@@ -315,7 +315,7 @@ abstract class _AbstractAuthRequestHandler {
       validDuration: validDuration.toString(),
     );
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       // TODO handle tenant ID
 
       // Validate the ID token is a non-empty string.
@@ -333,7 +333,7 @@ abstract class _AbstractAuthRequestHandler {
 
       final response = await client.projects.createSessionCookie(
         request,
-        app.projectId,
+        projectId,
       );
 
       final sessionCookie = response.sessionCookie;
@@ -390,10 +390,10 @@ abstract class _AbstractAuthRequestHandler {
       return userImportBuilder.buildResponse([]);
     }
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       final response = await client.projects.accounts_1.batchCreate(
         request,
-        app.projectId,
+        projectId,
       );
       // No error object is returned if no error encountered.
       // Rewrite response as UserImportResult and re-insert client previously detected errors.
@@ -431,10 +431,10 @@ abstract class _AbstractAuthRequestHandler {
       );
     }
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       // TODO handle tenants
       return client.projects.accounts_1.batchGet(
-        app.projectId,
+        projectId,
         maxResults: maxResults,
         nextPageToken: pageToken,
       );
@@ -448,10 +448,10 @@ abstract class _AbstractAuthRequestHandler {
     assertIsUid(uid);
 
     // TODO handle tenants
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       return client.projects.accounts_1.delete(
         auth1.GoogleCloudIdentitytoolkitV1DeleteAccountRequest(localId: uid),
-        app.projectId,
+        projectId,
       );
     });
   }
@@ -470,14 +470,14 @@ abstract class _AbstractAuthRequestHandler {
       );
     }
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       // TODO handle tenants
       return client.projects.accounts_1.batchDelete(
         auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsRequest(
           localIds: uids,
           force: force,
         ),
-        app.projectId,
+        projectId,
       );
     });
   }
@@ -487,7 +487,7 @@ abstract class _AbstractAuthRequestHandler {
   /// A [Future] that resolves when the operation completes
   /// with the user id that was created.
   Future<String> createNewAccount(CreateRequest properties) async {
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       var mfaInfo = properties.multiFactor?.enrolledFactors
           .map((info) => info.toGoogleCloudIdentitytoolkitV1MfaFactor())
           .toList();
@@ -506,7 +506,7 @@ abstract class _AbstractAuthRequestHandler {
           phoneNumber: properties.phoneNumber?.value,
           photoUrl: properties.photoURL?.value,
         ),
-        app.projectId,
+        projectId,
       );
 
       final localId = response.localId;
@@ -526,7 +526,7 @@ abstract class _AbstractAuthRequestHandler {
     auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest request,
   ) async {
     // TODO handle tenants
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       final response = await client.accounts.lookup(request);
       final users = response.users;
       if (users == null || users.isEmpty) {
@@ -637,7 +637,7 @@ abstract class _AbstractAuthRequestHandler {
     }
 
     // TODO handle tenants
-    return _httpClient.v1((client) => client.accounts.lookup(request));
+    return _httpClient.v1((client, projectId) => client.accounts.lookup(request));
   }
 
   /// Edits an existing user.
@@ -740,32 +740,38 @@ abstract class _AbstractAuthRequestHandler {
 class _AuthRequestHandler extends _AbstractAuthRequestHandler {
   _AuthRequestHandler(super.app);
 
-  // TODO getProjectConfig
-  // TODO updateProjectConfig
-  // TODO getTenant
-  // TODO listTenants
-  // TODO deleteTenant
-  // TODO updateTenant
+// TODO getProjectConfig
+// TODO updateProjectConfig
+// TODO getTenant
+// TODO listTenants
+// TODO deleteTenant
+// TODO updateTenant
 }
 
-class _AuthHttpClient {
-  _AuthHttpClient(this.app);
+class _AuthHttpClient extends BaseHttpClient {
+  _AuthHttpClient(super.app);
 
   // TODO handle tenants
-  final FirebaseAdminApp app;
 
-  String _buildParent() => 'projects/${app.projectId}';
+  Future<String> _buildParent() async {
+    final projectId = await discoverProjectId();
+    return 'projects/$projectId';
+  }
 
-  String _buildOAuthIpdParent(String parentId) => 'projects/${app.projectId}/'
-      'oauthIdpConfigs/$parentId';
+  Future<String> _buildOAuthIpdParent(String parentId) async {
+    final projectId = await discoverProjectId();
+    return 'projects/$projectId/oauthIdpConfigs/$parentId';
+  }
 
-  String _buildSamlParent(String parentId) => 'projects/${app.projectId}/'
-      'inboundSamlConfigs/$parentId';
+  Future<String> _buildSamlParent(String parentId) async {
+    final projectId = await discoverProjectId();
+    return 'projects/$projectId/inboundSamlConfigs/$parentId';
+  }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1GetOobCodeResponse> getOobCode(
     auth1.GoogleCloudIdentitytoolkitV1GetOobCodeRequest request,
   ) {
-    return v1((client) async {
+    return v1((client, projectId) async {
       final email = request.email;
       if (email == null || !isEmail(email)) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidEmail);
@@ -801,7 +807,7 @@ class _AuthHttpClient {
     required int pageSize,
     String? pageToken,
   }) {
-    return v2((client) {
+    return v2((client, projectId) async {
       if (pageToken != null && pageToken.isEmpty) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
       }
@@ -815,7 +821,7 @@ class _AuthHttpClient {
       }
 
       return client.projects.inboundSamlConfigs.list(
-        _buildParent(),
+        await _buildParent(),
         pageSize: pageSize,
         pageToken: pageToken,
       );
@@ -827,7 +833,7 @@ class _AuthHttpClient {
     required int pageSize,
     String? pageToken,
   }) {
-    return v2((client) {
+    return v2((client, projectId) async {
       if (pageToken != null && pageToken.isEmpty) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
       }
@@ -841,7 +847,7 @@ class _AuthHttpClient {
       }
 
       return client.projects.oauthIdpConfigs.list(
-        _buildParent(),
+        await _buildParent(),
         pageSize: pageSize,
         pageToken: pageToken,
       );
@@ -852,10 +858,10 @@ class _AuthHttpClient {
       createOAuthIdpConfig(
     auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
   ) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.create(
         request,
-        _buildParent(),
+        await _buildParent(),
       );
 
       final name = response.name;
@@ -874,10 +880,10 @@ class _AuthHttpClient {
       createInboundSamlConfig(
     auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
   ) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.create(
         request,
-        _buildParent(),
+        await _buildParent(),
       );
 
       final name = response.name;
@@ -893,17 +899,17 @@ class _AuthHttpClient {
   }
 
   Future<void> deleteOauthIdpConfig(String providerId) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       await client.projects.oauthIdpConfigs.delete(
-        _buildOAuthIpdParent(providerId),
+        await _buildOAuthIpdParent(providerId),
       );
     });
   }
 
   Future<void> deleteInboundSamlConfig(String providerId) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       await client.projects.inboundSamlConfigs.delete(
-        _buildSamlParent(providerId),
+        await _buildSamlParent(providerId),
       );
     });
   }
@@ -914,10 +920,10 @@ class _AuthHttpClient {
     String providerId, {
     required String? updateMask,
   }) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.patch(
         request,
-        _buildSamlParent(providerId),
+        await _buildSamlParent(providerId),
         updateMask: updateMask,
       );
 
@@ -938,10 +944,10 @@ class _AuthHttpClient {
     String providerId, {
     required String? updateMask,
   }) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.patch(
         request,
-        _buildOAuthIpdParent(providerId),
+        await _buildOAuthIpdParent(providerId),
         updateMask: updateMask,
       );
 
@@ -960,7 +966,7 @@ class _AuthHttpClient {
       setAccountInfo(
     auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoRequest request,
   ) {
-    return v1((client) async {
+    return v1((client, projectId) async {
       // TODO should this use account/project/update or account/update?
       // Or maybe both?
       // ^ Depending on it, use tenantId... Or do we? The request seems to reject tenantID args
@@ -976,9 +982,9 @@ class _AuthHttpClient {
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
       getOauthIdpConfig(String providerId) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.get(
-        _buildOAuthIpdParent(providerId),
+        await _buildOAuthIpdParent(providerId),
       );
 
       final name = response.name;
@@ -995,9 +1001,9 @@ class _AuthHttpClient {
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
       getInboundSamlConfig(String providerId) {
-    return v2((client) async {
+    return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.get(
-        _buildSamlParent(providerId),
+        await _buildSamlParent(providerId),
       );
 
       final name = response.name;
@@ -1012,6 +1018,19 @@ class _AuthHttpClient {
     });
   }
 
+  /// Gets the Auth API host URL based on emulator configuration.
+  Uri get _authApiHost {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final emulatorHost = env['FIREBASE_AUTH_EMULATOR_HOST'];
+
+    if (emulatorHost != null) {
+      return Uri.http(emulatorHost, 'identitytoolkit.googleapis.com/');
+    }
+
+    return Uri.https('identitytoolkit.googleapis.com', '/');
+  }
+
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,
   ) {
@@ -1019,40 +1038,46 @@ class _AuthHttpClient {
   }
 
   Future<R> v1<R>(
-    Future<R> Function(auth1.IdentityToolkitApi client) fn,
-  ) {
+    Future<R> Function(auth1.IdentityToolkitApi client, String projectId) fn,
+  ) async {
+    final projectId = await discoverProjectId();
     return _run(
       (client) => fn(
         auth1.IdentityToolkitApi(
           client,
-          rootUrl: app.authApiHost.toString(),
+          rootUrl: _authApiHost.toString(),
         ),
+        projectId,
       ),
     );
   }
 
   Future<R> v2<R>(
-    Future<R> Function(auth2.IdentityToolkitApi client) fn,
+    Future<R> Function(auth2.IdentityToolkitApi client, String projectId) fn,
   ) async {
+    final projectId = await discoverProjectId();
     return _run(
       (client) => fn(
         auth2.IdentityToolkitApi(
           client,
-          rootUrl: app.authApiHost.toString(),
+          rootUrl: _authApiHost.toString(),
         ),
+        projectId,
       ),
     );
   }
 
   Future<R> v3<R>(
-    Future<R> Function(auth3.IdentityToolkitApi client) fn,
+    Future<R> Function(auth3.IdentityToolkitApi client, String projectId) fn,
   ) async {
+    final projectId = await discoverProjectId();
     return _run(
       (client) => fn(
         auth3.IdentityToolkitApi(
           client,
-          rootUrl: app.authApiHost.toString(),
+          rootUrl: _authApiHost.toString(),
         ),
+        projectId,
       ),
     );
   }

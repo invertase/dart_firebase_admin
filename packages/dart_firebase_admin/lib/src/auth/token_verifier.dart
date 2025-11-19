@@ -56,7 +56,9 @@ class FirebaseTokenVerifier {
     required this.issuer,
     required this.tokenInfo,
     required this.app,
-  })  : _shortNameArticle = RegExp('[aeiou]', caseSensitive: false)
+    required BaseHttpClient httpClient,
+  })  : _httpClient = httpClient,
+        _shortNameArticle = RegExp('[aeiou]', caseSensitive: false)
                 .hasMatch(tokenInfo.shortName[0])
             ? 'an'
             : 'a',
@@ -65,17 +67,19 @@ class FirebaseTokenVerifier {
 
   final String _shortNameArticle;
   final Uri issuer;
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   final FirebaseTokenInfo tokenInfo;
   final SignatureVerifier _signatureVerifier;
+  final BaseHttpClient _httpClient;
 
   Future<DecodedIdToken> verifyJWT(
     String jwtToken, {
     bool isEmulator = false,
   }) async {
+    final projectId = await _httpClient.discoverProjectId();
     final decoded = await _decodeAndVerify(
       jwtToken,
-      projectId: app.projectId,
+      projectId: projectId,
       isEmulator: isEmulator,
     );
 
@@ -427,13 +431,15 @@ final _idTokenInfo = FirebaseTokenInfo(
 
 /// Creates a new FirebaseTokenVerifier to verify Firebase ID tokens.
 FirebaseTokenVerifier _createIdTokenVerifier(
-  FirebaseAdminApp app,
+  FirebaseApp app,
+  BaseHttpClient httpClient,
 ) {
   return FirebaseTokenVerifier(
     clientCertUrl: _clientCertUrl,
     issuer: Uri.parse('https://securetoken.google.com/'),
     tokenInfo: _idTokenInfo,
     app: app,
+    httpClient: httpClient,
   );
 }
 
@@ -443,12 +449,16 @@ final _sessionCookieCertUrl = Uri.parse(
 );
 
 /// Creates a new FirebaseTokenVerifier to verify Firebase session cookies.
-FirebaseTokenVerifier _createSessionCookieVerifier(FirebaseAdminApp app) {
+FirebaseTokenVerifier _createSessionCookieVerifier(
+  FirebaseApp app,
+  BaseHttpClient httpClient,
+) {
   return FirebaseTokenVerifier(
     clientCertUrl: _sessionCookieCertUrl,
     issuer: Uri.parse('https://session.firebase.google.com/'),
     tokenInfo: _sessionCookieInfo,
     app: app,
+    httpClient: httpClient,
   );
 }
 

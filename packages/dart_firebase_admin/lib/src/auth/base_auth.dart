@@ -1,7 +1,7 @@
 part of '../auth.dart';
 
 _FirebaseTokenGenerator _createFirebaseTokenGenerator(
-  FirebaseAdminApp app, {
+  FirebaseApp app, {
   String? tenantId,
 }) {
   try {
@@ -18,16 +18,22 @@ abstract class _BaseAuth {
     required this.app,
     required _AbstractAuthRequestHandler authRequestHandler,
     _FirebaseTokenGenerator? tokenGenerator,
-  })  : _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
-        _sessionCookieVerifier = _createSessionCookieVerifier(app),
-        _authRequestHandler = authRequestHandler;
+  })  : _authRequestHandler = authRequestHandler,
+        _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
+        _sessionCookieVerifier = _createSessionCookieVerifier(
+          app,
+          authRequestHandler._httpClient,
+        );
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   final _AbstractAuthRequestHandler _authRequestHandler;
   final FirebaseTokenVerifier _sessionCookieVerifier;
   final _FirebaseTokenGenerator _tokenGenerator;
 
-  late final _idTokenVerifier = _createIdTokenVerifier(app);
+  late final _idTokenVerifier = _createIdTokenVerifier(
+    app,
+    _authRequestHandler._httpClient,
+  );
 
   /// Generates the out of band email action link to reset a user's password.
   /// The link is generated for the user with the specified email address. The

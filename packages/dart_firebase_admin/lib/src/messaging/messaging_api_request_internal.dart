@@ -10,7 +10,7 @@ final _legacyFirebaseMessagingHeaders = {
 class FirebaseMessagingRequestHandler {
   FirebaseMessagingRequestHandler(this.firebase);
 
-  final FirebaseAdminApp firebase;
+  final FirebaseApp firebase;
 
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,

@@ -74,7 +74,7 @@ class ListRulesetsResponse {
 class SecurityRulesApiClient {
   SecurityRulesApiClient(this.app);
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   String? projectIdPrefix;
 
   Future<R> _v1<R>(

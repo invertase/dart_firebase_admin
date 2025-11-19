@@ -85,12 +85,12 @@ final class CollectionReference<T> extends Query<T> {
   /// document reference (e.g. via [DocumentReference.get]) will return a
   /// [DocumentSnapshot] whose [DocumentSnapshot.exists] property is `false`.
   Future<List<DocumentReference<T>>> listDocuments() async {
-    final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
-      firestore.app.projectId,
-      firestore._databaseId,
-    );
+    final response = await firestore._client.v1((client, projectId) {
+      final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
+        projectId,
+        firestore._databaseId,
+      );
 
-    final response = await firestore._client.v1((client) {
       return client.projects.databases.documents.list(
         parentPath._formattedName,
         id,
@@ -192,10 +192,11 @@ final class DocumentReference<T> implements _Serializable {
   }
 
   /// The string representation of the DocumentReference's location.
+  /// This can only be called after projectId has been discovered.
   String get _formattedName {
     return _path
         ._toQualifiedResourcePath(
-          firestore.app.projectId,
+          firestore._projectId,
           firestore._databaseId,
         )
         ._formattedName;
@@ -213,7 +214,7 @@ final class DocumentReference<T> implements _Serializable {
   /// });
   /// ```
   Future<List<CollectionReference<DocumentData>>> listCollections() {
-    return firestore._client.v1((a) async {
+    return firestore._client.v1((a, projectId) async {
       final request = firestore1.ListCollectionIdsRequest(
         // Setting `pageSize` to an arbitrarily large value lets the backend cap
         // the page size (currently to 300). Note that the backend rejects
@@ -1136,7 +1137,7 @@ base class Query<T> {
   Future<QuerySnapshot<T>> get() => _get(transactionId: null);
 
   Future<QuerySnapshot<T>> _get({required String? transactionId}) async {
-    final response = await firestore._client.v1((client) async {
+    final response = await firestore._client.v1((client, projectId) async {
       return client.projects.databases.documents.runQuery(
         _toProto(
           transactionId: transactionId,
@@ -1190,7 +1191,7 @@ base class Query<T> {
   String _buildProtoParentPath() {
     return _queryOptions.parentPath
         ._toQualifiedResourcePath(
-          firestore.app.projectId,
+          firestore._projectId,
           firestore._databaseId,
         )
         ._formattedName;
@@ -2008,7 +2009,7 @@ class AggregateQuery {
       ),
     );
 
-    final response = await firestore._client.v1((client) async {
+    final response = await firestore._client.v1((client, projectId) async {
       return client.projects.databases.documents.runAggregationQuery(
         aggregationQuery,
         query._buildProtoParentPath(),

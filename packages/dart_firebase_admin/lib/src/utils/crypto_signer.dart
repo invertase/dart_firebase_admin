@@ -9,10 +9,10 @@ import 'package:meta/meta.dart';
 import 'package:pem/pem.dart';
 import 'package:pointycastle/export.dart' as pointy;
 
-import '../../dart_firebase_admin.dart';
+import '../app.dart';
 
 Future<R> _v1<R>(
-  FirebaseAdminApp app,
+  FirebaseApp app,
   Future<R> Function(iam_credentials_v1.IAMCredentialsApi client) fn,
 ) async {
   try {
@@ -29,8 +29,8 @@ Future<R> _v1<R>(
 
 @internal
 abstract class CryptoSigner {
-  static CryptoSigner fromApp(FirebaseAdminApp app) {
-    final credential = app.credential;
+  static CryptoSigner fromApp(FirebaseApp app) {
+    final credential = app.options.credential;
     final serviceAccountCredentials = credential.serviceAccountCredentials;
     if (serviceAccountCredentials != null) {
       return _ServiceAccountSigner(serviceAccountCredentials);
@@ -50,12 +50,12 @@ abstract class CryptoSigner {
 }
 
 class _IAMSigner implements CryptoSigner {
-  _IAMSigner(this.app) : _serviceAccountId = app.credential.serviceAccountId;
+  _IAMSigner(this.app) : _serviceAccountId = app.options.credential.serviceAccountId;
 
   @override
   String get algorithm => 'RS256';
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   String? _serviceAccountId;
 
   @override

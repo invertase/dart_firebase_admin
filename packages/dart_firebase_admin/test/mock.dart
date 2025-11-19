@@ -9,7 +9,7 @@ void registerFallbacks() {
   registerFallbackValue(Request('post', Uri()));
 }
 
-class FirebaseAdminMock extends Mock implements FirebaseAdminApp {}
+class FirebaseAdminMock extends Mock implements FirebaseApp {}
 
 class ClientMock extends Mock implements Client {}
 

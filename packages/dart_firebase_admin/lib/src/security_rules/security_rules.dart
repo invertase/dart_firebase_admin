@@ -53,7 +53,7 @@ class SecurityRules {
   static const _cloudFirestore = 'cloud.firestore';
   static const _firebaseStorage = 'firebase.storage';
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   late final _client = SecurityRulesApiClient(app);
 
   /// Gets the [Ruleset] identified by the given

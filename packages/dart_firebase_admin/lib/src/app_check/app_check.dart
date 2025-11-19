@@ -8,11 +8,11 @@ import 'token_verifier.dart';
 class AppCheck {
   AppCheck(this.app);
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   late final _tokenGenerator =
       AppCheckTokenGenerator(CryptoSigner.fromApp(app));
   late final _client = AppCheckApiClient(app);
-  late final _appCheckTokenVerifier = AppCheckTokenVerifier(app);
+  late final _appCheckTokenVerifier = AppCheckTokenVerifier(app, _client);
 
   /// Creates a new [AppCheckToken] that can be sent
   /// back to a client.

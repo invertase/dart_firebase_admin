@@ -27,7 +27,7 @@ class Messaging {
             requestHandler ?? FirebaseMessagingRequestHandler(firebase);
 
   /// The app associated with this Messaging instance.
-  final FirebaseAdminApp firebase;
+  final FirebaseApp firebase;
 
   final FirebaseMessagingRequestHandler _requestHandler;
 
