@@ -2,17 +2,17 @@ part of '../googleapis_dart_storage.dart';
 
 class StorageOptions extends ServiceOptions {
   final String? apiEndpoint;
-  final Crc32Generator crc32cGenerator;
+  final Crc32Generator? crc32cGenerator;
   final RetryOptions? retryOptions;
 
   const StorageOptions({
     this.apiEndpoint,
-    Crc32Generator? crc32cGenerator,
+    this.crc32cGenerator,
     this.retryOptions,
     super.authClient,
     super.useAuthWithCustomEndpoint,
     super.universeDomain,
-  }) : crc32cGenerator = crc32cGenerator ?? defaultCrc32cValidatorGenerator;
+  });
 
   StorageOptions copyWith({
     String? apiEndpoint,
@@ -35,8 +35,12 @@ class StorageOptions extends ServiceOptions {
 }
 
 class Storage extends Service<StorageOptions> {
+  final Crc32Generator crc32cGenerator;
+
   Storage(StorageOptions options)
-      : super(_buildServiceConfig(options), _buildMergedOptions(options));
+      : crc32cGenerator =
+            options.crc32cGenerator ?? defaultCrc32cValidatorGenerator,
+        super(_buildServiceConfig(options), _buildMergedOptions(options));
 
   /// Calculate the API endpoint and whether it's a custom endpoint.
   static ({String apiEndpoint, bool customEndpoint}) _calculateEndpoint(

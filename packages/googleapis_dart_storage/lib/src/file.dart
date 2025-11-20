@@ -304,12 +304,18 @@ class File extends ServiceObject<FileMetadata>
         ),
         acl = Acl._objectAcl(bucket.storage, bucket.id, name),
         userProject = options?.userProject ?? bucket.userProject,
+        preconditionOpts = options?.preconditionOpts,
+        crc32cGenerator = options?.crc32cGenerator ?? bucket.crc32cGenerator,
+        kmsKeyName = options?.kmsKeyName,
         super(service: bucket.storage, id: name, metadata: FileMetadata());
 
   final String name;
   final Bucket bucket;
   final FileOptions options;
   final Acl acl;
+  final PreconditionOptions? preconditionOpts;
+  final Crc32Generator crc32cGenerator;
+  final String? kmsKeyName;
   URLSigner? _signer;
 
   /// A user project to apply to each request from this file.
