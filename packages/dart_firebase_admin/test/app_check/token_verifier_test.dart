@@ -12,11 +12,13 @@ void main() {
 
     setUp(() {
       app = FirebaseApp.initializeApp(
-        '$mockProjectId-token-verifier',
-        Credential.fromServiceAccountParams(
-          clientId: 'test-client-id',
-          privateKey: mockPrivateKey,
-          email: mockClientEmail,
+        name: '$mockProjectId-token-verifier',
+        options: AppOptions(
+          credential: Credential.fromServiceAccountParams(
+            clientId: 'test-client-id',
+            privateKey: mockPrivateKey,
+            email: mockClientEmail,
+          ),
         ),
       );
       verifier = AppCheckTokenVerifier(app);

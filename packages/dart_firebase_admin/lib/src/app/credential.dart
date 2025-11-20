@@ -14,7 +14,7 @@ sealed class Credential {
   /// Creates a credential using Application Default Credentials (ADC).
   ///
   /// ADC attempts to find credentials in the following order:
-  /// 1. GOOGLE_APPLICATION_CREDENTIALS environment variable (path to service account JSON)
+  /// 1. [Environment.googleApplicationCredentials] environment variable (path to service account JSON)
   /// 2. Compute Engine default service account (when running on GCE)
   /// 3. Other ADC sources
   ///
@@ -46,6 +46,40 @@ sealed class Credential {
   /// ```
   factory Credential.fromServiceAccount(File serviceAccountFile) {
     return ServiceAccountCredential.fromFile(serviceAccountFile);
+  }
+
+  /// Creates a credential from individual service account parameters.
+  ///
+  /// This is primarily useful for testing when you want to provide mock
+  /// credentials without creating a JSON file.
+  ///
+  /// Parameters:
+  /// - [clientId]: The OAuth2 client ID (optional)
+  /// - [privateKey]: The private key in PEM format
+  /// - [email]: The service account email address
+  /// - [projectId]: The Google Cloud project ID (optional, defaults to 'test-project')
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = Credential.fromServiceAccountParams(
+  ///   clientId: 'test-client-id',
+  ///   privateKey: '-----BEGIN RSA PRIVATE KEY-----\n...',
+  ///   email: 'test@example.iam.gserviceaccount.com',
+  ///   projectId: 'my-project',
+  /// );
+  /// ```
+  factory Credential.fromServiceAccountParams({
+    String? clientId,
+    required String privateKey,
+    required String email,
+    String projectId = 'test-project',
+  }) {
+    return ServiceAccountCredential.fromParams(
+      clientId: clientId,
+      privateKey: privateKey,
+      email: email,
+      projectId: projectId,
+    );
   }
 
   /// Private constructor for sealed class.
@@ -94,6 +128,25 @@ final class ServiceAccountCredential extends Credential {
     return ServiceAccountCredential.fromJson(json);
   }
 
+  /// Creates a [ServiceAccountCredential] from individual parameters.
+  ///
+  /// This is useful for testing when you want to provide mock credentials
+  /// without creating a JSON file.
+  factory ServiceAccountCredential.fromParams({
+    String? clientId,
+    required String privateKey,
+    required String email,
+    required String projectId,
+  }) {
+    final credentials = auth.ServiceAccountCredentials(
+      email,
+      auth.ClientId(clientId ?? email, null),
+      privateKey,
+    );
+
+    return ServiceAccountCredential._(credentials, projectId);
+  }
+
   ServiceAccountCredential._(
     this._credentials,
     this.projectId,
@@ -129,7 +182,7 @@ final class ServiceAccountCredential extends Credential {
 /// Uses Google Application Default Credentials (ADC) to automatically discover
 /// credentials from the environment. ADC checks the following sources in order:
 ///
-/// 1. **GOOGLE_APPLICATION_CREDENTIALS** environment variable pointing to a
+/// 1. [Environment.googleApplicationCredentials] environment variable pointing to a
 ///    service account JSON file
 /// 2. **Compute Engine** default service account (when running on GCE, Cloud Run, etc.)
 /// 3. Other ADC sources (gcloud CLI credentials, etc.)
@@ -139,9 +192,9 @@ final class ServiceAccountCredential extends Credential {
 /// hardcoding credential paths.
 ///
 /// The project ID is discovered lazily from:
-/// - The service account JSON file (if using GOOGLE_APPLICATION_CREDENTIALS)
+/// - The service account JSON file (if using [Environment.googleApplicationCredentials])
 /// - The GCE metadata service (if running on Compute Engine)
-/// - Environment variables (GOOGLE_CLOUD_PROJECT, GCLOUD_PROJECT)
+/// - Environment variables ([Environment.googleCloudProject], [Environment.gcloudProject])
 @internal
 final class ApplicationDefaultCredential extends Credential {
   ApplicationDefaultCredential({
@@ -153,7 +206,9 @@ final class ApplicationDefaultCredential extends Credential {
         _projectId = projectId,
         super._();
 
-  /// Factory to create from environment (GOOGLE_APPLICATION_CREDENTIALS).
+  /// Factory to create from environment.
+  ///
+  /// Checks [Environment.googleApplicationCredentials] for a service account file path.
   factory ApplicationDefaultCredential.fromEnvironment({
     String? serviceAccountId,
   }) {
@@ -162,7 +217,7 @@ final class ApplicationDefaultCredential extends Credential {
 
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final maybeConfig = env['GOOGLE_APPLICATION_CREDENTIALS'];
+    final maybeConfig = env[Environment.googleApplicationCredentials];
     if (maybeConfig != null && File(maybeConfig).existsSync()) {
       try {
         final text = File(maybeConfig).readAsStringSync();

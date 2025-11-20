@@ -35,6 +35,9 @@ abstract class _AbstractAuthRequestHandler {
   final FirebaseApp app;
   final _AuthHttpClient _httpClient;
 
+  /// Exposes the ProjectIdProvider for creating token verifiers.
+  ProjectIdProvider get projectIdProvider => _httpClient.projectIdProvider;
+
   /// Generates the out of band email action link for the email specified using the action code settings provided.
   /// Returns a promise that resolves with the generated link.
   Future<String> getEmailActionLink(
@@ -748,23 +751,27 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
 // TODO updateTenant
 }
 
-class _AuthHttpClient extends BaseHttpClient {
-  _AuthHttpClient(super.app);
+class _AuthHttpClient {
+  _AuthHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
+      : projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+
+  final FirebaseApp app;
+  final ProjectIdProvider projectIdProvider;
 
   // TODO handle tenants
 
   Future<String> _buildParent() async {
-    final projectId = await discoverProjectId();
+    final projectId = await projectIdProvider.discoverProjectId();
     return 'projects/$projectId';
   }
 
   Future<String> _buildOAuthIpdParent(String parentId) async {
-    final projectId = await discoverProjectId();
+    final projectId = await projectIdProvider.discoverProjectId();
     return 'projects/$projectId/oauthIdpConfigs/$parentId';
   }
 
   Future<String> _buildSamlParent(String parentId) async {
-    final projectId = await discoverProjectId();
+    final projectId = await projectIdProvider.discoverProjectId();
     return 'projects/$projectId/inboundSamlConfigs/$parentId';
   }
 
@@ -1019,10 +1026,13 @@ class _AuthHttpClient extends BaseHttpClient {
   }
 
   /// Gets the Auth API host URL based on emulator configuration.
+  ///
+  /// When [Environment.firebaseAuthEmulatorHost] is set, routes requests to
+  /// the local Auth emulator. Otherwise, uses production Auth API.
   Uri get _authApiHost {
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final emulatorHost = env['FIREBASE_AUTH_EMULATOR_HOST'];
+    final emulatorHost = env[Environment.firebaseAuthEmulatorHost];
 
     if (emulatorHost != null) {
       return Uri.http(emulatorHost, 'identitytoolkit.googleapis.com/');
@@ -1040,7 +1050,7 @@ class _AuthHttpClient extends BaseHttpClient {
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client, String projectId) fn,
   ) async {
-    final projectId = await discoverProjectId();
+    final projectId = await projectIdProvider.discoverProjectId();
     return _run(
       (client) => fn(
         auth1.IdentityToolkitApi(
@@ -1055,7 +1065,7 @@ class _AuthHttpClient extends BaseHttpClient {
   Future<R> v2<R>(
     Future<R> Function(auth2.IdentityToolkitApi client, String projectId) fn,
   ) async {
-    final projectId = await discoverProjectId();
+    final projectId = await projectIdProvider.discoverProjectId();
     return _run(
       (client) => fn(
         auth2.IdentityToolkitApi(
@@ -1070,7 +1080,7 @@ class _AuthHttpClient extends BaseHttpClient {
   Future<R> v3<R>(
     Future<R> Function(auth3.IdentityToolkitApi client, String projectId) fn,
   ) async {
-    final projectId = await discoverProjectId();
+    final projectId = await projectIdProvider.discoverProjectId();
     return _run(
       (client) => fn(
         auth3.IdentityToolkitApi(

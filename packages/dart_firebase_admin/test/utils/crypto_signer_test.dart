@@ -11,11 +11,13 @@ void main() {
 
       setUp(() {
         final app = FirebaseApp.initializeApp(
-          '$mockProjectId-crypto',
-          Credential.fromServiceAccountParams(
-            clientId: 'test-client-id',
-            privateKey: mockPrivateKey,
-            email: mockClientEmail,
+          name: '$mockProjectId-crypto',
+          options: AppOptions(
+            credential: Credential.fromServiceAccountParams(
+              clientId: 'test-client-id',
+              privateKey: mockPrivateKey,
+              email: mockClientEmail,
+            ),
           ),
         );
         signer = CryptoSigner.fromApp(app);

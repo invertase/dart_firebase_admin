@@ -5,8 +5,9 @@ _FirebaseTokenGenerator _createFirebaseTokenGenerator(
   String? tenantId,
 }) {
   try {
-    final signer =
-        app.isUsingEmulator ? _EmulatedSigner() : CryptoSigner.fromApp(app);
+    final signer = Environment.isAuthEmulatorEnabled()
+        ? _EmulatedSigner()
+        : CryptoSigner.fromApp(app);
     return _FirebaseTokenGenerator(signer, tenantId: tenantId);
   } on CryptoSignerException catch (err, stackTrace) {
     Error.throwWithStackTrace(_handleCryptoSignerError(err), stackTrace);
@@ -22,7 +23,7 @@ abstract class _BaseAuth {
         _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
         _sessionCookieVerifier = _createSessionCookieVerifier(
           app,
-          authRequestHandler._httpClient,
+          authRequestHandler.projectIdProvider,
         );
 
   final FirebaseApp app;
@@ -32,7 +33,7 @@ abstract class _BaseAuth {
 
   late final _idTokenVerifier = _createIdTokenVerifier(
     app,
-    _authRequestHandler._httpClient,
+    _authRequestHandler.projectIdProvider,
   );
 
   /// Generates the out of band email action link to reset a user's password.
@@ -362,7 +363,7 @@ abstract class _BaseAuth {
     String idToken, {
     bool checkRevoked = false,
   }) async {
-    final isEmulator = app.isUsingEmulator;
+    final isEmulator = Environment.isAuthEmulatorEnabled();
     final decodedIdToken = await _idTokenVerifier.verifyJWT(
       idToken,
       isEmulator: isEmulator,
@@ -414,7 +415,7 @@ abstract class _BaseAuth {
     String sessionCookie, {
     bool checkRevoked = false,
   }) async {
-    final isEmulator = app.isUsingEmulator;
+    final isEmulator = Environment.isAuthEmulatorEnabled();
     final decodedIdToken = await _sessionCookieVerifier.verifyJWT(
       sessionCookie,
       isEmulator: isEmulator,

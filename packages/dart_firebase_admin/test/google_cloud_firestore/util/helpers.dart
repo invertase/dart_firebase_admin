@@ -7,18 +7,23 @@ import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
 
+/// Creates a FirebaseApp for testing.
+///
+/// Note: Tests should be run with the following environment variables set:
+/// - FIRESTORE_EMULATOR_HOST=localhost:8080
+/// - FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
+///
+/// The emulator will be auto-detected from these environment variables.
 FirebaseApp createApp({
   FutureOr<void> Function()? tearDown,
   Client? client,
-  bool useEmulator = true,
 }) {
-  final credential = Credential.fromApplicationDefaultCredentials();
   final app = FirebaseApp.initializeApp(
-    projectId,
-    credential,
-    client: client,
+    options: AppOptions(
+      credential: Credential.fromApplicationDefaultCredentials(),
+      httpClient: client,
+    ),
   );
-  if (useEmulator) app.useEmulator();
 
   addTearDown(() async {
     if (tearDown != null) {
@@ -50,12 +55,17 @@ Future<void> _recursivelyDeleteAllDocuments(Firestore firestore) async {
   }
 }
 
+/// Creates a Firestore instance for testing.
+///
+/// Automatically cleans up all documents after each test.
+///
+/// Note: Tests should be run with FIRESTORE_EMULATOR_HOST=localhost:8080
+/// environment variable set. The emulator will be auto-detected.
 Future<Firestore> createFirestore({
   Settings? settings,
-  bool useEmulator = true,
 }) async {
   final firestore = Firestore(
-    createApp(useEmulator: useEmulator),
+    createApp(),
     settings: settings,
   );
 

@@ -54,7 +54,7 @@ void main() {
   group('FirebaseAuth', () {
     group('verifyIdToken', () {
       test('in prod', () async {
-        final app = createApp(useEmulator: false);
+        final app = createApp();
         final auth = Auth(app);
 
         final token = await getIdToken();

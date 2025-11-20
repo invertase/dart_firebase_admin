@@ -151,17 +151,9 @@ class FirebaseApp {
   /// Returns true if this app has been deleted.
   bool get isDeleted => _isDeleted;
 
-  /// Returns true if any Firebase emulator is enabled via environment variables.
-  bool get isUsingEmulator {
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    return env['FIREBASE_AUTH_EMULATOR_HOST'] != null ||
-        env['FIRESTORE_EMULATOR_HOST'] != null;
-  }
-
   @override
   String toString() =>
-      'FirebaseApp(name: $name, projectId: $projectId, wasInitializedFromEnv: $wasInitializedFromEnv, isDeleted: $_isDeleted, isUsingEmulator: $isUsingEmulator)';
+      'FirebaseApp(name: $name, projectId: $projectId, wasInitializedFromEnv: $wasInitializedFromEnv, isDeleted: $_isDeleted)';
 
   /// Map of service name to service instance for caching.
   final Map<String, FirebaseService> _services = {};
@@ -174,15 +166,6 @@ class FirebaseApp {
       : _createDefaultClient();
 
   Future<http.Client> _createDefaultClient() async {
-    // Auto-detect emulator and wrap if needed
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-
-    if (env['FIREBASE_AUTH_EMULATOR_HOST'] != null ||
-        env['FIRESTORE_EMULATOR_HOST'] != null) {
-      return _EmulatorClient(Client());
-    }
-
     // Use proper OAuth scope constants
     final scopes = [
       auth3.IdentityToolkitApi.cloudPlatformScope,
@@ -213,7 +196,7 @@ class FirebaseApp {
   /// [AppOptions.projectId] if it was explicitly set. Returns null if not set.
   ///
   /// Services that need project ID should use their own discovery mechanism
-  /// via `BaseHttpClient.discoverProjectId()` which handles async metadata
+  /// via `ProjectIdProvider.discoverProjectId()` which handles async metadata
   /// service lookup when explicit projectId is not available.
   String? get projectId => options.projectId;
 

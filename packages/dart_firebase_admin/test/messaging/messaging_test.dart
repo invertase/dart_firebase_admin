@@ -1,6 +1,5 @@
 import 'dart:convert';
-
-import 'package:dart_firebase_admin/src/messaging.dart';
+import 'package:dart_firebase_admin/src/messaging/messaging.dart';
 import 'package:googleapis/fcm/v1.dart' as fmc1;
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
@@ -48,7 +47,6 @@ void main() {
     when(() => messagingApiMock.projects).thenReturn(projectResourceMock);
 
     final sdk = createApp();
-    sdk.useEmulator();
     messaging = Messaging(sdk, requestHandler: requestHandler);
   });
 

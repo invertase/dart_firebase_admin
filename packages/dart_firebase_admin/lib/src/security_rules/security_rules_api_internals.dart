@@ -1,7 +1,8 @@
 import 'package:googleapis/firebaserules/v1.dart' as firebase_rules_v1;
 import 'package:meta/meta.dart';
 
-import '../utils/base_http_client.dart';
+import '../app.dart';
+import '../utils/project_id_provider.dart';
 import 'security_rules.dart';
 import 'security_rules_internals.dart';
 
@@ -71,8 +72,12 @@ class ListRulesetsResponse {
 }
 
 @internal
-class SecurityRulesApiClient extends BaseHttpClient {
-  SecurityRulesApiClient(super.app);
+class SecurityRulesApiClient {
+  SecurityRulesApiClient(this.app, [ProjectIdProvider? projectIdProvider])
+      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
 
   String? projectIdPrefix;
 
@@ -80,7 +85,7 @@ class SecurityRulesApiClient extends BaseHttpClient {
   Future<R> v1<R>(
     Future<R> Function(firebase_rules_v1.FirebaseRulesApi client, String projectId) fn,
   ) async {
-    final projectId = await discoverProjectId();
+    final projectId = await _projectIdProvider.discoverProjectId();
     try {
       return await fn(firebase_rules_v1.FirebaseRulesApi(await app.client), projectId);
     } on FirebaseSecurityRulesException {

@@ -11,12 +11,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
-import 'utils/base_http_client.dart' show BaseHttpClient;
-
 part 'app/app_options.dart';
 part 'app/app_registry.dart';
 part 'app/credential.dart';
-part 'app/emulator_client.dart';
+part 'app/environment.dart';
 part 'app/exception.dart';
 part 'app/firebase_app.dart';
 

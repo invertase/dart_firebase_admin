@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_firebase_admin/auth.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -16,7 +17,6 @@ void main() {
 
   setUp(() {
     final sdk = createApp(tearDown: () => cleanup(auth));
-    sdk.useEmulator();
     auth = Auth(sdk);
   });
 
@@ -212,7 +212,7 @@ void main() {
 }
 
 Future<void> cleanup(Auth auth) async {
-  if (!auth.app.isUsingEmulator) {
+  if (!Environment.isAuthEmulatorEnabled()) {
     throw Exception('Cannot cleanup non-emulator app');
   }
 

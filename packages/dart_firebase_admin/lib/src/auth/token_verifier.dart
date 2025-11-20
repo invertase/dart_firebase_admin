@@ -56,27 +56,27 @@ class FirebaseTokenVerifier {
     required this.issuer,
     required this.tokenInfo,
     required this.app,
-    required BaseHttpClient httpClient,
-  })  : _httpClient = httpClient,
-        _shortNameArticle = RegExp('[aeiou]', caseSensitive: false)
+    ProjectIdProvider? projectIdProvider,
+  })  : _shortNameArticle = RegExp('[aeiou]', caseSensitive: false)
                 .hasMatch(tokenInfo.shortName[0])
             ? 'an'
             : 'a',
         _signatureVerifier =
-            PublicKeySignatureVerifier.withCertificateUrl(clientCertUrl);
+            PublicKeySignatureVerifier.withCertificateUrl(clientCertUrl),
+        _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
   final String _shortNameArticle;
   final Uri issuer;
-  final FirebaseApp app;
   final FirebaseTokenInfo tokenInfo;
   final SignatureVerifier _signatureVerifier;
-  final BaseHttpClient _httpClient;
 
   Future<DecodedIdToken> verifyJWT(
     String jwtToken, {
     bool isEmulator = false,
   }) async {
-    final projectId = await _httpClient.discoverProjectId();
+    final projectId = await _projectIdProvider.discoverProjectId();
     final decoded = await _decodeAndVerify(
       jwtToken,
       projectId: projectId,
@@ -432,14 +432,14 @@ final _idTokenInfo = FirebaseTokenInfo(
 /// Creates a new FirebaseTokenVerifier to verify Firebase ID tokens.
 FirebaseTokenVerifier _createIdTokenVerifier(
   FirebaseApp app,
-  BaseHttpClient httpClient,
+  ProjectIdProvider projectIdProvider,
 ) {
   return FirebaseTokenVerifier(
     clientCertUrl: _clientCertUrl,
     issuer: Uri.parse('https://securetoken.google.com/'),
     tokenInfo: _idTokenInfo,
     app: app,
-    httpClient: httpClient,
+    projectIdProvider: projectIdProvider,
   );
 }
 
@@ -451,14 +451,14 @@ final _sessionCookieCertUrl = Uri.parse(
 /// Creates a new FirebaseTokenVerifier to verify Firebase session cookies.
 FirebaseTokenVerifier _createSessionCookieVerifier(
   FirebaseApp app,
-  BaseHttpClient httpClient,
+  ProjectIdProvider projectIdProvider,
 ) {
   return FirebaseTokenVerifier(
     clientCertUrl: _sessionCookieCertUrl,
     issuer: Uri.parse('https://session.firebase.google.com/'),
     tokenInfo: _sessionCookieInfo,
     app: app,
-    httpClient: httpClient,
+    projectIdProvider: projectIdProvider,
   );
 }
 

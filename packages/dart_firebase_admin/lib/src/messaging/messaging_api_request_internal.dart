@@ -7,8 +7,12 @@ final _legacyFirebaseMessagingHeaders = {
 };
 
 @internal
-class FirebaseMessagingRequestHandler extends BaseHttpClient {
-  FirebaseMessagingRequestHandler(super.app);
+class FirebaseMessagingRequestHandler {
+  FirebaseMessagingRequestHandler(this.app, [ProjectIdProvider? projectIdProvider])
+      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
 
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,
@@ -35,7 +39,7 @@ class FirebaseMessagingRequestHandler extends BaseHttpClient {
     Future<R> Function(fmc1.FirebaseCloudMessagingApi client, String projectId)
         fn,
   ) async {
-    final projectId = await discoverProjectId();
+    final projectId = await _projectIdProvider.discoverProjectId();
     return _run(
       (client) => fn(fmc1.FirebaseCloudMessagingApi(client), projectId),
     );

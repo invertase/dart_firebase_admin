@@ -5,13 +5,14 @@ import 'package:meta/meta.dart';
 
 import '../app.dart';
 
-/// Base class for service HTTP clients that need project ID discovery.
+/// Provider for Firebase services that need project ID discovery.
 ///
 /// This class encapsulates the pattern of discovering and caching project IDs
-/// for Firebase services. Each service's HTTP client should extend this class.
+/// for Firebase services. Services can inject this class to gain access
+/// to project ID resolution capabilities.
 @internal
-abstract class BaseHttpClient {
-  BaseHttpClient(this.app);
+final class ProjectIdProvider {
+  ProjectIdProvider(this.app);
 
   final FirebaseApp app;
 
@@ -20,7 +21,7 @@ abstract class BaseHttpClient {
 
   /// Gets the cached project ID if it has been discovered.
   /// Returns null if projectId has not been discovered yet.
-  @protected
+  @internal
   String? get cachedProjectId => _cachedProjectId;
 
   /// Returns the Google Cloud project ID associated with the Firebase app.
@@ -34,7 +35,6 @@ abstract class BaseHttpClient {
   /// The discovered project ID is cached for subsequent calls.
   ///
   /// Throws [FirebaseAppException] if project ID cannot be determined.
-  @protected
   Future<String> discoverProjectId() async {
     if (_cachedProjectId != null) {
       return _cachedProjectId!;

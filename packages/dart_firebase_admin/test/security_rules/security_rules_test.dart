@@ -10,7 +10,7 @@ void main() {
   setUpAll(registerFallbacks);
 
   setUp(() async {
-    final sdk = createApp(useEmulator: false);
+    final sdk = createApp();
     securityRules = SecurityRules(sdk);
   });
 

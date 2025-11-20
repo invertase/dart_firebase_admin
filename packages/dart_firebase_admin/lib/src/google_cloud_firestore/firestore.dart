@@ -11,7 +11,7 @@ import 'package:intl/intl.dart';
 
 import '../app.dart';
 import '../object_utils.dart';
-import '../utils/base_http_client.dart';
+import '../utils/project_id_provider.dart';
 import 'backoff.dart';
 import 'status_code.dart';
 import 'util.dart';
@@ -57,7 +57,7 @@ class Firestore implements FirebaseService {
   /// This must only be called after the first operation that triggers discovery.
   /// Otherwise it will throw.
   String get _projectId {
-    final cached = _client.cachedProjectId;
+    final cached = _client._projectIdProvider.cachedProjectId;
     if (cached == null) {
       throw StateError(
         'Project ID has not been discovered yet. '
@@ -283,16 +283,72 @@ class Settings with _$Settings {
   }) = _Settings;
 }
 
-class _FirestoreHttpClient extends BaseHttpClient {
-  _FirestoreHttpClient(super.app);
+/// Internal HTTP request implementation that wraps a stream.
+///
+/// This is used by [_EmulatorClient] to create modified requests with
+/// updated headers while preserving the request body stream.
+class _RequestImpl extends BaseRequest {
+  _RequestImpl(super.method, super.url, [Stream<List<int>>? stream])
+      : _stream = stream ?? const Stream.empty();
 
-  // TODO needs to send "owner" as bearer token when using the emulator
+  final Stream<List<int>> _stream;
+
+  @override
+  ByteStream finalize() {
+    super.finalize();
+    return ByteStream(_stream);
+  }
+}
+
+/// HTTP client wrapper that adds Firestore emulator authentication.
+///
+/// This client wraps another HTTP client and automatically adds the
+/// `Authorization: Bearer owner` header to all requests, which is required
+/// when connecting to the Firestore emulator.
+///
+/// The Firestore emulator expects this specific bearer token to grant full
+/// admin privileges for local development and testing.
+class _EmulatorClient extends BaseClient {
+  _EmulatorClient(this.client);
+
+  final Client client;
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) async {
+    // Make new request object and perform the authenticated request.
+    final modifiedRequest = _RequestImpl(
+      request.method,
+      request.url,
+      request.finalize(),
+    );
+    modifiedRequest.headers.addAll(request.headers);
+    modifiedRequest.headers['Authorization'] = 'Bearer owner';
+
+    return client.send(modifiedRequest);
+  }
+
+  @override
+  void close() {
+    client.close();
+    super.close();
+  }
+}
+
+class _FirestoreHttpClient {
+  _FirestoreHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
+      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
 
   /// Gets the Firestore API host URL based on emulator configuration.
+  ///
+  /// When [Environment.firestoreEmulatorHost] is set, routes requests to
+  /// the local Firestore emulator. Otherwise, uses production Firestore API.
   Uri get _firestoreApiHost {
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final emulatorHost = env['FIRESTORE_EMULATOR_HOST'];
+    final emulatorHost = env[Environment.firestoreEmulatorHost];
 
     if (emulatorHost != null) {
       return Uri.http(emulatorHost, '/');
@@ -301,12 +357,24 @@ class _FirestoreHttpClient extends BaseHttpClient {
     return Uri.https('firestore.googleapis.com', '/');
   }
 
-  // TODO refactor with auth
-  // TODO is it fine to use AuthClient?
+  /// Checks if the Firestore emulator is enabled via environment variable.
+  bool get _isUsingEmulator {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    return env[Environment.firestoreEmulatorHost] != null;
+  }
+
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,
-  ) {
-    return _firestoreGuard(() => app.client.then(fn));
+  ) async {
+    // Get the base client from the app
+    final baseClient = await app.client;
+
+    // Wrap with _EmulatorClient if using Firestore emulator
+    // The emulator requires "Authorization: Bearer owner" header
+    final client = _isUsingEmulator ? _EmulatorClient(baseClient) : baseClient;
+
+    return _firestoreGuard(() => fn(client));
   }
 
   /// Executes a Firestore v1 API operation with automatic projectId injection.
@@ -316,7 +384,7 @@ class _FirestoreHttpClient extends BaseHttpClient {
   Future<R> v1<R>(
     Future<R> Function(firestore1.FirestoreApi client, String projectId) fn,
   ) async {
-    final projectId = await discoverProjectId();
+    final projectId = await _projectIdProvider.discoverProjectId();
     return _run(
       (client) => fn(
         firestore1.FirestoreApi(

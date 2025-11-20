@@ -6,7 +6,7 @@ import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
 import '../app.dart';
-import '../utils/base_http_client.dart';
+import '../utils/project_id_provider.dart';
 
 part 'fmc_exception.dart';
 part 'messaging_api.dart';
