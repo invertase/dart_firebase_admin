@@ -27,6 +27,7 @@ part 'src/channel.dart';
 part 'src/crc32c.dart';
 part 'src/file.dart';
 part 'src/hmac_key.dart';
+part 'src/iam.dart';
 part 'src/notification.dart';
 part 'src/signer.dart';
 part 'src/storage.dart';

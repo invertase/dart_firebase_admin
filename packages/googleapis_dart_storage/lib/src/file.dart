@@ -507,7 +507,7 @@ class File extends ServiceObject<FileMetadata>
             options: CopyOptions(
               token: response.rewriteToken,
               destinationKmsKeyName: copyOptions.destinationKmsKeyName,
-              userProject: copyOptions.userProject,
+              userProject: copyOptions.userProject ?? userProject,
             ),
           );
         }
@@ -772,7 +772,7 @@ class File extends ServiceObject<FileMetadata>
       final copiedFile = await copy(
         destination,
         options: CopyOptions(
-          userProject: moveOptions.userProject,
+          userProject: moveOptions.userProject ?? userProject,
           preconditionOpts: moveOptions.preconditionOpts,
         ),
       );
@@ -862,7 +862,7 @@ class File extends ServiceObject<FileMetadata>
     await copy(
       FileBucketDestination.file(this),
       options: CopyOptions(
-        userProject: setStorageClassOptions.userProject,
+        userProject: setStorageClassOptions.userProject ?? userProject,
         preconditionOpts: setStorageClassOptions,
       ),
     );

@@ -126,7 +126,7 @@ class Storage extends Service<StorageOptions> {
           );
 
           final instance = this.bucket(bucket.name!);
-          instance.setMetadata(inner);
+          instance.setInstanceMetadata(inner);
           return instance;
         },
       );
@@ -157,11 +157,13 @@ class Storage extends Service<StorageOptions> {
             );
           }
 
-          return HmacKey._(
+          final hmacKey = HmacKey._(
             this,
             metadata.accessId!,
             options: HmacKeyOptions(projectId: metadata.projectId),
           );
+          hmacKey.setInstanceMetadata(metadata);
+          return hmacKey;
         },
       );
     } catch (e) {
@@ -169,68 +171,109 @@ class Storage extends Service<StorageOptions> {
     }
   }
 
-  Future<(Iterable<BucketMetadata> buckets, String? nextPageToken)> getBuckets(
-      [GetBucketsOptions? options]) async {
-    final executor = RetryExecutor.withoutRetries(this);
+  Future<(List<Bucket> buckets, GetBucketsOptions? nextQuery)> getBuckets(
+      [GetBucketsOptions? options = const GetBucketsOptions()]) async {
+    final opts = options ?? const GetBucketsOptions();
+    final autoPaginate = opts.autoPaginate ?? true;
 
-    try {
-      return await executor.retry(
-        (client) async {
-          final response = await client.buckets.list(
-            options?.projectId ?? this.options.projectId,
-            maxResults: options?.maxResults,
-            pageToken: options?.pageToken,
-            prefix: options?.prefix,
-            projection: options?.projection?.name,
-            softDeleted: options?.softDeleted,
-            userProject: options?.userProject,
-          );
+    if (autoPaginate) {
+      // Collect all buckets from the stream
+      final buckets = <Bucket>[];
+      await for (final bucket in getBucketsStream(opts)) {
+        buckets.add(bucket);
+      }
+      return (buckets, null);
+    } else {
+      // Single page request - no auto-pagination
+      final executor = RetryExecutor(this);
+      try {
+        final response = await executor.retry(
+          (client) async {
+            return await client.buckets.list(
+              opts.projectId ?? this.options.projectId,
+              maxResults: opts.maxResults,
+              pageToken: opts.pageToken,
+              prefix: opts.prefix,
+              projection: opts.projection?.name,
+              softDeleted: opts.softDeleted,
+              userProject: opts.userProject,
+            );
+          },
+        );
 
-          final nextPageToken = response.nextPageToken;
+        final itemsArray = response.items ?? [];
+        final buckets = itemsArray.map((bucketMetadata) {
+          final bucketInstance = bucket(bucketMetadata.id!);
+          bucketInstance.setInstanceMetadata(bucketMetadata);
+          return bucketInstance;
+        }).toList();
 
-          return (response.items ?? [], nextPageToken);
-        },
-      );
-    } catch (e) {
-      throw ApiError('Failed to get buckets', details: e);
+        // Build nextQuery if there's a nextPageToken
+        final nextQuery = response.nextPageToken != null
+            ? opts.copyWith(pageToken: response.nextPageToken)
+            : null;
+
+        return (buckets, nextQuery);
+      } catch (e) {
+        throw ApiError('Failed to get buckets', details: e);
+      }
     }
   }
 
-  Future<(Iterable<HmacKey> keys, String? nextPageToken)> getHmacKeys(
-      [GetHmacKeysOptions? options]) async {
-    final executor = RetryExecutor.withoutRetries(this);
+  Future<(List<HmacKey> keys, GetHmacKeysOptions? nextQuery)> getHmacKeys(
+      [GetHmacKeysOptions? options = const GetHmacKeysOptions()]) async {
+    final opts = options ?? const GetHmacKeysOptions();
+    final autoPaginate = opts.autoPaginate ?? true;
 
-    try {
-      return await executor.retry(
-        (client) async {
-          final response = await client.projects.hmacKeys.list(
-            options?.projectId ?? this.options.projectId,
-            serviceAccountEmail: options?.serviceAccountEmail,
-            showDeletedKeys: options?.showDeletedKeys,
-            maxResults: options?.maxResults,
-            pageToken: options?.pageToken,
-            userProject: options?.userProject,
+    if (autoPaginate) {
+      // Collect all keys from the stream
+      final keys = <HmacKey>[];
+      await for (final key in getHmacKeysStream(opts)) {
+        keys.add(key);
+      }
+      return (keys, null);
+    } else {
+      // Single page request - no auto-pagination
+      final executor = RetryExecutor(this);
+      try {
+        final response = await executor.retry(
+          (client) async {
+            return await client.projects.hmacKeys.list(
+              opts.projectId ?? this.options.projectId,
+              serviceAccountEmail: opts.serviceAccountEmail,
+              showDeletedKeys: opts.showDeletedKeys,
+              maxResults: opts.maxResults,
+              pageToken: opts.pageToken,
+              userProject: opts.userProject,
+            );
+          },
+        );
+
+        final itemsArray = response.items ?? [];
+        final keys = itemsArray.map((hmacKeyMetadata) {
+          final hmacKeyInstance = hmacKey(
+            hmacKeyMetadata.accessId!,
+            HmacKeyOptions(projectId: hmacKeyMetadata.projectId),
           );
+          hmacKeyInstance.setInstanceMetadata(hmacKeyMetadata);
+          return hmacKeyInstance;
+        }).toList();
 
-          final nextPageToken = response.nextPageToken;
+        // Build nextQuery if there's a nextPageToken
+        final nextQuery = response.nextPageToken != null
+            ? opts.copyWith(pageToken: response.nextPageToken)
+            : null;
 
-          final keys = response.items?.map(
-                (item) => HmacKey._(this, item.accessId!,
-                    options: HmacKeyOptions(projectId: item.projectId)),
-              ) ??
-              [];
-
-          return (keys, nextPageToken);
-        },
-      );
-    } catch (e) {
-      throw ApiError('Failed to get HMAC keys', details: e);
+        return (keys, nextQuery);
+      } catch (e) {
+        throw ApiError('Failed to get HMAC keys', details: e);
+      }
     }
   }
 
   Future<storage_v1.ServiceAccount> getServiceAccount(
       [GetServiceAccountOptions? options]) async {
-    final executor = RetryExecutor.withoutRetries(this);
+    final executor = RetryExecutor(this);
 
     try {
       return await executor.retry(
@@ -253,6 +296,90 @@ class Storage extends Service<StorageOptions> {
     }
 
     return HmacKey._(this, accessId, options: options);
+  }
+
+  /// Stream buckets in this storage instance.
+  ///
+  /// Automatically handles pagination and yields buckets as they arrive.
+  /// Similar to Node's `getBucketsStream`.
+  Stream<Bucket> getBucketsStream(
+      [GetBucketsOptions? options = const GetBucketsOptions()]) {
+    final opts = options ?? const GetBucketsOptions();
+    final executor = RetryExecutor(this);
+
+    return Streaming<Bucket, GetBucketsOptions>(
+      fetcher: (GetBucketsOptions pageOptions) async {
+        final response = await executor.retry(
+          (client) async {
+            return await client.buckets.list(
+              pageOptions.projectId ?? this.options.projectId,
+              maxResults: pageOptions.maxResults,
+              pageToken: pageOptions.pageToken,
+              prefix: pageOptions.prefix,
+              projection: pageOptions.projection?.name,
+              softDeleted: pageOptions.softDeleted,
+              userProject: pageOptions.userProject,
+            );
+          },
+        );
+
+        final itemsArray = response.items ?? [];
+        final buckets = itemsArray.map((bucketMetadata) {
+          final bucketInstance = bucket(bucketMetadata.id!);
+          bucketInstance.setInstanceMetadata(bucketMetadata);
+          return bucketInstance;
+        });
+
+        return (buckets, response.nextPageToken);
+      },
+      initialOptions: opts,
+      maxApiCalls: opts.maxApiCalls,
+      updatePageToken: (options, pageToken) =>
+          options.copyWith(pageToken: pageToken),
+    );
+  }
+
+  /// Stream HMAC keys in this storage instance.
+  ///
+  /// Automatically handles pagination and yields HMAC keys as they arrive.
+  /// Similar to Node's `getHmacKeysStream`.
+  Stream<HmacKey> getHmacKeysStream(
+      [GetHmacKeysOptions? options = const GetHmacKeysOptions()]) {
+    final opts = options ?? const GetHmacKeysOptions();
+    final executor = RetryExecutor(this);
+
+    return Streaming<HmacKey, GetHmacKeysOptions>(
+      fetcher: (GetHmacKeysOptions pageOptions) async {
+        final response = await executor.retry(
+          (client) async {
+            return await client.projects.hmacKeys.list(
+              pageOptions.projectId ?? this.options.projectId,
+              serviceAccountEmail: pageOptions.serviceAccountEmail,
+              showDeletedKeys: pageOptions.showDeletedKeys,
+              maxResults: pageOptions.maxResults,
+              pageToken: pageOptions.pageToken,
+              userProject: pageOptions.userProject,
+            );
+          },
+        );
+
+        final itemsArray = response.items ?? [];
+        final keys = itemsArray.map((hmacKeyMetadata) {
+          final hmacKeyInstance = hmacKey(
+            hmacKeyMetadata.accessId!,
+            HmacKeyOptions(projectId: hmacKeyMetadata.projectId),
+          );
+          hmacKeyInstance.setInstanceMetadata(hmacKeyMetadata);
+          return hmacKeyInstance;
+        });
+
+        return (keys, response.nextPageToken);
+      },
+      initialOptions: opts,
+      maxApiCalls: opts.maxApiCalls,
+      updatePageToken: (options, pageToken) =>
+          options.copyWith(pageToken: pageToken),
+    );
   }
 }
 

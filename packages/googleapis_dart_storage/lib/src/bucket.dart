@@ -1,7 +1,9 @@
 part of '../googleapis_dart_storage.dart';
 
 class GetBucketsOptions {
+  final bool? autoPaginate;
   final String? projectId;
+  final int? maxApiCalls;
   final int? maxResults;
   final String? pageToken;
   final String? prefix;
@@ -10,7 +12,9 @@ class GetBucketsOptions {
   final String? userProject;
 
   const GetBucketsOptions({
+    this.autoPaginate = true,
     this.projectId,
+    this.maxApiCalls,
     this.maxResults,
     this.pageToken,
     this.prefix,
@@ -18,6 +22,30 @@ class GetBucketsOptions {
     this.softDeleted,
     this.userProject,
   });
+
+  GetBucketsOptions copyWith({
+    bool? autoPaginate,
+    String? projectId,
+    int? maxApiCalls,
+    int? maxResults,
+    String? pageToken,
+    String? prefix,
+    Projection? projection,
+    bool? softDeleted,
+    String? userProject,
+  }) {
+    return GetBucketsOptions(
+      autoPaginate: autoPaginate ?? this.autoPaginate,
+      projectId: projectId ?? this.projectId,
+      maxApiCalls: maxApiCalls ?? this.maxApiCalls,
+      maxResults: maxResults ?? this.maxResults,
+      pageToken: pageToken ?? this.pageToken,
+      prefix: prefix ?? this.prefix,
+      projection: projection ?? this.projection,
+      softDeleted: softDeleted ?? this.softDeleted,
+      userProject: userProject ?? this.userProject,
+    );
+  }
 }
 
 class AddLifecycleRuleOptions extends PreconditionOptions {
@@ -197,6 +225,7 @@ class Bucket extends ServiceObject<BucketMetadata>
   final BucketOptions options;
   final Acl acl;
   final Acl aclDefault;
+  Iam? iam;
   URLSigner? _signer;
 
   /// A user project to apply to each request from this bucket.
@@ -257,7 +286,7 @@ class Bucket extends ServiceObject<BucketMetadata>
             ifMetagenerationMatch: options?.ifMetagenerationMatch?.toString(),
             ifMetagenerationNotMatch:
                 options?.ifMetagenerationNotMatch?.toString(),
-            userProject: options?.userProject ?? this.userProject,
+            userProject: options?.userProject ?? userProject,
           );
         } on ApiError catch (e) {
           if (e.code == 404 && options?.ignoreNotFound == true) {
@@ -308,7 +337,7 @@ class Bucket extends ServiceObject<BucketMetadata>
       if (e.code == 404 && getOptions.autoCreate) {
         try {
           // Create a minimal bucket metadata with just the name
-          final bucketMetadata = BucketMetadata()..name = id;
+          final bucketMetadata = BucketMetadata()..name = name;
           final created = await create(bucketMetadata);
           return created;
         } on ApiError catch (createErr) {
@@ -344,7 +373,6 @@ class Bucket extends ServiceObject<BucketMetadata>
           predefinedAcl: options?.predefinedAcl,
           userProject: options?.userProject ?? userProject,
         );
-        // TODO: Should this modify current instance?
         setInstanceMetadata(updated);
         return updated;
       },
@@ -723,6 +751,133 @@ class Bucket extends ServiceObject<BucketMetadata>
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Delete one or more labels from this bucket.
+  ///
+  /// If [labels] is null or empty, all labels are deleted.
+  ///
+  /// This is a convenience method that calls [setMetadata] with null values
+  /// for the specified label keys. To delete all labels, it first calls
+  /// [getLabels] to get the current labels, then deletes them all.
+  ///
+  /// See [setLabels] for setting labels.
+  ///
+  /// [labels] A list of label keys to delete. If null or empty, all labels are deleted.
+  ///
+  /// [options] Options including precondition options and userProject.
+  ///
+  /// Returns the updated bucket metadata.
+  ///
+  /// Example:
+  /// ```dart
+  /// // Delete all labels
+  /// await bucket.deleteLabels();
+  ///
+  /// // Delete a single label
+  /// await bucket.deleteLabels(labels: ['labelone']);
+  ///
+  /// // Delete multiple labels
+  /// await bucket.deleteLabels(labels: ['labelone', 'labeltwo']);
+  ///
+  /// // Delete with options
+  /// await bucket.deleteLabels(
+  ///   labels: ['labelone'],
+  ///   options: SetLabelsOptions(userProject: 'my-project'),
+  /// );
+  /// ```
+  Future<BucketMetadata> deleteLabels({
+    List<String>? labels,
+    SetLabelsOptions? options,
+  }) async {
+    List<String> labelsToDelete = [];
+
+    if (labels == null || labels.isEmpty) {
+      labelsToDelete = await getLabels().then((labels) => labels.keys.toList());
+    } else {
+      labelsToDelete = labels;
+    }
+
+    final nullLabelMap = <String, dynamic>{};
+    for (final labelKey in labelsToDelete) {
+      nullLabelMap[labelKey] = null;
+    }
+
+    final update = BucketMetadata()
+      ..labels = (nullLabelMap as dynamic) as Map<String, String>?;
+
+    if (options?.ifMetagenerationMatch != null) {
+      return setMetadata(update, options: options);
+    } else {
+      return setMetadata(
+        update,
+        options: SetLabelsOptions(
+          userProject: options?.userProject,
+        ),
+      );
+    }
+  }
+
+  Future<void> disableRequesterPays([PreconditionOptions? options]) async {
+    final metadata = BucketMetadata()
+      ..billing = storage_v1.BucketBilling(
+        requesterPays: false,
+      );
+    await setMetadata(
+      metadata,
+      options: SetBucketMetadataOptions(
+        ifMetagenerationMatch: options?.ifMetagenerationMatch,
+        ifMetagenerationNotMatch: options?.ifMetagenerationNotMatch,
+        ifGenerationMatch: options?.ifGenerationMatch,
+        ifGenerationNotMatch: options?.ifGenerationNotMatch,
+      ),
+    );
+  }
+
+  Future<BucketMetadata> enableLogging(EnableLoggingOptions options) async {
+    iam ??= Iam._(this);
+    final bucketId = options.bucket?.id ?? id;
+
+    final policy = await iam!.getPolicy();
+    final binding = storage_v1.PolicyBindings(
+      members: ['group:cloud-storage-analytics@google.com'],
+      role: 'roles/storage.objectCreator',
+    );
+
+    policy.bindings =
+        policy.bindings == null ? [binding] : [...policy.bindings!, binding];
+
+    await iam!.setPolicy(policy);
+
+    final metadata = BucketMetadata()
+      ..logging = storage_v1.BucketLogging(
+        logBucket: bucketId,
+        logObjectPrefix: options.prefix,
+      );
+
+    return setMetadata(
+      metadata,
+      options: SetBucketMetadataOptions(
+        ifMetagenerationMatch: options.ifMetagenerationMatch,
+        ifMetagenerationNotMatch: options.ifMetagenerationNotMatch,
+      ),
+    );
+  }
+
+  Future<void> enableRequesterPays([SetBucketMetadataOptions? options]) async {
+    final metadata = BucketMetadata()
+      ..billing = storage_v1.BucketBilling(
+        requesterPays: true,
+      );
+    await setMetadata(
+      metadata,
+      options: SetBucketMetadataOptions(
+        ifMetagenerationMatch: options?.ifMetagenerationMatch,
+        ifMetagenerationNotMatch: options?.ifMetagenerationNotMatch,
+        ifGenerationMatch: options?.ifGenerationMatch,
+        ifGenerationNotMatch: options?.ifGenerationNotMatch,
+      ),
+    );
   }
 
   /// List files in this bucket.
@@ -1210,5 +1365,15 @@ class MakeAllFilesPublicPrivateOptions {
     this.private,
     this.public,
     this.userProject,
+  });
+}
+
+class EnableLoggingOptions extends PreconditionOptions {
+  final String prefix;
+  final Bucket? bucket;
+
+  const EnableLoggingOptions({
+    required this.prefix,
+    this.bucket,
   });
 }

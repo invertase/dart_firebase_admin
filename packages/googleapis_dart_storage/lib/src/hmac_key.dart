@@ -15,21 +15,47 @@ class CreateHmacKeyOptions {
 }
 
 class GetHmacKeysOptions {
+  final bool? autoPaginate;
   final String? projectId;
   final String? serviceAccountEmail;
   final bool? showDeletedKeys;
+  final int? maxApiCalls;
   final int? maxResults;
   final String? pageToken;
   final String? userProject;
 
   const GetHmacKeysOptions({
+    this.autoPaginate = true,
     this.projectId,
     this.userProject,
     this.serviceAccountEmail,
     this.showDeletedKeys,
+    this.maxApiCalls,
     this.maxResults,
     this.pageToken,
   });
+
+  GetHmacKeysOptions copyWith({
+    bool? autoPaginate,
+    String? projectId,
+    String? serviceAccountEmail,
+    bool? showDeletedKeys,
+    int? maxApiCalls,
+    int? maxResults,
+    String? pageToken,
+    String? userProject,
+  }) {
+    return GetHmacKeysOptions(
+      autoPaginate: autoPaginate ?? this.autoPaginate,
+      projectId: projectId ?? this.projectId,
+      serviceAccountEmail: serviceAccountEmail ?? this.serviceAccountEmail,
+      showDeletedKeys: showDeletedKeys ?? this.showDeletedKeys,
+      maxApiCalls: maxApiCalls ?? this.maxApiCalls,
+      maxResults: maxResults ?? this.maxResults,
+      pageToken: pageToken ?? this.pageToken,
+      userProject: userProject ?? this.userProject,
+    );
+  }
 }
 
 enum HmacKeyState {
