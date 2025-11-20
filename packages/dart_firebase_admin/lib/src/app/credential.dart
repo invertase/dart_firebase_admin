@@ -165,7 +165,7 @@ final class ApplicationDefaultCredential extends Credential {
     try {
       final response = await get(
         Uri.parse(
-          'http://metadata/computeMetadata/v1/project/project-id',
+          'http://metadata.google.internal/computeMetadata/v1/project/project-id',
         ),
         headers: {
           'Metadata-Flavor': 'Google',
@@ -197,7 +197,7 @@ final class ApplicationDefaultCredential extends Credential {
     try {
       final response = await get(
         Uri.parse(
-          'http://metadata/computeMetadata/v1/instance/service-accounts/default/email',
+          'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
         ),
         headers: {
           'Metadata-Flavor': 'Google',
