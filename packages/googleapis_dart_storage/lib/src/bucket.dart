@@ -208,12 +208,22 @@ class Bucket extends ServiceObject<BucketMetadata>
 
   Storage get storage => service as Storage;
 
+  Uri get cloudStorageURI {
+    return Uri(scheme: 'gs', host: name);
+  }
+
+  final String name;
+
   Bucket._(Storage storage, String name, [BucketOptions? options])
       : options = (options ?? const BucketOptions()).copyWith(
           // Inherit from storage options crc32cGenerator (which has a default) if not specified in bucket options
           crc32cGenerator:
               options?.crc32cGenerator ?? storage.options.crc32cGenerator,
         ),
+        // Allow for "gs://"-style input, and strip any trailing slashes.
+        name = name
+            .replaceAll(RegExp(r'^gs://'), '')
+            .replaceAll(RegExp(r'/+$'), ''),
         userProject = options?.userProject,
         acl = Acl._bucketAcl(storage, name),
         aclDefault = Acl._bucketDefaultObjectAcl(storage, name),
