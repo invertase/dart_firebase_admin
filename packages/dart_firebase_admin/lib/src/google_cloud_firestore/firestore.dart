@@ -72,6 +72,7 @@ class Firestore implements FirebaseService {
     return 'projects/$_projectId/databases/$_databaseId';
   }
 
+  @override
   final FirebaseApp app;
   final Settings _settings;
 

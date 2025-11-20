@@ -55,7 +55,7 @@ class AppCheckApiClient extends BaseHttpClient {
         appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(
           appCheckToken: token,
         ),
-        'projects/${projectId}',
+        'projects/$projectId',
       );
 
       return response.alreadyConsumed ?? false;

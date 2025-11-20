@@ -1,7 +1,7 @@
 part of '../app.dart';
 
 class AppRegistry {
-  static const _DEFAULT_APP_NAME = '[DEFAULT]';
+  static const _defaultAppName = '[DEFAULT]';
 
   final Map<String, FirebaseApp> _apps = {};
 
@@ -9,7 +9,7 @@ class AppRegistry {
     AppOptions? options,
     String? name,
   }) {
-    name ??= _DEFAULT_APP_NAME;
+    name ??= _defaultAppName;
     _validateAppName(name);
 
     var wasInitializedFromEnv = false;
@@ -108,11 +108,11 @@ class AppRegistry {
   ///
   /// Throws [FirebaseAppException] if no app exists with the given name.
   FirebaseApp getApp([String? name]) {
-    name ??= _DEFAULT_APP_NAME;
+    name ??= _defaultAppName;
     _validateAppName(name);
 
     if (!_apps.containsKey(name)) {
-      final errorMessage = name == _DEFAULT_APP_NAME
+      final errorMessage = name == _defaultAppName
           ? 'The default Firebase app does not exist. '
           : 'Firebase app named "$name" does not exist. ';
       throw FirebaseAppException(

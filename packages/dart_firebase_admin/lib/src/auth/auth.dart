@@ -7,7 +7,7 @@ class Auth extends _BaseAuth implements FirebaseService {
   factory Auth(FirebaseApp app) {
     return app.getOrInitService(
       'auth',
-      (app) => Auth._(app),
+      Auth._,
     ) as Auth;
   }
 

@@ -5,11 +5,12 @@ import 'package:googleapis/fcm/v1.dart' as fmc1;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
-import 'app.dart';
+import '../app.dart';
+import '../utils/base_http_client.dart';
 
-part 'messaging/fmc_exception.dart';
-part 'messaging/messaging_api.dart';
-part 'messaging/messaging_api_request_internal.dart';
+part 'fmc_exception.dart';
+part 'messaging_api.dart';
+part 'messaging_api_request_internal.dart';
 
 const _fmcMaxBatchSize = 500;
 
@@ -18,20 +19,30 @@ const _fmcMaxBatchSize = 500;
 // const _fcmTopicManagementRemovePath = '/iid/v1:batchRemove';
 
 /// An interface for interacting with the Firebase Cloud Messaging service.
-class Messaging {
+class Messaging implements FirebaseService {
+  /// Creates or returns the cached Messaging instance for the given app.
+  factory Messaging(
+    FirebaseApp app, {
+    @internal FirebaseMessagingRequestHandler? requestHandler,
+  }) {
+    return app.getOrInitService(
+      'messaging',
+      (app) => Messaging._(app, requestHandler: requestHandler),
+    ) as Messaging;
+  }
+
   /// An interface for interacting with the Firebase Cloud Messaging service.
-  Messaging(
-    this.firebase, {
+  Messaging._(
+    this.app, {
     @internal FirebaseMessagingRequestHandler? requestHandler,
   }) : _requestHandler =
-            requestHandler ?? FirebaseMessagingRequestHandler(firebase);
+            requestHandler ?? FirebaseMessagingRequestHandler(app);
 
   /// The app associated with this Messaging instance.
-  final FirebaseApp firebase;
+  @override
+  final FirebaseApp app;
 
   final FirebaseMessagingRequestHandler _requestHandler;
-
-  String get _parent => 'projects/${firebase.projectId}';
 
   /// Sends the given message via FCM.
   ///
@@ -43,13 +54,14 @@ class Messaging {
   /// handed off to the FCM service for delivery.
   Future<String> send(Message message, {bool? dryRun}) {
     return _requestHandler.v1(
-      (client) async {
+      (client, projectId) async {
+        final parent = 'projects/$projectId';
         final response = await client.projects.messages.send(
           fmc1.SendMessageRequest(
             message: message._toProto(),
             validateOnly: dryRun,
           ),
-          _parent,
+          parent,
         );
 
         final name = response.name;
@@ -81,7 +93,7 @@ class Messaging {
   ///   (validation only) mode.
   Future<BatchResponse> sendEach(List<Message> messages, {bool? dryRun}) {
     return _requestHandler.v1(
-      (client) async {
+      (client, projectId) async {
         if (messages.isEmpty) {
           throw FirebaseMessagingAdminException(
             MessagingClientErrorCode.invalidArgument,
@@ -95,6 +107,7 @@ class Messaging {
           );
         }
 
+        final parent = 'projects/$projectId';
         final responses = await Future.wait<SendResponse>(
           messages.map((message) async {
             final response = client.projects.messages.send(
@@ -102,7 +115,7 @@ class Messaging {
                 message: message._toProto(),
                 validateOnly: dryRun,
               ),
-              _parent,
+              parent,
             );
 
             return response.then(
@@ -169,5 +182,10 @@ class Messaging {
           .toList(),
       dryRun: dryRun,
     );
+  }
+
+  @override
+  Future<void> delete() async {
+    // Messaging service cleanup if needed
   }
 }

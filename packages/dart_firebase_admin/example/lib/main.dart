@@ -1,6 +1,6 @@
+import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
-import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
@@ -20,13 +20,24 @@ Future<void> main() async {
   //
   // print(result);
 
+  // final auth = Auth(admin);
+  // final user = await auth.createUser(
+  //   CreateRequest(
+  //     email: 'demolafadumo@gmail.com',
+  //     password: 'Test@123',
+  //   ),
+  // );
+  //
+  // final fetchedUser = await auth.getUser(user.uid);
+  // print('Fetched user email: ${fetchedUser.email}');
+
   final firestore = Firestore(admin);
 
   final collection = firestore.collection('users');
 
   await collection.doc('123').set({
     'name': 'John Doe',
-    'age': 29,
+    'age': 27,
   });
 
   final snapshot = await collection.get();

@@ -1,4 +1,4 @@
-part of '../messaging.dart';
+part of 'messaging.dart';
 
 /// Messaging server to client enum error codes.
 @internal

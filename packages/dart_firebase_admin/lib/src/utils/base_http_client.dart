@@ -101,7 +101,7 @@ abstract class BaseHttpClient {
 
     final credential = app.options.credential;
     if (credential is ApplicationDefaultCredential) {
-      return await credential.getProjectId();
+      return credential.getProjectId();
     }
 
     return null;
