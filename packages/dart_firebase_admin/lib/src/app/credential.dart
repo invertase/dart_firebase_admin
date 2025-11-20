@@ -5,10 +5,21 @@ const envSymbol = #_envSymbol;
 
 /// Base class for Firebase Admin SDK credentials.
 ///
-/// Use [ServiceAccountCredential] for service account credentials,
-/// or [ApplicationDefaultCredential] for Application Default Credentials.
+/// Create credentials using one of the factory methods:
+/// - [Credential.fromServiceAccount] - For service account JSON files
+/// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
+///
+/// The credential is used to authenticate all API calls made by the Admin SDK.
 sealed class Credential {
-  /// Factory to create a credential using Application Default Credentials.
+  /// Creates a credential using Application Default Credentials (ADC).
+  ///
+  /// ADC attempts to find credentials in the following order:
+  /// 1. GOOGLE_APPLICATION_CREDENTIALS environment variable (path to service account JSON)
+  /// 2. Compute Engine default service account (when running on GCE)
+  /// 3. Other ADC sources
+  ///
+  /// [serviceAccountId] can optionally be provided to override the service
+  /// account email if needed for specific operations.
   factory Credential.fromApplicationDefaultCredentials({
     String? serviceAccountId,
   }) {
@@ -17,7 +28,22 @@ sealed class Credential {
     );
   }
 
-  /// Factory to create a credential from a service account file.
+  /// Creates a credential from a service account JSON file.
+  ///
+  /// The service account file must contain:
+  /// - `project_id`: The Google Cloud project ID
+  /// - `private_key`: The service account private key
+  /// - `client_email`: The service account email
+  ///
+  /// You can download service account JSON files from the Firebase Console
+  /// under Project Settings > Service Accounts.
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = Credential.fromServiceAccount(
+  ///   File('path/to/service-account.json'),
+  /// );
+  /// ```
   factory Credential.fromServiceAccount(File serviceAccountFile) {
     return ServiceAccountCredential.fromFile(serviceAccountFile);
   }
@@ -76,12 +102,19 @@ final class ServiceAccountCredential extends Credential {
   final auth.ServiceAccountCredentials _credentials;
 
   /// The Google Cloud project ID associated with this service account.
+  ///
+  /// This is extracted from the `project_id` field in the service account JSON.
   final String projectId;
 
-  /// The service account email (client_email).
+  /// The service account email address.
+  ///
+  /// This is the `client_email` field from the service account JSON.
+  /// Format: `firebase-adminsdk-xxxxx@project-id.iam.gserviceaccount.com`
   String get clientEmail => _credentials.email;
 
-  /// The private key.
+  /// The service account private key in PEM format.
+  ///
+  /// This is used to sign authentication tokens for API calls.
   String get privateKey => _credentials.privateKey;
 
   @override
@@ -93,10 +126,22 @@ final class ServiceAccountCredential extends Credential {
 
 /// Application Default Credentials for Firebase Admin SDK.
 ///
-/// Uses Google Application Default Credentials (ADC) which can be:
-/// - A service account file specified via GOOGLE_APPLICATION_CREDENTIALS
-/// - Compute Engine default service account
-/// - Other ADC sources
+/// Uses Google Application Default Credentials (ADC) to automatically discover
+/// credentials from the environment. ADC checks the following sources in order:
+///
+/// 1. **GOOGLE_APPLICATION_CREDENTIALS** environment variable pointing to a
+///    service account JSON file
+/// 2. **Compute Engine** default service account (when running on GCE, Cloud Run, etc.)
+/// 3. Other ADC sources (gcloud CLI credentials, etc.)
+///
+/// This credential type is recommended for production environments as it allows
+/// the same code to work across different deployment environments without
+/// hardcoding credential paths.
+///
+/// The project ID is discovered lazily from:
+/// - The service account JSON file (if using GOOGLE_APPLICATION_CREDENTIALS)
+/// - The GCE metadata service (if running on Compute Engine)
+/// - Environment variables (GOOGLE_CLOUD_PROJECT, GCLOUD_PROJECT)
 @internal
 final class ApplicationDefaultCredential extends Credential {
   ApplicationDefaultCredential({
@@ -151,11 +196,21 @@ final class ApplicationDefaultCredential extends Credential {
       _serviceAccountId ?? _serviceAccountCredentials?.email;
 
   /// The project ID if available from the service account file.
-  /// For Compute Engine, this needs to be fetched asynchronously via metadata service.
+  ///
+  /// For Compute Engine deployments, this will be null and needs to be
+  /// fetched asynchronously via [getProjectId].
   String? get projectId => _projectId;
 
-  /// Fetches the project ID from the metadata service (for Compute Engine).
-  /// Returns null if not available.
+  /// Fetches the project ID from the GCE metadata service.
+  ///
+  /// This is used when running on Google Compute Engine, Cloud Run, or other
+  /// GCP environments where the project ID can be queried from the metadata
+  /// service.
+  ///
+  /// Returns null if:
+  /// - Not running on GCE/Cloud Run
+  /// - Metadata service is unavailable
+  /// - Network request fails
   Future<String?> getProjectId() async {
     if (_projectId != null) {
       return _projectId;
@@ -182,8 +237,15 @@ final class ApplicationDefaultCredential extends Credential {
     return null;
   }
 
-  /// Fetches the service account email from the metadata service (for Compute Engine).
-  /// Returns null if not available.
+  /// Fetches the service account email from the GCE metadata service.
+  ///
+  /// This is used when running on Google Compute Engine to discover the default
+  /// service account email associated with the compute instance.
+  ///
+  /// Returns null if:
+  /// - Not running on GCE/Cloud Run
+  /// - Metadata service is unavailable
+  /// - Network request fails
   Future<String?> getServiceAccountEmail() async {
     if (_serviceAccountId != null) {
       return _serviceAccountId;

@@ -1,21 +1,71 @@
 part of '../app.dart';
 
-/// Base class for Firebase services.
+/// Base class for all Firebase services.
 ///
-/// Services that need cleanup should extend this class and implement [delete].
+/// All Firebase services (Auth, Messaging, Firestore, etc.) implement this
+/// interface to enable proper lifecycle management.
+///
+/// Services are automatically registered with the [FirebaseApp] when first
+/// accessed via factory constructors. When the app is closed via
+/// [FirebaseApp.close], all registered services have their [delete] method
+/// called to clean up resources.
+///
+/// Example implementation:
+/// ```dart
+/// class MyService implements FirebaseService {
+///   factory MyService(FirebaseApp app) {
+///     return app.getOrInitService(
+///       'my-service',
+///       (app) => MyService._(app),
+///     ) as MyService;
+///   }
+///
+///   MyService._(this.app);
+///
+///   @override
+///   final FirebaseApp app;
+///
+///   @override
+///   Future<void> delete() async {
+///     // Cleanup logic here
+///   }
+/// }
+/// ```
 abstract class FirebaseService {
   FirebaseService(this.app);
 
+  /// The Firebase app this service is associated with.
   final FirebaseApp app;
 
+  /// Cleans up resources used by this service.
+  ///
+  /// This method is called automatically when [FirebaseApp.close] is called
+  /// on the parent app. Services should override this to release any held
+  /// resources such as:
+  /// - Network connections
+  /// - File handles
+  /// - Cached data
+  /// - Subscriptions or listeners
   Future<void> delete();
 }
 
-/// Exception thrown for app-related errors.
+/// Exception thrown for Firebase app initialization and lifecycle errors.
+///
+/// Common error codes:
+/// - `invalid-app-options`: Invalid configuration provided to [FirebaseApp.initializeApp]
+/// - `duplicate-app`: App with the same name already exists with different config
+/// - `no-app`: Attempted to get an app that doesn't exist
+/// - `app-deleted`: Attempted to use an app that has been deleted
+/// - `invalid-app-name`: Provided app name is invalid (empty string)
+/// - `invalid-argument`: General invalid argument error
+/// - `invalid-credential`: Credential configuration is invalid
 class FirebaseAppException implements Exception {
   FirebaseAppException(this.code, this.message);
 
+  /// The error code identifying the type of error.
   final String code;
+
+  /// A human-readable description of the error.
   final String message;
 
   @override
@@ -56,7 +106,7 @@ class FirebaseApp {
   ///
   /// This is a convenience getter equivalent to `getApp()`.
   ///
-  /// Throws [FirebaseAppException] if the default app has not been initialized.
+  /// Throws `FirebaseAppException` if the default app has not been initialized.
   static FirebaseApp get instance => getApp();
 
   /// Gets an existing Firebase app by name.
@@ -64,7 +114,7 @@ class FirebaseApp {
   /// Returns the app with the given [name], or the default app if [name]
   /// is not provided.
   ///
-  /// Throws [FirebaseAppException] if no app exists with the given name.
+  /// Throws `FirebaseAppException` if no app exists with the given name.
   static FirebaseApp getApp([String? name]) {
     return _defaultAppRegistry.getApp(name);
   }
@@ -76,7 +126,7 @@ class FirebaseApp {
 
   /// Deletes the specified Firebase app and cleans up its resources.
   ///
-  /// Throws [FirebaseAppException] if the app does not exist.
+  /// Throws `FirebaseAppException` if the app does not exist.
   static Future<void> deleteApp(FirebaseApp app) {
     return _defaultAppRegistry.deleteApp(app);
   }
@@ -163,7 +213,7 @@ class FirebaseApp {
   /// [AppOptions.projectId] if it was explicitly set. Returns null if not set.
   ///
   /// Services that need project ID should use their own discovery mechanism
-  /// via [BaseHttpClient._discoverProjectId] which handles async metadata
+  /// via `BaseHttpClient.discoverProjectId()` which handles async metadata
   /// service lookup when explicit projectId is not available.
   String? get projectId => options.projectId;
 
@@ -184,7 +234,28 @@ class FirebaseApp {
     return _services[name]!;
   }
 
-  /// Closes this app and cleans up resources.
+  /// Closes this app and cleans up all associated resources.
+  ///
+  /// This method:
+  /// 1. Removes the app from the global registry
+  /// 2. Calls [FirebaseService.delete] on all registered services
+  /// 3. Closes the HTTP client (if it was created by the SDK)
+  /// 4. Marks the app as deleted
+  ///
+  /// After calling this method, the app instance can no longer be used.
+  /// Any subsequent calls to the app or its services will throw a
+  /// `FirebaseAppException` with code 'app-deleted'.
+  ///
+  /// Note: If you provided a custom [AppOptions.httpClient], it will NOT
+  /// be closed automatically. You are responsible for closing it.
+  ///
+  /// Example:
+  /// ```dart
+  /// final app = FirebaseApp.initializeApp(options: options);
+  /// // Use app...
+  /// await app.close();
+  /// // App can no longer be used
+  /// ```
   Future<void> close() async {
     _checkDestroyed();
 

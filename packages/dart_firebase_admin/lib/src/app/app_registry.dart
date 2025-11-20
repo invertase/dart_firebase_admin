@@ -5,6 +5,21 @@ class AppRegistry {
 
   final Map<String, FirebaseApp> _apps = {};
 
+  /// Initializes a new Firebase app or returns an existing one.
+  ///
+  /// Creates a new app with the given [options] and [name], or returns an
+  /// existing app if one with the same name already exists with matching
+  /// configuration.
+  ///
+  /// If [options] is null, the app will be initialized from the
+  /// FIREBASE_CONFIG environment variable.
+  ///
+  /// [name] defaults to '[DEFAULT]' if not provided.
+  ///
+  /// Throws `FirebaseAppException` if:
+  /// - An app with the same name exists but with different configuration
+  /// - An app with the same name exists but was initialized differently
+  ///   (one from env, one explicitly)
   FirebaseApp initializeApp({
     AppOptions? options,
     String? name,

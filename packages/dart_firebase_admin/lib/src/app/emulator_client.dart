@@ -1,5 +1,9 @@
 part of '../app.dart';
 
+/// Internal HTTP request implementation that wraps a stream.
+///
+/// This is used by [_EmulatorClient] to create modified requests with
+/// updated headers while preserving the request body stream.
 class _RequestImpl extends BaseRequest {
   _RequestImpl(super.method, super.url, [Stream<List<int>>? stream])
       : _stream = stream ?? const Stream.empty();
@@ -13,7 +17,14 @@ class _RequestImpl extends BaseRequest {
   }
 }
 
-/// Will close the underlying `http.Client` depending on a constructor argument.
+/// HTTP client wrapper that adds Firebase emulator authentication.
+///
+/// This client wraps another HTTP client and automatically adds the
+/// `Authorization: Bearer owner` header to all requests, which is required
+/// when connecting to Firebase emulators.
+///
+/// The emulator expects this specific bearer token to grant full admin
+/// privileges for local development and testing.
 class _EmulatorClient extends BaseClient {
   _EmulatorClient(this.client);
 
