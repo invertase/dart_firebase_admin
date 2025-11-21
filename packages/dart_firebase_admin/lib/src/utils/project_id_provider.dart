@@ -24,6 +24,12 @@ final class ProjectIdProvider {
   @internal
   String? get cachedProjectId => _cachedProjectId;
 
+  /// Gets the explicitly specified project ID from synchronous sources.
+  /// This is exposed for internal use by services that need synchronous
+  /// access to project ID (e.g., Firestore serialization).
+  @internal
+  String? get explicitProjectId => _getExplicitProjectId();
+
   /// Returns the Google Cloud project ID associated with the Firebase app.
   ///
   /// This method first checks if a project ID is explicitly specified in either
@@ -43,7 +49,7 @@ final class ProjectIdProvider {
     final projectId = await _findProjectId();
     if (projectId == null || projectId.isEmpty) {
       throw FirebaseAppException(
-        'invalid-credential',
+        AppErrorCode.invalidCredential,
         'Failed to determine project ID. Initialize the SDK with service '
             'account credentials or set project ID as an app option. '
             'Alternatively, set the GOOGLE_CLOUD_PROJECT environment variable.',

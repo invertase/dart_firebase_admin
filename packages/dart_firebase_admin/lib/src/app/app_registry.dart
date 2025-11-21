@@ -51,7 +51,7 @@ class AppRegistry {
     // Check initialization mode matches
     if (existingApp.wasInitializedFromEnv != wasInitializedFromEnv) {
       throw FirebaseAppException(
-        'invalid-app-options',
+        AppErrorCode.invalidAppOptions,
         'Firebase app named "$name" already exists with different configuration.',
       );
     }
@@ -64,7 +64,7 @@ class AppRegistry {
     // Check if options match existing app (using Equatable)
     if (options != existingApp.options) {
       throw FirebaseAppException(
-        'duplicate-app',
+        AppErrorCode.duplicateApp,
         'Firebase app named "$name" already exists with different configuration.',
       );
     }
@@ -110,7 +110,7 @@ class AppRegistry {
       );
     } catch (error) {
       throw FirebaseAppException(
-        'invalid-argument',
+        AppErrorCode.invalidArgument,
         'Failed to parse FIREBASE_CONFIG: $error',
       );
     }
@@ -131,7 +131,7 @@ class AppRegistry {
           ? 'The default Firebase app does not exist. '
           : 'Firebase app named "$name" does not exist. ';
       throw FirebaseAppException(
-        'no-app',
+        AppErrorCode.noApp,
         '${errorMessage}Make sure you call initializeApp() before using any of the Firebase services.',
       );
     }
@@ -151,7 +151,7 @@ class AppRegistry {
   Future<void> deleteApp(FirebaseApp app) async {
     if (!_apps.containsKey(app.name)) {
       throw FirebaseAppException(
-        'invalid-argument',
+        AppErrorCode.invalidArgument,
         'Firebase app named "${app.name}" does not exist.',
       );
     }
@@ -171,7 +171,7 @@ class AppRegistry {
   void _validateAppName(String name) {
     if (name.isEmpty) {
       throw FirebaseAppException(
-        'invalid-app-name',
+        AppErrorCode.invalidAppName,
         'Invalid Firebase app name "$name" provided. App name must be a non-empty string.',
       );
     }

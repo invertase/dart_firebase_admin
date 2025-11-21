@@ -760,18 +760,18 @@ class _AuthHttpClient {
 
   // TODO handle tenants
 
-  Future<String> _buildParent() async {
-    final projectId = await projectIdProvider.discoverProjectId();
+  /// Builds the parent resource path for project-level operations.
+  String buildParent(String projectId) {
     return 'projects/$projectId';
   }
 
-  Future<String> _buildOAuthIpdParent(String parentId) async {
-    final projectId = await projectIdProvider.discoverProjectId();
+  /// Builds the parent path for OAuth IDP config operations.
+  String buildOAuthIdpParent(String projectId, String parentId) {
     return 'projects/$projectId/oauthIdpConfigs/$parentId';
   }
 
-  Future<String> _buildSamlParent(String parentId) async {
-    final projectId = await projectIdProvider.discoverProjectId();
+  /// Builds the parent path for SAML config operations.
+  String buildSamlParent(String projectId, String parentId) {
     return 'projects/$projectId/inboundSamlConfigs/$parentId';
   }
 
@@ -828,7 +828,7 @@ class _AuthHttpClient {
       }
 
       return client.projects.inboundSamlConfigs.list(
-        await _buildParent(),
+        buildParent(projectId),
         pageSize: pageSize,
         pageToken: pageToken,
       );
@@ -854,7 +854,7 @@ class _AuthHttpClient {
       }
 
       return client.projects.oauthIdpConfigs.list(
-        await _buildParent(),
+        buildParent(projectId),
         pageSize: pageSize,
         pageToken: pageToken,
       );
@@ -868,7 +868,7 @@ class _AuthHttpClient {
     return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.create(
         request,
-        await _buildParent(),
+        buildParent(projectId),
       );
 
       final name = response.name;
@@ -890,7 +890,7 @@ class _AuthHttpClient {
     return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.create(
         request,
-        await _buildParent(),
+        buildParent(projectId),
       );
 
       final name = response.name;
@@ -908,7 +908,7 @@ class _AuthHttpClient {
   Future<void> deleteOauthIdpConfig(String providerId) {
     return v2((client, projectId) async {
       await client.projects.oauthIdpConfigs.delete(
-        await _buildOAuthIpdParent(providerId),
+        buildOAuthIdpParent(projectId, providerId),
       );
     });
   }
@@ -916,7 +916,7 @@ class _AuthHttpClient {
   Future<void> deleteInboundSamlConfig(String providerId) {
     return v2((client, projectId) async {
       await client.projects.inboundSamlConfigs.delete(
-        await _buildSamlParent(providerId),
+        buildSamlParent(projectId, providerId),
       );
     });
   }
@@ -930,7 +930,7 @@ class _AuthHttpClient {
     return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.patch(
         request,
-        await _buildSamlParent(providerId),
+        buildSamlParent(projectId, providerId),
         updateMask: updateMask,
       );
 
@@ -954,7 +954,7 @@ class _AuthHttpClient {
     return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.patch(
         request,
-        await _buildOAuthIpdParent(providerId),
+        buildOAuthIdpParent(projectId, providerId),
         updateMask: updateMask,
       );
 
@@ -991,7 +991,7 @@ class _AuthHttpClient {
       getOauthIdpConfig(String providerId) {
     return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.get(
-        await _buildOAuthIpdParent(providerId),
+        buildOAuthIdpParent(projectId, providerId),
       );
 
       final name = response.name;
@@ -1010,7 +1010,7 @@ class _AuthHttpClient {
       getInboundSamlConfig(String providerId) {
     return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.get(
-        await _buildSamlParent(providerId),
+        buildSamlParent(projectId, providerId),
       );
 
       final name = response.name;

@@ -55,7 +55,7 @@ class Messaging implements FirebaseService {
   Future<String> send(Message message, {bool? dryRun}) {
     return _requestHandler.v1(
       (client, projectId) async {
-        final parent = 'projects/$projectId';
+        final parent = _requestHandler.buildParent(projectId);
         final response = await client.projects.messages.send(
           fmc1.SendMessageRequest(
             message: message._toProto(),
@@ -107,7 +107,7 @@ class Messaging implements FirebaseService {
           );
         }
 
-        final parent = 'projects/$projectId';
+        final parent = _requestHandler.buildParent(projectId);
         final responses = await Future.wait<SendResponse>(
           messages.map((message) async {
             final response = client.projects.messages.send(

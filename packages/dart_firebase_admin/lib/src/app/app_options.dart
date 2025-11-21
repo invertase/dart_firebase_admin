@@ -6,7 +6,7 @@ part of '../app.dart';
 /// auto-discovered or use defaults when not provided.
 class AppOptions extends Equatable {
   const AppOptions({
-    required this.credential,
+    this.credential,
     this.projectId,
     this.databaseURL,
     this.storageBucket,
@@ -20,7 +20,7 @@ class AppOptions extends Equatable {
   /// This is the only required field. Use one of:
   /// - [Credential.fromServiceAccount] - Service account JSON file
   /// - [Credential.fromApplicationDefaultCredentials] - Application Default Credentials
-  final Credential credential;
+  final Credential? credential;
 
   /// The Firebase project ID.
   ///

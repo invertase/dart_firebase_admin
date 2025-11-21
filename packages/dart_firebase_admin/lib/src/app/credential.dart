@@ -106,7 +106,8 @@ final class ServiceAccountCredential extends Credential {
     // Extract and validate projectId - required for service accounts
     final projectId = json['project_id'] as String?;
     if (projectId == null || projectId.isEmpty) {
-      throw const FormatException(
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
         'Service account JSON must contain a "project_id" property',
       );
     }

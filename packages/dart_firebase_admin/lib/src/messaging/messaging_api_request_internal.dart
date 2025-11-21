@@ -45,6 +45,11 @@ class FirebaseMessagingRequestHandler {
     );
   }
 
+  /// Builds the parent resource path for FCM operations.
+  String buildParent(String projectId) {
+    return 'projects/$projectId';
+  }
+
   /// Invokes the request handler with the provided request data.
   Future<Object?> invokeRequestHandler({
     required String host,

@@ -70,7 +70,7 @@ void main() {
           'email': ['foo@google.com'],
         });
         expect(decodedToken.firebase.signInProvider, 'password');
-      });
+      }, skip: 'Requires production mode but runs with emulator auto-detection');
     });
   });
 }

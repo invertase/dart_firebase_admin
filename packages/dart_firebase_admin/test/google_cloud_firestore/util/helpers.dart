@@ -7,6 +7,28 @@ import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
 
+/// Clears all data from the Firestore Emulator.
+///
+/// This function calls the emulator's clear data endpoint to remove all documents.
+/// This ensures test isolation by providing a clean slate for each test.
+Future<void> clearFirestoreEmulator() async {
+  final client = Client();
+  try {
+    final response = await client.delete(
+      Uri.parse('http://localhost:8080/emulator/v1/projects/$projectId/databases/(default)/documents'),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // Emulator cleared successfully
+    } else {
+      print('WARNING: Failed to clear Firestore emulator: HTTP ${response.statusCode}');
+    }
+  } catch (e) {
+    print('WARNING: Exception while clearing Firestore emulator: $e');
+  } finally {
+    client.close();
+  }
+}
+
 /// Creates a FirebaseApp for testing.
 ///
 /// Note: Tests should be run with the following environment variables set:
@@ -17,10 +39,12 @@ const projectId = 'dart-firebase-admin';
 FirebaseApp createApp({
   FutureOr<void> Function()? tearDown,
   Client? client,
+  String? name,
 }) {
   final app = FirebaseApp.initializeApp(
+    name: name,
     options: AppOptions(
-      credential: Credential.fromApplicationDefaultCredentials(),
+      projectId: projectId,
       httpClient: client,
     ),
   );
@@ -64,12 +88,22 @@ Future<void> _recursivelyDeleteAllDocuments(Firestore firestore) async {
 Future<Firestore> createFirestore({
   Settings? settings,
 }) async {
+  // Use unique app name for each test to avoid interference
+  final appName = 'firestore-test-${DateTime.now().microsecondsSinceEpoch}';
+
   final firestore = Firestore(
-    createApp(),
+    createApp(name: appName),
     settings: settings,
   );
 
-  addTearDown(() => _recursivelyDeleteAllDocuments(firestore));
+  addTearDown(() async {
+    try {
+      await _recursivelyDeleteAllDocuments(firestore);
+    } on ClientException catch (e) {
+      // Ignore if HTTP client was already closed by app teardown
+      if (!e.message.contains('Client is already closed')) rethrow;
+    }
+  });
 
   return firestore;
 }

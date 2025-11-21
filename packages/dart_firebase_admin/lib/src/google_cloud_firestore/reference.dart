@@ -139,7 +139,7 @@ final class CollectionReference<T> extends Query<T> {
   }) {
     return CollectionReference<U>._(
       firestore: firestore,
-      path: _queryOptions.parentPath._append(id) as _QualifiedResourcePath,
+      path: _queryOptions.parentPath._append(id),
       converter: (
         fromFirestore: fromFirestore,
         toFirestore: toFirestore,

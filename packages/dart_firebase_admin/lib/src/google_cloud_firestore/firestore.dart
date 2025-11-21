@@ -53,18 +53,31 @@ class Firestore implements FirebaseService {
   /// Returns the Database ID for this Firestore instance.
   String get _databaseId => _settings.databaseId ?? '(default)';
 
-  /// Gets the cached project ID.
-  /// This must only be called after the first operation that triggers discovery.
-  /// Otherwise it will throw.
+  /// Gets the project ID for synchronous operations.
+  ///
+  /// Returns the cached project ID from async discovery if available.
+  /// Otherwise, falls back to explicitly specified project ID from:
+  /// 1. app.options.projectId
+  /// 2. ServiceAccountCredential.projectId
+  /// 3. GOOGLE_CLOUD_PROJECT or GCLOUD_PROJECT environment variables
+  ///
+  /// This matches Node.js Firestore behavior where explicit project IDs
+  /// are immediately available for synchronous operations like serialization.
+  ///
+  /// Throws if project ID is not available from any source.
   String get _projectId {
     final cached = _client._projectIdProvider.cachedProjectId;
-    if (cached == null) {
-      throw StateError(
-        'Project ID has not been discovered yet. '
-        'This should only be called within operations after v1() has been invoked.',
-      );
-    }
-    return cached;
+    if (cached != null) return cached;
+
+    // Fall back to explicitly set project ID (from app options, env vars, or credentials)
+    final explicit = _client._projectIdProvider.explicitProjectId;
+    if (explicit != null) return explicit;
+
+    throw StateError(
+      'Project ID has not been discovered yet. '
+      'Initialize the SDK with service account credentials, set project ID '
+      'as an app option, or set the GOOGLE_CLOUD_PROJECT environment variable.',
+    );
   }
 
   /// The Database ID, using the format 'projects/${projectId}/databases/$_databaseId'

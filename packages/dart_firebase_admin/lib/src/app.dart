@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
+part 'app/app_exception.dart';
 part 'app/app_options.dart';
 part 'app/app_registry.dart';
 part 'app/credential.dart';

@@ -49,29 +49,6 @@ abstract class FirebaseService {
   Future<void> delete();
 }
 
-/// Exception thrown for Firebase app initialization and lifecycle errors.
-///
-/// Common error codes:
-/// - `invalid-app-options`: Invalid configuration provided to [FirebaseApp.initializeApp]
-/// - `duplicate-app`: App with the same name already exists with different config
-/// - `no-app`: Attempted to get an app that doesn't exist
-/// - `app-deleted`: Attempted to use an app that has been deleted
-/// - `invalid-app-name`: Provided app name is invalid (empty string)
-/// - `invalid-argument`: General invalid argument error
-/// - `invalid-credential`: Credential configuration is invalid
-class FirebaseAppException implements Exception {
-  FirebaseAppException(this.code, this.message);
-
-  /// The error code identifying the type of error.
-  final String code;
-
-  /// A human-readable description of the error.
-  final String message;
-
-  @override
-  String toString() => 'FirebaseAppException($code): $message';
-}
-
 /// Represents a Firebase app instance.
 ///
 /// Each app is associated with a Firebase project and has its own
@@ -173,7 +150,7 @@ class FirebaseApp {
     ];
 
     final serviceAccountCredentials =
-        options.credential.serviceAccountCredentials;
+        options.credential?.serviceAccountCredentials;
 
     // Create authenticated client using googleapis_auth
     if (serviceAccountCredentials != null) {
@@ -266,7 +243,7 @@ class FirebaseApp {
   void _checkDestroyed() {
     if (_isDeleted) {
       throw FirebaseAppException(
-        'app-deleted',
+        AppErrorCode.appDeleted,
         'Firebase app "$name" has already been deleted.',
       );
     }

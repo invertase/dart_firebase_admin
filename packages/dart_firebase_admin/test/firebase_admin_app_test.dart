@@ -6,11 +6,7 @@ import 'package:test/test.dart';
 void main() {
   group(FirebaseApp, () {
     test('initializeApp() creates a new FirebaseApp with options', () {
-      final app = FirebaseApp.initializeApp(
-        options: AppOptions(
-          credential: Credential.fromApplicationDefaultCredentials(),
-        ),
-      );
+      final app = FirebaseApp.initializeApp();
 
       expect(app, isA<FirebaseApp>());
       expect(app.name, '[DEFAULT]');

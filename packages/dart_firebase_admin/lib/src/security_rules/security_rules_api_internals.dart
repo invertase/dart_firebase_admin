@@ -81,6 +81,21 @@ class SecurityRulesApiClient {
 
   String? projectIdPrefix;
 
+  /// Builds the project path for Security Rules operations.
+  String buildProjectPath(String projectId) {
+    return 'projects/$projectId';
+  }
+
+  /// Builds the ruleset resource path.
+  String buildRulesetPath(String projectId, String name) {
+    return 'projects/$projectId/rulesets/$name';
+  }
+
+  /// Builds the release resource path.
+  String buildReleasePath(String projectId, String name) {
+    return 'projects/$projectId/releases/$name';
+  }
+
   /// Executes a SecurityRules v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
     Future<R> Function(firebase_rules_v1.FirebaseRulesApi client, String projectId) fn,
@@ -123,7 +138,7 @@ class SecurityRulesApiClient {
   Future<RulesetResponse> getRuleset(String name) {
     return v1((api, projectId) async {
       final response = await api.projects.rulesets
-          .get('projects/$projectId/rulesets/$name');
+          .get(buildRulesetPath(projectId, name));
 
       return RulesetResponse._from(response);
     });
@@ -148,7 +163,7 @@ class SecurityRulesApiClient {
     return v1((api, projectId) async {
       final response = await api.projects.rulesets.create(
         toApiRuleset(),
-        'projects/$projectId',
+        buildProjectPath(projectId),
       );
 
       return RulesetResponse._(
@@ -174,7 +189,7 @@ class SecurityRulesApiClient {
   Future<void> deleteRuleset(String name) {
     return v1((api, projectId) async {
       await api.projects.rulesets
-          .delete('projects/$projectId/rulesets/$name');
+          .delete(buildRulesetPath(projectId, name));
     });
   }
 
@@ -191,7 +206,7 @@ class SecurityRulesApiClient {
       }
 
       final response = await api.projects.rulesets.list(
-        'projects/$projectId',
+        buildProjectPath(projectId),
         pageSize: pageSize,
         pageToken: pageToken,
       );
@@ -206,7 +221,7 @@ class SecurityRulesApiClient {
   Future<Release> getRelease(String name) {
     return v1((api, projectId) async {
       final response = await api.projects.releases
-          .get('projects/$projectId/releases/$name');
+          .get(buildReleasePath(projectId, name));
 
       return Release._(
         name: response.name!,
@@ -222,11 +237,11 @@ class SecurityRulesApiClient {
       final response = await api.projects.releases.patch(
         firebase_rules_v1.UpdateReleaseRequest(
           release: firebase_rules_v1.Release(
-            name: 'projects/$projectId/releases/$name',
-            rulesetName: 'projects/$projectId/rulesets/$rulesetName',
+            name: buildReleasePath(projectId, name),
+            rulesetName: buildRulesetPath(projectId, rulesetName),
           ),
         ),
-        'projects/$projectId/releases/$name',
+        buildReleasePath(projectId, name),
       );
 
       return Release._(
@@ -242,10 +257,10 @@ class SecurityRulesApiClient {
     return v1((api, projectId) async {
       final response = await api.projects.releases.create(
         firebase_rules_v1.Release(
-          name: 'projects/$projectId/releases/$name',
-          rulesetName: 'projects/$projectId/rulesets/$rulesetName',
+          name: buildReleasePath(projectId, name),
+          rulesetName: buildRulesetPath(projectId, rulesetName),
         ),
-        'projects/$projectId',
+        buildProjectPath(projectId),
       );
 
       return Release._(

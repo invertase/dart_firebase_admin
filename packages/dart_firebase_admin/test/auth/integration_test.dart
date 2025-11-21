@@ -45,7 +45,8 @@ void main() {
           ),
         );
 
-        final app = createApp(client: clientMock);
+        // Use unique app name so we get a new app with the mock client
+        final app = createApp(client: clientMock, name: 'test-$messagingError');
         final handler = Auth(app);
 
         await expectLater(
