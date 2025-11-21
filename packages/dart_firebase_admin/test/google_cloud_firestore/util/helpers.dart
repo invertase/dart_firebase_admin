@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:http/http.dart';
@@ -51,15 +49,17 @@ Future<void> clearFirestoreEmulator() async {
   try {
     final response = await client.delete(
       Uri.parse(
-          'http://localhost:8080/emulator/v1/projects/$projectId/databases/(default)/documents'),
+          'http://localhost:8080/emulator/v1/projects/$projectId/databases/(default)/documents',),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
       // Emulator cleared successfully
     } else {
+      // ignore: avoid_print
       print(
-          'WARNING: Failed to clear Firestore emulator: HTTP ${response.statusCode}');
+          'WARNING: Failed to clear Firestore emulator: HTTP ${response.statusCode}',);
     }
   } catch (e) {
+    // ignore: avoid_print
     print('WARNING: Exception while clearing Firestore emulator: $e');
   } finally {
     client.close();

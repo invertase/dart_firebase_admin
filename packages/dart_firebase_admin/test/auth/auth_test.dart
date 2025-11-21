@@ -72,7 +72,7 @@ void main() {
         expect(decodedToken.firebase.signInProvider, 'password');
       },
           skip:
-              'Requires production mode but runs with emulator auto-detection');
+              'Requires production mode but runs with emulator auto-detection',);
     });
   });
 }

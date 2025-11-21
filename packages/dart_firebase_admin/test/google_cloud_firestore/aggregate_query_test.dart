@@ -66,7 +66,7 @@ void main() {
           .where('price', WhereFilter.lessThan, 200);
       final rangeCount = await rangeQuery.count().get();
       expect(rangeCount.count, 2);
-    }, skip: 'Flaky: Firestore emulator data inconsistency');
+    }, skip: 'Flaky: Firestore emulator data inconsistency',);
 
     test('count() works with orderBy and limit', () async {
       // Add test documents
@@ -105,7 +105,7 @@ void main() {
       final rangeQuery = collection.orderBy('value').startAfter([3]).endAt([8]);
       final rangeCount = await rangeQuery.count().get();
       expect(rangeCount.count, 5); // values 4-8
-    }, skip: 'Flaky: Firestore emulator data inconsistency');
+    }, skip: 'Flaky: Firestore emulator data inconsistency',);
 
     test('count() works with collection groups', () async {
       // Create documents with subcollections
@@ -270,7 +270,7 @@ void main() {
 
         final snapshot = await collection.sum('price').get();
         expect(snapshot.getSum('price'), equals(60));
-      }, skip: 'Flaky: Firestore emulator data inconsistency');
+      }, skip: 'Flaky: Firestore emulator data inconsistency',);
 
       test('sum() works with double values', () async {
         await collection.add({'amount': 10.5});
@@ -696,48 +696,48 @@ void main() {
     group('FieldPath support', () {
       test('sum() works with FieldPath for nested fields', () async {
         await collection.add({
-          'product': {'price': 10}
+          'product': {'price': 10},
         });
         await collection.add({
-          'product': {'price': 20}
+          'product': {'price': 20},
         });
         await collection.add({
-          'product': {'price': 15}
+          'product': {'price': 15},
         });
 
         final snapshot =
-            await collection.sum(FieldPath(['product', 'price'])).get();
+            await collection.sum(FieldPath(const ['product', 'price'])).get();
 
         expect(snapshot.getSum('product.price'), equals(45));
       });
 
       test('average() works with FieldPath for nested fields', () async {
         await collection.add({
-          'product': {'price': 10}
+          'product': {'price': 10},
         });
         await collection.add({
-          'product': {'price': 20}
+          'product': {'price': 20},
         });
         await collection.add({
-          'product': {'price': 15}
+          'product': {'price': 15},
         });
 
         final snapshot =
-            await collection.average(FieldPath(['product', 'price'])).get();
+            await collection.average(FieldPath(const ['product', 'price'])).get();
 
         expect(snapshot.getAverage('product.price'), equals(15.0));
       });
 
       test('AggregateField.sum() works with FieldPath', () async {
         await collection.add({
-          'nested': {'value': 100}
+          'nested': {'value': 100},
         });
         await collection.add({
-          'nested': {'value': 200}
+          'nested': {'value': 200},
         });
 
         final snapshot = await collection
-            .aggregate(AggregateField.sum(FieldPath(['nested', 'value'])))
+            .aggregate(AggregateField.sum(FieldPath(const ['nested', 'value'])))
             .get();
 
         expect(snapshot.getSum('nested.value'), equals(300));
@@ -745,17 +745,17 @@ void main() {
 
       test('AggregateField.average() works with FieldPath', () async {
         await collection.add({
-          'nested': {'score': 85}
+          'nested': {'score': 85},
         });
         await collection.add({
-          'nested': {'score': 90}
+          'nested': {'score': 90},
         });
         await collection.add({
-          'nested': {'score': 95}
+          'nested': {'score': 95},
         });
 
         final snapshot = await collection
-            .aggregate(AggregateField.average(FieldPath(['nested', 'score'])))
+            .aggregate(AggregateField.average(FieldPath(const ['nested', 'score'])))
             .get();
 
         expect(snapshot.getAverage('nested.score'), equals(90.0));
@@ -763,16 +763,16 @@ void main() {
 
       test('combined aggregations work with FieldPath', () async {
         await collection.add({
-          'data': {'price': 10, 'quantity': 5}
+          'data': {'price': 10, 'quantity': 5},
         });
         await collection.add({
-          'data': {'price': 20, 'quantity': 3}
+          'data': {'price': 20, 'quantity': 3},
         });
 
         final snapshot = await collection
             .aggregate(
-              AggregateField.sum(FieldPath(['data', 'price'])),
-              AggregateField.average(FieldPath(['data', 'quantity'])),
+              AggregateField.sum(FieldPath(const ['data', 'price'])),
+              AggregateField.average(FieldPath(const ['data', 'quantity'])),
             )
             .get();
 
@@ -784,20 +784,20 @@ void main() {
         await collection.add({
           'level1': {
             'level2': {
-              'level3': {'value': 42}
-            }
-          }
+              'level3': {'value': 42},
+            },
+          },
         });
         await collection.add({
           'level1': {
             'level2': {
-              'level3': {'value': 58}
-            }
-          }
+              'level3': {'value': 58},
+            },
+          },
         });
 
         final snapshot = await collection
-            .sum(FieldPath(['level1', 'level2', 'level3', 'value']))
+            .sum(FieldPath(const ['level1', 'level2', 'level3', 'value']))
             .get();
 
         expect(snapshot.getSum('level1.level2.level3.value'), equals(100));
@@ -806,17 +806,17 @@ void main() {
       test('FieldPath and String fields can be mixed', () async {
         await collection.add({
           'price': 10,
-          'nested': {'cost': 5}
+          'nested': {'cost': 5},
         });
         await collection.add({
           'price': 20,
-          'nested': {'cost': 10}
+          'nested': {'cost': 10},
         });
 
         final snapshot = await collection
             .aggregate(
               const sum('price'),
-              AggregateField.sum(FieldPath(['nested', 'cost'])),
+              AggregateField.sum(FieldPath(const ['nested', 'cost'])),
             )
             .get();
 

@@ -471,7 +471,7 @@ void main() {
 
       final DocumentSnapshot<Map<String, dynamic>> snapshot1 = await doc1.get();
       expect(snapshot1.data()!['test'], equals(2));
-    }, skip: 'Flaky: Firestore emulator data inconsistency');
+    }, skip: 'Flaky: Firestore emulator data inconsistency',);
 
     test('should collide transaction if number of maxAttempts is not enough',
         retry: 2, () async {

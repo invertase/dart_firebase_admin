@@ -141,7 +141,7 @@ final class ServiceAccountCredential extends Credential {
   }) {
     final credentials = auth.ServiceAccountCredentials(
       email,
-      auth.ClientId(clientId ?? email, null),
+      auth.ClientId(clientId ?? email),
       privateKey,
     );
 

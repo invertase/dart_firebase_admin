@@ -50,7 +50,7 @@ void main() {
 
     // Mock buildParent to return the expected parent resource path
     when(() => requestHandler.buildParent(any())).thenAnswer(
-        (invocation) => 'projects/${invocation.positionalArguments[0]}');
+        (invocation) => 'projects/${invocation.positionalArguments[0]}',);
 
     // Use unique app name for each test to avoid interference
     final appName = 'messaging-test-${DateTime.now().microsecondsSinceEpoch}';

@@ -14,7 +14,7 @@ class AppRegistry {
   /// If [options] is null, the app will be initialized from the
   /// FIREBASE_CONFIG environment variable.
   ///
-  /// [name] defaults to '[DEFAULT]' if not provided.
+  /// [name] defaults to `[DEFAULT]` if not provided.
   ///
   /// Throws `FirebaseAppException` if:
   /// - An app with the same name exists but with different configuration

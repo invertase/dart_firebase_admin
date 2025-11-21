@@ -3,9 +3,9 @@ import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1_beta;
 import 'package:meta/meta.dart';
 
 import '../app.dart';
-import '../utils/project_id_provider.dart';
 import '../utils/crypto_signer.dart';
 import '../utils/jwt.dart';
+import '../utils/project_id_provider.dart';
 import 'app_check_api.dart';
 
 /// Class that facilitates sending requests to the Firebase App Check backend API.
@@ -27,7 +27,7 @@ class AppCheckApiClient {
 
   Future<R> _v1Beta<R>(
     Future<R> Function(
-            appcheck1_beta.FirebaseappcheckApi client, String projectId)
+            appcheck1_beta.FirebaseappcheckApi client, String projectId,)
         fn,
   ) async {
     final projectId = await _projectIdProvider.discoverProjectId();

@@ -9,7 +9,7 @@ final _legacyFirebaseMessagingHeaders = {
 @internal
 class FirebaseMessagingRequestHandler {
   FirebaseMessagingRequestHandler(this.app,
-      [ProjectIdProvider? projectIdProvider])
+      [ProjectIdProvider? projectIdProvider,])
       : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
   final FirebaseApp app;

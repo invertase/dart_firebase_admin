@@ -68,7 +68,7 @@ class FirebaseApp {
   /// If [options] is not provided, the app will be auto-initialized from
   /// the FIREBASE_CONFIG environment variable.
   ///
-  /// [name] defaults to '[DEFAULT]' if not specified.
+  /// [name] defaults to an internal string if not specified.
   static FirebaseApp initializeApp({
     AppOptions? options,
     String? name,

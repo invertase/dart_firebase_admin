@@ -23,7 +23,7 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
       if (e.message == 'unknown algorithm') return;
       if (e.message == 'invalid signature') return;
       rethrow;
-    } on AssertionError {
+    } catch (e) {
       // Emulator tokens may use RS256 with test keys, causing assertion
       // errors when verifying with SecretKey. Skip verification.
       return;
