@@ -1,49 +1,55 @@
+import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
+  await authExample(admin);
+  await firestoreExample(admin);
+  await admin.close();
+}
 
-  // final messaging = Messaging(admin);
-  //
-  // final result = await messaging.send(
-  //   TokenMessage(
-  //     token:
-  //         'e8Ap1n9UTQenyB-UEjNQt9:APA91bHhgc9RZYDcCKb7U1scQo1K0ZTSMItop8IqctrOcgvmN__oBo4vgbFX-ji4atr1PVw3Loug-eOCBmj4HVZjUE0aQBA0mGry7uL-7JuMaojhtl13MpvQtbZptvX_8f6vDcqei88O',
-  //     notification: Notification(
-  //       title: 'Hello',
-  //       body: 'World',
-  //     ),
-  //   ),
-  // );
-  //
-  // print(result);
+Future<void> authExample(FirebaseApp admin) async {
+  print('\n### Auth Example ###\n');
 
-  // final auth = Auth(admin);
-  // final user = await auth.createUser(
-  //   CreateRequest(
-  //     email: 'demolafadumo@gmail.com',
-  //     password: 'Test@123',
-  //   ),
-  // );
-  //
-  // final fetchedUser = await auth.getUser(user.uid);
-  // print('Fetched user email: ${fetchedUser.email}');
+  final auth = Auth(admin);
+
+  late UserRecord user;
+  try {
+    print('> Check if user with email exists: test@example.com\n');
+    user = await auth.getUserByEmail('test@example.com');
+    print('> User found by email\n');
+  } on FirebaseAuthAdminException catch (e) {
+    if (e.errorCode == AuthClientErrorCode.userNotFound) {
+      print('\n> User not found, creating new user');
+      user = await auth.createUser(
+        CreateRequest(
+          email: 'test@example.com',
+          password: 'Test@123',
+        ),
+      );
+    }
+  }
+
+  print('Fetched user email: ${user.email}');
+}
+
+Future<void> firestoreExample(FirebaseApp admin) async {
+  print('\n### Firestore Example ###\n');
 
   final firestore = Firestore(admin);
 
-  final collection = firestore.collection('users');
-
-  await collection.doc('123').set({
-    'name': 'John Doe',
-    'age': 27,
-  });
-
-  final snapshot = await collection.get();
-
-  for (final doc in snapshot.docs) {
-    print(doc.data());
+  try {
+    final collection = firestore.collection('users');
+    await collection.doc('123').set({
+      'name': 'John Doe',
+      'age': 27,
+    });
+    final snapshot = await collection.get();
+    for (final doc in snapshot.docs) {
+      print('> Document data: ${doc.data()}');
+    }
+  } catch (e) {
+    print('> Error setting document: $e');
   }
-
-  await admin.close();
 }
