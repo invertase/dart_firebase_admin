@@ -7,6 +7,8 @@ void main() {
   group('Collection interface', () {
     late Firestore firestore;
 
+    setUpAll(ensureEmulatorConfigured);
+
     setUp(() async => firestore = await createFirestore());
 
     test('supports + in collection name', () async {

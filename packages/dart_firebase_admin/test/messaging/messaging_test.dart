@@ -1,6 +1,5 @@
 import 'dart:convert';
-
-import 'package:dart_firebase_admin/src/messaging.dart';
+import 'package:dart_firebase_admin/src/messaging/messaging.dart';
 import 'package:googleapis/fcm/v1.dart' as fmc1;
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
@@ -38,7 +37,9 @@ void main() {
     when(() => requestHandler.v1<T>(any())).thenAnswer((invocation) async {
       final callback = invocation.positionalArguments.first as Function;
 
-      final result = await Function.apply(callback, [messagingApiMock]);
+      // Pass both the API client and projectId to match the v1() signature
+      final result =
+          await Function.apply(callback, [messagingApiMock, projectId]);
       return result as T;
     });
   }
@@ -47,8 +48,14 @@ void main() {
     when(() => projectResourceMock.messages).thenReturn(messages);
     when(() => messagingApiMock.projects).thenReturn(projectResourceMock);
 
-    final sdk = createApp();
-    sdk.useEmulator();
+    // Mock buildParent to return the expected parent resource path
+    when(() => requestHandler.buildParent(any())).thenAnswer(
+      (invocation) => 'projects/${invocation.positionalArguments[0]}',
+    );
+
+    // Use unique app name for each test to avoid interference
+    final appName = 'messaging-test-${DateTime.now().microsecondsSinceEpoch}';
+    final sdk = createApp(name: appName);
     messaging = Messaging(sdk, requestHandler: requestHandler);
   });
 

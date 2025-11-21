@@ -1,4 +1,4 @@
-part of '../messaging.dart';
+part of 'messaging.dart';
 
 final _legacyFirebaseMessagingHeaders = {
   // TODO send version
@@ -8,14 +8,18 @@ final _legacyFirebaseMessagingHeaders = {
 
 @internal
 class FirebaseMessagingRequestHandler {
-  FirebaseMessagingRequestHandler(this.firebase);
+  FirebaseMessagingRequestHandler(
+    this.app, [
+    ProjectIdProvider? projectIdProvider,
+  ]) : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
-  final FirebaseAdminApp firebase;
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
 
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,
   ) {
-    return _fmcGuard(() => firebase.client.then(fn));
+    return _fmcGuard(() => app.client.then(fn));
   }
 
   Future<T> _fmcGuard<T>(
@@ -32,10 +36,20 @@ class FirebaseMessagingRequestHandler {
     }
   }
 
+  /// Executes a Messaging v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
-    Future<R> Function(fmc1.FirebaseCloudMessagingApi client) fn,
-  ) {
-    return _run((client) => fn(fmc1.FirebaseCloudMessagingApi(client)));
+    Future<R> Function(fmc1.FirebaseCloudMessagingApi client, String projectId)
+        fn,
+  ) async {
+    final projectId = await _projectIdProvider.discoverProjectId();
+    return _run(
+      (client) => fn(fmc1.FirebaseCloudMessagingApi(client), projectId),
+    );
+  }
+
+  /// Builds the parent resource path for FCM operations.
+  String buildParent(String projectId) {
+    return 'projects/$projectId';
   }
 
   /// Invokes the request handler with the provided request data.
@@ -45,8 +59,7 @@ class FirebaseMessagingRequestHandler {
     Object? requestData,
   }) async {
     try {
-      final client = await firebase.client;
-
+      final client = await app.client;
       final response = await client.post(
         Uri.https(host, path),
         body: jsonEncode(requestData),

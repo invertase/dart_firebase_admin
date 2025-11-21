@@ -5,10 +5,19 @@ import 'app_check_api_internal.dart';
 import 'token_generator.dart';
 import 'token_verifier.dart';
 
-class AppCheck {
-  AppCheck(this.app);
+class AppCheck implements FirebaseService {
+  /// Creates or returns the cached AppCheck instance for the given app.
+  factory AppCheck(FirebaseApp app) {
+    return app.getOrInitService(
+      'app-check',
+      AppCheck._,
+    ) as AppCheck;
+  }
 
-  final FirebaseAdminApp app;
+  AppCheck._(this.app);
+
+  @override
+  final FirebaseApp app;
   late final _tokenGenerator =
       AppCheckTokenGenerator(CryptoSigner.fromApp(app));
   late final _client = AppCheckApiClient(app);
@@ -61,5 +70,10 @@ class AppCheck {
       appId: decodedToken.appId,
       token: decodedToken,
     );
+  }
+
+  @override
+  Future<void> delete() async {
+    // AppCheck service cleanup if needed
   }
 }

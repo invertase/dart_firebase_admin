@@ -8,15 +8,17 @@ import '../mock_service_account.dart';
 void main() {
   group('AppCheckTokenVerifier', () {
     late AppCheckTokenVerifier verifier;
-    late FirebaseAdminApp app;
+    late FirebaseApp app;
 
     setUp(() {
-      app = FirebaseAdminApp.initializeApp(
-        '$mockProjectId-token-verifier',
-        Credential.fromServiceAccountParams(
-          clientId: 'test-client-id',
-          privateKey: mockPrivateKey,
-          email: mockClientEmail,
+      app = FirebaseApp.initializeApp(
+        name: '$mockProjectId-token-verifier',
+        options: AppOptions(
+          credential: Credential.fromServiceAccountParams(
+            clientId: 'test-client-id',
+            privateKey: mockPrivateKey,
+            email: mockClientEmail,
+          ),
         ),
       );
       verifier = AppCheckTokenVerifier(app);

@@ -19,10 +19,14 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
         SecretKey(''),
       );
     } on JWTInvalidException catch (e) {
-      // Emulator tokens have "alg": "none"
+      // Emulator tokens may have "alg": "none"
       if (e.message == 'unknown algorithm') return;
       if (e.message == 'invalid signature') return;
       rethrow;
+    } catch (e) {
+      // Emulator tokens may use RS256 with test keys, causing assertion
+      // errors when verifying with SecretKey. Skip verification.
+      return;
     }
   }
 }

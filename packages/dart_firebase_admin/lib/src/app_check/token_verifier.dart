@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 
 import '../app.dart';
 import '../utils/jwt.dart';
+import '../utils/project_id_provider.dart';
 import 'app_check_api.dart';
 import 'app_check_api_internal.dart';
 
@@ -12,14 +13,18 @@ const jwksUrl = 'https://firebaseappcheck.googleapis.com/v1/jwks';
 ///
 @internal
 class AppCheckTokenVerifier {
-  AppCheckTokenVerifier(this.app);
+  AppCheckTokenVerifier(this.app, [ProjectIdProvider? projectIdProvider])
+      : projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
+  final ProjectIdProvider projectIdProvider;
+
   final _signatureVerifier =
       PublicKeySignatureVerifier.withJwksUrl(Uri.parse(jwksUrl));
 
   Future<DecodedAppCheckToken> verifyToken(String token) async {
-    final decoded = await _decodeAndVerify(token, app.projectId);
+    final projectId = await projectIdProvider.discoverProjectId();
+    final decoded = await _decodeAndVerify(token, projectId);
 
     return DecodedAppCheckToken.fromMap(decoded.payload);
   }

@@ -48,7 +48,7 @@ void main() {
 
         expect(
           () => Credential.fromServiceAccount(fs.file('service-account.json')),
-          throwsArgumentError,
+          throwsA(isA<FirebaseAppException>()),
         );
       });
 
@@ -57,6 +57,7 @@ void main() {
         fs.file('service-account.json').writeAsStringSync('''
 {
   "type": "service_account",
+  "project_id": "test-project",
   "client_id": "id",
   "private_key": ${jsonEncode(_fakeRSAKey)},
   "client_email": "email"

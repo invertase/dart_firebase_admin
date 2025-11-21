@@ -56,16 +56,19 @@ class FirebaseTokenVerifier {
     required this.issuer,
     required this.tokenInfo,
     required this.app,
+    ProjectIdProvider? projectIdProvider,
   })  : _shortNameArticle = RegExp('[aeiou]', caseSensitive: false)
                 .hasMatch(tokenInfo.shortName[0])
             ? 'an'
             : 'a',
         _signatureVerifier =
-            PublicKeySignatureVerifier.withCertificateUrl(clientCertUrl);
+            PublicKeySignatureVerifier.withCertificateUrl(clientCertUrl),
+        _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
   final String _shortNameArticle;
   final Uri issuer;
-  final FirebaseAdminApp app;
   final FirebaseTokenInfo tokenInfo;
   final SignatureVerifier _signatureVerifier;
 
@@ -73,9 +76,10 @@ class FirebaseTokenVerifier {
     String jwtToken, {
     bool isEmulator = false,
   }) async {
+    final projectId = await _projectIdProvider.discoverProjectId();
     final decoded = await _decodeAndVerify(
       jwtToken,
-      projectId: app.projectId,
+      projectId: projectId,
       isEmulator: isEmulator,
     );
 
@@ -427,13 +431,15 @@ final _idTokenInfo = FirebaseTokenInfo(
 
 /// Creates a new FirebaseTokenVerifier to verify Firebase ID tokens.
 FirebaseTokenVerifier _createIdTokenVerifier(
-  FirebaseAdminApp app,
+  FirebaseApp app,
+  ProjectIdProvider projectIdProvider,
 ) {
   return FirebaseTokenVerifier(
     clientCertUrl: _clientCertUrl,
     issuer: Uri.parse('https://securetoken.google.com/'),
     tokenInfo: _idTokenInfo,
     app: app,
+    projectIdProvider: projectIdProvider,
   );
 }
 
@@ -443,12 +449,16 @@ final _sessionCookieCertUrl = Uri.parse(
 );
 
 /// Creates a new FirebaseTokenVerifier to verify Firebase session cookies.
-FirebaseTokenVerifier _createSessionCookieVerifier(FirebaseAdminApp app) {
+FirebaseTokenVerifier _createSessionCookieVerifier(
+  FirebaseApp app,
+  ProjectIdProvider projectIdProvider,
+) {
   return FirebaseTokenVerifier(
     clientCertUrl: _sessionCookieCertUrl,
     issuer: Uri.parse('https://session.firebase.google.com/'),
     tokenInfo: _sessionCookieInfo,
     app: app,
+    projectIdProvider: projectIdProvider,
   );
 }
 

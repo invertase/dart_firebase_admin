@@ -47,13 +47,22 @@ class Ruleset extends RulesetMetadata {
 }
 
 /// The Firebase `SecurityRules` service interface.
-class SecurityRules {
-  SecurityRules(this.app);
+class SecurityRules implements FirebaseService {
+  /// Creates or returns the cached SecurityRules instance for the given app.
+  factory SecurityRules(FirebaseApp app) {
+    return app.getOrInitService(
+      'security-rules',
+      SecurityRules._,
+    ) as SecurityRules;
+  }
+
+  SecurityRules._(this.app);
 
   static const _cloudFirestore = 'cloud.firestore';
   static const _firebaseStorage = 'firebase.storage';
 
-  final FirebaseAdminApp app;
+  @override
+  final FirebaseApp app;
   late final _client = SecurityRulesApiClient(app);
 
   /// Gets the [Ruleset] identified by the given
@@ -192,6 +201,11 @@ class SecurityRules {
     final rulesetName = release.rulesetName;
 
     return getRuleset(_stripProjectIdPrefix(rulesetName));
+  }
+
+  @override
+  Future<void> delete() async {
+    // SecurityRules service cleanup if needed
   }
 }
 

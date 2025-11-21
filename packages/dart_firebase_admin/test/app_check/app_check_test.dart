@@ -12,7 +12,7 @@ void main() {
   setUpAll(registerFallbacks);
 
   setUp(() {
-    final sdk = createApp(useEmulator: false);
+    final sdk = createApp();
     appCheck = AppCheck(sdk);
   });
 

@@ -85,12 +85,12 @@ final class CollectionReference<T> extends Query<T> {
   /// document reference (e.g. via [DocumentReference.get]) will return a
   /// [DocumentSnapshot] whose [DocumentSnapshot.exists] property is `false`.
   Future<List<DocumentReference<T>>> listDocuments() async {
-    final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
-      firestore.app.projectId,
-      firestore._databaseId,
-    );
+    final response = await firestore._client.v1((client, projectId) {
+      final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
+        projectId,
+        firestore._databaseId,
+      );
 
-    final response = await firestore._client.v1((client) {
       return client.projects.databases.documents.list(
         parentPath._formattedName,
         id,
@@ -139,7 +139,7 @@ final class CollectionReference<T> extends Query<T> {
   }) {
     return CollectionReference<U>._(
       firestore: firestore,
-      path: _queryOptions.parentPath._append(id) as _QualifiedResourcePath,
+      path: _queryOptions.parentPath._append(id),
       converter: (
         fromFirestore: fromFirestore,
         toFirestore: toFirestore,
@@ -192,10 +192,11 @@ final class DocumentReference<T> implements _Serializable {
   }
 
   /// The string representation of the DocumentReference's location.
+  /// This can only be called after projectId has been discovered.
   String get _formattedName {
     return _path
         ._toQualifiedResourcePath(
-          firestore.app.projectId,
+          firestore._projectId,
           firestore._databaseId,
         )
         ._formattedName;
@@ -213,7 +214,7 @@ final class DocumentReference<T> implements _Serializable {
   /// });
   /// ```
   Future<List<CollectionReference<DocumentData>>> listCollections() {
-    return firestore._client.v1((a) async {
+    return firestore._client.v1((a, projectId) async {
       final request = firestore1.ListCollectionIdsRequest(
         // Setting `pageSize` to an arbitrarily large value lets the backend cap
         // the page size (currently to 300). Note that the backend rejects
@@ -612,7 +613,7 @@ sealed class _FilterInternal {
   int get hashCode;
 }
 
-class _CompositeFilterInternal implements _FilterInternal {
+class _CompositeFilterInternal extends _FilterInternal {
   _CompositeFilterInternal({required this.op, required this.filters});
 
   final _CompositeOperator op;
@@ -660,7 +661,7 @@ class _CompositeFilterInternal implements _FilterInternal {
   int get hashCode => Object.hash(runtimeType, op, filters);
 }
 
-class _FieldFilterInternal implements _FilterInternal {
+class _FieldFilterInternal extends _FilterInternal {
   _FieldFilterInternal({
     required this.field,
     required this.op,
@@ -1136,7 +1137,7 @@ base class Query<T> {
   Future<QuerySnapshot<T>> get() => _get(transactionId: null);
 
   Future<QuerySnapshot<T>> _get({required String? transactionId}) async {
-    final response = await firestore._client.v1((client) async {
+    final response = await firestore._client.v1((client, projectId) async {
       return client.projects.databases.documents.runQuery(
         _toProto(
           transactionId: transactionId,
@@ -1190,7 +1191,7 @@ base class Query<T> {
   String _buildProtoParentPath() {
     return _queryOptions.parentPath
         ._toQualifiedResourcePath(
-          firestore.app.projectId,
+          firestore._projectId,
           firestore._databaseId,
         )
         ._formattedName;
@@ -1803,7 +1804,7 @@ class AggregateField {
     return const AggregateField._(
       fieldPath: null,
       alias: 'count',
-      type: _AggregateType.count,
+      type: AggregateType.count,
     );
   }
 
@@ -1823,7 +1824,7 @@ class AggregateField {
     return AggregateField._(
       fieldPath: fieldName,
       alias: 'sum_$fieldName',
-      type: _AggregateType.sum,
+      type: AggregateType.sum,
     );
   }
 
@@ -1843,7 +1844,7 @@ class AggregateField {
     return AggregateField._(
       fieldPath: fieldName,
       alias: 'avg_$fieldName',
-      type: _AggregateType.average,
+      type: AggregateType.average,
     );
   }
 
@@ -1854,23 +1855,23 @@ class AggregateField {
   final String alias;
 
   /// The type of aggregation.
-  final _AggregateType type;
+  final AggregateType type;
 
   /// Converts this public field to the internal representation.
-  _AggregateFieldInternal _toInternal() {
+  AggregateFieldInternal _toInternal() {
     firestore1.Aggregation aggregation;
     switch (type) {
-      case _AggregateType.count:
+      case AggregateType.count:
         aggregation = firestore1.Aggregation(
           count: firestore1.Count(),
         );
-      case _AggregateType.sum:
+      case AggregateType.sum:
         aggregation = firestore1.Aggregation(
           sum: firestore1.Sum(
             field: firestore1.FieldReference(fieldPath: fieldPath),
           ),
         );
-      case _AggregateType.average:
+      case AggregateType.average:
         aggregation = firestore1.Aggregation(
           avg: firestore1.Avg(
             field: firestore1.FieldReference(fieldPath: fieldPath),
@@ -1878,7 +1879,7 @@ class AggregateField {
         );
     }
 
-    return _AggregateFieldInternal(
+    return AggregateFieldInternal(
       alias: alias,
       aggregation: aggregation,
     );
@@ -1886,7 +1887,7 @@ class AggregateField {
 }
 
 /// The type of aggregation to perform.
-enum _AggregateType {
+enum AggregateType {
   count,
   sum,
   average,
@@ -1901,7 +1902,7 @@ class count extends AggregateField {
       : super._(
           fieldPath: null,
           alias: 'count',
-          type: _AggregateType.count,
+          type: AggregateType.count,
         );
 }
 
@@ -1914,7 +1915,7 @@ class sum extends AggregateField {
       : super._(
           fieldPath: field,
           alias: 'sum_$field',
-          type: _AggregateType.sum,
+          type: AggregateType.sum,
         );
 
   /// The field to sum.
@@ -1930,7 +1931,7 @@ class average extends AggregateField {
       : super._(
           fieldPath: field,
           alias: 'avg_$field',
-          type: _AggregateType.average,
+          type: AggregateType.average,
         );
 
   /// The field to average.
@@ -1939,8 +1940,9 @@ class average extends AggregateField {
 
 /// Internal representation of an aggregation field.
 @immutable
-class _AggregateFieldInternal {
-  const _AggregateFieldInternal({
+@internal
+class AggregateFieldInternal {
+  const AggregateFieldInternal({
     required this.alias,
     required this.aggregation,
   });
@@ -1950,7 +1952,7 @@ class _AggregateFieldInternal {
 
   @override
   bool operator ==(Object other) {
-    return other is _AggregateFieldInternal &&
+    return other is AggregateFieldInternal &&
         alias == other.alias &&
         // For count aggregations, we just check that both have count set
         ((aggregation.count != null && other.aggregation.count != null) ||
@@ -1979,7 +1981,7 @@ class AggregateQuery {
   final Query<Object?> query;
 
   @internal
-  final List<_AggregateFieldInternal> aggregations;
+  final List<AggregateFieldInternal> aggregations;
 
   /// Executes the aggregate query and returns the results as an
   /// [AggregateQuerySnapshot].
@@ -2008,7 +2010,7 @@ class AggregateQuery {
       ),
     );
 
-    final response = await firestore._client.v1((client) async {
+    final response = await firestore._client.v1((client, projectId) async {
       return client.projects.databases.documents.runAggregationQuery(
         aggregationQuery,
         query._buildProtoParentPath(),
@@ -2048,14 +2050,14 @@ class AggregateQuery {
   bool operator ==(Object other) {
     return other is AggregateQuery &&
         query == other.query &&
-        const ListEquality<_AggregateFieldInternal>()
+        const ListEquality<AggregateFieldInternal>()
             .equals(aggregations, other.aggregations);
   }
 
   @override
   int get hashCode => Object.hash(
         query,
-        const ListEquality<_AggregateFieldInternal>().hash(aggregations),
+        const ListEquality<AggregateFieldInternal>().hash(aggregations),
       );
 }
 

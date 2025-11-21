@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -10,6 +11,7 @@ import 'package:intl/intl.dart';
 
 import '../app.dart';
 import '../object_utils.dart';
+import '../utils/project_id_provider.dart';
 import 'backoff.dart';
 import 'status_code.dart';
 import 'util.dart';
@@ -33,19 +35,58 @@ part 'transaction.dart';
 part 'types.dart';
 part 'write_batch.dart';
 
-class Firestore {
-  Firestore(this.app, {Settings? settings})
+class Firestore implements FirebaseService {
+  /// Creates or returns the cached Firestore instance for the given app.
+  ///
+  /// Note: Settings can only be specified on the first call. Subsequent calls
+  /// will return the cached instance and ignore any new settings.
+  factory Firestore(FirebaseApp app, {Settings? settings}) {
+    return app.getOrInitService(
+      'firestore',
+      (app) => Firestore._(app, settings: settings),
+    ) as Firestore;
+  }
+
+  Firestore._(this.app, {Settings? settings})
       : _settings = settings ?? Settings();
 
   /// Returns the Database ID for this Firestore instance.
   String get _databaseId => _settings.databaseId ?? '(default)';
 
-  /// The Database ID, using the format 'projects/${app.projectId}/databases/$_databaseId'
-  String get _formattedDatabaseName {
-    return 'projects/${app.projectId}/databases/$_databaseId';
+  /// Gets the project ID for synchronous operations.
+  ///
+  /// Returns the cached project ID from async discovery if available.
+  /// Otherwise, falls back to explicitly specified project ID from:
+  /// 1. app.options.projectId
+  /// 2. ServiceAccountCredential.projectId
+  /// 3. GOOGLE_CLOUD_PROJECT or GCLOUD_PROJECT environment variables
+  ///
+  /// This matches Node.js Firestore behavior where explicit project IDs
+  /// are immediately available for synchronous operations like serialization.
+  ///
+  /// Throws if project ID is not available from any source.
+  String get _projectId {
+    final cached = _client._projectIdProvider.cachedProjectId;
+    if (cached != null) return cached;
+
+    // Fall back to explicitly set project ID (from app options, env vars, or credentials)
+    final explicit = _client._projectIdProvider.explicitProjectId;
+    if (explicit != null) return explicit;
+
+    throw StateError(
+      'Project ID has not been discovered yet. '
+      'Initialize the SDK with service account credentials, set project ID '
+      'as an app option, or set the GOOGLE_CLOUD_PROJECT environment variable.',
+    );
   }
 
-  final FirebaseAdminApp app;
+  /// The Database ID, using the format 'projects/${projectId}/databases/$_databaseId'
+  String get _formattedDatabaseName {
+    return 'projects/$_projectId/databases/$_databaseId';
+  }
+
+  @override
+  final FirebaseApp app;
   final Settings _settings;
 
   late final _client = _FirestoreHttpClient(app);
@@ -105,7 +146,7 @@ class Firestore {
 
     return DocumentReference._(
       firestore: this,
-      path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      path: path,
       converter: _jsonConverter,
     );
   }
@@ -132,7 +173,7 @@ class Firestore {
 
     return CollectionReference._(
       firestore: this,
-      path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      path: path,
       converter: _jsonConverter,
     );
   }
@@ -225,6 +266,20 @@ class Firestore {
 
     return transaction._runTransaction(updateFuntion);
   }
+
+  @override
+  Future<void> delete() async {
+    // Close HTTP client if we created it (emulator mode)
+    // In production mode, we use app.client which is closed by the app
+    if (Environment.isFirestoreEmulatorEnabled()) {
+      try {
+        final client = await _client._client;
+        client.close();
+      } catch (_) {
+        // Ignore errors if client wasn't initialized
+      }
+    }
+  }
 }
 
 class SettingsCredentials {
@@ -251,28 +306,75 @@ class Settings with _$Settings {
 }
 
 class _FirestoreHttpClient {
-  _FirestoreHttpClient(this.app);
+  _FirestoreHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
+      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
-  // TODO needs to send "owner" as bearer token when using the emulator
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
 
-  // TODO refactor with auth
-  // TODO is it fine to use AuthClient?
-  Future<R> _run<R>(
-    Future<R> Function(Client client) fn,
-  ) {
-    return _firestoreGuard(() => app.client.then(fn));
+  /// Lazy-initialized HTTP client that's cached for reuse.
+  /// Uses unauthenticated client for emulator, authenticated for production.
+  late final Future<Client> _client = _createClient();
+
+  /// Creates the appropriate HTTP client based on emulator configuration.
+  Future<Client> _createClient() async {
+    // If app has custom httpClient (e.g., mock for testing), always use it
+    if (app.options.httpClient != null) {
+      return app.client;
+    }
+
+    if (_isUsingEmulator) {
+      // Emulator: Create unauthenticated client to avoid loading ADC credentials
+      // which would cause emulator warnings. Wrap with EmulatorClient to add
+      // "Authorization: Bearer owner" header that the emulator requires.
+      return EmulatorClient(Client());
+    }
+    // Production: Use authenticated client from app
+    return app.client;
   }
 
+  /// Gets the Firestore API host URL based on emulator configuration.
+  ///
+  /// When [Environment.firestoreEmulatorHost] is set, routes requests to
+  /// the local Firestore emulator. Otherwise, uses production Firestore API.
+  Uri get _firestoreApiHost {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final emulatorHost = env[Environment.firestoreEmulatorHost];
+
+    if (emulatorHost != null) {
+      return Uri.http(emulatorHost, '/');
+    }
+
+    return Uri.https('firestore.googleapis.com', '/');
+  }
+
+  /// Checks if the Firestore emulator is enabled via environment variable.
+  bool get _isUsingEmulator => Environment.isFirestoreEmulatorEnabled();
+
+  Future<R> _run<R>(
+    Future<R> Function(Client client) fn,
+  ) async {
+    // Use the cached client (created once based on emulator configuration)
+    final client = await _client;
+    return _firestoreGuard(() => fn(client));
+  }
+
+  /// Executes a Firestore v1 API operation with automatic projectId injection.
+  ///
+  /// Discovers and caches the projectId on first call, then provides it to
+  /// all subsequent operations. This matches the Auth service pattern.
   Future<R> v1<R>(
-    Future<R> Function(firestore1.FirestoreApi client) fn,
-  ) {
+    Future<R> Function(firestore1.FirestoreApi client, String projectId) fn,
+  ) async {
+    final projectId = await _projectIdProvider.discoverProjectId();
     return _run(
       (client) => fn(
         firestore1.FirestoreApi(
           client,
-          rootUrl: app.firestoreApiHost.toString(),
+          rootUrl: _firestoreApiHost.toString(),
         ),
+        projectId,
       ),
     );
   }

@@ -84,7 +84,6 @@ void main() {
       final jwt = JWT(payload);
       final token = jwt.sign(
         SecretKey(''),
-        algorithm: JWTAlgorithm.HS256,
       );
 
       await expectLater(

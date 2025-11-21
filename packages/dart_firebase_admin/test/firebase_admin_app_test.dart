@@ -4,70 +4,61 @@ import 'package:dart_firebase_admin/src/app.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group(FirebaseAdminApp, () {
-    test('initializeApp() creates a new FirebaseAdminApp', () {
-      final app = FirebaseAdminApp.initializeApp(
-        'dart-firebase-admin',
-        Credential.fromApplicationDefaultCredentials(),
-      );
+  group(FirebaseApp, () {
+    test('initializeApp() creates a new FirebaseApp with options', () {
+      final app = FirebaseApp.initializeApp();
 
-      expect(app, isA<FirebaseAdminApp>());
-      expect(app.authApiHost, Uri.https('identitytoolkit.googleapis.com', '/'));
-      expect(
-        app.firestoreApiHost,
-        Uri.https('firestore.googleapis.com', '/'),
-      );
+      expect(app, isA<FirebaseApp>());
+      expect(app.name, '[DEFAULT]');
     });
+  });
 
-    test('useEmulator() sets the apiHost to the emulator', () {
-      final app = FirebaseAdminApp.initializeApp(
-        'dart-firebase-admin',
-        Credential.fromApplicationDefaultCredentials(),
-      );
-
-      app.useEmulator();
-
-      expect(
-        app.authApiHost,
-        Uri.http('127.0.0.1:9099', 'identitytoolkit.googleapis.com/'),
-      );
-      expect(
-        app.firestoreApiHost,
-        Uri.http('127.0.0.1:8080', '/'),
-      );
-    });
-
-    test(
-        'useEmulator() uses environment variables to set apiHost to the emulator',
-        () async {
+  group('Environment emulator detection', () {
+    test('isAuthEmulatorEnabled() returns true when env var is set', () async {
       const firebaseAuthEmulatorHost = '127.0.0.1:9000';
-      const firestoreEmulatorHost = '127.0.0.1:8000';
       final testEnv = <String, String>{
-        'FIREBASE_AUTH_EMULATOR_HOST': firebaseAuthEmulatorHost,
-        'FIRESTORE_EMULATOR_HOST': firestoreEmulatorHost,
+        Environment.firebaseAuthEmulatorHost: firebaseAuthEmulatorHost,
       };
 
       await runZoned(
         zoneValues: {envSymbol: testEnv},
         () async {
-          final app = FirebaseAdminApp.initializeApp(
-            'dart-firebase-admin',
-            Credential.fromApplicationDefaultCredentials(),
-          );
+          expect(Environment.isAuthEmulatorEnabled(), true);
+          expect(Environment.isFirestoreEmulatorEnabled(), false);
+        },
+      );
+    });
 
-          app.useEmulator();
+    test('isFirestoreEmulatorEnabled() returns true when env var is set',
+        () async {
+      const firestoreEmulatorHost = '127.0.0.1:8000';
+      final testEnv = <String, String>{
+        Environment.firestoreEmulatorHost: firestoreEmulatorHost,
+      };
 
-          expect(
-            app.authApiHost,
-            Uri.http(
-              firebaseAuthEmulatorHost,
-              'identitytoolkit.googleapis.com/',
-            ),
-          );
-          expect(
-            app.firestoreApiHost,
-            Uri.http(firestoreEmulatorHost, '/'),
-          );
+      await runZoned(
+        zoneValues: {envSymbol: testEnv},
+        () async {
+          expect(Environment.isFirestoreEmulatorEnabled(), true);
+          expect(Environment.isAuthEmulatorEnabled(), false);
+        },
+      );
+    });
+
+    test('both emulator detection methods work when both env vars are set',
+        () async {
+      const firebaseAuthEmulatorHost = '127.0.0.1:9000';
+      const firestoreEmulatorHost = '127.0.0.1:8000';
+      final testEnv = <String, String>{
+        Environment.firebaseAuthEmulatorHost: firebaseAuthEmulatorHost,
+        Environment.firestoreEmulatorHost: firestoreEmulatorHost,
+      };
+
+      await runZoned(
+        zoneValues: {envSymbol: testEnv},
+        () async {
+          expect(Environment.isAuthEmulatorEnabled(), true);
+          expect(Environment.isFirestoreEmulatorEnabled(), true);
         },
       );
     });

@@ -1,4 +1,4 @@
-part of '../messaging.dart';
+part of 'messaging.dart';
 
 abstract class _BaseMessage {
   _BaseMessage._({

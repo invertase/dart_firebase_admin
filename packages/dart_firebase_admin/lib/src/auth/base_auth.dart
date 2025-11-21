@@ -1,12 +1,13 @@
 part of '../auth.dart';
 
 _FirebaseTokenGenerator _createFirebaseTokenGenerator(
-  FirebaseAdminApp app, {
+  FirebaseApp app, {
   String? tenantId,
 }) {
   try {
-    final signer =
-        app.isUsingEmulator ? _EmulatedSigner() : CryptoSigner.fromApp(app);
+    final signer = Environment.isAuthEmulatorEnabled()
+        ? _EmulatedSigner()
+        : CryptoSigner.fromApp(app);
     return _FirebaseTokenGenerator(signer, tenantId: tenantId);
   } on CryptoSignerException catch (err, stackTrace) {
     Error.throwWithStackTrace(_handleCryptoSignerError(err), stackTrace);
@@ -18,16 +19,22 @@ abstract class _BaseAuth {
     required this.app,
     required _AbstractAuthRequestHandler authRequestHandler,
     _FirebaseTokenGenerator? tokenGenerator,
-  })  : _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
-        _sessionCookieVerifier = _createSessionCookieVerifier(app),
-        _authRequestHandler = authRequestHandler;
+  })  : _authRequestHandler = authRequestHandler,
+        _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
+        _sessionCookieVerifier = _createSessionCookieVerifier(
+          app,
+          authRequestHandler.projectIdProvider,
+        );
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   final _AbstractAuthRequestHandler _authRequestHandler;
   final FirebaseTokenVerifier _sessionCookieVerifier;
   final _FirebaseTokenGenerator _tokenGenerator;
 
-  late final _idTokenVerifier = _createIdTokenVerifier(app);
+  late final _idTokenVerifier = _createIdTokenVerifier(
+    app,
+    _authRequestHandler.projectIdProvider,
+  );
 
   /// Generates the out of band email action link to reset a user's password.
   /// The link is generated for the user with the specified email address. The
@@ -356,7 +363,7 @@ abstract class _BaseAuth {
     String idToken, {
     bool checkRevoked = false,
   }) async {
-    final isEmulator = app.isUsingEmulator;
+    final isEmulator = Environment.isAuthEmulatorEnabled();
     final decodedIdToken = await _idTokenVerifier.verifyJWT(
       idToken,
       isEmulator: isEmulator,
@@ -408,7 +415,7 @@ abstract class _BaseAuth {
     String sessionCookie, {
     bool checkRevoked = false,
   }) async {
-    final isEmulator = app.isUsingEmulator;
+    final isEmulator = Environment.isAuthEmulatorEnabled();
     final decodedIdToken = await _sessionCookieVerifier.verifyJWT(
       sessionCookie,
       isEmulator: isEmulator,

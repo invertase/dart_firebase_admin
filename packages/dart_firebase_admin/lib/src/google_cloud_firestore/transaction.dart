@@ -247,7 +247,7 @@ class Transaction {
     // otherwise blocking.
     final rollBackRequest =
         firestore1.RollbackRequest(transaction: transactionId);
-    return _firestore._client.v1((client) {
+    return _firestore._client.v1((client, projectId) {
       return client.projects.databases.documents
           .rollback(
             rollBackRequest,
