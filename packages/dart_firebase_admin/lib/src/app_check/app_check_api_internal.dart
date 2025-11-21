@@ -27,8 +27,9 @@ class AppCheckApiClient {
 
   Future<R> _v1Beta<R>(
     Future<R> Function(
-            appcheck1_beta.FirebaseappcheckApi client, String projectId,)
-        fn,
+      appcheck1_beta.FirebaseappcheckApi client,
+      String projectId,
+    ) fn,
   ) async {
     final projectId = await _projectIdProvider.discoverProjectId();
     return fn(appcheck1_beta.FirebaseappcheckApi(await app.client), projectId);

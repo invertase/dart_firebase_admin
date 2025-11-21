@@ -99,13 +99,16 @@ class SecurityRulesApiClient {
   /// Executes a SecurityRules v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
     Future<R> Function(
-            firebase_rules_v1.FirebaseRulesApi client, String projectId,)
-        fn,
+      firebase_rules_v1.FirebaseRulesApi client,
+      String projectId,
+    ) fn,
   ) async {
     final projectId = await _projectIdProvider.discoverProjectId();
     try {
       return await fn(
-          firebase_rules_v1.FirebaseRulesApi(await app.client), projectId,);
+        firebase_rules_v1.FirebaseRulesApi(await app.client),
+        projectId,
+      );
     } on FirebaseSecurityRulesException {
       rethrow;
     } on firebase_rules_v1.DetailedApiRequestError catch (e, stack) {

@@ -40,33 +40,37 @@ void main() {
       expect(filtered.count, 2);
     });
 
-    test('count() works with complex queries', () async {
-      // Add test documents
-      await collection
-          .add({'category': 'books', 'price': 15.99, 'inStock': true});
-      await collection
-          .add({'category': 'books', 'price': 25.99, 'inStock': false});
-      await collection
-          .add({'category': 'books', 'price': 9.99, 'inStock': true});
-      await collection
-          .add({'category': 'electronics', 'price': 199.99, 'inStock': true});
-      await collection
-          .add({'category': 'electronics', 'price': 299.99, 'inStock': false});
+    test(
+      'count() works with complex queries',
+      () async {
+        // Add test documents
+        await collection
+            .add({'category': 'books', 'price': 15.99, 'inStock': true});
+        await collection
+            .add({'category': 'books', 'price': 25.99, 'inStock': false});
+        await collection
+            .add({'category': 'books', 'price': 9.99, 'inStock': true});
+        await collection
+            .add({'category': 'electronics', 'price': 199.99, 'inStock': true});
+        await collection.add(
+            {'category': 'electronics', 'price': 299.99, 'inStock': false});
 
-      // Test with multiple where conditions
-      final query = collection
-          .where('category', WhereFilter.equal, 'books')
-          .where('inStock', WhereFilter.equal, true);
-      final count = await query.count().get();
-      expect(count.count, 2);
+        // Test with multiple where conditions
+        final query = collection
+            .where('category', WhereFilter.equal, 'books')
+            .where('inStock', WhereFilter.equal, true);
+        final count = await query.count().get();
+        expect(count.count, 2);
 
-      // Test with range query
-      final rangeQuery = collection
-          .where('price', WhereFilter.greaterThanOrEqual, 20)
-          .where('price', WhereFilter.lessThan, 200);
-      final rangeCount = await rangeQuery.count().get();
-      expect(rangeCount.count, 2);
-    }, skip: 'Flaky: Firestore emulator data inconsistency',);
+        // Test with range query
+        final rangeQuery = collection
+            .where('price', WhereFilter.greaterThanOrEqual, 20)
+            .where('price', WhereFilter.lessThan, 200);
+        final rangeCount = await rangeQuery.count().get();
+        expect(rangeCount.count, 2);
+      },
+      skip: 'Flaky: Firestore emulator data inconsistency',
+    );
 
     test('count() works with orderBy and limit', () async {
       // Add test documents
@@ -85,27 +89,32 @@ void main() {
       expect(limitToLastCount.count, 3);
     });
 
-    test('count() works with startAt and endAt', () async {
-      // Add test documents
-      for (var i = 1; i <= 10; i++) {
-        await collection.add({'value': i});
-      }
+    test(
+      'count() works with startAt and endAt',
+      () async {
+        // Add test documents
+        for (var i = 1; i <= 10; i++) {
+          await collection.add({'value': i});
+        }
 
-      // Test with startAt
-      final startAtQuery = collection.orderBy('value').startAt([5]);
-      final startAtCount = await startAtQuery.count().get();
-      expect(startAtCount.count, 6); // values 5-10
+        // Test with startAt
+        final startAtQuery = collection.orderBy('value').startAt([5]);
+        final startAtCount = await startAtQuery.count().get();
+        expect(startAtCount.count, 6); // values 5-10
 
-      // Test with endBefore
-      final endBeforeQuery = collection.orderBy('value').endBefore([7]);
-      final endBeforeCount = await endBeforeQuery.count().get();
-      expect(endBeforeCount.count, 6); // values 1-6
+        // Test with endBefore
+        final endBeforeQuery = collection.orderBy('value').endBefore([7]);
+        final endBeforeCount = await endBeforeQuery.count().get();
+        expect(endBeforeCount.count, 6); // values 1-6
 
-      // Test with both startAfter and endAt
-      final rangeQuery = collection.orderBy('value').startAfter([3]).endAt([8]);
-      final rangeCount = await rangeQuery.count().get();
-      expect(rangeCount.count, 5); // values 4-8
-    }, skip: 'Flaky: Firestore emulator data inconsistency',);
+        // Test with both startAfter and endAt
+        final rangeQuery =
+            collection.orderBy('value').startAfter([3]).endAt([8]);
+        final rangeCount = await rangeQuery.count().get();
+        expect(rangeCount.count, 5); // values 4-8
+      },
+      skip: 'Flaky: Firestore emulator data inconsistency',
+    );
 
     test('count() works with collection groups', () async {
       // Create documents with subcollections
@@ -263,14 +272,18 @@ void main() {
         expect(snapshot.getSum('price'), equals(0));
       });
 
-      test('sum() returns correct sum for numeric values', () async {
-        await collection.add({'price': 10});
-        await collection.add({'price': 20});
-        await collection.add({'price': 30});
+      test(
+        'sum() returns correct sum for numeric values',
+        () async {
+          await collection.add({'price': 10});
+          await collection.add({'price': 20});
+          await collection.add({'price': 30});
 
-        final snapshot = await collection.sum('price').get();
-        expect(snapshot.getSum('price'), equals(60));
-      }, skip: 'Flaky: Firestore emulator data inconsistency',);
+          final snapshot = await collection.sum('price').get();
+          expect(snapshot.getSum('price'), equals(60));
+        },
+        skip: 'Flaky: Firestore emulator data inconsistency',
+      );
 
       test('sum() works with double values', () async {
         await collection.add({'amount': 10.5});
@@ -722,8 +735,9 @@ void main() {
           'product': {'price': 15},
         });
 
-        final snapshot =
-            await collection.average(FieldPath(const ['product', 'price'])).get();
+        final snapshot = await collection
+            .average(FieldPath(const ['product', 'price']))
+            .get();
 
         expect(snapshot.getAverage('product.price'), equals(15.0));
       });
@@ -755,7 +769,8 @@ void main() {
         });
 
         final snapshot = await collection
-            .aggregate(AggregateField.average(FieldPath(const ['nested', 'score'])))
+            .aggregate(
+                AggregateField.average(FieldPath(const ['nested', 'score'])))
             .get();
 
         expect(snapshot.getAverage('nested.score'), equals(90.0));

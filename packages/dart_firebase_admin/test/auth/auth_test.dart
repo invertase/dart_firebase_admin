@@ -53,26 +53,28 @@ Future<String> getIdToken() async {
 void main() {
   group('FirebaseAuth', () {
     group('verifyIdToken', () {
-      test('in prod', () async {
-        final app = createApp();
-        final auth = Auth(app);
+      test(
+        'in prod',
+        () async {
+          final app = createApp();
+          final auth = Auth(app);
 
-        final token = await getIdToken();
-        final decodedToken = await auth.verifyIdToken(token);
+          final token = await getIdToken();
+          final decodedToken = await auth.verifyIdToken(token);
 
-        expect(decodedToken.aud, 'dart-firebase-admin');
-        expect(decodedToken.uid, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-        expect(decodedToken.sub, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-        expect(decodedToken.email, 'foo@google.com');
-        expect(decodedToken.emailVerified, false);
-        expect(decodedToken.phoneNumber, isNull);
-        expect(decodedToken.firebase.identities, {
-          'email': ['foo@google.com'],
-        });
-        expect(decodedToken.firebase.signInProvider, 'password');
-      },
-          skip:
-              'Requires production mode but runs with emulator auto-detection',);
+          expect(decodedToken.aud, 'dart-firebase-admin');
+          expect(decodedToken.uid, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
+          expect(decodedToken.sub, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
+          expect(decodedToken.email, 'foo@google.com');
+          expect(decodedToken.emailVerified, false);
+          expect(decodedToken.phoneNumber, isNull);
+          expect(decodedToken.firebase.identities, {
+            'email': ['foo@google.com'],
+          });
+          expect(decodedToken.firebase.signInProvider, 'password');
+        },
+        skip: 'Requires production mode but runs with emulator auto-detection',
+      );
     });
   });
 }
