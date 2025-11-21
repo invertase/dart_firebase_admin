@@ -54,7 +54,7 @@ void main() {
   group('FirebaseAuth', () {
     group('verifyIdToken', () {
       test(
-        'in prod',
+        'verifies ID token from Firebase Auth production',
         () async {
           final app = createApp();
           final auth = Auth(app);
