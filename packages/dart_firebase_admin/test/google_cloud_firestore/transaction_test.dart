@@ -14,7 +14,6 @@ void main() {
     late Firestore firestore;
 
     setUp(() async {
-      await helpers.clearFirestoreEmulator();
       firestore = await helpers.createFirestore();
     });
 

@@ -53,7 +53,8 @@ void main() {
         await collection
             .add({'category': 'electronics', 'price': 199.99, 'inStock': true});
         await collection.add(
-            {'category': 'electronics', 'price': 299.99, 'inStock': false});
+          {'category': 'electronics', 'price': 299.99, 'inStock': false},
+        );
 
         // Test with multiple where conditions
         final query = collection
@@ -770,7 +771,8 @@ void main() {
 
         final snapshot = await collection
             .aggregate(
-                AggregateField.average(FieldPath(const ['nested', 'score'])))
+              AggregateField.average(FieldPath(const ['nested', 'score'])),
+            )
             .get();
 
         expect(snapshot.getAverage('nested.score'), equals(90.0));

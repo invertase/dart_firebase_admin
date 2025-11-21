@@ -40,33 +40,33 @@ void ensureEmulatorConfigured({bool requireAuth = false}) {
   }
 }
 
-/// Clears all data from the Firestore Emulator.
-///
-/// This function calls the emulator's clear data endpoint to remove all documents.
-/// This ensures test isolation by providing a clean slate for each test.
-Future<void> clearFirestoreEmulator() async {
-  final client = Client();
-  try {
-    final response = await client.delete(
-      Uri.parse(
-        'http://localhost:8080/emulator/v1/projects/$projectId/databases/(default)/documents',
-      ),
-    );
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      // Emulator cleared successfully
-    } else {
-      // ignore: avoid_print
-      print(
-        'WARNING: Failed to clear Firestore emulator: HTTP ${response.statusCode}',
-      );
-    }
-  } catch (e) {
-    // ignore: avoid_print
-    print('WARNING: Exception while clearing Firestore emulator: $e');
-  } finally {
-    client.close();
-  }
-}
+// /// Clears all data from the Firestore Emulator.
+// ///
+// /// This function calls the emulator's clear data endpoint to remove all documents.
+// /// This ensures test isolation by providing a clean slate for each test.
+// Future<void> clearFirestoreEmulator() async {
+//   final client = Client();
+//   try {
+//     final response = await client.delete(
+//       Uri.parse(
+//         'http://localhost:8080/emulator/v1/projects/$projectId/databases/(default)/documents',
+//       ),
+//     );
+//     if (response.statusCode >= 200 && response.statusCode < 300) {
+//       // Emulator cleared successfully
+//     } else {
+//       // ignore: avoid_print
+//       print(
+//         'WARNING: Failed to clear Firestore emulator: HTTP ${response.statusCode}',
+//       );
+//     }
+//   } catch (e) {
+//     // ignore: avoid_print
+//     print('WARNING: Exception while clearing Firestore emulator: $e');
+//   } finally {
+//     client.close();
+//   }
+// }
 
 /// Creates a FirebaseApp for testing.
 ///

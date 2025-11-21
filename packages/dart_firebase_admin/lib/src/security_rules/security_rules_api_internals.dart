@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 import '../app.dart';
 import '../utils/project_id_provider.dart';
 import 'security_rules.dart';
-import 'security_rules_internals.dart';
+import 'security_rules_exception.dart';
 
 class Release {
   Release._({

@@ -269,7 +269,16 @@ class Firestore implements FirebaseService {
 
   @override
   Future<void> delete() async {
-    // Firestore service cleanup if needed
+    // Close HTTP client if we created it (emulator mode)
+    // In production mode, we use app.client which is closed by the app
+    if (Environment.isFirestoreEmulatorEnabled()) {
+      try {
+        final client = await _client._client;
+        client.close();
+      } catch (_) {
+        // Ignore errors if client wasn't initialized
+      }
+    }
   }
 }
 
@@ -296,63 +305,33 @@ class Settings with _$Settings {
   }) = _Settings;
 }
 
-/// Internal HTTP request implementation that wraps a stream.
-///
-/// This is used by [_EmulatorClient] to create modified requests with
-/// updated headers while preserving the request body stream.
-class _RequestImpl extends BaseRequest {
-  _RequestImpl(super.method, super.url, [Stream<List<int>>? stream])
-      : _stream = stream ?? const Stream.empty();
-
-  final Stream<List<int>> _stream;
-
-  @override
-  ByteStream finalize() {
-    super.finalize();
-    return ByteStream(_stream);
-  }
-}
-
-/// HTTP client wrapper that adds Firestore emulator authentication.
-///
-/// This client wraps another HTTP client and automatically adds the
-/// `Authorization: Bearer owner` header to all requests, which is required
-/// when connecting to the Firestore emulator.
-///
-/// The Firestore emulator expects this specific bearer token to grant full
-/// admin privileges for local development and testing.
-class _EmulatorClient extends BaseClient {
-  _EmulatorClient(this.client);
-
-  final Client client;
-
-  @override
-  Future<StreamedResponse> send(BaseRequest request) async {
-    // Make new request object and perform the authenticated request.
-    final modifiedRequest = _RequestImpl(
-      request.method,
-      request.url,
-      request.finalize(),
-    );
-    modifiedRequest.headers.addAll(request.headers);
-    modifiedRequest.headers['Authorization'] = 'Bearer owner';
-
-    return client.send(modifiedRequest);
-  }
-
-  @override
-  void close() {
-    client.close();
-    super.close();
-  }
-}
-
 class _FirestoreHttpClient {
   _FirestoreHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
       : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
   final FirebaseApp app;
   final ProjectIdProvider _projectIdProvider;
+
+  /// Lazy-initialized HTTP client that's cached for reuse.
+  /// Uses unauthenticated client for emulator, authenticated for production.
+  late final Future<Client> _client = _createClient();
+
+  /// Creates the appropriate HTTP client based on emulator configuration.
+  Future<Client> _createClient() async {
+    // If app has custom httpClient (e.g., mock for testing), always use it
+    if (app.options.httpClient != null) {
+      return app.client;
+    }
+
+    if (_isUsingEmulator) {
+      // Emulator: Create unauthenticated client to avoid loading ADC credentials
+      // which would cause emulator warnings. Wrap with EmulatorClient to add
+      // "Authorization: Bearer owner" header that the emulator requires.
+      return EmulatorClient(Client());
+    }
+    // Production: Use authenticated client from app
+    return app.client;
+  }
 
   /// Gets the Firestore API host URL based on emulator configuration.
   ///
@@ -371,22 +350,13 @@ class _FirestoreHttpClient {
   }
 
   /// Checks if the Firestore emulator is enabled via environment variable.
-  bool get _isUsingEmulator {
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    return env[Environment.firestoreEmulatorHost] != null;
-  }
+  bool get _isUsingEmulator => Environment.isFirestoreEmulatorEnabled();
 
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,
   ) async {
-    // Get the base client from the app
-    final baseClient = await app.client;
-
-    // Wrap with _EmulatorClient if using Firestore emulator
-    // The emulator requires "Authorization: Bearer owner" header
-    final client = _isUsingEmulator ? _EmulatorClient(baseClient) : baseClient;
-
+    // Use the cached client (created once based on emulator configuration)
+    final client = await _client;
     return _firestoreGuard(() => fn(client));
   }
 

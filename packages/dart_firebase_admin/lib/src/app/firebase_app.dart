@@ -138,11 +138,14 @@ class FirebaseApp {
   /// The HTTP client for this app.
   ///
   /// Uses the client from options if provided, otherwise creates a default one.
-  late final Future<http.Client> _httpClient = options.httpClient != null
-      ? Future.value(options.httpClient)
-      : _createDefaultClient();
+  /// Nullable to avoid triggering lazy initialization during cleanup.
+  Future<http.Client>? _httpClient;
 
   Future<http.Client> _createDefaultClient() async {
+    // Always create an authenticated client for production services.
+    // Services with emulators (Firestore, Auth) create their own
+    // unauthenticated clients when in emulator mode to avoid ADC warnings.
+
     // Use proper OAuth scope constants
     final scopes = [
       auth3.IdentityToolkitApi.cloudPlatformScope,
@@ -164,8 +167,13 @@ class FirebaseApp {
   }
 
   /// Returns the HTTP client for this app.
+  /// Lazily initializes on first access.
   @internal
-  Future<http.Client> get client => _httpClient;
+  Future<http.Client> get client {
+    return _httpClient ??= options.httpClient != null
+        ? Future.value(options.httpClient)
+        : _createDefaultClient();
+  }
 
   /// Returns the explicitly configured project ID, if available.
   ///
@@ -231,9 +239,9 @@ class FirebaseApp {
 
     _services.clear();
 
-    // Only close client if we created it (not user-provided)
-    if (options.httpClient == null) {
-      (await _httpClient).close();
+    // Only close client if it was initialized AND we created it (not user-provided)
+    if (_httpClient != null && options.httpClient == null) {
+      (await _httpClient!).close();
     }
 
     _isDeleted = true;

@@ -759,6 +759,27 @@ class _AuthHttpClient {
   final FirebaseApp app;
   final ProjectIdProvider projectIdProvider;
 
+  /// Lazy-initialized HTTP client that's cached for reuse.
+  /// Uses unauthenticated client for emulator, authenticated for production.
+  late final Future<Client> _client = _createClient();
+
+  /// Creates the appropriate HTTP client based on emulator configuration.
+  Future<Client> _createClient() async {
+    // If app has custom httpClient (e.g., mock for testing), always use it
+    if (app.options.httpClient != null) {
+      return app.client;
+    }
+
+    if (Environment.isAuthEmulatorEnabled()) {
+      // Emulator: Create unauthenticated client to avoid loading ADC credentials
+      // which would cause emulator warnings. Wrap with EmulatorClient to add
+      // "Authorization: Bearer owner" header that the emulator requires.
+      return EmulatorClient(Client());
+    }
+    // Production: Use authenticated client from app
+    return app.client;
+  }
+
   // TODO handle tenants
 
   /// Builds the parent resource path for project-level operations.
@@ -1045,7 +1066,11 @@ class _AuthHttpClient {
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,
   ) {
-    return _authGuard(() => app.client.then(fn));
+    return _authGuard(() async {
+      // Use the cached client (created once based on emulator configuration)
+      final client = await _client;
+      return fn(client);
+    });
   }
 
   Future<R> v1<R>(

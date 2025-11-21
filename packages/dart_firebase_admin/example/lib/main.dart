@@ -14,24 +14,31 @@ Future<void> authExample(FirebaseApp admin) async {
 
   final auth = Auth(admin);
 
-  late UserRecord user;
+  UserRecord? user;
   try {
     print('> Check if user with email exists: test@example.com\n');
     user = await auth.getUserByEmail('test@example.com');
     print('> User found by email\n');
   } on FirebaseAuthAdminException catch (e) {
     if (e.errorCode == AuthClientErrorCode.userNotFound) {
-      print('\n> User not found, creating new user');
+      print('> User not found, creating new user\n');
       user = await auth.createUser(
         CreateRequest(
           email: 'test@example.com',
           password: 'Test@123',
         ),
       );
+    } else {
+      print('> Auth error: ${e.errorCode} - ${e.message}');
     }
+  } catch (e, stackTrace) {
+    print('> Unexpected error: $e');
+    print('Stack trace: $stackTrace');
   }
 
-  print('Fetched user email: ${user.email}');
+  if (user != null) {
+    print('Fetched user email: ${user.email}');
+  }
 }
 
 Future<void> firestoreExample(FirebaseApp admin) async {

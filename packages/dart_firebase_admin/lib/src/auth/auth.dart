@@ -19,7 +19,16 @@ class Auth extends _BaseAuth implements FirebaseService {
 
   @override
   Future<void> delete() async {
-    // Auth service cleanup if needed
+    // Close HTTP client if we created it (emulator mode)
+    // In production mode, we use app.client which is closed by the app
+    if (Environment.isAuthEmulatorEnabled()) {
+      try {
+        final client = await _authRequestHandler._httpClient._client;
+        client.close();
+      } catch (_) {
+        // Ignore errors if client wasn't initialized
+      }
+    }
   }
 
   // TODO tenantManager
