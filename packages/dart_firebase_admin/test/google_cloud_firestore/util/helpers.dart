@@ -15,12 +15,14 @@ Future<void> clearFirestoreEmulator() async {
   final client = Client();
   try {
     final response = await client.delete(
-      Uri.parse('http://localhost:8080/emulator/v1/projects/$projectId/databases/(default)/documents'),
+      Uri.parse(
+          'http://localhost:8080/emulator/v1/projects/$projectId/databases/(default)/documents'),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
       // Emulator cleared successfully
     } else {
-      print('WARNING: Failed to clear Firestore emulator: HTTP ${response.statusCode}');
+      print(
+          'WARNING: Failed to clear Firestore emulator: HTTP ${response.statusCode}');
     }
   } catch (e) {
     print('WARNING: Exception while clearing Firestore emulator: $e');

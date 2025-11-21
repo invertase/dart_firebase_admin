@@ -50,7 +50,8 @@ abstract class CryptoSigner {
 }
 
 class _IAMSigner implements CryptoSigner {
-  _IAMSigner(this.app) : _serviceAccountId = app.options.credential?.serviceAccountId;
+  _IAMSigner(this.app)
+      : _serviceAccountId = app.options.credential?.serviceAccountId;
 
   @override
   String get algorithm => 'RS256';

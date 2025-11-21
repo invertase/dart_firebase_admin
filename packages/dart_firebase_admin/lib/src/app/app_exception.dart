@@ -5,8 +5,8 @@ class FirebaseAppException implements Exception {
   FirebaseAppException(
     this.errorCode, [
     String? message,
-  ]) : code = errorCode.code,
-       _message = message;
+  ])  : code = errorCode.code,
+        _message = message;
 
   /// The error code object containing code and default message.
   final AppErrorCode errorCode;

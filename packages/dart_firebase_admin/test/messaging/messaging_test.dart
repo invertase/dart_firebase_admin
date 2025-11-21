@@ -38,7 +38,8 @@ void main() {
       final callback = invocation.positionalArguments.first as Function;
 
       // Pass both the API client and projectId to match the v1() signature
-      final result = await Function.apply(callback, [messagingApiMock, projectId]);
+      final result =
+          await Function.apply(callback, [messagingApiMock, projectId]);
       return result as T;
     });
   }
@@ -48,8 +49,8 @@ void main() {
     when(() => messagingApiMock.projects).thenReturn(projectResourceMock);
 
     // Mock buildParent to return the expected parent resource path
-    when(() => requestHandler.buildParent(any()))
-        .thenAnswer((invocation) => 'projects/${invocation.positionalArguments[0]}');
+    when(() => requestHandler.buildParent(any())).thenAnswer(
+        (invocation) => 'projects/${invocation.positionalArguments[0]}');
 
     // Use unique app name for each test to avoid interference
     final appName = 'messaging-test-${DateTime.now().microsecondsSinceEpoch}';

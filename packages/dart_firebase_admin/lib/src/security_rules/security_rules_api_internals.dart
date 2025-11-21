@@ -98,11 +98,14 @@ class SecurityRulesApiClient {
 
   /// Executes a SecurityRules v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
-    Future<R> Function(firebase_rules_v1.FirebaseRulesApi client, String projectId) fn,
+    Future<R> Function(
+            firebase_rules_v1.FirebaseRulesApi client, String projectId)
+        fn,
   ) async {
     final projectId = await _projectIdProvider.discoverProjectId();
     try {
-      return await fn(firebase_rules_v1.FirebaseRulesApi(await app.client), projectId);
+      return await fn(
+          firebase_rules_v1.FirebaseRulesApi(await app.client), projectId);
     } on FirebaseSecurityRulesException {
       rethrow;
     } on firebase_rules_v1.DetailedApiRequestError catch (e, stack) {
@@ -137,8 +140,8 @@ class SecurityRulesApiClient {
 
   Future<RulesetResponse> getRuleset(String name) {
     return v1((api, projectId) async {
-      final response = await api.projects.rulesets
-          .get(buildRulesetPath(projectId, name));
+      final response =
+          await api.projects.rulesets.get(buildRulesetPath(projectId, name));
 
       return RulesetResponse._from(response);
     });
@@ -188,8 +191,7 @@ class SecurityRulesApiClient {
 
   Future<void> deleteRuleset(String name) {
     return v1((api, projectId) async {
-      await api.projects.rulesets
-          .delete(buildRulesetPath(projectId, name));
+      await api.projects.rulesets.delete(buildRulesetPath(projectId, name));
     });
   }
 
@@ -220,8 +222,8 @@ class SecurityRulesApiClient {
 
   Future<Release> getRelease(String name) {
     return v1((api, projectId) async {
-      final response = await api.projects.releases
-          .get(buildReleasePath(projectId, name));
+      final response =
+          await api.projects.releases.get(buildReleasePath(projectId, name));
 
       return Release._(
         name: response.name!,

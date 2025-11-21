@@ -640,7 +640,8 @@ abstract class _AbstractAuthRequestHandler {
     }
 
     // TODO handle tenants
-    return _httpClient.v1((client, projectId) => client.accounts.lookup(request));
+    return _httpClient
+        .v1((client, projectId) => client.accounts.lookup(request));
   }
 
   /// Edits an existing user.

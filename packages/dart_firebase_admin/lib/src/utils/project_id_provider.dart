@@ -51,8 +51,8 @@ final class ProjectIdProvider {
       throw FirebaseAppException(
         AppErrorCode.invalidCredential,
         'Failed to determine project ID. Initialize the SDK with service '
-            'account credentials or set project ID as an app option. '
-            'Alternatively, set the GOOGLE_CLOUD_PROJECT environment variable.',
+        'account credentials or set project ID as an app option. '
+        'Alternatively, set the GOOGLE_CLOUD_PROJECT environment variable.',
       );
     }
 

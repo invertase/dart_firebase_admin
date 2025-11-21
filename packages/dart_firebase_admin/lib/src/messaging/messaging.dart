@@ -35,8 +35,7 @@ class Messaging implements FirebaseService {
   Messaging._(
     this.app, {
     @internal FirebaseMessagingRequestHandler? requestHandler,
-  }) : _requestHandler =
-            requestHandler ?? FirebaseMessagingRequestHandler(app);
+  }) : _requestHandler = requestHandler ?? FirebaseMessagingRequestHandler(app);
 
   /// The app associated with this Messaging instance.
   @override
