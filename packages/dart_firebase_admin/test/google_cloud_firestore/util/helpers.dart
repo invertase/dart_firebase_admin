@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/src/app.dart';
@@ -6,6 +7,40 @@ import 'package:http/http.dart';
 import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
+
+/// Validates that required emulator environment variables are set.
+///
+/// Call this in setUpAll() of test files to fail fast if emulators aren't
+/// configured, preventing accidental writes to production.
+///
+/// Example:
+/// ```dart
+/// setUpAll(() {
+///   ensureEmulatorConfigured();
+/// });
+/// ```
+void ensureEmulatorConfigured({bool requireAuth = false}) {
+  final missingVars = <String>[];
+
+  if (!Environment.isFirestoreEmulatorEnabled()) {
+    missingVars.add(Environment.firestoreEmulatorHost);
+  }
+
+  if (requireAuth && !Environment.isAuthEmulatorEnabled()) {
+    missingVars.add(Environment.firebaseAuthEmulatorHost);
+  }
+
+  if (missingVars.isNotEmpty) {
+    throw StateError(
+      'Missing emulator configuration: ${missingVars.join(", ")}\n\n'
+      'Tests must run against Firebase emulators to prevent writing to production.\n'
+      'Set the following environment variables:\n'
+      '  ${Environment.firestoreEmulatorHost}=localhost:8080\n'
+      '  ${Environment.firebaseAuthEmulatorHost}=localhost:9099\n\n'
+      'Or run tests with: firebase emulators:exec "dart test"',
+    );
+  }
+}
 
 /// Clears all data from the Firestore Emulator.
 ///
@@ -90,6 +125,15 @@ Future<void> _recursivelyDeleteAllDocuments(Firestore firestore) async {
 Future<Firestore> createFirestore({
   Settings? settings,
 }) async {
+  // CRITICAL: Ensure emulator is running to prevent hitting production
+  if (!Environment.isFirestoreEmulatorEnabled()) {
+    throw StateError(
+      '${Environment.firestoreEmulatorHost} environment variable must be set to run tests. '
+      'This prevents accidentally writing test data to production. '
+      'Set it to "localhost:8080" or your emulator host.',
+    );
+  }
+
   // Use unique app name for each test to avoid interference
   final appName = 'firestore-test-${DateTime.now().microsecondsSinceEpoch}';
 
