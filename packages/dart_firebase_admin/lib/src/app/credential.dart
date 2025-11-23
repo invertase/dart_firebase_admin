@@ -113,7 +113,8 @@ final class ServiceAccountCredential extends Credential {
     }
 
     // Use parent's fromJson to create the base credentials
-    final credentials = googleapis_auth.ServiceAccountCredentials.fromJson(json);
+    final credentials =
+        googleapis_auth.ServiceAccountCredentials.fromJson(json);
 
     return ServiceAccountCredential._(credentials, projectId);
   }
@@ -172,7 +173,8 @@ final class ServiceAccountCredential extends Credential {
   String get privateKey => _credentials.privateKey;
 
   @override
-  googleapis_auth.ServiceAccountCredentials get serviceAccountCredentials => _credentials;
+  googleapis_auth.ServiceAccountCredentials get serviceAccountCredentials =>
+      _credentials;
 
   @override
   String? get serviceAccountId => _credentials.email;
@@ -224,7 +226,8 @@ final class ApplicationDefaultCredential extends Credential {
         final text = File(maybeConfig).readAsStringSync();
         final decodedValue = jsonDecode(text);
         if (decodedValue is Map) {
-          creds = googleapis_auth.ServiceAccountCredentials.fromJson(decodedValue);
+          creds =
+              googleapis_auth.ServiceAccountCredentials.fromJson(decodedValue);
           projectId = decodedValue['project_id'] as String?;
         }
       } on FormatException catch (_) {

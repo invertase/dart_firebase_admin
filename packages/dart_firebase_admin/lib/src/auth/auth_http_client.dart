@@ -46,8 +46,8 @@ class _AuthHttpClient {
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1GetOobCodeResponse> getOobCode(
-      auth1.GoogleCloudIdentitytoolkitV1GetOobCodeRequest request,
-      ) {
+    auth1.GoogleCloudIdentitytoolkitV1GetOobCodeRequest request,
+  ) {
     return v1((client, projectId) async {
       final email = request.email;
       if (email == null || !isEmail(email)) {
@@ -80,7 +80,7 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListInboundSamlConfigsResponse>
-  listInboundSamlConfigs({
+      listInboundSamlConfigs({
     required int pageSize,
     String? pageToken,
   }) {
@@ -93,7 +93,7 @@ class _AuthHttpClient {
         throw FirebaseAuthAdminException(
           AuthClientErrorCode.invalidArgument,
           'Required "maxResults" must be a positive integer that does not exceed '
-              '$_maxListProviderConfigurationPageSize.',
+          '$_maxListProviderConfigurationPageSize.',
         );
       }
 
@@ -106,7 +106,7 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListOAuthIdpConfigsResponse>
-  listOAuthIdpConfigs({
+      listOAuthIdpConfigs({
     required int pageSize,
     String? pageToken,
   }) {
@@ -119,7 +119,7 @@ class _AuthHttpClient {
         throw FirebaseAuthAdminException(
           AuthClientErrorCode.invalidArgument,
           'Required "maxResults" must be a positive integer that does not exceed '
-              '$_maxListProviderConfigurationPageSize.',
+          '$_maxListProviderConfigurationPageSize.',
         );
       }
 
@@ -132,9 +132,9 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-  createOAuthIdpConfig(
-      auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
-      ) {
+      createOAuthIdpConfig(
+    auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
+  ) {
     return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.create(
         request,
@@ -154,9 +154,9 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-  createInboundSamlConfig(
-      auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
-      ) {
+      createInboundSamlConfig(
+    auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
+  ) {
     return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.create(
         request,
@@ -192,11 +192,11 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-  updateInboundSamlConfig(
-      auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
-      String providerId, {
-        required String? updateMask,
-      }) {
+      updateInboundSamlConfig(
+    auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
+    String providerId, {
+    required String? updateMask,
+  }) {
     return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.patch(
         request,
@@ -216,11 +216,11 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-  updateOAuthIdpConfig(
-      auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
-      String providerId, {
-        required String? updateMask,
-      }) {
+      updateOAuthIdpConfig(
+    auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
+    String providerId, {
+    required String? updateMask,
+  }) {
     return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.patch(
         request,
@@ -240,9 +240,9 @@ class _AuthHttpClient {
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoResponse>
-  setAccountInfo(
-      auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoRequest request,
-      ) {
+      setAccountInfo(
+    auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoRequest request,
+  ) {
     return v1((client, projectId) async {
       // TODO should this use account/project/update or account/update?
       // Or maybe both?
@@ -258,7 +258,7 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-  getOauthIdpConfig(String providerId) {
+      getOauthIdpConfig(String providerId) {
     return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.get(
         buildOAuthIdpParent(projectId, providerId),
@@ -277,7 +277,7 @@ class _AuthHttpClient {
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-  getInboundSamlConfig(String providerId) {
+      getInboundSamlConfig(String providerId) {
     return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.get(
         buildSamlParent(projectId, providerId),
@@ -312,8 +312,8 @@ class _AuthHttpClient {
   }
 
   Future<R> _run<R>(
-      Future<R> Function(Client client) fn,
-      ) {
+    Future<R> Function(Client client) fn,
+  ) {
     return _authGuard(() async {
       // Use the cached client (created once based on emulator configuration)
       final client = await _client;
@@ -322,11 +322,11 @@ class _AuthHttpClient {
   }
 
   Future<R> v1<R>(
-      Future<R> Function(auth1.IdentityToolkitApi client, String projectId) fn,
-      ) async {
+    Future<R> Function(auth1.IdentityToolkitApi client, String projectId) fn,
+  ) async {
     final projectId = await projectIdProvider.discoverProjectId();
     return _run(
-          (client) => fn(
+      (client) => fn(
         auth1.IdentityToolkitApi(
           client,
           rootUrl: _authApiHost.toString(),
@@ -337,11 +337,11 @@ class _AuthHttpClient {
   }
 
   Future<R> v2<R>(
-      Future<R> Function(auth2.IdentityToolkitApi client, String projectId) fn,
-      ) async {
+    Future<R> Function(auth2.IdentityToolkitApi client, String projectId) fn,
+  ) async {
     final projectId = await projectIdProvider.discoverProjectId();
     return _run(
-          (client) => fn(
+      (client) => fn(
         auth2.IdentityToolkitApi(
           client,
           rootUrl: _authApiHost.toString(),
@@ -352,11 +352,11 @@ class _AuthHttpClient {
   }
 
   Future<R> v3<R>(
-      Future<R> Function(auth3.IdentityToolkitApi client, String projectId) fn,
-      ) async {
+    Future<R> Function(auth3.IdentityToolkitApi client, String projectId) fn,
+  ) async {
     final projectId = await projectIdProvider.discoverProjectId();
     return _run(
-          (client) => fn(
+      (client) => fn(
         auth3.IdentityToolkitApi(
           client,
           rootUrl: _authApiHost.toString(),

@@ -48,8 +48,8 @@ class _FirestoreHttpClient {
   bool get _isUsingEmulator => Environment.isFirestoreEmulatorEnabled();
 
   Future<R> _run<R>(
-      Future<R> Function(Client client) fn,
-      ) async {
+    Future<R> Function(Client client) fn,
+  ) async {
     // Use the cached client (created once based on emulator configuration)
     final client = await _client;
     return _firestoreGuard(() => fn(client));
@@ -60,11 +60,11 @@ class _FirestoreHttpClient {
   /// Discovers and caches the projectId on first call, then provides it to
   /// all subsequent operations. This matches the Auth service pattern.
   Future<R> v1<R>(
-      Future<R> Function(firestore1.FirestoreApi client, String projectId) fn,
-      ) async {
+    Future<R> Function(firestore1.FirestoreApi client, String projectId) fn,
+  ) async {
     final projectId = await _projectIdProvider.discoverProjectId();
     return _run(
-          (client) => fn(
+      (client) => fn(
         firestore1.FirestoreApi(
           client,
           rootUrl: _firestoreApiHost.toString(),
