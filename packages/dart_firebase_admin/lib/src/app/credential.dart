@@ -85,10 +85,10 @@ sealed class Credential {
   /// Private constructor for sealed class.
   Credential._();
 
-  /// Returns the underlying [auth.ServiceAccountCredentials] if this is a
+  /// Returns the underlying [googleapis_auth.ServiceAccountCredentials] if this is a
   /// [ServiceAccountCredential], null otherwise.
   @internal
-  auth.ServiceAccountCredentials? get serviceAccountCredentials;
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials;
 
   /// Returns the service account ID (email) if available.
   @internal
@@ -97,7 +97,7 @@ sealed class Credential {
 
 /// Extended service account credentials that includes projectId.
 ///
-/// This wraps [auth.ServiceAccountCredentials] and adds the [projectId] field
+/// This wraps [googleapis_auth.ServiceAccountCredentials] and adds the [projectId] field
 /// which is required for Firebase Admin SDK operations.
 @internal
 final class ServiceAccountCredential extends Credential {
@@ -113,7 +113,7 @@ final class ServiceAccountCredential extends Credential {
     }
 
     // Use parent's fromJson to create the base credentials
-    final credentials = auth.ServiceAccountCredentials.fromJson(json);
+    final credentials = googleapis_auth.ServiceAccountCredentials.fromJson(json);
 
     return ServiceAccountCredential._(credentials, projectId);
   }
@@ -139,9 +139,9 @@ final class ServiceAccountCredential extends Credential {
     required String email,
     required String projectId,
   }) {
-    final credentials = auth.ServiceAccountCredentials(
+    final credentials = googleapis_auth.ServiceAccountCredentials(
       email,
-      auth.ClientId(clientId ?? email),
+      googleapis_auth.ClientId(clientId ?? email),
       privateKey,
     );
 
@@ -153,7 +153,7 @@ final class ServiceAccountCredential extends Credential {
     this.projectId,
   ) : super._();
 
-  final auth.ServiceAccountCredentials _credentials;
+  final googleapis_auth.ServiceAccountCredentials _credentials;
 
   /// The Google Cloud project ID associated with this service account.
   ///
@@ -172,7 +172,7 @@ final class ServiceAccountCredential extends Credential {
   String get privateKey => _credentials.privateKey;
 
   @override
-  auth.ServiceAccountCredentials get serviceAccountCredentials => _credentials;
+  googleapis_auth.ServiceAccountCredentials get serviceAccountCredentials => _credentials;
 
   @override
   String? get serviceAccountId => _credentials.email;
@@ -200,7 +200,7 @@ final class ServiceAccountCredential extends Credential {
 final class ApplicationDefaultCredential extends Credential {
   ApplicationDefaultCredential({
     String? serviceAccountId,
-    auth.ServiceAccountCredentials? serviceAccountCredentials,
+    googleapis_auth.ServiceAccountCredentials? serviceAccountCredentials,
     String? projectId,
   })  : _serviceAccountId = serviceAccountId,
         _serviceAccountCredentials = serviceAccountCredentials,
@@ -213,7 +213,7 @@ final class ApplicationDefaultCredential extends Credential {
   factory ApplicationDefaultCredential.fromEnvironment({
     String? serviceAccountId,
   }) {
-    auth.ServiceAccountCredentials? creds;
+    googleapis_auth.ServiceAccountCredentials? creds;
     String? projectId;
 
     final env =
@@ -224,7 +224,7 @@ final class ApplicationDefaultCredential extends Credential {
         final text = File(maybeConfig).readAsStringSync();
         final decodedValue = jsonDecode(text);
         if (decodedValue is Map) {
-          creds = auth.ServiceAccountCredentials.fromJson(decodedValue);
+          creds = googleapis_auth.ServiceAccountCredentials.fromJson(decodedValue);
           projectId = decodedValue['project_id'] as String?;
         }
       } on FormatException catch (_) {
@@ -240,11 +240,11 @@ final class ApplicationDefaultCredential extends Credential {
   }
 
   final String? _serviceAccountId;
-  final auth.ServiceAccountCredentials? _serviceAccountCredentials;
+  final googleapis_auth.ServiceAccountCredentials? _serviceAccountCredentials;
   final String? _projectId;
 
   @override
-  auth.ServiceAccountCredentials? get serviceAccountCredentials =>
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
       _serviceAccountCredentials;
 
   @override

@@ -1,54 +1,5 @@
 part of '../app.dart';
 
-/// Base class for all Firebase services.
-///
-/// All Firebase services (Auth, Messaging, Firestore, etc.) implement this
-/// interface to enable proper lifecycle management.
-///
-/// Services are automatically registered with the [FirebaseApp] when first
-/// accessed via factory constructors. When the app is closed via
-/// [FirebaseApp.close], all registered services have their [delete] method
-/// called to clean up resources.
-///
-/// Example implementation:
-/// ```dart
-/// class MyService implements FirebaseService {
-///   factory MyService(FirebaseApp app) {
-///     return app.getOrInitService(
-///       'my-service',
-///       (app) => MyService._(app),
-///     ) as MyService;
-///   }
-///
-///   MyService._(this.app);
-///
-///   @override
-///   final FirebaseApp app;
-///
-///   @override
-///   Future<void> delete() async {
-///     // Cleanup logic here
-///   }
-/// }
-/// ```
-abstract class FirebaseService {
-  FirebaseService(this.app);
-
-  /// The Firebase app this service is associated with.
-  final FirebaseApp app;
-
-  /// Cleans up resources used by this service.
-  ///
-  /// This method is called automatically when [FirebaseApp.close] is called
-  /// on the parent app. Services should override this to release any held
-  /// resources such as:
-  /// - Network connections
-  /// - File handles
-  /// - Cached data
-  /// - Subscriptions or listeners
-  Future<void> delete();
-}
-
 /// Represents a Firebase app instance.
 ///
 /// Each app is associated with a Firebase project and has its own
@@ -157,13 +108,15 @@ class FirebaseApp {
 
     // Create authenticated client using googleapis_auth
     if (serviceAccountCredentials != null) {
-      return auth.clientViaServiceAccount(
+      return googleapis_auth.clientViaServiceAccount(
         serviceAccountCredentials,
         scopes,
       );
     }
 
-    return auth.clientViaApplicationDefaultCredentials(scopes: scopes);
+    return googleapis_auth.clientViaApplicationDefaultCredentials(
+      scopes: scopes,
+    );
   }
 
   /// Returns the HTTP client for this app.
@@ -191,16 +144,50 @@ class FirebaseApp {
   /// will invoke [init] to create the service. Subsequent calls return the
   /// cached instance.
   @internal
-  FirebaseService getOrInitService(
+  T getOrInitService<T extends FirebaseService>(
     String name,
-    FirebaseService Function(FirebaseApp) init,
+    T Function(FirebaseApp) init,
   ) {
     _checkDestroyed();
     if (!_services.containsKey(name)) {
       _services[name] = init(this);
     }
-    return _services[name]!;
+    return _services[name]! as T;
   }
+
+  /// Gets the App Check service instance for this app.
+  ///
+  /// Returns a cached instance if one exists, otherwise creates a new one.
+  AppCheck get appCheck =>
+      getOrInitService(FirebaseServiceType.appCheck.name, AppCheck.new);
+
+  /// Gets the Auth service instance for this app.
+  ///
+  /// Returns a cached instance if one exists, otherwise creates a new one.
+  Auth get auth => getOrInitService(FirebaseServiceType.auth.name, Auth.new);
+
+  /// Gets the Firestore service instance for this app.
+  ///
+  /// Returns a cached instance if one exists, otherwise creates a new one.
+  /// Optional [settings] are only applied when creating a new instance.
+  Firestore firestore({Settings? settings}) => getOrInitService(
+        FirebaseServiceType.firestore.name,
+        (app) => Firestore(app, settings: settings),
+      );
+
+  /// Gets the Messaging service instance for this app.
+  ///
+  /// Returns a cached instance if one exists, otherwise creates a new one.
+  Messaging get messaging =>
+      getOrInitService(FirebaseServiceType.messaging.name, Messaging.new);
+
+  /// Gets the Security Rules service instance for this app.
+  ///
+  /// Returns a cached instance if one exists, otherwise creates a new one.
+  SecurityRules get securityRules => getOrInitService(
+        FirebaseServiceType.securityRules.name,
+        SecurityRules.new,
+      );
 
   /// Closes this app and cleans up all associated resources.
   ///
