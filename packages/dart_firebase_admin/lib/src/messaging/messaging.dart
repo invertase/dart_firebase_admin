@@ -26,9 +26,9 @@ class Messaging implements FirebaseService {
     @internal FirebaseMessagingRequestHandler? requestHandler,
   }) {
     return app.getOrInitService(
-      'messaging',
+      FirebaseServiceType.messaging.name,
       (app) => Messaging._(app, requestHandler: requestHandler),
-    ) as Messaging;
+    );
   }
 
   /// An interface for interacting with the Firebase Cloud Messaging service.

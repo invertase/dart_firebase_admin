@@ -6,9 +6,9 @@ class Auth extends _BaseAuth implements FirebaseService {
   /// Creates or returns the cached Auth instance for the given app.
   factory Auth(FirebaseApp app) {
     return app.getOrInitService(
-      'auth',
+      FirebaseServiceType.auth.name,
       Auth._,
-    ) as Auth;
+    );
   }
 
   Auth._(FirebaseApp app)

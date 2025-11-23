@@ -32,3 +32,4 @@ part 'auth/token_generator.dart';
 part 'auth/token_verifier.dart';
 part 'auth/user.dart';
 part 'auth/user_import_builder.dart';
+part 'auth/auth_http_client.dart';

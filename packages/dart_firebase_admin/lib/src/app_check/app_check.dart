@@ -9,9 +9,9 @@ class AppCheck implements FirebaseService {
   /// Creates or returns the cached AppCheck instance for the given app.
   factory AppCheck(FirebaseApp app) {
     return app.getOrInitService(
-      'app-check',
+      FirebaseServiceType.appCheck.name,
       AppCheck._,
-    ) as AppCheck;
+    );
   }
 
   AppCheck._(this.app);

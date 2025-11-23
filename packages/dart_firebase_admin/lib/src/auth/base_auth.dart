@@ -62,6 +62,8 @@ abstract class _BaseAuth {
     String email, {
     ActionCodeSettings? actionCodeSettings,
   }) {
+    // TODO(demolaf): see if 'PASSWORD_RESET' needs to be replaced with
+    //  _emailActionRequestTypes
     return _authRequestHandler.getEmailActionLink(
       'PASSWORD_RESET',
       email,

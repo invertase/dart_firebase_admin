@@ -51,9 +51,9 @@ class SecurityRules implements FirebaseService {
   /// Creates or returns the cached SecurityRules instance for the given app.
   factory SecurityRules(FirebaseApp app) {
     return app.getOrInitService(
-      'security-rules',
+      FirebaseServiceType.securityRules.name,
       SecurityRules._,
-    ) as SecurityRules;
+    );
   }
 
   SecurityRules._(this.app);
