@@ -1,11 +1,27 @@
 part of '../auth.dart';
 
-class _AuthHttpClient {
-  _AuthHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
+class AuthHttpClient {
+  AuthHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
       : projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
   final FirebaseApp app;
   final ProjectIdProvider projectIdProvider;
+
+  /// Gets the Auth API host URL based on emulator configuration.
+  ///
+  /// When [Environment.firebaseAuthEmulatorHost] is set, routes requests to
+  /// the local Auth emulator. Otherwise, uses production Auth API.
+  Uri get _authApiHost {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final emulatorHost = env[Environment.firebaseAuthEmulatorHost];
+
+    if (emulatorHost != null) {
+      return Uri.http(emulatorHost, 'identitytoolkit.googleapis.com/');
+    }
+
+    return Uri.https('identitytoolkit.googleapis.com', '/');
+  }
 
   /// Lazy-initialized HTTP client that's cached for reuse.
   /// Uses unauthenticated client for emulator, authenticated for production.
@@ -293,22 +309,6 @@ class _AuthHttpClient {
 
       return response;
     });
-  }
-
-  /// Gets the Auth API host URL based on emulator configuration.
-  ///
-  /// When [Environment.firebaseAuthEmulatorHost] is set, routes requests to
-  /// the local Auth emulator. Otherwise, uses production Auth API.
-  Uri get _authApiHost {
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final emulatorHost = env[Environment.firebaseAuthEmulatorHost];
-
-    if (emulatorHost != null) {
-      return Uri.http(emulatorHost, 'identitytoolkit.googleapis.com/');
-    }
-
-    return Uri.https('identitytoolkit.googleapis.com', '/');
   }
 
   Future<R> _run<R>(

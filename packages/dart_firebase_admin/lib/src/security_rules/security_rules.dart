@@ -1,5 +1,11 @@
+import 'package:googleapis/firebaserules/v1.dart' as firebase_rules_v1;
+
 import '../../dart_firebase_admin.dart';
-import 'security_rules_api_internals.dart';
+import '../utils/project_id_provider.dart';
+
+part 'security_rules_exception.dart';
+part 'security_rules_http_client.dart';
+part 'security_rules_request_handler.dart';
 
 /// A source file containing some Firebase security rules. The content includes raw
 /// source code including text formatting, indentation and comments.
@@ -63,7 +69,7 @@ class SecurityRules implements FirebaseService {
 
   @override
   final FirebaseApp app;
-  late final _client = SecurityRulesApiClient(app);
+  late final _requestHandler = SecurityRulesRequestHandler(app);
 
   /// Gets the [Ruleset] identified by the given
   /// name. The input name should be the short name string without the project ID
@@ -74,7 +80,7 @@ class SecurityRules implements FirebaseService {
   /// [name] - Name of the [Ruleset] to retrieve.
   /// Returns a future that fulfills with the specified [Ruleset].
   Future<Ruleset> getRuleset(String name) async {
-    final rulesetResponse = await _client.getRuleset(name);
+    final rulesetResponse = await _requestHandler.getRuleset(name);
 
     return Ruleset._fromResponse(rulesetResponse);
   }
@@ -108,7 +114,7 @@ class SecurityRules implements FirebaseService {
   /// [ruleset] - Name of the ruleset to apply.
   /// Returns a future that fulfills when the ruleset is released.
   Future<void> releaseFirestoreRuleset(String ruleset) async {
-    await _client.updateOrCreateRelease(_cloudFirestore, ruleset);
+    await _requestHandler.updateOrCreateRelease(_cloudFirestore, ruleset);
   }
 
   /// Gets the [Ruleset] currently applied to a
@@ -148,7 +154,10 @@ class SecurityRules implements FirebaseService {
   ///   containing the name.
   /// Returns a future that fulfills when the ruleset is released.
   Future<void> releaseStorageRuleset(String ruleset, String bucket) async {
-    await _client.updateOrCreateRelease('$_firebaseStorage/$bucket', ruleset);
+    await _requestHandler.updateOrCreateRelease(
+      '$_firebaseStorage/$bucket',
+      ruleset,
+    );
   }
 
   /// Creates a new [Ruleset] from the given [RulesFile].
@@ -162,7 +171,7 @@ class SecurityRules implements FirebaseService {
       ),
     );
 
-    final rulesetResponse = await _client.createRuleset(ruleset);
+    final rulesetResponse = await _requestHandler.createRuleset(ruleset);
     return Ruleset._fromResponse(rulesetResponse);
   }
 
@@ -175,7 +184,7 @@ class SecurityRules implements FirebaseService {
   /// [name] - Name of the [Ruleset] to delete.
   /// Returns a future that fulfills when the [Ruleset] is deleted.
   Future<void> deleteRuleset(String name) {
-    return _client.deleteRuleset(name);
+    return _requestHandler.deleteRuleset(name);
   }
 
   /// Retrieves a page of ruleset metadata.
@@ -189,7 +198,7 @@ class SecurityRules implements FirebaseService {
     int pageSize = 100,
     String? nextPageToken,
   }) async {
-    final response = await _client.listRulesets(
+    final response = await _requestHandler.listRulesets(
       pageSize: pageSize,
       pageToken: nextPageToken,
     );
@@ -197,7 +206,7 @@ class SecurityRules implements FirebaseService {
   }
 
   Future<Ruleset> _getRulesetForRelease(String releaseName) async {
-    final release = await _client.getRelease(releaseName);
+    final release = await _requestHandler.getRelease(releaseName);
     final rulesetName = release.rulesetName;
 
     return getRuleset(_stripProjectIdPrefix(rulesetName));

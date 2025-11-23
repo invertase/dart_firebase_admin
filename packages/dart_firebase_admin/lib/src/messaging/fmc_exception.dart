@@ -208,6 +208,101 @@ enum MessagingClientErrorCode {
   final String message;
 }
 
+/// Extracts error code from the given response object.
+String? _getErrorCode(Object? response) {
+  if (response is! Map || !response.containsKey('error')) return null;
+
+  final error = response['error'];
+  if (error is String) return error;
+
+  error as Map;
+
+  final details = error['details'];
+  if (details is List) {
+    const fcmErrorType = 'type.googleapis.com/google.firebase.fcm.v1.FcmError';
+    for (final element in details) {
+      if (element is Map && element['@type'] == fcmErrorType) {
+        return element['errorCode'] as String?;
+      }
+    }
+  }
+
+  if (error.containsKey('status')) {
+    return error['status'] as String?;
+  }
+
+  return error['message'] as String?;
+}
+
+/// Extracts error message from the given response object.
+String? _getErrorMessage(Object? response) {
+  switch (response) {
+    case <Object?, Object?>{'error': {'message': final String? message}}:
+      return message;
+  }
+
+  return null;
+}
+
+/// Creates a new FirebaseMessagingError by extracting the error code, message and other relevant
+/// details from an HTTP error response.
+FirebaseMessagingAdminException _createFirebaseError({
+  required String body,
+  required int? statusCode,
+  required bool isJson,
+}) {
+  if (isJson) {
+    // For JSON responses, map the server response to a client-side error.
+
+    final json = jsonDecode(body);
+    final errorCode = _getErrorCode(json)!;
+    final errorMessage = _getErrorMessage(json);
+
+    return FirebaseMessagingAdminException.fromServerError(
+      serverErrorCode: errorCode,
+      message: errorMessage,
+      rawServerResponse: json,
+    );
+  }
+
+  // Non-JSON response
+  MessagingClientErrorCode error;
+  switch (statusCode) {
+    case 400:
+      error = MessagingClientErrorCode.invalidArgument;
+    case 401:
+    case 403:
+      error = MessagingClientErrorCode.authenticationError;
+    case 500:
+      error = MessagingClientErrorCode.internalError;
+    case 503:
+      error = MessagingClientErrorCode.serverUnavailable;
+    default:
+      // Treat non-JSON responses with unexpected status codes as unknown errors.
+      error = MessagingClientErrorCode.unknownError;
+  }
+
+  return FirebaseMessagingAdminException(
+    error,
+    '${error.message} Raw server response: "$body". Status code: '
+    '$statusCode.',
+  );
+}
+
+Future<T> _fmcGuard<T>(
+  FutureOr<T> Function() fn,
+) async {
+  try {
+    final value = fn();
+
+    if (value is T) return value;
+
+    return value.catchError(_handleException);
+  } catch (error, stackTrace) {
+    _handleException(error, stackTrace);
+  }
+}
+
 /// Converts a Exception to a FirebaseAdminException.
 Never _handleException(Object exception, StackTrace stackTrace) {
   if (exception is fmc1.DetailedApiRequestError) {

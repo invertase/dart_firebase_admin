@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dart_firebase_admin/src/messaging/messaging.dart';
 import 'package:googleapis/fcm/v1.dart' as fmc1;
 import 'package:http/http.dart';
@@ -11,8 +12,8 @@ import '../mock.dart';
 class ProjectsMessagesResourceMock extends Mock
     implements fmc1.ProjectsMessagesResource {}
 
-class FirebaseMessagingRequestHandlerMock extends Mock
-    implements FirebaseMessagingRequestHandler {}
+class FirebaseMessagingHttpClientMock extends Mock
+    implements FirebaseMessagingHttpClient {}
 
 class FirebaseCloudMessagingApiMock extends Mock
     implements fmc1.FirebaseCloudMessagingApi {}
@@ -25,8 +26,9 @@ extension on Object? {
 
 void main() {
   late Messaging messaging;
+  late FirebaseMessagingRequestHandler requestHandler;
 
-  final requestHandler = FirebaseMessagingRequestHandlerMock();
+  final httpClient = FirebaseMessagingHttpClientMock();
   final messages = ProjectsMessagesResourceMock();
   final projectResourceMock = ProjectsResourceMock();
   final messagingApiMock = FirebaseCloudMessagingApiMock();
@@ -34,7 +36,7 @@ void main() {
   setUpAll(registerFallbacks);
 
   void mockV1<T>() {
-    when(() => requestHandler.v1<T>(any())).thenAnswer((invocation) async {
+    when(() => httpClient.v1<T>(any())).thenAnswer((invocation) async {
       final callback = invocation.positionalArguments.first as Function;
 
       // Pass both the API client and projectId to match the v1() signature
@@ -49,18 +51,20 @@ void main() {
     when(() => messagingApiMock.projects).thenReturn(projectResourceMock);
 
     // Mock buildParent to return the expected parent resource path
-    when(() => requestHandler.buildParent(any())).thenAnswer(
+    when(() => httpClient.buildParent(any())).thenAnswer(
       (invocation) => 'projects/${invocation.positionalArguments[0]}',
     );
 
     // Use unique app name for each test to avoid interference
     final appName = 'messaging-test-${DateTime.now().microsecondsSinceEpoch}';
-    final sdk = createApp(name: appName);
-    messaging = Messaging(sdk, requestHandler: requestHandler);
+    final app = createApp(name: appName);
+    requestHandler =
+        FirebaseMessagingRequestHandler(app, httpClient: httpClient);
+    messaging = Messaging(app, requestHandler: requestHandler);
   });
 
   tearDown(() {
-    reset(requestHandler);
+    reset(httpClient);
     reset(messages);
     reset(projectResourceMock);
     reset(messagingApiMock);

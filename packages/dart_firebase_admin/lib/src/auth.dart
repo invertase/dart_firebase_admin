@@ -23,7 +23,7 @@ import 'utils/validator.dart';
 
 part 'auth/action_code_settings_builder.dart';
 part 'auth/auth.dart';
-part 'auth/auth_api_request.dart';
+part 'auth/auth_request_handler.dart';
 part 'auth/auth_config.dart';
 part 'auth/auth_exception.dart';
 part 'auth/base_auth.dart';

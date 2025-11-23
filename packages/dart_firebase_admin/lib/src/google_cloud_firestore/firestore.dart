@@ -24,7 +24,6 @@ part 'document_reader.dart';
 part 'field_value.dart';
 part 'filter.dart';
 part 'firestore.freezed.dart';
-part 'firestore_api_request_internal.dart';
 part 'firestore_exception.dart';
 part 'firestore_http_client.dart';
 part 'geo_point.dart';
@@ -90,7 +89,7 @@ class Firestore implements FirebaseService {
   final FirebaseApp app;
   final Settings _settings;
 
-  late final _client = _FirestoreHttpClient(app);
+  late final _client = FirestoreHttpClient(app);
   late final _serializer = _Serializer(this);
 
   // TODO batch

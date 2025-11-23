@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'app_check.dart';
-import 'app_check_api_internal.dart';
 
 class AppCheckToken {
   @internal

@@ -1,0 +1,74 @@
+part of 'security_rules.dart';
+
+/// HTTP client for Firebase Security Rules API operations.
+///
+/// Handles HTTP client management, googleapis API client creation,
+/// and path builders.
+/// Does not handle emulator routing as Security Rules has no emulator support.
+class SecurityRulesHttpClient {
+  SecurityRulesHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
+      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+
+  final FirebaseApp app;
+  final ProjectIdProvider _projectIdProvider;
+
+  /// Executes a Security Rules v1 API operation with automatic projectId injection.
+  Future<R> v1<R>(
+    Future<R> Function(
+      firebase_rules_v1.FirebaseRulesApi client,
+      String projectId,
+    ) fn,
+  ) async {
+    final projectId = await _projectIdProvider.discoverProjectId();
+    try {
+      return await fn(
+        firebase_rules_v1.FirebaseRulesApi(await app.client),
+        projectId,
+      );
+    } on FirebaseSecurityRulesException {
+      rethrow;
+    } on firebase_rules_v1.DetailedApiRequestError catch (e, stack) {
+      switch (e.jsonResponse) {
+        case {'error': {'status': final status}}:
+          final code = _errorMapping[status];
+          if (code == null) break;
+
+          Error.throwWithStackTrace(
+            FirebaseSecurityRulesException(code, e.message),
+            stack,
+          );
+      }
+
+      Error.throwWithStackTrace(
+        FirebaseSecurityRulesException(
+          FirebaseSecurityRulesErrorCode.unknownError,
+          'Unexpected error: $e',
+        ),
+        stack,
+      );
+    } catch (e, stack) {
+      Error.throwWithStackTrace(
+        FirebaseSecurityRulesException(
+          FirebaseSecurityRulesErrorCode.unknownError,
+          'Unexpected error: $e',
+        ),
+        stack,
+      );
+    }
+  }
+
+  /// Builds the project path for Security Rules operations.
+  String buildProjectPath(String projectId) {
+    return 'projects/$projectId';
+  }
+
+  /// Builds the ruleset resource path.
+  String buildRulesetPath(String projectId, String name) {
+    return 'projects/$projectId/rulesets/$name';
+  }
+
+  /// Builds the release resource path.
+  String buildReleasePath(String projectId, String name) {
+    return 'projects/$projectId/releases/$name';
+  }
+}

@@ -1,2 +1,6 @@
 export 'src/google_cloud_firestore/firestore.dart'
-    hide $SettingsCopyWith, ApiMapValue, AggregateFieldInternal;
+    hide
+        $SettingsCopyWith,
+        ApiMapValue,
+        AggregateFieldInternal,
+        FirestoreHttpClient;

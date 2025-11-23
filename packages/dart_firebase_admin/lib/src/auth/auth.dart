@@ -14,7 +14,7 @@ class Auth extends _BaseAuth implements FirebaseService {
   Auth._(FirebaseApp app)
       : super(
           app: app,
-          authRequestHandler: _AuthRequestHandler(app),
+          authRequestHandler: AuthRequestHandler(app),
         );
 
   @override

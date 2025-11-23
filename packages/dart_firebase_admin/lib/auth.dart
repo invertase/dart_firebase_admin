@@ -1,1 +1,2 @@
-export 'src/auth.dart' hide UserMetadataToJson;
+export 'src/auth.dart'
+    hide UserMetadataToJson, AuthRequestHandler, AuthHttpClient;

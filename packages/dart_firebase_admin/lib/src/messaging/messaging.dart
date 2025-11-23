@@ -10,7 +10,8 @@ import '../utils/project_id_provider.dart';
 
 part 'fmc_exception.dart';
 part 'messaging_api.dart';
-part 'messaging_api_request_internal.dart';
+part 'messaging_http_client.dart';
+part 'messaging_request_handler.dart';
 
 const _fmcMaxBatchSize = 500;
 
@@ -52,28 +53,7 @@ class Messaging implements FirebaseService {
   /// Returns a unique message ID string after the message has been successfully
   /// handed off to the FCM service for delivery.
   Future<String> send(Message message, {bool? dryRun}) {
-    return _requestHandler.v1(
-      (client, projectId) async {
-        final parent = _requestHandler.buildParent(projectId);
-        final response = await client.projects.messages.send(
-          fmc1.SendMessageRequest(
-            message: message._toProto(),
-            validateOnly: dryRun,
-          ),
-          parent,
-        );
-
-        final name = response.name;
-        if (name == null) {
-          throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.internalError,
-            'No name in response',
-          );
-        }
-
-        return name;
-      },
-    );
+    return _requestHandler.send(message, dryRun: dryRun);
   }
 
   /// Sends each message in the given array via Firebase Cloud Messaging.
@@ -91,61 +71,7 @@ class Messaging implements FirebaseService {
   /// - [dryRun]: Whether to send the messages in the dry-run
   ///   (validation only) mode.
   Future<BatchResponse> sendEach(List<Message> messages, {bool? dryRun}) {
-    return _requestHandler.v1(
-      (client, projectId) async {
-        if (messages.isEmpty) {
-          throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.invalidArgument,
-            'messages must be a non-empty array',
-          );
-        }
-        if (messages.length > _fmcMaxBatchSize) {
-          throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.invalidArgument,
-            'messages list must not contain more than $_fmcMaxBatchSize items',
-          );
-        }
-
-        final parent = _requestHandler.buildParent(projectId);
-        final responses = await Future.wait<SendResponse>(
-          messages.map((message) async {
-            final response = client.projects.messages.send(
-              fmc1.SendMessageRequest(
-                message: message._toProto(),
-                validateOnly: dryRun,
-              ),
-              parent,
-            );
-
-            return response.then(
-              (value) {
-                return SendResponse._(success: true, messageId: value.name);
-              },
-              // ignore: avoid_types_on_closure_parameters
-              onError: (Object? error) {
-                return SendResponse._(
-                  success: false,
-                  error: error is FirebaseMessagingAdminException
-                      ? error
-                      : FirebaseMessagingAdminException(
-                          MessagingClientErrorCode.internalError,
-                          error.toString(),
-                        ),
-                );
-              },
-            );
-          }),
-        );
-
-        final successCount = responses.where((r) => r.success).length;
-
-        return BatchResponse._(
-          responses: responses,
-          successCount: successCount,
-          failureCount: responses.length - successCount,
-        );
-      },
-    );
+    return _requestHandler.sendEach(messages, dryRun: dryRun);
   }
 
   /// Sends the given multicast message to all the FCM registration tokens
@@ -165,22 +91,7 @@ class Messaging implements FirebaseService {
     MulticastMessage message, {
     bool? dryRun,
   }) {
-    return sendEach(
-      message.tokens
-          .map(
-            (token) => TokenMessage(
-              token: token,
-              data: message.data,
-              notification: message.notification,
-              android: message.android,
-              apns: message.apns,
-              fcmOptions: message.fcmOptions,
-              webpush: message.webpush,
-            ),
-          )
-          .toList(),
-      dryRun: dryRun,
-    );
+    return _requestHandler.sendEachForMulticast(message, dryRun: dryRun);
   }
 
   @override

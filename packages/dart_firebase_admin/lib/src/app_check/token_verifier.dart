@@ -3,8 +3,8 @@ import 'package:meta/meta.dart';
 import '../app.dart';
 import '../utils/jwt.dart';
 import '../utils/project_id_provider.dart';
+import 'app_check.dart';
 import 'app_check_api.dart';
-import 'app_check_api_internal.dart';
 
 const appCheckIssuer = 'https://firebaseappcheck.googleapis.com/';
 const jwksUrl = 'https://firebaseappcheck.googleapis.com/v1/jwks';

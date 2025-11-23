@@ -1,11 +1,30 @@
 part of 'firestore.dart';
 
-class _FirestoreHttpClient {
-  _FirestoreHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
+class FirestoreHttpClient {
+  FirestoreHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
       : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
 
   final FirebaseApp app;
   final ProjectIdProvider _projectIdProvider;
+
+  /// Gets the Firestore API host URL based on emulator configuration.
+  ///
+  /// When [Environment.firestoreEmulatorHost] is set, routes requests to
+  /// the local Firestore emulator. Otherwise, uses production Firestore API.
+  Uri get _firestoreApiHost {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    final emulatorHost = env[Environment.firestoreEmulatorHost];
+
+    if (emulatorHost != null) {
+      return Uri.http(emulatorHost, '/');
+    }
+
+    return Uri.https('firestore.googleapis.com', '/');
+  }
+
+  /// Checks if the Firestore emulator is enabled via environment variable.
+  bool get _isUsingEmulator => Environment.isFirestoreEmulatorEnabled();
 
   /// Lazy-initialized HTTP client that's cached for reuse.
   /// Uses unauthenticated client for emulator, authenticated for production.
@@ -27,25 +46,6 @@ class _FirestoreHttpClient {
     // Production: Use authenticated client from app
     return app.client;
   }
-
-  /// Gets the Firestore API host URL based on emulator configuration.
-  ///
-  /// When [Environment.firestoreEmulatorHost] is set, routes requests to
-  /// the local Firestore emulator. Otherwise, uses production Firestore API.
-  Uri get _firestoreApiHost {
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final emulatorHost = env[Environment.firestoreEmulatorHost];
-
-    if (emulatorHost != null) {
-      return Uri.http(emulatorHost, '/');
-    }
-
-    return Uri.https('firestore.googleapis.com', '/');
-  }
-
-  /// Checks if the Firestore emulator is enabled via environment variable.
-  bool get _isUsingEmulator => Environment.isFirestoreEmulatorEnabled();
 
   Future<R> _run<R>(
     Future<R> Function(Client client) fn,

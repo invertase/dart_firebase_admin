@@ -31,10 +31,10 @@ const _emailActionRequestTypes = {
 };
 
 abstract class _AbstractAuthRequestHandler {
-  _AbstractAuthRequestHandler(this.app) : _httpClient = _AuthHttpClient(app);
+  _AbstractAuthRequestHandler(this.app) : _httpClient = AuthHttpClient(app);
 
   final FirebaseApp app;
-  final _AuthHttpClient _httpClient;
+  final AuthHttpClient _httpClient;
 
   /// Exposes the ProjectIdProvider for creating token verifiers.
   ProjectIdProvider get projectIdProvider => _httpClient.projectIdProvider;
@@ -743,8 +743,8 @@ abstract class _AbstractAuthRequestHandler {
   }
 }
 
-class _AuthRequestHandler extends _AbstractAuthRequestHandler {
-  _AuthRequestHandler(super.app);
+class AuthRequestHandler extends _AbstractAuthRequestHandler {
+  AuthRequestHandler(super.app);
 
 // TODO getProjectConfig
 // TODO updateProjectConfig
