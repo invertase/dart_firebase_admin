@@ -23,10 +23,7 @@ Future<void> authExample(FirebaseApp admin) async {
     if (e.errorCode == AuthClientErrorCode.userNotFound) {
       print('> User not found, creating new user\n');
       user = await auth.createUser(
-        CreateRequest(
-          email: 'test@example.com',
-          password: 'Test@123',
-        ),
+        CreateRequest(email: 'test@example.com', password: 'Test@123'),
       );
     } else {
       print('> Auth error: ${e.errorCode} - ${e.message}');
@@ -48,10 +45,7 @@ Future<void> firestoreExample(FirebaseApp admin) async {
 
   try {
     final collection = firestore.collection('users');
-    await collection.doc('123').set({
-      'name': 'John Doe',
-      'age': 27,
-    });
+    await collection.doc('123').set({'name': 'John Doe', 'age': 27});
     final snapshot = await collection.get();
     for (final doc in snapshot.docs) {
       print('> Document data: ${doc.data()}');
