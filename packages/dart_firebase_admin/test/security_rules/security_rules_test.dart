@@ -20,10 +20,7 @@ void main() {
   group('SecurityRules', () {
     test('ruleset e2e', () async {
       final ruleset = await securityRules.createRuleset(
-        RulesFile(
-          name: 'firestore.rules',
-          content: simpleFirestoreContent,
-        ),
+        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
       );
 
       final ruleset2 = await securityRules.getRuleset(ruleset.name);
@@ -37,18 +34,18 @@ void main() {
       expect(
         securityRules.getRuleset(ruleset.name),
         throwsA(
-          isA<FirebaseSecurityRulesException>()
-              .having((e) => e.code, 'code', 'security-rules/not-found'),
+          isA<FirebaseSecurityRulesException>().having(
+            (e) => e.code,
+            'code',
+            'security-rules/not-found',
+          ),
         ),
       );
     });
 
     test('listRulesetMetadata', () async {
       final ruleset = await securityRules.createRuleset(
-        RulesFile(
-          name: 'firestore.rules',
-          content: simpleFirestoreContent,
-        ),
+        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
       );
       final ruleset2 = await securityRules.createRuleset(
         RulesFile(
@@ -75,10 +72,7 @@ void main() {
 
     test('firestore release flow', () async {
       final ruleset = await securityRules.createRuleset(
-        RulesFile(
-          name: 'firestore.rules',
-          content: simpleFirestoreContent,
-        ),
+        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
       );
 
       final before = await securityRules.getFirestoreRuleset();

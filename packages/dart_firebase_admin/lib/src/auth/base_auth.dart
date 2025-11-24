@@ -19,9 +19,9 @@ abstract class _BaseAuth {
     required this.app,
     required _AbstractAuthRequestHandler authRequestHandler,
     _FirebaseTokenGenerator? tokenGenerator,
-  })  : _authRequestHandler = authRequestHandler,
-        _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
-        _sessionCookieVerifier = _createSessionCookieVerifier(app);
+  }) : _authRequestHandler = authRequestHandler,
+       _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
+       _sessionCookieVerifier = _createSessionCookieVerifier(app);
 
   final FirebaseApp app;
   final _AbstractAuthRequestHandler _authRequestHandler;
@@ -498,10 +498,7 @@ abstract class _BaseAuth {
     final users =
         response.users?.map(UserRecord.fromResponse).toList() ?? <UserRecord>[];
 
-    return ListUsersResult._(
-      users: users,
-      pageToken: response.nextPageToken,
-    );
+    return ListUsersResult._(users: users, pageToken: response.nextPageToken);
   }
 
   /// Deletes an existing user.
@@ -536,9 +533,12 @@ abstract class _BaseAuth {
   Future<DeleteUsersResult> deleteUsers(List<String> uids) async {
     uids.forEach(assertIsUid);
 
-    final response =
-        await _authRequestHandler.deleteAccounts(uids, force: true);
-    final errors = response.errors ??
+    final response = await _authRequestHandler.deleteAccounts(
+      uids,
+      force: true,
+    );
+    final errors =
+        response.errors ??
         <auth1.GoogleCloudIdentitytoolkitV1BatchDeleteErrorInfo>[];
 
     return DeleteUsersResult._(
@@ -595,8 +595,9 @@ abstract class _BaseAuth {
   /// Returns a Future fulfilled with the user
   /// data corresponding to the provided phone number.
   Future<UserRecord> getUserByPhoneNumber(String phoneNumber) async {
-    final response =
-        await _authRequestHandler.getAccountInfoByPhoneNumber(phoneNumber);
+    final response = await _authRequestHandler.getAccountInfoByPhoneNumber(
+      phoneNumber,
+    );
     // Returns the user record populated with server response.
     return UserRecord.fromResponse(response);
   }
@@ -664,10 +665,12 @@ abstract class _BaseAuth {
   /// Throws [FirebaseAdminException] if any of the identifiers are invalid or if more than 100
   ///  identifiers are specified.
   Future<GetUsersResult> getUsers(List<UserIdentifier> identifiers) async {
-    final response =
-        await _authRequestHandler.getAccountInfoByIdentifiers(identifiers);
+    final response = await _authRequestHandler.getAccountInfoByIdentifiers(
+      identifiers,
+    );
 
-    final userRecords = response.users?.map(UserRecord.fromResponse).toList() ??
+    final userRecords =
+        response.users?.map(UserRecord.fromResponse).toList() ??
         const <UserRecord>[];
 
     // Checks if the specified identifier is within the list of UserRecords.
@@ -681,8 +684,9 @@ abstract class _BaseAuth {
           case PhoneIdentifier():
             return id.phoneNumber == userRecord.phoneNumber;
           case ProviderIdentifier():
-            final matchingUserInfo = userRecord.providerData
-                .firstWhereOrNull((userInfo) => userInfo.phoneNumber != null);
+            final matchingUserInfo = userRecord.providerData.firstWhereOrNull(
+              (userInfo) => userInfo.phoneNumber != null,
+            );
             return matchingUserInfo != null &&
                 id.providerUid == matchingUserInfo.uid;
         }
@@ -707,15 +711,15 @@ abstract class _BaseAuth {
         // Return the corresponding user record.
         .then(getUser)
         .onError<FirebaseAuthAdminException>((error, _) {
-      if (error.errorCode == AuthClientErrorCode.userNotFound) {
-        // Something must have happened after creating the user and then retrieving it.
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'Unable to create the user record provided.',
-        );
-      }
-      throw error;
-    });
+          if (error.errorCode == AuthClientErrorCode.userNotFound) {
+            // Something must have happened after creating the user and then retrieving it.
+            throw FirebaseAuthAdminException(
+              AuthClientErrorCode.internalError,
+              'Unable to create the user record provided.',
+            );
+          }
+          throw error;
+        });
   }
 
   /// Updates an existing user.
@@ -771,8 +775,10 @@ abstract class _BaseAuth {
       }
     }
 
-    final existingUid =
-        await _authRequestHandler.updateExistingAccount(uid, request);
+    final existingUid = await _authRequestHandler.updateExistingAccount(
+      uid,
+      request,
+    );
     return getUser(existingUid);
   }
 }

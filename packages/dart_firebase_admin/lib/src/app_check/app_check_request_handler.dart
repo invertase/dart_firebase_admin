@@ -6,7 +6,7 @@ part of 'app_check.dart';
 /// and validation. Delegates simple API calls to [AppCheckHttpClient].
 class AppCheckRequestHandler {
   AppCheckRequestHandler(FirebaseApp app)
-      : _httpClient = AppCheckHttpClient(app);
+    : _httpClient = AppCheckHttpClient(app);
 
   final AppCheckHttpClient _httpClient;
 

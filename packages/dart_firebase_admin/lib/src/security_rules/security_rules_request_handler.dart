@@ -56,10 +56,7 @@ class RulesetResponse extends RulesetContent {
 }
 
 class ListRulesetsResponse {
-  ListRulesetsResponse._({
-    required this.rulesets,
-    this.nextPageToken,
-  });
+  ListRulesetsResponse._({required this.rulesets, this.nextPageToken});
 
   final List<RulesetResponse> rulesets;
   final String? nextPageToken;
@@ -71,7 +68,7 @@ class ListRulesetsResponse {
 /// and validation. Delegates simple API calls to [SecurityRulesHttpClient].
 class SecurityRulesRequestHandler {
   SecurityRulesRequestHandler(FirebaseApp app)
-      : _httpClient = SecurityRulesHttpClient(app);
+    : _httpClient = SecurityRulesHttpClient(app);
 
   final SecurityRulesHttpClient _httpClient;
 
@@ -100,8 +97,9 @@ class SecurityRulesRequestHandler {
 
   Future<RulesetResponse> getRuleset(String name) {
     return _httpClient.v1((api, projectId) async {
-      final response =
-          await api.projects.rulesets.get(buildRulesetPath(projectId, name));
+      final response = await api.projects.rulesets.get(
+        buildRulesetPath(projectId, name),
+      );
 
       return RulesetResponse._from(response);
     });
@@ -182,8 +180,9 @@ class SecurityRulesRequestHandler {
 
   Future<Release> getRelease(String name) {
     return _httpClient.v1((api, projectId) async {
-      final response =
-          await api.projects.releases.get(buildReleasePath(projectId, name));
+      final response = await api.projects.releases.get(
+        buildReleasePath(projectId, name),
+      );
 
       return Release._(
         name: response.name!,

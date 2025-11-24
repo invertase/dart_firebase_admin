@@ -55,10 +55,8 @@ const messagingServerToClientCode = {
 
 class FirebaseMessagingAdminException extends FirebaseAdminException
     implements Exception {
-  FirebaseMessagingAdminException(
-    this.errorCode, [
-    String? message,
-  ]) : super('messaging', errorCode.code, message ?? errorCode.message);
+  FirebaseMessagingAdminException(this.errorCode, [String? message])
+    : super('messaging', errorCode.code, message ?? errorCode.message);
 
   @internal
   factory FirebaseMessagingAdminException.fromServerError({
@@ -67,7 +65,8 @@ class FirebaseMessagingAdminException extends FirebaseAdminException
     Object? rawServerResponse,
   }) {
     // If not found, default to unknown error.
-    final error = messagingServerToClientCode[serverErrorCode] ??
+    final error =
+        messagingServerToClientCode[serverErrorCode] ??
         MessagingClientErrorCode.unknownError;
     message ??= error.message;
 
@@ -196,10 +195,7 @@ enum MessagingClientErrorCode {
     message: 'An unknown server error was returned.',
   );
 
-  const MessagingClientErrorCode({
-    required this.code,
-    required this.message,
-  });
+  const MessagingClientErrorCode({required this.code, required this.message});
 
   /// The error code.
   final String code;
@@ -289,9 +285,7 @@ FirebaseMessagingAdminException _createFirebaseError({
   );
 }
 
-Future<T> _fmcGuard<T>(
-  FutureOr<T> Function() fn,
-) async {
+Future<T> _fmcGuard<T>(FutureOr<T> Function() fn) async {
   try {
     final value = fn();
 

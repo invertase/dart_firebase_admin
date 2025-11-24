@@ -14,9 +14,7 @@ class AppCheckToken {
 }
 
 class AppCheckTokenOptions {
-  AppCheckTokenOptions({
-    this.ttlMillis,
-  }) {
+  AppCheckTokenOptions({this.ttlMillis}) {
     if (ttlMillis case final ttlMillis?) {
       if (ttlMillis.inMinutes < 30 || ttlMillis.inDays > 7) {
         throw FirebaseAppCheckException(
@@ -87,14 +85,14 @@ class DecodedAppCheckToken {
   });
 
   DecodedAppCheckToken.fromMap(Map<String, dynamic> map)
-      : this._(
-          iss: map['iss'] as String,
-          sub: map['sub'] as String,
-          aud: (map['aud'] as List).cast<String>(),
-          exp: map['exp'] as int,
-          iat: map['iat'] as int,
-          appId: map['sub'] as String,
-        );
+    : this._(
+        iss: map['iss'] as String,
+        sub: map['sub'] as String,
+        aud: (map['aud'] as List).cast<String>(),
+        exp: map['exp'] as int,
+        iat: map['iat'] as int,
+        appId: map['sub'] as String,
+      );
 
   /// The issuer identifier for the issuer of the response.
   /// This value is a URL with the format

@@ -23,7 +23,7 @@ class AppCheckHttpClient {
   /// Executes an App Check v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
     Future<R> Function(appcheck1.FirebaseappcheckApi client, String projectId)
-        fn,
+    fn,
   ) async {
     final client = await app.client;
     final projectId = await client.getProjectId(
@@ -38,7 +38,8 @@ class AppCheckHttpClient {
     Future<R> Function(
       appcheck1_beta.FirebaseappcheckApi client,
       String projectId,
-    ) fn,
+    )
+    fn,
   ) async {
     final client = await app.client;
     final projectId = await client.getProjectId(
@@ -69,7 +70,7 @@ class AppCheckHttpClient {
   ///
   /// Returns the raw googleapis response without transformation.
   Future<appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenResponse>
-      verifyAppCheckToken(String token) {
+  verifyAppCheckToken(String token) {
     return v1Beta((client, projectId) async {
       return client.projects.verifyAppCheckToken(
         appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(

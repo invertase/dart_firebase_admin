@@ -45,11 +45,8 @@ sealed class Filter {
   ///   });
   /// });
   /// ```
-  factory Filter.where(
-    Object fieldPath,
-    WhereFilter op,
-    Object? value,
-  ) = _UnaryFilter.fromString;
+  factory Filter.where(Object fieldPath, WhereFilter op, Object? value) =
+      _UnaryFilter.fromString;
 
   /// Creates and returns a new [Filter], which can be applied to [Query.where],
   /// [Filter.or] or [Filter.and]. When applied to a [Query] it requires that
@@ -131,11 +128,7 @@ sealed class Filter {
 }
 
 class _UnaryFilter implements Filter {
-  _UnaryFilter(
-    this.fieldPath,
-    this.op,
-    this.value,
-  ) {
+  _UnaryFilter(this.fieldPath, this.op, this.value) {
     if (value == null || identical(value, double.nan)) {
       if (op != WhereFilter.equal && op != WhereFilter.notEqual) {
         throw ArgumentError(
@@ -145,11 +138,8 @@ class _UnaryFilter implements Filter {
     }
   }
 
-  _UnaryFilter.fromString(
-    Object field,
-    WhereFilter op,
-    Object? value,
-  ) : this(FieldPath.from(field), op, value);
+  _UnaryFilter.fromString(Object field, WhereFilter op, Object? value)
+    : this(FieldPath.from(field), op, value);
 
   final FieldPath fieldPath;
   final WhereFilter op;
@@ -160,10 +150,10 @@ class _CompositeFilter implements Filter {
   _CompositeFilter({required this.filters, required this.operator});
 
   _CompositeFilter.or(List<Filter> filters)
-      : this(filters: filters, operator: _CompositeOperator.or);
+    : this(filters: filters, operator: _CompositeOperator.or);
 
   _CompositeFilter.and(List<Filter> filters)
-      : this(filters: filters, operator: _CompositeOperator.and);
+    : this(filters: filters, operator: _CompositeOperator.and);
 
   final List<Filter> filters;
   final _CompositeOperator operator;

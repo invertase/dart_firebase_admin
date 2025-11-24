@@ -31,11 +31,11 @@ enum StatusCode {
 
   static const deadlineExceededResourceExhaustedInternalUnavailable =
       <StatusCode>[
-    StatusCode.deadlineExceeded,
-    StatusCode.resourceExhausted,
-    StatusCode.internal,
-    StatusCode.unavailable,
-  ];
+        StatusCode.deadlineExceeded,
+        StatusCode.resourceExhausted,
+        StatusCode.internal,
+        StatusCode.unavailable,
+      ];
 
   static const resourceExhaustedUnavailable = <StatusCode>[
     StatusCode.resourceExhausted,

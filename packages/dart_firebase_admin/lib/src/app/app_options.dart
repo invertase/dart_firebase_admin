@@ -121,12 +121,12 @@ class AppOptions extends Equatable {
 
   @override
   List<Object?> get props => [
-        // Exclude credential and httpClient from comparison
-        // (they're instances that can't be meaningfully compared)
-        projectId,
-        databaseURL,
-        storageBucket,
-        serviceAccountId,
-        databaseAuthVariableOverride,
-      ];
+    // Exclude credential and httpClient from comparison
+    // (they're instances that can't be meaningfully compared)
+    projectId,
+    databaseURL,
+    storageBucket,
+    serviceAccountId,
+    databaseAuthVariableOverride,
+  ];
 }

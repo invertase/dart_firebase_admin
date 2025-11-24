@@ -2,10 +2,7 @@ import 'package:meta/meta.dart';
 
 /// Validates that 'value' is a host.
 @internal
-void validateHost(
-  String value, {
-  required String argName,
-}) {
+void validateHost(String value, {required String argName}) {
   final urlString = 'http://$value/';
   Uri parsed;
   try {

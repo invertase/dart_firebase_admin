@@ -110,8 +110,9 @@ final class ServiceAccountCredential extends Credential {
     }
 
     // Use parent's fromJson to create the base credentials
-    final credentials =
-        googleapis_auth.ServiceAccountCredentials.fromJson(json);
+    final credentials = googleapis_auth.ServiceAccountCredentials.fromJson(
+      json,
+    );
 
     return ServiceAccountCredential._(credentials, projectId);
   }
@@ -146,10 +147,7 @@ final class ServiceAccountCredential extends Credential {
     return ServiceAccountCredential._(credentials, projectId);
   }
 
-  ServiceAccountCredential._(
-    this._credentials,
-    this.projectId,
-  ) : super._();
+  ServiceAccountCredential._(this._credentials, this.projectId) : super._();
 
   final googleapis_auth.ServiceAccountCredentials _credentials;
 
@@ -201,10 +199,10 @@ final class ApplicationDefaultCredential extends Credential {
     String? serviceAccountId,
     googleapis_auth.ServiceAccountCredentials? serviceAccountCredentials,
     String? projectId,
-  })  : _serviceAccountId = serviceAccountId,
-        _serviceAccountCredentials = serviceAccountCredentials,
-        _projectId = projectId,
-        super._();
+  }) : _serviceAccountId = serviceAccountId,
+       _serviceAccountCredentials = serviceAccountCredentials,
+       _projectId = projectId,
+       super._();
 
   /// Factory to create from environment.
   ///
@@ -223,8 +221,9 @@ final class ApplicationDefaultCredential extends Credential {
         final text = File(maybeConfig).readAsStringSync();
         final decodedValue = jsonDecode(text);
         if (decodedValue is Map) {
-          creds =
-              googleapis_auth.ServiceAccountCredentials.fromJson(decodedValue);
+          creds = googleapis_auth.ServiceAccountCredentials.fromJson(
+            decodedValue,
+          );
           projectId = decodedValue['project_id'] as String?;
         }
       } on FormatException catch (_) {

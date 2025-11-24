@@ -83,10 +83,7 @@ FirebaseApp createApp({
 }) {
   final app = FirebaseApp.initializeApp(
     name: name,
-    options: AppOptions(
-      projectId: projectId,
-      httpClient: client,
-    ),
+    options: AppOptions(projectId: projectId, httpClient: client),
   );
 
   addTearDown(() async {
@@ -125,9 +122,7 @@ Future<void> _recursivelyDeleteAllDocuments(Firestore firestore) async {
 ///
 /// Note: Tests should be run with FIRESTORE_EMULATOR_HOST=localhost:8080
 /// environment variable set. The emulator will be auto-detected.
-Future<Firestore> createFirestore({
-  Settings? settings,
-}) async {
+Future<Firestore> createFirestore({Settings? settings}) async {
   // CRITICAL: Ensure emulator is running to prevent hitting production
   if (!Environment.isFirestoreEmulatorEnabled()) {
     throw StateError(
@@ -140,10 +135,7 @@ Future<Firestore> createFirestore({
   // Use unique app name for each test to avoid interference
   final appName = 'firestore-test-${DateTime.now().microsecondsSinceEpoch}';
 
-  final firestore = Firestore(
-    createApp(name: appName),
-    settings: settings,
-  );
+  final firestore = Firestore(createApp(name: appName), settings: settings);
 
   addTearDown(() async {
     try {

@@ -16,9 +16,7 @@ Future<R> _v1<R>(
   Future<R> Function(iam_credentials_v1.IAMCredentialsApi client) fn,
 ) async {
   try {
-    return await fn(
-      iam_credentials_v1.IAMCredentialsApi(await app.client),
-    );
+    return await fn(iam_credentials_v1.IAMCredentialsApi(await app.client));
   } on iam_credentials_v1.ApiRequestError catch (e) {
     throw CryptoSignerException(
       CryptoSignerErrorCode.serverError,
@@ -51,7 +49,7 @@ abstract class CryptoSigner {
 
 class _IAMSigner implements CryptoSigner {
   _IAMSigner(this.app)
-      : _serviceAccountId = app.options.credential?.serviceAccountId;
+    : _serviceAccountId = app.options.credential?.serviceAccountId;
 
   @override
   String get algorithm => 'RS256';
@@ -69,9 +67,7 @@ class _IAMSigner implements CryptoSigner {
       Uri.parse(
         'http://metadata/computeMetadata/v1/instance/service-accounts/default/email',
       ),
-      headers: {
-        'Metadata-Flavor': 'Google',
-      },
+      headers: {'Metadata-Flavor': 'Google'},
     );
 
     if (response.statusCode != 200) {
@@ -92,9 +88,7 @@ class _IAMSigner implements CryptoSigner {
 
     final response = await _v1(app, (client) {
       return client.projects.serviceAccounts.signBlob(
-        iam_credentials_v1.SignBlobRequest(
-          payload: base64Encode(buffer),
-        ),
+        iam_credentials_v1.SignBlobRequest(payload: base64Encode(buffer)),
         'projects/-/serviceAccounts/$serviceAccount',
       );
     });

@@ -31,10 +31,8 @@ const _emailActionRequestTypes = {
 };
 
 abstract class _AbstractAuthRequestHandler {
-  _AbstractAuthRequestHandler(
-    this.app, {
-    @internal AuthHttpClient? httpClient,
-  }) : _httpClient = httpClient ?? AuthHttpClient(app);
+  _AbstractAuthRequestHandler(this.app, {@internal AuthHttpClient? httpClient})
+    : _httpClient = httpClient ?? AuthHttpClient(app);
 
   final FirebaseApp app;
   final AuthHttpClient _httpClient;
@@ -86,7 +84,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Lists the OIDC configurations (single batch only) with a size of maxResults and starting from
   /// the offset as specified by pageToken.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListOAuthIdpConfigsResponse>
-      listOAuthIdpConfigs({int? maxResults, String? pageToken}) async {
+  listOAuthIdpConfigs({int? maxResults, String? pageToken}) async {
     final response = await _httpClient.listOAuthIdpConfigs(
       pageSize: maxResults ?? _maxListProviderConfigurationPageSize,
       pageToken: pageToken,
@@ -101,7 +99,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Lists the SAML configurations (single batch only) with a size of maxResults and starting from
   /// the offset as specified by pageToken.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListInboundSamlConfigsResponse>
-      listInboundSamlConfigs({int? maxResults, String? pageToken}) async {
+  listInboundSamlConfigs({int? maxResults, String? pageToken}) async {
     final response = await _httpClient.listInboundSamlConfigs(
       pageSize: maxResults ?? _maxListProviderConfigurationPageSize,
       pageToken: pageToken,
@@ -115,10 +113,9 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Creates a new OIDC provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      createOAuthIdpConfig(
-    OIDCAuthProviderConfig options,
-  ) async {
-    final request = _OIDCConfig.buildServerRequest(options) ??
+  createOAuthIdpConfig(OIDCAuthProviderConfig options) async {
+    final request =
+        _OIDCConfig.buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig();
 
     final response = await _httpClient.createOAuthIdpConfig(request);
@@ -137,10 +134,9 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Creates a new SAML provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      createInboundSamlConfig(
-    SAMLAuthProviderConfig options,
-  ) async {
-    final request = _SAMLConfig.buildServerRequest(options) ??
+  createInboundSamlConfig(SAMLAuthProviderConfig options) async {
+    final request =
+        _SAMLConfig.buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig();
 
     final response = await _httpClient.createInboundSamlConfig(request);
@@ -193,8 +189,9 @@ abstract class _AbstractAuthRequestHandler {
     final request = auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoRequest(
       localId: uid,
       // validSince is in UTC seconds.
-      validSince:
-          (DateTime.now().millisecondsSinceEpoch / 1000).floor().toString(),
+      validSince: (DateTime.now().millisecondsSinceEpoch / 1000)
+          .floor()
+          .toString(),
     );
 
     final response = await _httpClient.setAccountInfo(request);
@@ -203,7 +200,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Updates an existing OIDC provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      updateOAuthIdpConfig(
+  updateOAuthIdpConfig(
     String providerId,
     OIDCUpdateAuthProviderRequest options,
   ) async {
@@ -237,7 +234,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Updates an existing SAML provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      updateInboundSamlConfig(
+  updateInboundSamlConfig(
     String providerId,
     SAMLUpdateAuthProviderRequest options,
   ) async {
@@ -269,18 +266,16 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Looks up an OIDC provider configuration by provider ID.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      getOAuthIdpConfig(String providerId) {
+  getOAuthIdpConfig(String providerId) {
     if (!_OIDCConfig.isProviderId(providerId)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidProviderId,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
     return _httpClient.getOauthIdpConfig(providerId);
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      getInboundSamlConfig(String providerId) {
+  getInboundSamlConfig(String providerId) {
     if (!_SAMLConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
@@ -291,9 +286,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Deletes an OIDC configuration identified by a providerId.
   Future<void> deleteOAuthIdpConfig(String providerId) {
     if (!_OIDCConfig.isProviderId(providerId)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidProviderId,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
     return _httpClient.deleteOauthIdpConfig(providerId);
@@ -302,9 +295,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Deletes a SAML configuration identified by a providerId.
   Future<void> deleteInboundSamlConfig(String providerId) {
     if (!_SAMLConfig.isProviderId(providerId)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidProviderId,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
     return _httpClient.deleteInboundSamlConfig(providerId);
@@ -318,9 +309,9 @@ abstract class _AbstractAuthRequestHandler {
     final validDuration = expiresIn / 1000;
     final request =
         auth1.GoogleCloudIdentitytoolkitV1CreateSessionCookieRequest(
-      idToken: idToken,
-      validDuration: validDuration.toString(),
-    );
+          idToken: idToken,
+          validDuration: validDuration.toString(),
+        );
 
     return _httpClient.v1((client, projectId) async {
       // TODO handle tenant ID
@@ -422,10 +413,7 @@ abstract class _AbstractAuthRequestHandler {
   /// users and the next page token if available. For the last page, an empty list of users
   /// and no page token are returned.
   Future<auth1.GoogleCloudIdentitytoolkitV1DownloadAccountResponse>
-      downloadAccount({
-    required int? maxResults,
-    required String? pageToken,
-  }) {
+  downloadAccount({required int? maxResults, required String? pageToken}) {
     maxResults ??= _maxDownloadAccountPageSize;
     if (pageToken != null && pageToken.isEmpty) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
@@ -464,10 +452,7 @@ abstract class _AbstractAuthRequestHandler {
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsResponse>
-      deleteAccounts(
-    List<String> uids, {
-    required bool force,
-  }) async {
+  deleteAccounts(List<String> uids, {required bool force}) async {
     if (uids.isEmpty) {
       return auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsResponse();
     } else if (uids.length > _maxDeleteAccountsBatchSize) {
@@ -529,7 +514,7 @@ abstract class _AbstractAuthRequestHandler {
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoResponse>
-      _accountsLookup(
+  _accountsLookup(
     auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest request,
   ) async {
     // TODO handle tenants
@@ -571,9 +556,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Looks up a user by phone number.
   Future<auth1.GoogleCloudIdentitytoolkitV1UserInfo>
-      getAccountInfoByPhoneNumber(
-    String phoneNumber,
-  ) async {
+  getAccountInfoByPhoneNumber(String phoneNumber) async {
     assertIsPhoneNumber(phoneNumber);
 
     final response = await _accountsLookup(
@@ -586,7 +569,7 @@ abstract class _AbstractAuthRequestHandler {
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1UserInfo>
-      getAccountInfoByFederatedUid({
+  getAccountInfoByFederatedUid({
     required String providerId,
     required String rawId,
   }) async {
@@ -610,9 +593,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Looks up multiple users by their identifiers (uid, email, etc).
   Future<auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoResponse>
-      getAccountInfoByIdentifiers(
-    List<UserIdentifier> identifiers,
-  ) async {
+  getAccountInfoByIdentifiers(List<UserIdentifier> identifiers) async {
     if (identifiers.isEmpty) {
       return auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoResponse(
         users: [],
@@ -644,8 +625,9 @@ abstract class _AbstractAuthRequestHandler {
     }
 
     // TODO handle tenants
-    return _httpClient
-        .v1((client, projectId) => client.accounts.lookup(request));
+    return _httpClient.v1(
+      (client, projectId) => client.accounts.lookup(request),
+    );
   }
 
   /// Edits an existing user.
@@ -710,8 +692,8 @@ abstract class _AbstractAuthRequestHandler {
     List<String>? deleteProvider;
     if (isPhoneNumberDeleted) deleteProvider = ['phone'];
 
-    final linkProviderUserInfo =
-        properties.providerToLink?._toProviderUserInfo();
+    final linkProviderUserInfo = properties.providerToLink
+        ?._toProviderUserInfo();
 
     final providerToUnlink = properties.providersToUnlink;
     if (providerToUnlink != null) {
@@ -746,15 +728,12 @@ abstract class _AbstractAuthRequestHandler {
 }
 
 class AuthRequestHandler extends _AbstractAuthRequestHandler {
-  AuthRequestHandler(
-    super.app, {
-    @internal super.httpClient,
-  });
+  AuthRequestHandler(super.app, {@internal super.httpClient});
 
-// TODO getProjectConfig
-// TODO updateProjectConfig
-// TODO getTenant
-// TODO listTenants
-// TODO deleteTenant
-// TODO updateTenant
+  // TODO getProjectConfig
+  // TODO updateProjectConfig
+  // TODO getTenant
+  // TODO listTenants
+  // TODO deleteTenant
+  // TODO updateTenant
 }

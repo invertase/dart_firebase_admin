@@ -15,23 +15,14 @@ void main() {
     };
 
     test('valid kid should pass', () async {
-      final jwt = JWT(
-        payload,
-        header: {'kid': 'key1'},
-      );
-      final token = jwt.sign(
-        privateKey,
-        algorithm: JWTAlgorithm.RS256,
-      );
+      final jwt = JWT(payload, header: {'kid': 'key1'});
+      final token = jwt.sign(privateKey, algorithm: JWTAlgorithm.RS256);
       await PublicKeySignatureVerifier(keyFetcher).verify(token);
     });
 
     test('no kid should throw', () async {
       final jwt = JWT(payload);
-      final token = jwt.sign(
-        privateKey,
-        algorithm: JWTAlgorithm.RS256,
-      );
+      final token = jwt.sign(privateKey, algorithm: JWTAlgorithm.RS256);
       await expectLater(
         PublicKeySignatureVerifier(keyFetcher).verify(token),
         throwsA(isA<JwtException>()),
@@ -39,14 +30,8 @@ void main() {
     });
 
     test('invalid kid should throw', () async {
-      final jwt = JWT(
-        payload,
-        header: {'kid': 'key2'},
-      );
-      final token = jwt.sign(
-        privateKey,
-        algorithm: JWTAlgorithm.RS256,
-      );
+      final jwt = JWT(payload, header: {'kid': 'key2'});
+      final token = jwt.sign(privateKey, algorithm: JWTAlgorithm.RS256);
       await expectLater(
         PublicKeySignatureVerifier(keyFetcher).verify(token),
         throwsA(isA<JwtException>()),
@@ -74,7 +59,8 @@ void main() {
       final payload = {
         'user_id': '123',
         'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        'exp': DateTime.now()
+        'exp':
+            DateTime.now()
                 .add(const Duration(hours: 1))
                 .millisecondsSinceEpoch ~/
             1000,
@@ -82,14 +68,9 @@ void main() {
 
       // Create token with 'none' algorithm (emulator tokens)
       final jwt = JWT(payload);
-      final token = jwt.sign(
-        SecretKey(''),
-      );
+      final token = jwt.sign(SecretKey(''));
 
-      await expectLater(
-        verifier.verify(token),
-        completes,
-      );
+      await expectLater(verifier.verify(token), completes);
     });
   });
 
@@ -136,11 +117,13 @@ void main() {
     test('should throw JwtException for expired tokens', () {
       final payload = {
         'sub': 'user123',
-        'exp': DateTime.now()
+        'exp':
+            DateTime.now()
                 .subtract(const Duration(hours: 1))
                 .millisecondsSinceEpoch ~/
             1000,
-        'iat': DateTime.now()
+        'iat':
+            DateTime.now()
                 .subtract(const Duration(hours: 2))
                 .millisecondsSinceEpoch ~/
             1000,
@@ -165,7 +148,8 @@ void main() {
         'sub': 'user123',
         'iss': 'https://example.com',
         'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        'exp': DateTime.now()
+        'exp':
+            DateTime.now()
                 .add(const Duration(hours: 1))
                 .millisecondsSinceEpoch ~/
             1000,
@@ -187,7 +171,8 @@ void main() {
       final payload = {
         'sub': 'user123',
         'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        'exp': DateTime.now()
+        'exp':
+            DateTime.now()
                 .add(const Duration(hours: 1))
                 .millisecondsSinceEpoch ~/
             1000,
@@ -196,11 +181,8 @@ void main() {
       final token = jwt.sign(SecretKey('secret'));
 
       expect(
-        () => verifyJwtSignature(
-          token,
-          SecretKey('secret'),
-          subject: 'user123',
-        ),
+        () =>
+            verifyJwtSignature(token, SecretKey('secret'), subject: 'user123'),
         returnsNormally,
       );
     });

@@ -64,18 +64,12 @@ void main() {
           CryptoSignerErrorCode.invalidArgument,
           equals('invalid-argument'),
         );
-        expect(
-          CryptoSignerErrorCode.internalError,
-          equals('internal-error'),
-        );
+        expect(CryptoSignerErrorCode.internalError, equals('internal-error'));
         expect(
           CryptoSignerErrorCode.invalidCredential,
           equals('invalid-credential'),
         );
-        expect(
-          CryptoSignerErrorCode.serverError,
-          equals('server-error'),
-        );
+        expect(CryptoSignerErrorCode.serverError, equals('server-error'));
       });
     });
   });

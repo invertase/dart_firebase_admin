@@ -20,10 +20,7 @@ class AppRegistry {
   /// - An app with the same name exists but with different configuration
   /// - An app with the same name exists but was initialized differently
   ///   (one from env, one explicitly)
-  FirebaseApp initializeApp({
-    AppOptions? options,
-    String? name,
-  }) {
+  FirebaseApp initializeApp({AppOptions? options, String? name}) {
     name ??= _defaultAppName;
     _validateAppName(name);
 

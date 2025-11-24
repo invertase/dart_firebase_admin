@@ -40,8 +40,10 @@ void main() {
       final callback = invocation.positionalArguments.first as Function;
 
       // Pass both the API client and projectId to match the v1() signature
-      final result =
-          await Function.apply(callback, [messagingApiMock, projectId]);
+      final result = await Function.apply(callback, [
+        messagingApiMock,
+        projectId,
+      ]);
       return result as T;
     });
   }
@@ -58,8 +60,10 @@ void main() {
     // Use unique app name for each test to avoid interference
     final appName = 'messaging-test-${DateTime.now().microsecondsSinceEpoch}';
     final app = createApp(name: appName);
-    requestHandler =
-        FirebaseMessagingRequestHandler(app, httpClient: httpClient);
+    requestHandler = FirebaseMessagingRequestHandler(
+      app,
+      httpClient: httpClient,
+    );
     messaging = Messaging(app, requestHandler: requestHandler);
   });
 
@@ -93,8 +97,11 @@ void main() {
         await expectLater(
           () => handler.send(TokenMessage(token: '123')),
           throwsA(
-            isA<FirebaseMessagingAdminException>()
-                .having((e) => e.errorCode, 'errorCode', error),
+            isA<FirebaseMessagingAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              error,
+            ),
           ),
         );
       });
@@ -115,9 +122,7 @@ void main() {
                 ),
               ),
               400,
-              headers: {
-                'content-type': 'application/json',
-              },
+              headers: {'content-type': 'application/json'},
             ),
           ),
         );
@@ -141,13 +146,11 @@ void main() {
     setUp(() => mockV1<String>());
 
     test('should send a message', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
-      final result = await messaging.send(
-        TopicMessage(topic: 'test'),
-      );
+      final result = await messaging.send(TopicMessage(topic: 'test'));
 
       expect(result, 'test');
 
@@ -163,9 +166,9 @@ void main() {
     });
 
     test('throws internal error if response has no name', () {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message()),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message()));
 
       expect(
         () => messaging.send(TopicMessage(topic: 'test')),
@@ -182,14 +185,11 @@ void main() {
     });
 
     test('dryRun', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
-      await messaging.send(
-        TopicMessage(topic: 'test'),
-        dryRun: true,
-      );
+      await messaging.send(TopicMessage(topic: 'test'), dryRun: true);
 
       final capture = verify(() => messages.send(captureAny(), captureAny()))
         ..called(1);
@@ -200,9 +200,9 @@ void main() {
     });
 
     test('supports booleans', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
       await messaging.send(
         TopicMessage(
@@ -243,25 +243,18 @@ void main() {
         1,
       );
 
-      expect(
-        request.message!.webpush!.notification!['renotify'],
-        1,
-      );
+      expect(request.message!.webpush!.notification!['renotify'], 1);
     });
 
     test('supports null alert/sound', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
       await messaging.send(
         TopicMessage(
           topic: 'test',
-          apns: ApnsConfig(
-            payload: ApnsPayload(
-              aps: Aps(),
-            ),
-          ),
+          apns: ApnsConfig(payload: ApnsPayload(aps: Aps())),
           webpush: WebpushConfig(
             notification: WebpushNotification(renotify: true),
           ),
@@ -272,10 +265,7 @@ void main() {
         ..called(1);
       final request = capture.captured.first as fmc1.SendMessageRequest;
 
-      expect(
-        request.message!.apns!.payload!['aps'],
-        <String, Object?>{},
-      );
+      expect(request.message!.apns!.payload!['aps'], <String, Object?>{});
     });
   });
 
@@ -309,19 +299,16 @@ void main() {
     });
 
     test('works', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (i) {
-          final request =
-              i.positionalArguments.first as fmc1.SendMessageRequest;
-          switch (request.message?.topic) {
-            case 'test':
-              // Voluntary cause "test" to resolve after "test2"
-              return Future(() => Future.value(fmc1.Message(name: 'test')));
-            case _:
-              return Future.error('error');
-          }
-        },
-      );
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        final request = i.positionalArguments.first as fmc1.SendMessageRequest;
+        switch (request.message?.topic) {
+          case 'test':
+            // Voluntary cause "test" to resolve after "test2"
+            return Future(() => Future.value(fmc1.Message(name: 'test')));
+          case _:
+            return Future.error('error');
+        }
+      });
 
       final result = await messaging.sendEach([
         TopicMessage(topic: 'test'),
@@ -342,8 +329,11 @@ void main() {
             .having(
               (r) => r.error,
               'error',
-              isA<FirebaseMessagingAdminException>()
-                  .having((e) => e.message, 'message', 'error'),
+              isA<FirebaseMessagingAdminException>().having(
+                (e) => e.message,
+                'message',
+                'error',
+              ),
             ),
       ]);
 
@@ -361,9 +351,9 @@ void main() {
     });
 
     test('dry run', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (i) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((i) => Future.value(fmc1.Message(name: 'test')));
 
       await messaging.sendEach(dryRun: true, [
         TopicMessage(topic: 'test'),

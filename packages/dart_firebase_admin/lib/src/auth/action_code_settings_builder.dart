@@ -80,13 +80,13 @@ class ActionCodeSettings {
 
 class _ActionCodeSettingsBuilder {
   _ActionCodeSettingsBuilder(ActionCodeSettings actionCodeSettings)
-      : _continueUrl = actionCodeSettings.url,
-        _canHandleCodeInApp = actionCodeSettings.handleCodeInApp ?? false,
-        _dynamicLinkDomain = actionCodeSettings.dynamicLinkDomain,
-        _ibi = actionCodeSettings.iOS?.bundleId,
-        _apn = actionCodeSettings.android?.packageName,
-        _amv = actionCodeSettings.android?.minimumVersion,
-        _installApp = actionCodeSettings.android?.installApp ?? false {
+    : _continueUrl = actionCodeSettings.url,
+      _canHandleCodeInApp = actionCodeSettings.handleCodeInApp ?? false,
+      _dynamicLinkDomain = actionCodeSettings.dynamicLinkDomain,
+      _ibi = actionCodeSettings.iOS?.bundleId,
+      _apn = actionCodeSettings.android?.packageName,
+      _amv = actionCodeSettings.android?.minimumVersion,
+      _installApp = actionCodeSettings.android?.installApp ?? false {
     if (Uri.tryParse(actionCodeSettings.url) == null) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidContinueUri);
     }

@@ -67,10 +67,7 @@ class FirestoreHttpClient {
     );
     return _run(
       (client) => fn(
-        firestore1.FirestoreApi(
-          client,
-          rootUrl: _firestoreApiHost.toString(),
-        ),
+        firestore1.FirestoreApi(client, rootUrl: _firestoreApiHost.toString()),
         projectId,
       ),
     );

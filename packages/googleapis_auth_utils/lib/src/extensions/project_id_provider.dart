@@ -95,11 +95,12 @@ final class _ProjectIdProvider {
   /// Attempts to get project ID from gcloud config.
   Future<String?> _getGcloudProjectId() async {
     try {
-      final result = await Process.run(
-        'gcloud',
-        ['config', 'config-helper', '--format', 'json'],
-        runInShell: true,
-      );
+      final result = await Process.run('gcloud', [
+        'config',
+        'config-helper',
+        '--format',
+        'json',
+      ], runInShell: true);
 
       if (result.exitCode == 0) {
         final json =

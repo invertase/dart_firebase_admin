@@ -2,10 +2,8 @@ part of '../auth.dart';
 
 class FirebaseAuthAdminException extends FirebaseAdminException
     implements Exception {
-  FirebaseAuthAdminException(
-    this.errorCode, [
-    String? message,
-  ]) : super('auth', errorCode.code, message ?? errorCode.message);
+  FirebaseAuthAdminException(this.errorCode, [String? message])
+    : super('auth', errorCode.code, message ?? errorCode.message);
 
   factory FirebaseAuthAdminException.fromServerError({
     required String serverErrorCode,
@@ -20,7 +18,8 @@ class FirebaseAuthAdminException extends FirebaseAdminException
       serverErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
     }
     // If not found, default to internal error.
-    final error = authServerToClientCode[serverErrorCode] ??
+    final error =
+        authServerToClientCode[serverErrorCode] ??
         AuthClientErrorCode.internalError;
     // Server detailed message should have highest priority.
     customMessage = customMessage ?? error.message;
@@ -263,7 +262,8 @@ enum AuthClientErrorCode {
   ),
   invalidDynamicLinkDomain(
     code: 'invalid-dynamic-link-domain',
-    message: 'The provided dynamic link domain is not configured or authorized '
+    message:
+        'The provided dynamic link domain is not configured or authorized '
         'for the current project.',
   ),
   invalidEmailVerified(
@@ -290,7 +290,8 @@ enum AuthClientErrorCode {
   ),
   invalidHashAlgorithm(
     code: 'invalid-hash-algorithm',
-    message: 'The hash algorithm must match one of the strings in the list of '
+    message:
+        'The hash algorithm must match one of the strings in the list of '
         'supported algorithms.',
   ),
   invalidHashBlockSize(
@@ -362,7 +363,8 @@ enum AuthClientErrorCode {
   ),
   invalidProjectId(
     code: 'invalid-project-id',
-    message: 'Invalid parent project. '
+    message:
+        'Invalid parent project. '
         "Either parent project doesn't exist or didn't enable multi-tenancy.",
   ),
   invalidProviderData(
@@ -419,7 +421,8 @@ enum AuthClientErrorCode {
   ),
   missingAndroidPackageName(
     code: 'missing-android-pkg-name',
-    message: 'An Android Package Name must be provided if the Android App is '
+    message:
+        'An Android Package Name must be provided if the Android App is '
         'required to be installed.',
   ),
   missingConfig(
@@ -451,7 +454,8 @@ enum AuthClientErrorCode {
   ),
   missingHashAlgorithm(
     code: 'missing-hash-algorithm',
-    message: 'Importing users with password hashes requires that the hashing '
+    message:
+        'Importing users with password hashes requires that the hashing '
         'algorithm and its parameters be provided.',
   ),
   missingOauthClientId(
@@ -566,14 +570,8 @@ enum AuthClientErrorCode {
     message:
         'There is no user record corresponding to the provided identifier.',
   ),
-  notFound(
-    code: 'not-found',
-    message: 'The requested resource was not found.',
-  ),
-  userDisabled(
-    code: 'user-disabled',
-    message: 'The user record is disabled.',
-  ),
+  notFound(code: 'not-found', message: 'The requested resource was not found.'),
+  userDisabled(code: 'user-disabled', message: 'The user record is disabled.'),
   userNotDisabled(
     code: 'user-not-disabled',
     message:
@@ -593,10 +591,7 @@ enum AuthClientErrorCode {
     message: 'reCAPTCHA enterprise is not enabled.',
   );
 
-  const AuthClientErrorCode({
-    required this.code,
-    required this.message,
-  });
+  const AuthClientErrorCode({required this.code, required this.message});
 
   final String code;
   final String message;

@@ -32,10 +32,7 @@ class AppCheckTokenGenerator {
     try {
       final account = await signer.getAccountId();
 
-      final header = {
-        'alg': signer.algorithm,
-        'typ': 'JWT',
-      };
+      final header = {'alg': signer.algorithm, 'typ': 'JWT'};
       final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
       final body = {
         'iss': account,

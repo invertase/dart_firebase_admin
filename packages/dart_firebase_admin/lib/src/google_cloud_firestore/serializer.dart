@@ -56,9 +56,7 @@ class _Serializer {
         return timestamp._toProto();
 
       case null:
-        return firestore1.Value(
-          nullValue: 'NULL_VALUE',
-        );
+        return firestore1.Value(nullValue: 'NULL_VALUE');
 
       case _Serializable():
         return value._toProto();
@@ -72,9 +70,7 @@ class _Serializer {
 
       case Map():
         if (value.isEmpty) {
-          return firestore1.Value(
-            mapValue: firestore1.MapValue(fields: {}),
-          );
+          return firestore1.Value(mapValue: firestore1.MapValue(fields: {}));
         }
 
         final fields = encodeFields(Map.from(value));

@@ -49,7 +49,7 @@ class Firestore implements FirebaseService {
   }
 
   Firestore._(this.app, {Settings? settings})
-      : _settings = settings ?? Settings();
+    : _settings = settings ?? Settings();
 
   /// Returns the Database ID for this Firestore instance.
   String get _databaseId => _settings.databaseId ?? '(default)';
@@ -323,7 +323,7 @@ class ReadOnlyTransactionOptions extends TransactionOptions {
 
 class ReadWriteTransactionOptions extends TransactionOptions {
   ReadWriteTransactionOptions({int maxAttempts = 5})
-      : _maxAttempts = maxAttempts;
+    : _maxAttempts = maxAttempts;
 
   final int _maxAttempts;
 

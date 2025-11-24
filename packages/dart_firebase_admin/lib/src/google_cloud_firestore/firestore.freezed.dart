@@ -12,7 +12,8 @@ part of 'firestore.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods',
+);
 
 /// @nodoc
 mixin _$Settings {
@@ -50,20 +51,20 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
 
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? databaseId = freezed,
-    Object? useBigInt = freezed,
-  }) {
-    return _then(_value.copyWith(
-      databaseId: freezed == databaseId
-          ? _value.databaseId
-          : databaseId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      useBigInt: freezed == useBigInt
-          ? _value.useBigInt
-          : useBigInt // ignore: cast_nullable_to_non_nullable
-              as bool?,
-    ) as $Val);
+  $Res call({Object? databaseId = freezed, Object? useBigInt = freezed}) {
+    return _then(
+      _value.copyWith(
+            databaseId: freezed == databaseId
+                ? _value.databaseId
+                : databaseId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            useBigInt: freezed == useBigInt
+                ? _value.useBigInt
+                : useBigInt // ignore: cast_nullable_to_non_nullable
+                      as bool?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -71,8 +72,9 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
 abstract class _$$SettingsImplCopyWith<$Res>
     implements $SettingsCopyWith<$Res> {
   factory _$$SettingsImplCopyWith(
-          _$SettingsImpl value, $Res Function(_$SettingsImpl) then) =
-      __$$SettingsImplCopyWithImpl<$Res>;
+    _$SettingsImpl value,
+    $Res Function(_$SettingsImpl) then,
+  ) = __$$SettingsImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String? databaseId, bool? useBigInt});
@@ -83,25 +85,25 @@ class __$$SettingsImplCopyWithImpl<$Res>
     extends _$SettingsCopyWithImpl<$Res, _$SettingsImpl>
     implements _$$SettingsImplCopyWith<$Res> {
   __$$SettingsImplCopyWithImpl(
-      _$SettingsImpl _value, $Res Function(_$SettingsImpl) _then)
-      : super(_value, _then);
+    _$SettingsImpl _value,
+    $Res Function(_$SettingsImpl) _then,
+  ) : super(_value, _then);
 
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? databaseId = freezed,
-    Object? useBigInt = freezed,
-  }) {
-    return _then(_$SettingsImpl(
-      databaseId: freezed == databaseId
-          ? _value.databaseId
-          : databaseId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      useBigInt: freezed == useBigInt
-          ? _value.useBigInt
-          : useBigInt // ignore: cast_nullable_to_non_nullable
-              as bool?,
-    ));
+  $Res call({Object? databaseId = freezed, Object? useBigInt = freezed}) {
+    return _then(
+      _$SettingsImpl(
+        databaseId: freezed == databaseId
+            ? _value.databaseId
+            : databaseId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        useBigInt: freezed == useBigInt
+            ? _value.useBigInt
+            : useBigInt // ignore: cast_nullable_to_non_nullable
+                  as bool?,
+      ),
+    );
   }
 }
 
@@ -152,11 +154,9 @@ abstract class _Settings implements Settings {
       _$SettingsImpl;
 
   @override
-
   /// The database name. If omitted, the default database will be used.
   String? get databaseId;
   @override
-
   /// Whether to use `BigInt` for integer types when deserializing Firestore
   /// Documents. Regardless of magnitude, all integer values are returned as
   /// `BigInt` to match the precision of the Firestore backend. Floating point
@@ -174,8 +174,9 @@ mixin _$QueryOptions<T> {
   String get collectionId => throw _privateConstructorUsedError;
   ({
     T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-    Map<String, Object?> Function(T) toFirestore
-  }) get converter => throw _privateConstructorUsedError;
+    Map<String, Object?> Function(T) toFirestore,
+  })
+  get converter => throw _privateConstructorUsedError;
   bool get allDescendants => throw _privateConstructorUsedError;
   List<_FilterInternal> get filters => throw _privateConstructorUsedError;
   List<_FieldOrder> get fieldOrders => throw _privateConstructorUsedError;
@@ -186,11 +187,11 @@ mixin _$QueryOptions<T> {
   LimitType? get limitType => throw _privateConstructorUsedError;
   int? get offset =>
       throw _privateConstructorUsedError; // Whether to select all documents under `parentPath`. By default, only
-// collections that match `collectionId` are selected.
+  // collections that match `collectionId` are selected.
   bool get kindless =>
       throw _privateConstructorUsedError; // Whether to require consistent documents when restarting the query. By
-// default, restarting the query uses the readTime offset of the original
-// query to provide consistent results.
+  // default, restarting the query uses the readTime offset of the original
+  // query to provide consistent results.
   bool get requireConsistency => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
@@ -201,27 +202,30 @@ mixin _$QueryOptions<T> {
 /// @nodoc
 abstract class _$QueryOptionsCopyWith<T, $Res> {
   factory _$QueryOptionsCopyWith(
-          _QueryOptions<T> value, $Res Function(_QueryOptions<T>) then) =
-      __$QueryOptionsCopyWithImpl<T, $Res, _QueryOptions<T>>;
+    _QueryOptions<T> value,
+    $Res Function(_QueryOptions<T>) then,
+  ) = __$QueryOptionsCopyWithImpl<T, $Res, _QueryOptions<T>>;
   @useResult
-  $Res call(
-      {_ResourcePath parentPath,
-      String collectionId,
-      ({
-        T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-        Map<String, Object?> Function(T) toFirestore
-      }) converter,
-      bool allDescendants,
-      List<_FilterInternal> filters,
-      List<_FieldOrder> fieldOrders,
-      _QueryCursor? startAt,
-      _QueryCursor? endAt,
-      int? limit,
-      firestore1.Projection? projection,
-      LimitType? limitType,
-      int? offset,
-      bool kindless,
-      bool requireConsistency});
+  $Res call({
+    _ResourcePath parentPath,
+    String collectionId,
+    ({
+      T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+      Map<String, Object?> Function(T) toFirestore,
+    })
+    converter,
+    bool allDescendants,
+    List<_FilterInternal> filters,
+    List<_FieldOrder> fieldOrders,
+    _QueryCursor? startAt,
+    _QueryCursor? endAt,
+    int? limit,
+    firestore1.Projection? projection,
+    LimitType? limitType,
+    int? offset,
+    bool kindless,
+    bool requireConsistency,
+  });
 }
 
 /// @nodoc
@@ -252,106 +256,113 @@ class __$QueryOptionsCopyWithImpl<T, $Res, $Val extends _QueryOptions<T>>
     Object? kindless = null,
     Object? requireConsistency = null,
   }) {
-    return _then(_value.copyWith(
-      parentPath: null == parentPath
-          ? _value.parentPath
-          : parentPath // ignore: cast_nullable_to_non_nullable
-              as _ResourcePath,
-      collectionId: null == collectionId
-          ? _value.collectionId
-          : collectionId // ignore: cast_nullable_to_non_nullable
-              as String,
-      converter: null == converter
-          ? _value.converter
-          : converter // ignore: cast_nullable_to_non_nullable
-              as ({
-              T Function(
-                  QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-              Map<String, Object?> Function(T) toFirestore
-            }),
-      allDescendants: null == allDescendants
-          ? _value.allDescendants
-          : allDescendants // ignore: cast_nullable_to_non_nullable
-              as bool,
-      filters: null == filters
-          ? _value.filters
-          : filters // ignore: cast_nullable_to_non_nullable
-              as List<_FilterInternal>,
-      fieldOrders: null == fieldOrders
-          ? _value.fieldOrders
-          : fieldOrders // ignore: cast_nullable_to_non_nullable
-              as List<_FieldOrder>,
-      startAt: freezed == startAt
-          ? _value.startAt
-          : startAt // ignore: cast_nullable_to_non_nullable
-              as _QueryCursor?,
-      endAt: freezed == endAt
-          ? _value.endAt
-          : endAt // ignore: cast_nullable_to_non_nullable
-              as _QueryCursor?,
-      limit: freezed == limit
-          ? _value.limit
-          : limit // ignore: cast_nullable_to_non_nullable
-              as int?,
-      projection: freezed == projection
-          ? _value.projection
-          : projection // ignore: cast_nullable_to_non_nullable
-              as firestore1.Projection?,
-      limitType: freezed == limitType
-          ? _value.limitType
-          : limitType // ignore: cast_nullable_to_non_nullable
-              as LimitType?,
-      offset: freezed == offset
-          ? _value.offset
-          : offset // ignore: cast_nullable_to_non_nullable
-              as int?,
-      kindless: null == kindless
-          ? _value.kindless
-          : kindless // ignore: cast_nullable_to_non_nullable
-              as bool,
-      requireConsistency: null == requireConsistency
-          ? _value.requireConsistency
-          : requireConsistency // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            parentPath: null == parentPath
+                ? _value.parentPath
+                : parentPath // ignore: cast_nullable_to_non_nullable
+                      as _ResourcePath,
+            collectionId: null == collectionId
+                ? _value.collectionId
+                : collectionId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            converter: null == converter
+                ? _value.converter
+                : converter // ignore: cast_nullable_to_non_nullable
+                      as ({
+                        T Function(QueryDocumentSnapshot<Map<String, Object?>>)
+                        fromFirestore,
+                        Map<String, Object?> Function(T) toFirestore,
+                      }),
+            allDescendants: null == allDescendants
+                ? _value.allDescendants
+                : allDescendants // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            filters: null == filters
+                ? _value.filters
+                : filters // ignore: cast_nullable_to_non_nullable
+                      as List<_FilterInternal>,
+            fieldOrders: null == fieldOrders
+                ? _value.fieldOrders
+                : fieldOrders // ignore: cast_nullable_to_non_nullable
+                      as List<_FieldOrder>,
+            startAt: freezed == startAt
+                ? _value.startAt
+                : startAt // ignore: cast_nullable_to_non_nullable
+                      as _QueryCursor?,
+            endAt: freezed == endAt
+                ? _value.endAt
+                : endAt // ignore: cast_nullable_to_non_nullable
+                      as _QueryCursor?,
+            limit: freezed == limit
+                ? _value.limit
+                : limit // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            projection: freezed == projection
+                ? _value.projection
+                : projection // ignore: cast_nullable_to_non_nullable
+                      as firestore1.Projection?,
+            limitType: freezed == limitType
+                ? _value.limitType
+                : limitType // ignore: cast_nullable_to_non_nullable
+                      as LimitType?,
+            offset: freezed == offset
+                ? _value.offset
+                : offset // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            kindless: null == kindless
+                ? _value.kindless
+                : kindless // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            requireConsistency: null == requireConsistency
+                ? _value.requireConsistency
+                : requireConsistency // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$_QueryOptionsImplCopyWith<T, $Res>
     implements _$QueryOptionsCopyWith<T, $Res> {
-  factory _$$_QueryOptionsImplCopyWith(_$_QueryOptionsImpl<T> value,
-          $Res Function(_$_QueryOptionsImpl<T>) then) =
-      __$$_QueryOptionsImplCopyWithImpl<T, $Res>;
+  factory _$$_QueryOptionsImplCopyWith(
+    _$_QueryOptionsImpl<T> value,
+    $Res Function(_$_QueryOptionsImpl<T>) then,
+  ) = __$$_QueryOptionsImplCopyWithImpl<T, $Res>;
   @override
   @useResult
-  $Res call(
-      {_ResourcePath parentPath,
-      String collectionId,
-      ({
-        T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-        Map<String, Object?> Function(T) toFirestore
-      }) converter,
-      bool allDescendants,
-      List<_FilterInternal> filters,
-      List<_FieldOrder> fieldOrders,
-      _QueryCursor? startAt,
-      _QueryCursor? endAt,
-      int? limit,
-      firestore1.Projection? projection,
-      LimitType? limitType,
-      int? offset,
-      bool kindless,
-      bool requireConsistency});
+  $Res call({
+    _ResourcePath parentPath,
+    String collectionId,
+    ({
+      T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+      Map<String, Object?> Function(T) toFirestore,
+    })
+    converter,
+    bool allDescendants,
+    List<_FilterInternal> filters,
+    List<_FieldOrder> fieldOrders,
+    _QueryCursor? startAt,
+    _QueryCursor? endAt,
+    int? limit,
+    firestore1.Projection? projection,
+    LimitType? limitType,
+    int? offset,
+    bool kindless,
+    bool requireConsistency,
+  });
 }
 
 /// @nodoc
 class __$$_QueryOptionsImplCopyWithImpl<T, $Res>
     extends __$QueryOptionsCopyWithImpl<T, $Res, _$_QueryOptionsImpl<T>>
     implements _$$_QueryOptionsImplCopyWith<T, $Res> {
-  __$$_QueryOptionsImplCopyWithImpl(_$_QueryOptionsImpl<T> _value,
-      $Res Function(_$_QueryOptionsImpl<T>) _then)
-      : super(_value, _then);
+  __$$_QueryOptionsImplCopyWithImpl(
+    _$_QueryOptionsImpl<T> _value,
+    $Res Function(_$_QueryOptionsImpl<T>) _then,
+  ) : super(_value, _then);
 
   @pragma('vm:prefer-inline')
   @override
@@ -371,92 +382,94 @@ class __$$_QueryOptionsImplCopyWithImpl<T, $Res>
     Object? kindless = null,
     Object? requireConsistency = null,
   }) {
-    return _then(_$_QueryOptionsImpl<T>(
-      parentPath: null == parentPath
-          ? _value.parentPath
-          : parentPath // ignore: cast_nullable_to_non_nullable
-              as _ResourcePath,
-      collectionId: null == collectionId
-          ? _value.collectionId
-          : collectionId // ignore: cast_nullable_to_non_nullable
-              as String,
-      converter: null == converter
-          ? _value.converter
-          : converter // ignore: cast_nullable_to_non_nullable
-              as ({
-              T Function(
-                  QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-              Map<String, Object?> Function(T) toFirestore
-            }),
-      allDescendants: null == allDescendants
-          ? _value.allDescendants
-          : allDescendants // ignore: cast_nullable_to_non_nullable
-              as bool,
-      filters: null == filters
-          ? _value._filters
-          : filters // ignore: cast_nullable_to_non_nullable
-              as List<_FilterInternal>,
-      fieldOrders: null == fieldOrders
-          ? _value._fieldOrders
-          : fieldOrders // ignore: cast_nullable_to_non_nullable
-              as List<_FieldOrder>,
-      startAt: freezed == startAt
-          ? _value.startAt
-          : startAt // ignore: cast_nullable_to_non_nullable
-              as _QueryCursor?,
-      endAt: freezed == endAt
-          ? _value.endAt
-          : endAt // ignore: cast_nullable_to_non_nullable
-              as _QueryCursor?,
-      limit: freezed == limit
-          ? _value.limit
-          : limit // ignore: cast_nullable_to_non_nullable
-              as int?,
-      projection: freezed == projection
-          ? _value.projection
-          : projection // ignore: cast_nullable_to_non_nullable
-              as firestore1.Projection?,
-      limitType: freezed == limitType
-          ? _value.limitType
-          : limitType // ignore: cast_nullable_to_non_nullable
-              as LimitType?,
-      offset: freezed == offset
-          ? _value.offset
-          : offset // ignore: cast_nullable_to_non_nullable
-              as int?,
-      kindless: null == kindless
-          ? _value.kindless
-          : kindless // ignore: cast_nullable_to_non_nullable
-              as bool,
-      requireConsistency: null == requireConsistency
-          ? _value.requireConsistency
-          : requireConsistency // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$_QueryOptionsImpl<T>(
+        parentPath: null == parentPath
+            ? _value.parentPath
+            : parentPath // ignore: cast_nullable_to_non_nullable
+                  as _ResourcePath,
+        collectionId: null == collectionId
+            ? _value.collectionId
+            : collectionId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        converter: null == converter
+            ? _value.converter
+            : converter // ignore: cast_nullable_to_non_nullable
+                  as ({
+                    T Function(QueryDocumentSnapshot<Map<String, Object?>>)
+                    fromFirestore,
+                    Map<String, Object?> Function(T) toFirestore,
+                  }),
+        allDescendants: null == allDescendants
+            ? _value.allDescendants
+            : allDescendants // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        filters: null == filters
+            ? _value._filters
+            : filters // ignore: cast_nullable_to_non_nullable
+                  as List<_FilterInternal>,
+        fieldOrders: null == fieldOrders
+            ? _value._fieldOrders
+            : fieldOrders // ignore: cast_nullable_to_non_nullable
+                  as List<_FieldOrder>,
+        startAt: freezed == startAt
+            ? _value.startAt
+            : startAt // ignore: cast_nullable_to_non_nullable
+                  as _QueryCursor?,
+        endAt: freezed == endAt
+            ? _value.endAt
+            : endAt // ignore: cast_nullable_to_non_nullable
+                  as _QueryCursor?,
+        limit: freezed == limit
+            ? _value.limit
+            : limit // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        projection: freezed == projection
+            ? _value.projection
+            : projection // ignore: cast_nullable_to_non_nullable
+                  as firestore1.Projection?,
+        limitType: freezed == limitType
+            ? _value.limitType
+            : limitType // ignore: cast_nullable_to_non_nullable
+                  as LimitType?,
+        offset: freezed == offset
+            ? _value.offset
+            : offset // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        kindless: null == kindless
+            ? _value.kindless
+            : kindless // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        requireConsistency: null == requireConsistency
+            ? _value.requireConsistency
+            : requireConsistency // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
 class _$_QueryOptionsImpl<T> extends __QueryOptions<T> {
-  _$_QueryOptionsImpl(
-      {required this.parentPath,
-      required this.collectionId,
-      required this.converter,
-      required this.allDescendants,
-      required final List<_FilterInternal> filters,
-      required final List<_FieldOrder> fieldOrders,
-      this.startAt,
-      this.endAt,
-      this.limit,
-      this.projection,
-      this.limitType,
-      this.offset,
-      this.kindless = false,
-      this.requireConsistency = true})
-      : _filters = filters,
-        _fieldOrders = fieldOrders,
-        super._();
+  _$_QueryOptionsImpl({
+    required this.parentPath,
+    required this.collectionId,
+    required this.converter,
+    required this.allDescendants,
+    required final List<_FilterInternal> filters,
+    required final List<_FieldOrder> fieldOrders,
+    this.startAt,
+    this.endAt,
+    this.limit,
+    this.projection,
+    this.limitType,
+    this.offset,
+    this.kindless = false,
+    this.requireConsistency = true,
+  }) : _filters = filters,
+       _fieldOrders = fieldOrders,
+       super._();
 
   @override
   final _ResourcePath parentPath;
@@ -465,8 +478,9 @@ class _$_QueryOptionsImpl<T> extends __QueryOptions<T> {
   @override
   final ({
     T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-    Map<String, Object?> Function(T) toFirestore
-  }) converter;
+    Map<String, Object?> Function(T) toFirestore,
+  })
+  converter;
   @override
   final bool allDescendants;
   final List<_FilterInternal> _filters;
@@ -497,14 +511,14 @@ class _$_QueryOptionsImpl<T> extends __QueryOptions<T> {
   final LimitType? limitType;
   @override
   final int? offset;
-// Whether to select all documents under `parentPath`. By default, only
-// collections that match `collectionId` are selected.
+  // Whether to select all documents under `parentPath`. By default, only
+  // collections that match `collectionId` are selected.
   @override
   @JsonKey()
   final bool kindless;
-// Whether to require consistent documents when restarting the query. By
-// default, restarting the query uses the readTime offset of the original
-// query to provide consistent results.
+  // Whether to require consistent documents when restarting the query. By
+  // default, restarting the query uses the readTime offset of the original
+  // query to provide consistent results.
   @override
   @JsonKey()
   final bool requireConsistency;
@@ -528,8 +542,10 @@ class _$_QueryOptionsImpl<T> extends __QueryOptions<T> {
             (identical(other.allDescendants, allDescendants) ||
                 other.allDescendants == allDescendants) &&
             const DeepCollectionEquality().equals(other._filters, _filters) &&
-            const DeepCollectionEquality()
-                .equals(other._fieldOrders, _fieldOrders) &&
+            const DeepCollectionEquality().equals(
+              other._fieldOrders,
+              _fieldOrders,
+            ) &&
             (identical(other.startAt, startAt) || other.startAt == startAt) &&
             (identical(other.endAt, endAt) || other.endAt == endAt) &&
             (identical(other.limit, limit) || other.limit == limit) &&
@@ -546,49 +562,54 @@ class _$_QueryOptionsImpl<T> extends __QueryOptions<T> {
 
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      parentPath,
-      collectionId,
-      converter,
-      allDescendants,
-      const DeepCollectionEquality().hash(_filters),
-      const DeepCollectionEquality().hash(_fieldOrders),
-      startAt,
-      endAt,
-      limit,
-      projection,
-      limitType,
-      offset,
-      kindless,
-      requireConsistency);
+    runtimeType,
+    parentPath,
+    collectionId,
+    converter,
+    allDescendants,
+    const DeepCollectionEquality().hash(_filters),
+    const DeepCollectionEquality().hash(_fieldOrders),
+    startAt,
+    endAt,
+    limit,
+    projection,
+    limitType,
+    offset,
+    kindless,
+    requireConsistency,
+  );
 
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$_QueryOptionsImplCopyWith<T, _$_QueryOptionsImpl<T>> get copyWith =>
       __$$_QueryOptionsImplCopyWithImpl<T, _$_QueryOptionsImpl<T>>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 }
 
 abstract class __QueryOptions<T> extends _QueryOptions<T> {
-  factory __QueryOptions(
-      {required final _ResourcePath parentPath,
-      required final String collectionId,
-      required final ({
-        T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-        Map<String, Object?> Function(T) toFirestore
-      }) converter,
-      required final bool allDescendants,
-      required final List<_FilterInternal> filters,
-      required final List<_FieldOrder> fieldOrders,
-      final _QueryCursor? startAt,
-      final _QueryCursor? endAt,
-      final int? limit,
-      final firestore1.Projection? projection,
-      final LimitType? limitType,
-      final int? offset,
-      final bool kindless,
-      final bool requireConsistency}) = _$_QueryOptionsImpl<T>;
+  factory __QueryOptions({
+    required final _ResourcePath parentPath,
+    required final String collectionId,
+    required final ({
+      T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
+      Map<String, Object?> Function(T) toFirestore,
+    })
+    converter,
+    required final bool allDescendants,
+    required final List<_FilterInternal> filters,
+    required final List<_FieldOrder> fieldOrders,
+    final _QueryCursor? startAt,
+    final _QueryCursor? endAt,
+    final int? limit,
+    final firestore1.Projection? projection,
+    final LimitType? limitType,
+    final int? offset,
+    final bool kindless,
+    final bool requireConsistency,
+  }) = _$_QueryOptionsImpl<T>;
   __QueryOptions._() : super._();
 
   @override
@@ -598,8 +619,9 @@ abstract class __QueryOptions<T> extends _QueryOptions<T> {
   @override
   ({
     T Function(QueryDocumentSnapshot<Map<String, Object?>>) fromFirestore,
-    Map<String, Object?> Function(T) toFirestore
-  }) get converter;
+    Map<String, Object?> Function(T) toFirestore,
+  })
+  get converter;
   @override
   bool get allDescendants;
   @override
@@ -619,11 +641,11 @@ abstract class __QueryOptions<T> extends _QueryOptions<T> {
   @override
   int? get offset;
   @override // Whether to select all documents under `parentPath`. By default, only
-// collections that match `collectionId` are selected.
+  // collections that match `collectionId` are selected.
   bool get kindless;
   @override // Whether to require consistent documents when restarting the query. By
-// default, restarting the query uses the readTime offset of the original
-// query to provide consistent results.
+  // default, restarting the query uses the readTime offset of the original
+  // query to provide consistent results.
   bool get requireConsistency;
   @override
   @JsonKey(ignore: true)

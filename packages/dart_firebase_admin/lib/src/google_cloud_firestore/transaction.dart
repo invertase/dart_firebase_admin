@@ -29,10 +29,7 @@ class _TransactionResult<T> {
 /// the methods to read and write data within the transaction context. See
 /// [Firestore.runTransaction].
 class Transaction {
-  Transaction(
-    Firestore firestore,
-    TransactionOptions? transactionOptions,
-  ) {
+  Transaction(Firestore firestore, TransactionOptions? transactionOptions) {
     _firestore = firestore;
 
     _maxAttempts =
@@ -88,17 +85,14 @@ class Transaction {
   /// Throws a [FirebaseFirestoreAdminException] with [FirestoreClientErrorCode.notFound] status if no document exists at the
   /// provided [docRef].
   ///
-  Future<DocumentSnapshot<T>> get<T>(
-    DocumentReference<T> docRef,
-  ) async {
+  Future<DocumentSnapshot<T>> get<T>(DocumentReference<T> docRef) async {
     if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
       throw Exception(readAfterWriteErrorMsg);
     }
-    return _withLazyStartedTransaction<DocumentReference<T>,
-        DocumentSnapshot<T>>(
-      docRef,
-      resultFn: _getSingleFn,
-    );
+    return _withLazyStartedTransaction<
+      DocumentReference<T>,
+      DocumentSnapshot<T>
+    >(docRef, resultFn: _getSingleFn);
   }
 
   /// Retrieve multiple documents from the database by the provided
@@ -118,12 +112,10 @@ class Transaction {
     if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
       throw Exception(readAfterWriteErrorMsg);
     }
-    return _withLazyStartedTransaction<List<DocumentReference<T>>,
-        List<DocumentSnapshot<T>>>(
-      documentsRefs,
-      fieldMask: fieldMasks,
-      resultFn: _getBatchFn<T>,
-    );
+    return _withLazyStartedTransaction<
+      List<DocumentReference<T>>,
+      List<DocumentSnapshot<T>>
+    >(documentsRefs, fieldMask: fieldMasks, resultFn: _getBatchFn<T>);
   }
 
   /// Create the document referred to by the provided
@@ -175,14 +167,9 @@ class Transaction {
       throw Exception(readOnlyWriteErrorMsg);
     }
 
-    _writeBatch.update(
-      documentRef,
-      {
-        for (final entry in data.entries)
-          FieldPath.from(entry.key): entry.value,
-      },
-      precondition: precondition,
-    );
+    _writeBatch.update(documentRef, {
+      for (final entry in data.entries) FieldPath.from(entry.key): entry.value,
+    }, precondition: precondition);
   }
 
   /// Deletes the document referred to by this [DocumentReference].
@@ -245,14 +232,12 @@ class Transaction {
     // If there are any locks held, then rollback will eventually release them.
     // Rollback can be done concurrently thereby reducing latency caused by
     // otherwise blocking.
-    final rollBackRequest =
-        firestore1.RollbackRequest(transaction: transactionId);
+    final rollBackRequest = firestore1.RollbackRequest(
+      transaction: transactionId,
+    );
     return _firestore._client.v1((client, projectId) {
       return client.projects.databases.documents
-          .rollback(
-            rollBackRequest,
-            _firestore._formattedDatabaseName,
-          )
+          .rollback(rollBackRequest, _firestore._formattedDatabaseName)
           .catchError(_handleException);
     });
   }
@@ -269,7 +254,8 @@ class Transaction {
       Timestamp? readTime,
       firestore1.TransactionOptions? transactionOptions,
       List<FieldPath>? fieldMask,
-    }) resultFn,
+    })
+    resultFn,
   }) {
     if (_transactionIdPromise != null) {
       // Simply queue this subsequent read operation after the first read
@@ -305,8 +291,11 @@ class Transaction {
           opts.readOnly = firestore1.ReadOnly();
         }
 
-        final resultPromise =
-            resultFn(docRef, transactionOptions: opts, fieldMask: fieldMask);
+        final resultPromise = resultFn(
+          docRef,
+          transactionOptions: opts,
+          fieldMask: fieldMask,
+        );
 
         // Ensure the _transactionIdPromise is set synchronously so that
         // subsequent operations will not race to start another transaction
@@ -317,17 +306,13 @@ class Transaction {
             // Illegal state
             // The read operation was provided with new transaction options but did not return a transaction ID
             // Rejecting here will cause all queued reads to reject
-            throw Exception(
-              'Transaction ID was missing from server response.',
-            );
+            throw Exception('Transaction ID was missing from server response.');
           }
         });
 
-        return resultPromise.then(
-          (r) {
-            return r.result;
-          },
-        );
+        return resultPromise.then((r) {
+          return r.result;
+        });
       }
     }
   }
@@ -377,9 +362,7 @@ class Transaction {
     );
   }
 
-  Future<T> _runTransaction<T>(
-    TransactionHandler<T> updateFunction,
-  ) async {
+  Future<T> _runTransaction<T>(TransactionHandler<T> updateFunction) async {
     // No backoff is set for readonly transactions (i.e. attempts == 1)
     if (_writeBatch == null) {
       return _runTransactionOnce(updateFunction);
@@ -406,9 +389,7 @@ class Transaction {
     throw Exception('Transaction max attempts exceeded');
   }
 
-  Future<T> _runTransactionOnce<T>(
-    TransactionHandler<T> updateFunction,
-  ) async {
+  Future<T> _runTransactionOnce<T>(TransactionHandler<T> updateFunction) async {
     try {
       final result = await updateFunction(this);
       //If we are on a readWrite transaction, commit

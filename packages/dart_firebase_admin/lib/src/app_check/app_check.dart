@@ -19,22 +19,18 @@ part 'app_check_request_handler.dart';
 class AppCheck implements FirebaseService {
   /// Creates or returns the cached AppCheck instance for the given app.
   factory AppCheck(FirebaseApp app) {
-    return app.getOrInitService(
-      FirebaseServiceType.appCheck.name,
-      AppCheck._,
-    );
+    return app.getOrInitService(FirebaseServiceType.appCheck.name, AppCheck._);
   }
 
-  AppCheck._(
-    this.app, {
-    @internal AppCheckRequestHandler? requestHandler,
-  }) : _requestHandler = requestHandler ?? AppCheckRequestHandler(app);
+  AppCheck._(this.app, {@internal AppCheckRequestHandler? requestHandler})
+    : _requestHandler = requestHandler ?? AppCheckRequestHandler(app);
 
   @override
   final FirebaseApp app;
   final AppCheckRequestHandler _requestHandler;
-  late final _tokenGenerator =
-      AppCheckTokenGenerator(CryptoSigner.fromApp(app));
+  late final _tokenGenerator = AppCheckTokenGenerator(
+    CryptoSigner.fromApp(app),
+  );
   late final _appCheckTokenVerifier = AppCheckTokenVerifier(app);
 
   /// Creates a new [AppCheckToken] that can be sent
@@ -66,12 +62,14 @@ class AppCheck implements FirebaseService {
     String appCheckToken, [
     VerifyAppCheckTokenOptions? options,
   ]) async {
-    final decodedToken =
-        await _appCheckTokenVerifier.verifyToken(appCheckToken);
+    final decodedToken = await _appCheckTokenVerifier.verifyToken(
+      appCheckToken,
+    );
 
     if (options?.consume ?? false) {
-      final alreadyConsumed =
-          await _requestHandler.verifyReplayProtection(appCheckToken);
+      final alreadyConsumed = await _requestHandler.verifyReplayProtection(
+        appCheckToken,
+      );
       return VerifyAppCheckTokenResponse(
         alreadyConsumed: alreadyConsumed,
         appId: decodedToken.appId,

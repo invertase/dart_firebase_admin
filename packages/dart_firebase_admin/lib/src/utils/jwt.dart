@@ -14,10 +14,7 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
     // Signature checks skipped for emulator; no need to fetch public keys.
 
     try {
-      verifyJwtSignature(
-        token,
-        SecretKey(''),
-      );
+      verifyJwtSignature(token, SecretKey(''));
     } on JWTInvalidException catch (e) {
       // Emulator tokens may have "alg": "none"
       if (e.message == 'unknown algorithm') return;
@@ -152,7 +149,7 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
   PublicKeySignatureVerifier(this.keyFetcher);
 
   PublicKeySignatureVerifier.withCertificateUrl(Uri clientCert)
-      : this(UrlKeyFetcher(clientCert));
+    : this(UrlKeyFetcher(clientCert));
 
   factory PublicKeySignatureVerifier.withJwksUrl(Uri jwksUrl) {
     return PublicKeySignatureVerifier(JwksFetcher(jwksUrl));

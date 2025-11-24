@@ -15,7 +15,8 @@ class SecurityRulesHttpClient {
     Future<R> Function(
       firebase_rules_v1.FirebaseRulesApi client,
       String projectId,
-    ) fn,
+    )
+    fn,
   ) async {
     final client = await app.client;
     final projectId = await client.getProjectId(

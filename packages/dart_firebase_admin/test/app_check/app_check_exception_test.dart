@@ -19,10 +19,7 @@ void main() {
         AppCheckErrorCode.permissionDenied.code,
         equals('permission-denied'),
       );
-      expect(
-        AppCheckErrorCode.unauthenticated.code,
-        equals('unauthenticated'),
-      );
+      expect(AppCheckErrorCode.unauthenticated.code, equals('unauthenticated'));
       expect(AppCheckErrorCode.notFound.code, equals('not-found'));
       expect(
         AppCheckErrorCode.appCheckTokenExpired.code,
@@ -69,10 +66,7 @@ void main() {
     });
 
     test('fromJwtException should handle tokenExpired error', () {
-      final jwtError = JwtException(
-        JwtErrorCode.tokenExpired,
-        'Token expired',
-      );
+      final jwtError = JwtException(JwtErrorCode.tokenExpired, 'Token expired');
 
       final exception = FirebaseAppCheckException.fromJwtException(jwtError);
 
@@ -114,10 +108,7 @@ void main() {
     });
 
     test('fromJwtException should handle other errors', () {
-      final jwtError = JwtException(
-        JwtErrorCode.unknown,
-        'Unknown error',
-      );
+      final jwtError = JwtException(JwtErrorCode.unknown, 'Unknown error');
 
       final exception = FirebaseAppCheckException.fromJwtException(jwtError);
 

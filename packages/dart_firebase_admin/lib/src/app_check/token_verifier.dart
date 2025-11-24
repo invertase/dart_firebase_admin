@@ -19,8 +19,9 @@ class AppCheckTokenVerifier {
 
   final FirebaseApp app;
 
-  final _signatureVerifier =
-      PublicKeySignatureVerifier.withJwksUrl(Uri.parse(jwksUrl));
+  final _signatureVerifier = PublicKeySignatureVerifier.withJwksUrl(
+    Uri.parse(jwksUrl),
+  );
 
   Future<DecodedAppCheckToken> verifyToken(String token) async {
     final client = await app.client;

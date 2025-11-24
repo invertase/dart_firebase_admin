@@ -118,10 +118,8 @@ Never _handleException(Object exception, StackTrace stackTrace) {
 
 class FirebaseFirestoreAdminException extends FirebaseAdminException
     implements Exception {
-  FirebaseFirestoreAdminException(
-    this.errorCode, [
-    String? message,
-  ]) : super('firestore', errorCode.code, message ?? errorCode.message);
+  FirebaseFirestoreAdminException(this.errorCode, [String? message])
+    : super('firestore', errorCode.code, message ?? errorCode.message);
 
   @internal
   factory FirebaseFirestoreAdminException.fromServerError({
@@ -130,7 +128,8 @@ class FirebaseFirestoreAdminException extends FirebaseAdminException
     Object? rawServerResponse,
   }) {
     // If not found, default to unknown error.
-    final error = firestoreServerToClientCode[serverErrorCode] ??
+    final error =
+        firestoreServerToClientCode[serverErrorCode] ??
         FirestoreClientErrorCode.unknown;
     message ??= error.message;
 

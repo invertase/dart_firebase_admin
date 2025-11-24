@@ -48,10 +48,7 @@ void main() {
         ),
       );
 
-      expect(
-        documentRef.collection('col/doc/col').id,
-        'col',
-      );
+      expect(documentRef.collection('col/doc/col').id, 'col');
     });
 
     test('has path property', () {
@@ -86,11 +83,12 @@ void main() {
 
     test("doesn't serialize unsupported types", () {
       expect(
-        firestore
-            .doc('unknownType/documentId')
-            .set({'foo': FieldPath.documentId}),
+        firestore.doc('unknownType/documentId').set({
+          'foo': FieldPath.documentId,
+        }),
         throwsArgumentError(
-          message: 'Cannot use object of type "FieldPath" '
+          message:
+              'Cannot use object of type "FieldPath" '
               'as a Firestore value (found in field foo).',
         ),
       );
@@ -113,15 +111,13 @@ void main() {
           .get()
           .then((snapshot) => snapshot.data()!['moonLanding']);
 
-      expect(
-        data,
-        Timestamp.fromDate(DateTime(1960, 7, 20, 20, 18)),
-      );
+      expect(data, Timestamp.fromDate(DateTime(1960, 7, 20, 20, 18)));
     });
 
     test('Supports BigInt', () async {
-      final firestore =
-          await createFirestore(settings: Settings(useBigInt: true));
+      final firestore = await createFirestore(
+        settings: Settings(useBigInt: true),
+      );
 
       await firestore.doc('collectionId/bigInt').set({
         'foo': BigInt.from(9223372036854775807),
@@ -136,9 +132,7 @@ void main() {
     });
 
     test('serializes unicode keys', () async {
-      await firestore.doc('collectionId/unicode').set({
-        '😀': '😜',
-      });
+      await firestore.doc('collectionId/unicode').set({'😀': '😜'});
 
       final data = await firestore
           .doc('collectionId/unicode')
@@ -227,9 +221,7 @@ void main() {
     test('returns document', () async {
       firestore = await createFirestore();
       await firestore.doc('collectionId/getdocument').set({
-        'foo': {
-          'bar': 'foobar',
-        },
+        'foo': {'bar': 'foobar'},
         'null': null,
       });
 
@@ -240,17 +232,13 @@ void main() {
         'null': null,
       });
 
-      expect(snapshot.get('foo')?.value, {
-        'bar': 'foobar',
-      });
+      expect(snapshot.get('foo')?.value, {'bar': 'foobar'});
       expect(snapshot.get('unknown'), null);
       expect(snapshot.get('null'), isNotNull);
       expect(snapshot.get('null')!.value, null);
       expect(snapshot.get('foo.bar')?.value, 'foobar');
 
-      expect(snapshot.get(FieldPath(const ['foo']))?.value, {
-        'bar': 'foobar',
-      });
+      expect(snapshot.get(FieldPath(const ['foo']))?.value, {'bar': 'foobar'});
       expect(snapshot.get(FieldPath(const ['foo', 'bar']))?.value, 'foobar');
 
       expect(snapshot.ref.id, 'getdocument');
@@ -264,18 +252,9 @@ void main() {
 
       final snapshot = await firestore.doc('collectionId/times').get();
 
-      expect(
-        snapshot.createTime!.seconds * 1000,
-        greaterThan(time),
-      );
-      expect(
-        snapshot.updateTime!.seconds * 1000,
-        greaterThan(time),
-      );
-      expect(
-        snapshot.readTime!.seconds * 1000,
-        greaterThan(time),
-      );
+      expect(snapshot.createTime!.seconds * 1000, greaterThan(time));
+      expect(snapshot.updateTime!.seconds * 1000, greaterThan(time));
+      expect(snapshot.readTime!.seconds * 1000, greaterThan(time));
     });
 
     test('returns not found', () async {
@@ -358,28 +337,27 @@ void main() {
 
     setUp(() async => firestore = await createFirestore());
 
-    test('sends empty non-merge write even with just field transform',
-        () async {
-      final now = DateTime.now().toUtc().millisecondsSinceEpoch - 5000;
-      await firestore.doc('collectionId/setdoctransform').set({
-        'a': FieldValue.serverTimestamp,
-        'b': {'c': FieldValue.serverTimestamp},
-      });
+    test(
+      'sends empty non-merge write even with just field transform',
+      () async {
+        final now = DateTime.now().toUtc().millisecondsSinceEpoch - 5000;
+        await firestore.doc('collectionId/setdoctransform').set({
+          'a': FieldValue.serverTimestamp,
+          'b': {'c': FieldValue.serverTimestamp},
+        });
 
-      final writes = await firestore
-          .doc('collectionId/setdoctransform')
-          .get()
-          .then((s) => s.data()!);
+        final writes = await firestore
+            .doc('collectionId/setdoctransform')
+            .get()
+            .then((s) => s.data()!);
 
-      expect(
-        (writes['a']! as Timestamp).seconds * 1000,
-        greaterThan(now),
-      );
-      expect(
-        ((writes['b']! as Map)['c']! as Timestamp).seconds * 1000,
-        greaterThan(now),
-      );
-    });
+        expect((writes['a']! as Timestamp).seconds * 1000, greaterThan(now));
+        expect(
+          ((writes['b']! as Map)['c']! as Timestamp).seconds * 1000,
+          greaterThan(now),
+        );
+      },
+    );
 
     test("doesn't split on dots", () async {
       await firestore.doc('collectionId/setdots').set({'a.b': 'c'});
@@ -394,9 +372,9 @@ void main() {
 
     test("doesn't support non-merge deletes", () {
       expect(
-        () => firestore
-            .doc('collectionId/nonMergeDelete')
-            .set({'foo': FieldValue.delete}),
+        () => firestore.doc('collectionId/nonMergeDelete').set({
+          'foo': FieldValue.delete,
+        }),
         throwsArgumentError(
           message:
               'must appear at the top-level and can only be used in update() '
@@ -424,32 +402,27 @@ void main() {
       final time = DateTime.now().toUtc().millisecondsSinceEpoch - 5000;
 
       await firestore.doc('collectionId/createdoctime').delete();
-      final result =
-          await firestore.doc('collectionId/createdoctime').create({});
+      final result = await firestore
+          .doc('collectionId/createdoctime')
+          .create({});
 
-      expect(
-        result.writeTime.seconds * 1000,
-        greaterThan(time),
-      );
+      expect(result.writeTime.seconds * 1000, greaterThan(time));
     });
 
     test('supports field transforms', () async {
       final time = DateTime.now().toUtc().millisecondsSinceEpoch - 5000;
 
       await firestore.doc('collectionId/createdoctransform').delete();
-      await firestore
-          .doc('collectionId/createdoctransform')
-          .create({'a': FieldValue.serverTimestamp});
+      await firestore.doc('collectionId/createdoctransform').create({
+        'a': FieldValue.serverTimestamp,
+      });
 
       final writes = await firestore
           .doc('collectionId/createdoctransform')
           .get()
           .then((s) => s.data()!);
 
-      expect(
-        (writes['a']! as Timestamp).seconds * 1000,
-        greaterThan(time),
-      );
+      expect((writes['a']! as Timestamp).seconds * 1000, greaterThan(time));
     });
   });
 
@@ -485,21 +458,13 @@ void main() {
       final a = writes['a']! as Map;
       final c = writes['c']! as Map;
 
-      expect(
-        (a['b']! as Timestamp).seconds * 1000,
-        greaterThan(time),
-      );
-      expect(
-        (c['d']! as Timestamp).seconds * 1000,
-        greaterThan(time),
-      );
+      expect((a['b']! as Timestamp).seconds * 1000, greaterThan(time));
+      expect((c['d']! as Timestamp).seconds * 1000, greaterThan(time));
     });
 
     test('supports nested empty map', () async {
       await firestore.doc('collectionId/updatedocemptymap').set({});
-      await firestore.doc('collectionId/updatedocemptymap').update({
-        'foo': {},
-      });
+      await firestore.doc('collectionId/updatedocemptymap').update({'foo': {}});
 
       final writes = await firestore
           .doc('collectionId/updatedocemptymap')
@@ -528,9 +493,7 @@ void main() {
     test('supports nested delete if not at root level', () async {
       expect(
         firestore.doc('collectionId/updatenesteddeleteinvalid').update({
-          'foo': {
-            'bar': FieldValue.delete,
-          },
+          'foo': {'bar': FieldValue.delete},
         }),
         throwsArgumentError(
           message:
@@ -548,20 +511,16 @@ void main() {
         'foo': 42,
       });
 
-      expect(
-        result.writeTime.seconds * 1000,
-        greaterThan(time),
-      );
+      expect(result.writeTime.seconds * 1000, greaterThan(time));
     });
 
     test('with invalid last update time precondition', () async {
       final soon = DateTime.now().toUtc().millisecondsSinceEpoch + 5000;
 
       await expectLater(
-        firestore.doc('collectionId/invalidlastupdatetimeprecondition').update(
-          {'foo': 'bar'},
-          Precondition.timestamp(Timestamp.fromMillis(soon)),
-        ),
+        firestore.doc('collectionId/invalidlastupdatetimeprecondition').update({
+          'foo': 'bar',
+        }, Precondition.timestamp(Timestamp.fromMillis(soon))),
         throwsA(isA<FirebaseFirestoreAdminException>()),
       );
     });
@@ -572,18 +531,15 @@ void main() {
           .set({});
 
       // does not throw
-      await firestore.doc('collectionId/lastupdatetimeprecondition').update(
-        {'foo': 'bar'},
-        Precondition.timestamp(result.writeTime),
-      );
+      await firestore.doc('collectionId/lastupdatetimeprecondition').update({
+        'foo': 'bar',
+      }, Precondition.timestamp(result.writeTime));
     });
 
     test('requires at least one field', () {
       expect(
         firestore.doc('collectionId/emptyupdate').update({}),
-        throwsArgumentError(
-          message: 'At least one field must be updated.',
-        ),
+        throwsArgumentError(message: 'At least one field must be updated.'),
       );
     });
 
@@ -606,10 +562,7 @@ void main() {
         'foo': {
           'foo': 'one',
           'bar': 'two',
-          'deep': {
-            'foo': 'one',
-            'bar': 'two',
-          },
+          'deep': {'foo': 'one', 'bar': 'two'},
         },
       });
     });

@@ -148,11 +148,7 @@ class MulticastMessage extends _BaseMessage {
 /// A notification that can be included in [Message].
 class Notification {
   /// A notification that can be included in [Message].
-  Notification({
-    this.title,
-    this.body,
-    this.imageUrl,
-  });
+  Notification({this.title, this.body, this.imageUrl});
 
   /// The title of the notification.
   final String? title;
@@ -164,11 +160,7 @@ class Notification {
   final String? imageUrl;
 
   fmc1.Notification _toProto() {
-    return fmc1.Notification(
-      title: title,
-      body: body,
-      image: imageUrl,
-    );
+    return fmc1.Notification(title: title, body: body, image: imageUrl);
   }
 }
 
@@ -188,12 +180,7 @@ class FcmOptions {
 /// Represents the WebPush protocol options that can be included in a [Message].
 class WebpushConfig {
   /// Represents the WebPush protocol options that can be included in a [Message].
-  WebpushConfig({
-    this.headers,
-    this.data,
-    this.notification,
-    this.fcmOptions,
-  });
+  WebpushConfig({this.headers, this.data, this.notification, this.fcmOptions});
 
   /// A collection of WebPush headers. Header values must be strings.
   ///
@@ -253,11 +240,7 @@ class WebpushNotificationAction {
   final String title;
 
   Map<String, Object?> _toProto() {
-    return {
-      'action': action,
-      'icon': icon,
-      'title': title,
-    }._cleanProto();
+    return {'action': action, 'icon': icon, 'title': title}._cleanProto();
   }
 }
 
@@ -276,11 +259,7 @@ extension on Map<String, Object?> {
   }
 }
 
-enum WebpushNotificationDirection {
-  auto,
-  ltr,
-  rtl,
-}
+enum WebpushNotificationDirection { auto, ltr, rtl }
 
 /// Represents the WebPush-specific notification options that can be included in
 /// [WebpushConfig]. This supports most of the standard
@@ -396,11 +375,7 @@ class ApnsConfig {
   /// [Message]. Refer to
   /// [Apple documentation](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/CommunicatingwithAPNs.html)
   /// for various headers and payload fields supported by APNs.
-  ApnsConfig({
-    this.headers,
-    this.payload,
-    this.fcmOptions,
-  });
+  ApnsConfig({this.headers, this.payload, this.fcmOptions});
 
   /// A collection of APNs headers. Header values must be strings.
   final Map<String, String>? headers;
@@ -553,11 +528,7 @@ class CriticalSound {
   final double? volume;
 
   Map<String, Object?> _toProto() {
-    return {
-      'critical': critical,
-      'name': name,
-      'volume': volume,
-    }._cleanProto();
+    return {'critical': critical, 'name': name, 'volume': volume}._cleanProto();
   }
 }
 
@@ -573,17 +544,11 @@ class ApnsFcmOptions {
   final String? imageUrl;
 
   fmc1.ApnsFcmOptions _toProto() {
-    return fmc1.ApnsFcmOptions(
-      analyticsLabel: analyticsLabel,
-      image: imageUrl,
-    );
+    return fmc1.ApnsFcmOptions(analyticsLabel: analyticsLabel, image: imageUrl);
   }
 }
 
-enum AndroidConfigPriority {
-  high,
-  normal,
-}
+enum AndroidConfigPriority { high, normal }
 
 /// Represents the Android-specific options that can be included in an [Message].
 class AndroidConfig {
@@ -661,11 +626,7 @@ enum AndroidNotificationPriority {
   final String _code;
 }
 
-enum AndroidNotificationVisibility {
-  private,
-  public,
-  secret,
-}
+enum AndroidNotificationVisibility { private, public, secret }
 
 /// Represents the Android-specific notification options that can be included in
 /// [AndroidConfig].
@@ -1306,11 +1267,7 @@ class BatchResponse {
 class SendResponse {
   /// Interface representing the status of an individual message that was sent as
   /// part of a batch request.
-  SendResponse._({
-    required this.success,
-    this.messageId,
-    this.error,
-  });
+  SendResponse._({required this.success, this.messageId, this.error});
 
   /// A boolean indicating if the message was successfully handed off to FCM or
   /// not. When true, the `messageId` attribute is guaranteed to be set. When

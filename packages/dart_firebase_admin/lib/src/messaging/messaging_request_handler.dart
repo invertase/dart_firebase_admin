@@ -21,28 +21,26 @@ class FirebaseMessagingRequestHandler {
   /// Returns a unique message ID string after the message has been successfully
   /// handed off to the FCM service for delivery.
   Future<String> send(Message message, {bool? dryRun}) {
-    return _httpClient.v1(
-      (client, projectId) async {
-        final parent = _httpClient.buildParent(projectId);
-        final response = await client.projects.messages.send(
-          fmc1.SendMessageRequest(
-            message: message._toProto(),
-            validateOnly: dryRun,
-          ),
-          parent,
+    return _httpClient.v1((client, projectId) async {
+      final parent = _httpClient.buildParent(projectId);
+      final response = await client.projects.messages.send(
+        fmc1.SendMessageRequest(
+          message: message._toProto(),
+          validateOnly: dryRun,
+        ),
+        parent,
+      );
+
+      final name = response.name;
+      if (name == null) {
+        throw FirebaseMessagingAdminException(
+          MessagingClientErrorCode.internalError,
+          'No name in response',
         );
+      }
 
-        final name = response.name;
-        if (name == null) {
-          throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.internalError,
-            'No name in response',
-          );
-        }
-
-        return name;
-      },
-    );
+      return name;
+    });
   }
 
   /// Sends each message in the given array via Firebase Cloud Messaging.
@@ -60,61 +58,59 @@ class FirebaseMessagingRequestHandler {
   /// - [dryRun]: Whether to send the messages in the dry-run
   ///   (validation only) mode.
   Future<BatchResponse> sendEach(List<Message> messages, {bool? dryRun}) {
-    return _httpClient.v1(
-      (client, projectId) async {
-        if (messages.isEmpty) {
-          throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.invalidArgument,
-            'messages must be a non-empty array',
-          );
-        }
-        if (messages.length > _fmcMaxBatchSize) {
-          throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.invalidArgument,
-            'messages list must not contain more than $_fmcMaxBatchSize items',
-          );
-        }
-
-        final parent = _httpClient.buildParent(projectId);
-        final responses = await Future.wait<SendResponse>(
-          messages.map((message) async {
-            final response = client.projects.messages.send(
-              fmc1.SendMessageRequest(
-                message: message._toProto(),
-                validateOnly: dryRun,
-              ),
-              parent,
-            );
-
-            return response.then(
-              (value) {
-                return SendResponse._(success: true, messageId: value.name);
-              },
-              // ignore: avoid_types_on_closure_parameters
-              onError: (Object? error) {
-                return SendResponse._(
-                  success: false,
-                  error: error is FirebaseMessagingAdminException
-                      ? error
-                      : FirebaseMessagingAdminException(
-                          MessagingClientErrorCode.internalError,
-                          error.toString(),
-                        ),
-                );
-              },
-            );
-          }),
+    return _httpClient.v1((client, projectId) async {
+      if (messages.isEmpty) {
+        throw FirebaseMessagingAdminException(
+          MessagingClientErrorCode.invalidArgument,
+          'messages must be a non-empty array',
         );
-
-        final successCount = responses.where((r) => r.success).length;
-
-        return BatchResponse._(
-          responses: responses,
-          successCount: successCount,
-          failureCount: responses.length - successCount,
+      }
+      if (messages.length > _fmcMaxBatchSize) {
+        throw FirebaseMessagingAdminException(
+          MessagingClientErrorCode.invalidArgument,
+          'messages list must not contain more than $_fmcMaxBatchSize items',
         );
-      },
-    );
+      }
+
+      final parent = _httpClient.buildParent(projectId);
+      final responses = await Future.wait<SendResponse>(
+        messages.map((message) async {
+          final response = client.projects.messages.send(
+            fmc1.SendMessageRequest(
+              message: message._toProto(),
+              validateOnly: dryRun,
+            ),
+            parent,
+          );
+
+          return response.then(
+            (value) {
+              return SendResponse._(success: true, messageId: value.name);
+            },
+            // ignore: avoid_types_on_closure_parameters
+            onError: (Object? error) {
+              return SendResponse._(
+                success: false,
+                error: error is FirebaseMessagingAdminException
+                    ? error
+                    : FirebaseMessagingAdminException(
+                        MessagingClientErrorCode.internalError,
+                        error.toString(),
+                      ),
+              );
+            },
+          );
+        }),
+      );
+
+      final successCount = responses.where((r) => r.success).length;
+
+      return BatchResponse._(
+        responses: responses,
+        successCount: successCount,
+        failureCount: responses.length - successCount,
+      );
+    });
   }
 
   /// Sends the given multicast message to all the FCM registration tokens

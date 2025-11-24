@@ -44,7 +44,7 @@ enum AppCheckErrorCode {
 /// [message] - The error message.
 class FirebaseAppCheckException extends FirebaseAdminException {
   FirebaseAppCheckException(AppCheckErrorCode code, [String? _message])
-      : super('app-check', code.code, _message);
+    : super('app-check', code.code, _message);
 
   factory FirebaseAppCheckException.fromJwtException(JwtException error) {
     if (error.code == JwtErrorCode.tokenExpired) {

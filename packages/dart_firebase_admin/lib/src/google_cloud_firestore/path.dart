@@ -87,10 +87,8 @@ abstract class _Path<T extends _Path<Object?>> implements Comparable<_Path<T>> {
   }
 
   @override
-  int get hashCode => Object.hash(
-        runtimeType,
-        const ListEquality<String>().hash(segments),
-      );
+  int get hashCode =>
+      Object.hash(runtimeType, const ListEquality<String>().hash(segments));
 }
 
 class _ResourcePath extends _Path<_ResourcePath> {
@@ -144,9 +142,9 @@ class _QualifiedResourcePath extends _ResourcePath {
     required String projectId,
     required String databaseId,
     required List<String> segments,
-  })  : _projectId = projectId,
-        _databaseId = databaseId,
-        super._(segments);
+  }) : _projectId = projectId,
+       _databaseId = databaseId,
+       super._(segments);
 
   factory _QualifiedResourcePath.fromSlashSeparatedString(String absolutePath) {
     final elements = _resourcePathRe.firstMatch(absolutePath);
@@ -236,19 +234,11 @@ final _fieldPathRegex = RegExp(r'^[^*~/[\]]+$');
 class _StringFieldMask implements FieldMask {
   _StringFieldMask(this.path) {
     if (path.contains('..')) {
-      throw ArgumentError.value(
-        path,
-        'path',
-        'must not contain ".."',
-      );
+      throw ArgumentError.value(path, 'path', 'must not contain ".."');
     }
 
     if (path.startsWith('.') || path.endsWith('.')) {
-      throw ArgumentError.value(
-        path,
-        'path',
-        'must not start or end with "."',
-      );
+      throw ArgumentError.value(path, 'path', 'must not start or end with "."');
     }
 
     if (!_fieldPathRegex.hasMatch(path)) {
@@ -314,10 +304,12 @@ class FieldPath extends _Path<FieldPath> {
 
   String get _formattedName {
     final regex = RegExp(r'^[_a-zA-Z][_a-zA-Z0-9]*$');
-    return segments.map((e) {
-      if (regex.hasMatch(e)) return e;
-      return '`${e.replaceAll(r'\', r'\\').replaceAll('`', r'\')}`';
-    }).join('.');
+    return segments
+        .map((e) {
+          if (regex.hasMatch(e)) return e;
+          return '`${e.replaceAll(r'\', r'\\').replaceAll('`', r'\')}`';
+        })
+        .join('.');
   }
 
   @override

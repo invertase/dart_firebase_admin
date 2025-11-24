@@ -56,12 +56,16 @@ class FirebaseTokenVerifier {
     required this.issuer,
     required this.tokenInfo,
     required this.app,
-  })  : _shortNameArticle = RegExp('[aeiou]', caseSensitive: false)
-                .hasMatch(tokenInfo.shortName[0])
-            ? 'an'
-            : 'a',
-        _signatureVerifier =
-            PublicKeySignatureVerifier.withCertificateUrl(clientCertUrl);
+  }) : _shortNameArticle =
+           RegExp(
+             '[aeiou]',
+             caseSensitive: false,
+           ).hasMatch(tokenInfo.shortName[0])
+           ? 'an'
+           : 'a',
+       _signatureVerifier = PublicKeySignatureVerifier.withCertificateUrl(
+         clientCertUrl,
+       );
 
   final FirebaseApp app;
   final String _shortNameArticle;
@@ -117,8 +121,9 @@ class FirebaseTokenVerifier {
     required bool isEmulator,
   }) async {
     try {
-      final verifier =
-          isEmulator ? EmulatorSignatureVerifier() : _signatureVerifier;
+      final verifier = isEmulator
+          ? EmulatorSignatureVerifier()
+          : _signatureVerifier;
       await verifier.verify(token);
       // ignore: avoid_catching_errors
     } on JwtException catch (error, stackTrace) {
@@ -145,7 +150,8 @@ class FirebaseTokenVerifier {
     final projectIdMatchMessage =
         ' Make sure the ${tokenInfo.shortName} comes from the same '
         'Firebase project as the service account used to authenticate this SDK.';
-    final verifyJwtTokenDocsMessage = ' See ${tokenInfo.url} '
+    final verifyJwtTokenDocsMessage =
+        ' See ${tokenInfo.url} '
         'for details on how to retrieve $_shortNameArticle ${tokenInfo.shortName}.';
 
     late final alg = header['alg'];
@@ -155,17 +161,20 @@ class FirebaseTokenVerifier {
       final isCustomToken = (payload['aud'] == _firebaseAudience);
 
       late final d = payload['d'];
-      final isLegacyCustomToken = alg == 'HS256' &&
+      final isLegacyCustomToken =
+          alg == 'HS256' &&
           payload['v'] == 0 &&
           d is Map &&
           d.containsKey('uid');
 
       String message;
       if (isCustomToken) {
-        message = '${tokenInfo.verifyApiName} expects $_shortNameArticle '
+        message =
+            '${tokenInfo.verifyApiName} expects $_shortNameArticle '
             '${tokenInfo.shortName}, but was given a custom token.';
       } else if (isLegacyCustomToken) {
-        message = '${tokenInfo.verifyApiName} expects $_shortNameArticle '
+        message =
+            '${tokenInfo.verifyApiName} expects $_shortNameArticle '
             '${tokenInfo.shortName}, but was given a legacy custom token.';
       } else {
         message = '${tokenInfo.jwtName} has no "kid" claim.';
@@ -173,9 +182,11 @@ class FirebaseTokenVerifier {
 
       throws(message);
     } else if (!isEmulator && alg != _algorithmRS256) {
-      throws('${tokenInfo.jwtName} has incorrect algorithm. '
-          'Expected "$_algorithmRS256" but got "$alg".'
-          '$verifyJwtTokenDocsMessage');
+      throws(
+        '${tokenInfo.jwtName} has incorrect algorithm. '
+        'Expected "$_algorithmRS256" but got "$alg".'
+        '$verifyJwtTokenDocsMessage',
+      );
     } else if (audience != null &&
         !(payload['aud'] as String).contains(audience)) {
       throws(
@@ -215,7 +226,8 @@ class FirebaseTokenVerifier {
 
   /// Maps JwtError to FirebaseAuthError
   Object _mapJwtErrorToAuthError(JwtException error) {
-    final verifyJwtTokenDocsMessage = ' See ${tokenInfo.url} '
+    final verifyJwtTokenDocsMessage =
+        ' See ${tokenInfo.url} '
         'for details on how to retrieve $_shortNameArticle ${tokenInfo.shortName}.';
     if (error.code == JwtErrorCode.tokenExpired) {
       final errorMessage =
@@ -227,7 +239,8 @@ class FirebaseTokenVerifier {
         errorMessage,
       );
     } else if (error.code == JwtErrorCode.invalidSignature) {
-      final errorMessage = '${tokenInfo.jwtName} has invalid signature.'
+      final errorMessage =
+          '${tokenInfo.jwtName} has invalid signature.'
           '$verifyJwtTokenDocsMessage';
       return FirebaseAuthAdminException(
         AuthClientErrorCode.invalidArgument,
@@ -262,11 +275,11 @@ class TokenProvider {
 
   @internal
   TokenProvider.fromMap(Map<Object?, Object?> map)
-      : identities = Map.from(map['identities']! as Map),
-        signInProvider = map['sign_in_provider']! as String,
-        signInSecondFactor = map['sign_in_second_factor'] as String?,
-        secondFactorIdentifier = map['second_factor_identifier'] as String?,
-        tenant = map['tenant'] as String?;
+    : identities = Map.from(map['identities']! as Map),
+      signInProvider = map['sign_in_provider']! as String,
+      signInSecondFactor = map['sign_in_second_factor'] as String?,
+      secondFactorIdentifier = map['second_factor_identifier'] as String?,
+      tenant = map['tenant'] as String?;
 
   /// Provider-specific identity details corresponding
   /// to the provider used to sign in the user.
@@ -422,8 +435,9 @@ class DecodedIdToken {
 
 /// User facing token information related to the Firebase ID token.
 final _idTokenInfo = FirebaseTokenInfo(
-  url:
-      Uri.parse('https://firebase.google.com/docs/auth/admin/verify-id-tokens'),
+  url: Uri.parse(
+    'https://firebase.google.com/docs/auth/admin/verify-id-tokens',
+  ),
   verifyApiName: 'verifyIdToken()',
   jwtName: 'Firebase ID token',
   shortName: 'ID token',
@@ -431,9 +445,7 @@ final _idTokenInfo = FirebaseTokenInfo(
 );
 
 /// Creates a new FirebaseTokenVerifier to verify Firebase ID tokens.
-FirebaseTokenVerifier _createIdTokenVerifier(
-  FirebaseApp app,
-) {
+FirebaseTokenVerifier _createIdTokenVerifier(FirebaseApp app) {
   return FirebaseTokenVerifier(
     clientCertUrl: _clientCertUrl,
     issuer: Uri.parse('https://securetoken.google.com/'),
@@ -448,9 +460,7 @@ final _sessionCookieCertUrl = Uri.parse(
 );
 
 /// Creates a new FirebaseTokenVerifier to verify Firebase session cookies.
-FirebaseTokenVerifier _createSessionCookieVerifier(
-  FirebaseApp app,
-) {
+FirebaseTokenVerifier _createSessionCookieVerifier(FirebaseApp app) {
   return FirebaseTokenVerifier(
     clientCertUrl: _sessionCookieCertUrl,
     issuer: Uri.parse('https://session.firebase.google.com/'),

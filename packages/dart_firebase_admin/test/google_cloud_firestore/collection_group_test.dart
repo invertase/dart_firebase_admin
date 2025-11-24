@@ -30,11 +30,12 @@ void main() {
         firestore.doc('abc/def/with-converter-group/docC').set({'value': 10}),
       ]);
 
-      final group =
-          firestore.collectionGroup('with-converter-group').withConverter(
-                fromFirestore: (firestore) => firestore.data()['value']! as num,
-                toFirestore: (value) => {'value': value},
-              );
+      final group = firestore
+          .collectionGroup('with-converter-group')
+          .withConverter(
+            fromFirestore: (firestore) => firestore.data()['value']! as num,
+            toFirestore: (value) => {'value': value},
+          );
 
       final query = group.where('value', WhereFilter.greaterThan, 12);
       final snapshot = await query.get();

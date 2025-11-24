@@ -95,9 +95,7 @@ class WriteBatch {
       for (final writeResult
           in response.writeResults ?? <firestore1.WriteResult>[])
         WriteResult._(
-          Timestamp._fromString(
-            writeResult.updateTime ?? response.commitTime!,
-          ),
+          Timestamp._fromString(writeResult.updateTime ?? response.commitTime!),
         ),
     ];
   }
@@ -137,9 +135,7 @@ class WriteBatch {
     _verifyNotCommited();
 
     firestore1.Write op() {
-      final write = firestore1.Write(
-        delete: documentRef._formattedName,
-      );
+      final write = firestore1.Write(delete: documentRef._formattedName);
       if (precondition != null && !precondition._isEmpty) {
         write.currentDocument = precondition._toProto();
       }
@@ -155,21 +151,21 @@ class WriteBatch {
   void set<T>(DocumentReference<T> documentReference, T data) {
     final firestoreData = documentReference._converter.toFirestore(data);
 
-    _validateDocumentData(
-      'data',
-      firestoreData,
-      allowDeletes: false,
-    );
+    _validateDocumentData('data', firestoreData, allowDeletes: false);
 
     _verifyNotCommited();
 
-    final transform =
-        _DocumentTransform.fromObject(documentReference, firestoreData);
+    final transform = _DocumentTransform.fromObject(
+      documentReference,
+      firestoreData,
+    );
     transform.validate();
 
     firestore1.Write op() {
-      final document =
-          DocumentSnapshot._fromObject(documentReference, firestoreData);
+      final document = DocumentSnapshot._fromObject(
+        documentReference,
+        firestoreData,
+      );
 
       final write = document._toWriteProto();
       if (transform.transforms.isNotEmpty) {
@@ -190,11 +186,7 @@ class WriteBatch {
     UpdateMap data, {
     Precondition? precondition,
   }) {
-    _update(
-      data: data,
-      documentRef: documentRef,
-      precondition: precondition,
-    );
+    _update(data: data, documentRef: documentRef, precondition: precondition);
   }
 
   void _update({
@@ -259,11 +251,7 @@ void _validateUpdateMap(String arg, UpdateMap obj) {
   _validateFieldValue(arg, obj);
 }
 
-void _validateFieldValue(
-  String arg,
-  UpdateMap obj, {
-  FieldPath? path,
-}) {
+void _validateFieldValue(String arg, UpdateMap obj, {FieldPath? path}) {
   _validateUserInput(
     arg,
     obj,

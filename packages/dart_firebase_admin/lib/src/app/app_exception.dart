@@ -2,11 +2,9 @@ part of '../app.dart';
 
 /// Exception thrown for Firebase app initialization and lifecycle errors.
 class FirebaseAppException implements Exception {
-  FirebaseAppException(
-    this.errorCode, [
-    String? message,
-  ])  : code = errorCode.code,
-        _message = message;
+  FirebaseAppException(this.errorCode, [String? message])
+    : code = errorCode.code,
+      _message = message;
 
   /// The error code object containing code and default message.
   final AppErrorCode errorCode;
@@ -71,10 +69,7 @@ enum AppErrorCode {
   ),
 
   /// Network error occurred during the operation.
-  networkError(
-    code: 'network-error',
-    message: 'A network error has occurred.',
-  ),
+  networkError(code: 'network-error', message: 'A network error has occurred.'),
 
   /// Network timeout occurred during the operation.
   networkTimeout(
@@ -83,10 +78,7 @@ enum AppErrorCode {
   ),
 
   /// No Firebase app exists with the given name.
-  noApp(
-    code: 'no-app',
-    message: 'No Firebase app exists with the given name.',
-  ),
+  noApp(code: 'no-app', message: 'No Firebase app exists with the given name.'),
 
   /// Unable to parse the server response.
   unableToParseResponse(
@@ -94,10 +86,7 @@ enum AppErrorCode {
     message: 'Unable to parse the response from the server.',
   );
 
-  const AppErrorCode({
-    required this.code,
-    required this.message,
-  });
+  const AppErrorCode({required this.code, required this.message});
 
   /// The error code string identifier.
   final String code;

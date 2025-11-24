@@ -20,47 +20,42 @@ void main() {
         Environment.firebaseAuthEmulatorHost: firebaseAuthEmulatorHost,
       };
 
-      await runZoned(
-        zoneValues: {envSymbol: testEnv},
-        () async {
-          expect(Environment.isAuthEmulatorEnabled(), true);
-          expect(Environment.isFirestoreEmulatorEnabled(), false);
-        },
-      );
+      await runZoned(zoneValues: {envSymbol: testEnv}, () async {
+        expect(Environment.isAuthEmulatorEnabled(), true);
+        expect(Environment.isFirestoreEmulatorEnabled(), false);
+      });
     });
 
-    test('isFirestoreEmulatorEnabled() returns true when env var is set',
-        () async {
-      const firestoreEmulatorHost = '127.0.0.1:8000';
-      final testEnv = <String, String>{
-        Environment.firestoreEmulatorHost: firestoreEmulatorHost,
-      };
+    test(
+      'isFirestoreEmulatorEnabled() returns true when env var is set',
+      () async {
+        const firestoreEmulatorHost = '127.0.0.1:8000';
+        final testEnv = <String, String>{
+          Environment.firestoreEmulatorHost: firestoreEmulatorHost,
+        };
 
-      await runZoned(
-        zoneValues: {envSymbol: testEnv},
-        () async {
+        await runZoned(zoneValues: {envSymbol: testEnv}, () async {
           expect(Environment.isFirestoreEmulatorEnabled(), true);
           expect(Environment.isAuthEmulatorEnabled(), false);
-        },
-      );
-    });
+        });
+      },
+    );
 
-    test('both emulator detection methods work when both env vars are set',
-        () async {
-      const firebaseAuthEmulatorHost = '127.0.0.1:9000';
-      const firestoreEmulatorHost = '127.0.0.1:8000';
-      final testEnv = <String, String>{
-        Environment.firebaseAuthEmulatorHost: firebaseAuthEmulatorHost,
-        Environment.firestoreEmulatorHost: firestoreEmulatorHost,
-      };
+    test(
+      'both emulator detection methods work when both env vars are set',
+      () async {
+        const firebaseAuthEmulatorHost = '127.0.0.1:9000';
+        const firestoreEmulatorHost = '127.0.0.1:8000';
+        final testEnv = <String, String>{
+          Environment.firebaseAuthEmulatorHost: firebaseAuthEmulatorHost,
+          Environment.firestoreEmulatorHost: firestoreEmulatorHost,
+        };
 
-      await runZoned(
-        zoneValues: {envSymbol: testEnv},
-        () async {
+        await runZoned(zoneValues: {envSymbol: testEnv}, () async {
           expect(Environment.isAuthEmulatorEnabled(), true);
           expect(Environment.isFirestoreEmulatorEnabled(), true);
-        },
-      );
-    });
+        });
+      },
+    );
   });
 }

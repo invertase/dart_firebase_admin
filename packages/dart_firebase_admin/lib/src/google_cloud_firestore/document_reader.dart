@@ -15,11 +15,11 @@ class _DocumentReader<T> {
     this.transactionId,
     this.readTime,
     this.transactionOptions,
-  })  : _outstandingDocuments = documents.map((e) => e._formattedName).toSet(),
-        assert(
-          [transactionId, readTime, transactionOptions].nonNulls.length <= 1,
-          'Only transactionId or readTime or transactionOptions must be provided. transactionId = $transactionId, readTime = $readTime, transactionOptions = $transactionOptions',
-        );
+  }) : _outstandingDocuments = documents.map((e) => e._formattedName).toSet(),
+       assert(
+         [transactionId, readTime, transactionOptions].nonNulls.length <= 1,
+         'Only transactionId or readTime or transactionOptions must be provided. transactionId = $transactionId, readTime = $readTime, transactionOptions = $transactionOptions',
+       );
 
   String? _retrievedTransactionId;
   final Firestore firestore;
@@ -79,12 +79,14 @@ class _DocumentReader<T> {
 
     var resultCount = 0;
     try {
-      final documents = await firestore._client.v1((client, projectId) async {
-        return client.projects.databases.documents.batchGet(
-          request,
-          firestore._formattedDatabaseName,
-        );
-      }).catchError(_handleException);
+      final documents = await firestore._client
+          .v1((client, projectId) async {
+            return client.projects.databases.documents.batchGet(
+              request,
+              firestore._formattedDatabaseName,
+            );
+          })
+          .catchError(_handleException);
 
       for (final response in documents) {
         DocumentSnapshot<DocumentData>? documentSnapshot;
@@ -117,13 +119,15 @@ class _DocumentReader<T> {
         }
       }
     } on FirebaseFirestoreAdminException catch (firestoreError) {
-      final shoulRetry = request.transaction != null &&
+      final shoulRetry =
+          request.transaction != null &&
           request.newTransaction != null &&
           // Only retry if we made progress.
           resultCount > 0 &&
           // Don't retry permanent errors.
-          StatusCode.batchGetRetryCodes
-              .contains(firestoreError.errorCode.statusCode);
+          StatusCode.batchGetRetryCodes.contains(
+            firestoreError.errorCode.statusCode,
+          );
       if (shoulRetry) {
         return _fetchDocuments();
       } else {

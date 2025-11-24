@@ -49,9 +49,7 @@ extension AuthClientX on AuthClient {
         Uri.parse(
           'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
         ),
-        headers: {
-          'Metadata-Flavor': 'Google',
-        },
+        headers: {'Metadata-Flavor': 'Google'},
       );
 
       if (response.statusCode == 200) {

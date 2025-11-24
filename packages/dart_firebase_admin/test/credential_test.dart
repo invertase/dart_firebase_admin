@@ -74,12 +74,12 @@ void main() {
 
     group('fromApplicationDefaultCredentials', () {
       test(
-          'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
-          () {
-        final dir = Directory.current.createTempSync();
-        addTearDown(() => dir.deleteSync(recursive: true));
-        final file = File('${dir.path}/service-account.json');
-        file.writeAsStringSync('''
+        'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
+        () {
+          final dir = Directory.current.createTempSync();
+          addTearDown(() => dir.deleteSync(recursive: true));
+          final file = File('${dir.path}/service-account.json');
+          file.writeAsStringSync('''
 {
   "type": "service_account",
   "client_id": "id",
@@ -88,33 +88,32 @@ void main() {
 }
 ''');
 
-        final fakeServiceAccount = {
-          'GOOGLE_APPLICATION_CREDENTIALS': file.path,
-        };
-        final credential = runZoned(
-          Credential.fromApplicationDefaultCredentials,
-          zoneValues: {envSymbol: fakeServiceAccount},
-        );
-        expect(credential.serviceAccountCredentials, isNotNull);
+          final fakeServiceAccount = {
+            'GOOGLE_APPLICATION_CREDENTIALS': file.path,
+          };
+          final credential = runZoned(
+            Credential.fromApplicationDefaultCredentials,
+            zoneValues: {envSymbol: fakeServiceAccount},
+          );
+          expect(credential.serviceAccountCredentials, isNotNull);
 
-        // Verify if service account is actually being used
-        expect(
-          credential.serviceAccountCredentials!.email,
-          'foo@bar.com',
-        );
-      });
+          // Verify if service account is actually being used
+          expect(credential.serviceAccountCredentials!.email, 'foo@bar.com');
+        },
+      );
 
       test(
-          'does nothing if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is not valid service account JSON',
-          () {
-        final credential = runZoned(
-          Credential.fromApplicationDefaultCredentials,
-          zoneValues: {
-            envSymbol: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
-          },
-        );
-        expect(credential.serviceAccountCredentials, isNull);
-      });
+        'does nothing if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is not valid service account JSON',
+        () {
+          final credential = runZoned(
+            Credential.fromApplicationDefaultCredentials,
+            zoneValues: {
+              envSymbol: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
+            },
+          );
+          expect(credential.serviceAccountCredentials, isNull);
+        },
+      );
     });
   });
 }

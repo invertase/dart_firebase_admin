@@ -14,13 +14,11 @@ class Auth extends _BaseAuth implements FirebaseService {
     );
   }
 
-  Auth._(
-    FirebaseApp app, {
-    @internal AuthRequestHandler? requestHandler,
-  }) : super(
-          app: app,
-          authRequestHandler: requestHandler ?? AuthRequestHandler(app),
-        );
+  Auth._(FirebaseApp app, {@internal AuthRequestHandler? requestHandler})
+    : super(
+        app: app,
+        authRequestHandler: requestHandler ?? AuthRequestHandler(app),
+      );
 
   @override
   Future<void> delete() async {

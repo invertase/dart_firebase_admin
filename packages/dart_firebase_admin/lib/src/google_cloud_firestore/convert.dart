@@ -17,10 +17,6 @@ void _assertValidProtobufValue(firestore1.Value proto) {
   ];
 
   if (values.nonNulls.length != 1) {
-    throw ArgumentError.value(
-      proto,
-      'proto',
-      'Unable to infer type value',
-    );
+    throw ArgumentError.value(proto, 'proto', 'Unable to infer type value');
   }
 }

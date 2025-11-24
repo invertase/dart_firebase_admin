@@ -6,7 +6,7 @@ part of '../app.dart';
 /// updated headers while preserving the request body stream.
 class _RequestImpl extends BaseRequest {
   _RequestImpl(super.method, super.url, [Stream<List<int>>? stream])
-      : _stream = stream ?? const Stream.empty();
+    : _stream = stream ?? const Stream.empty();
 
   final Stream<List<int>> _stream;
 
@@ -66,8 +66,7 @@ class EmulatorClient implements googleapis_auth.AuthClient {
     Map<String, String>? headers,
     Object? body,
     Encoding? encoding,
-  }) =>
-      client.post(url, headers: headers, body: body, encoding: encoding);
+  }) => client.post(url, headers: headers, body: body, encoding: encoding);
 
   @override
   Future<Response> put(
@@ -75,8 +74,7 @@ class EmulatorClient implements googleapis_auth.AuthClient {
     Map<String, String>? headers,
     Object? body,
     Encoding? encoding,
-  }) =>
-      client.put(url, headers: headers, body: body, encoding: encoding);
+  }) => client.put(url, headers: headers, body: body, encoding: encoding);
 
   @override
   Future<Response> patch(
@@ -84,8 +82,7 @@ class EmulatorClient implements googleapis_auth.AuthClient {
     Map<String, String>? headers,
     Object? body,
     Encoding? encoding,
-  }) =>
-      client.patch(url, headers: headers, body: body, encoding: encoding);
+  }) => client.patch(url, headers: headers, body: body, encoding: encoding);
 
   @override
   Future<Response> delete(
@@ -93,8 +90,7 @@ class EmulatorClient implements googleapis_auth.AuthClient {
     Map<String, String>? headers,
     Object? body,
     Encoding? encoding,
-  }) =>
-      client.delete(url, headers: headers, body: body, encoding: encoding);
+  }) => client.delete(url, headers: headers, body: body, encoding: encoding);
 
   @override
   Future<String> read(Uri url, {Map<String, String>? headers}) =>

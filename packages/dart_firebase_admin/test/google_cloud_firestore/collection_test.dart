@@ -12,8 +12,9 @@ void main() {
     setUp(() async => firestore = await createFirestore());
 
     test('supports + in collection name', () async {
-      final a = firestore
-          .collection('/collection+a/lF1kvtRAYMqmdInT7iJK/subcollection');
+      final a = firestore.collection(
+        '/collection+a/lF1kvtRAYMqmdInT7iJK/subcollection',
+      );
 
       expect(a.path, 'collection+a/lF1kvtRAYMqmdInT7iJK/subcollection');
 
@@ -151,11 +152,12 @@ void main() {
     });
 
     test('for CollectionReference.withConverter().add()', () async {
-      final collection =
-          firestore.collection('withConverterColAdd').withConverter<int>(
-                fromFirestore: (snapshot) => snapshot.data()['value']! as int,
-                toFirestore: (value) => {'value': value},
-              );
+      final collection = firestore
+          .collection('withConverterColAdd')
+          .withConverter<int>(
+            fromFirestore: (snapshot) => snapshot.data()['value']! as int,
+            toFirestore: (value) => {'value': value},
+          );
 
       expect(collection, isA<CollectionReference<int>>());
 
@@ -169,20 +171,22 @@ void main() {
       expect(docSnapshot.data(), 42);
     });
 
-    test('drops the converter when calling CollectionReference<T>.parent()',
-        () {
-      final collection = firestore
-          .collection('withConverterColParent/doc/child')
-          .withConverter(
-            fromFirestore: (snapshot) => snapshot.data()['value']! as int,
-            toFirestore: (value) => {'value': value},
-          );
+    test(
+      'drops the converter when calling CollectionReference<T>.parent()',
+      () {
+        final collection = firestore
+            .collection('withConverterColParent/doc/child')
+            .withConverter(
+              fromFirestore: (snapshot) => snapshot.data()['value']! as int,
+              toFirestore: (value) => {'value': value},
+            );
 
-      expect(collection, isA<CollectionReference<int>>());
+        expect(collection, isA<CollectionReference<int>>());
 
-      final DocumentReference<DocumentData>? parent = collection.parent;
+        final DocumentReference<DocumentData>? parent = collection.parent;
 
-      expect(parent!.path, 'withConverterColParent/doc');
-    });
+        expect(parent!.path, 'withConverterColParent/doc');
+      },
+    );
   });
 }
