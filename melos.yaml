@@ -1,4 +1,0 @@
-name: dart_firebase_admin
-
-packages:
-  - "packages/**"
