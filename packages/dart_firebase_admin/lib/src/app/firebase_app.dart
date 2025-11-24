@@ -90,9 +90,9 @@ class FirebaseApp {
   ///
   /// Uses the client from options if provided, otherwise creates a default one.
   /// Nullable to avoid triggering lazy initialization during cleanup.
-  Future<http.Client>? _httpClient;
+  Future<googleapis_auth.AuthClient>? _httpClient;
 
-  Future<http.Client> _createDefaultClient() async {
+  Future<googleapis_auth.AuthClient> _createDefaultClient() async {
     // Always create an authenticated client for production services.
     // Services with emulators (Firestore, Auth) create their own
     // unauthenticated clients when in emulator mode to avoid ADC warnings.
@@ -122,9 +122,9 @@ class FirebaseApp {
   /// Returns the HTTP client for this app.
   /// Lazily initializes on first access.
   @internal
-  Future<http.Client> get client {
+  Future<googleapis_auth.AuthClient> get client {
     return _httpClient ??= options.httpClient != null
-        ? Future.value(options.httpClient)
+        ? Future.value(options.httpClient!)
         : _createDefaultClient();
   }
 

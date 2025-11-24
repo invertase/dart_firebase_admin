@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/src/app.dart';
-import 'package:http/http.dart';
+import 'package:googleapis_auth/auth_io.dart';
+import 'package:http/http.dart' show ClientException;
 import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
@@ -77,7 +78,7 @@ void ensureEmulatorConfigured({bool requireAuth = false}) {
 /// The emulator will be auto-detected from these environment variables.
 FirebaseApp createApp({
   FutureOr<void> Function()? tearDown,
-  Client? client,
+  AuthClient? client,
   String? name,
 }) {
   final app = FirebaseApp.initializeApp(

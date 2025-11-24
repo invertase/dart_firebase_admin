@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:googleapis/firestore/v1.dart' as firestore1;
+import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 

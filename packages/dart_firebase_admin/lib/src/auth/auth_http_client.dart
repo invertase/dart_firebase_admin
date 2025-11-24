@@ -25,12 +25,12 @@ class AuthHttpClient {
 
   /// Lazy-initialized HTTP client that's cached for reuse.
   /// Uses unauthenticated client for emulator, authenticated for production.
-  late final Future<Client> _client = _createClient();
+  late final Future<googleapis_auth.AuthClient> _client = _createClient();
 
-  Future<Client> get client => _client;
+  Future<googleapis_auth.AuthClient> get client => _client;
 
   /// Creates the appropriate HTTP client based on emulator configuration.
-  Future<Client> _createClient() async {
+  Future<googleapis_auth.AuthClient> _createClient() async {
     // If app has custom httpClient (e.g., mock for testing), always use it
     if (app.options.httpClient != null) {
       return app.client;
@@ -40,7 +40,7 @@ class AuthHttpClient {
       // Emulator: Create unauthenticated client to avoid loading ADC credentials
       // which would cause emulator warnings. Wrap with EmulatorClient to add
       // "Authorization: Bearer owner" header that the emulator requires.
-      return EmulatorClient(Client());
+      return EmulatorClient(http.Client());
     }
     // Production: Use authenticated client from app
     return app.client;
@@ -314,7 +314,7 @@ class AuthHttpClient {
   }
 
   Future<R> _run<R>(
-    Future<R> Function(Client client) fn,
+    Future<R> Function(googleapis_auth.AuthClient client) fn,
   ) {
     return _authGuard(() async {
       // Use the cached client (created once based on emulator configuration)

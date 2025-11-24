@@ -25,10 +25,14 @@ class _RequestImpl extends BaseRequest {
 ///
 /// Firebase emulators expect this specific bearer token to grant full
 /// admin privileges for local development and testing.
-class EmulatorClient extends BaseClient {
+class EmulatorClient implements googleapis_auth.AuthClient {
   EmulatorClient(this.client);
 
   final Client client;
+
+  @override
+  googleapis_auth.AccessCredentials get credentials =>
+      throw UnimplementedError();
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
@@ -47,4 +51,56 @@ class EmulatorClient extends BaseClient {
   void close() {
     client.close();
   }
+
+  @override
+  Future<Response> head(Uri url, {Map<String, String>? headers}) =>
+      client.head(url, headers: headers);
+
+  @override
+  Future<Response> get(Uri url, {Map<String, String>? headers}) =>
+      client.get(url, headers: headers);
+
+  @override
+  Future<Response> post(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) =>
+      client.post(url, headers: headers, body: body, encoding: encoding);
+
+  @override
+  Future<Response> put(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) =>
+      client.put(url, headers: headers, body: body, encoding: encoding);
+
+  @override
+  Future<Response> patch(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) =>
+      client.patch(url, headers: headers, body: body, encoding: encoding);
+
+  @override
+  Future<Response> delete(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) =>
+      client.delete(url, headers: headers, body: body, encoding: encoding);
+
+  @override
+  Future<String> read(Uri url, {Map<String, String>? headers}) =>
+      client.read(url, headers: headers);
+
+  @override
+  Future<Uint8List> readBytes(Uri url, {Map<String, String>? headers}) =>
+      client.readBytes(url, headers: headers);
 }
