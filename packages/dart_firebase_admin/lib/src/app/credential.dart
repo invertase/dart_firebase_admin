@@ -50,21 +50,18 @@ sealed class Credential {
 
   /// Creates a credential from individual service account parameters.
   ///
-  /// This is primarily useful for testing when you want to provide mock
-  /// credentials without creating a JSON file.
-  ///
   /// Parameters:
   /// - [clientId]: The OAuth2 client ID (optional)
   /// - [privateKey]: The private key in PEM format
   /// - [email]: The service account email address
-  /// - [projectId]: The Google Cloud project ID (optional, defaults to 'test-project')
+  /// - [projectId]: The Google Cloud project ID
   ///
   /// Example:
   /// ```dart
   /// final credential = Credential.fromServiceAccountParams(
-  ///   clientId: 'test-client-id',
+  ///   clientId: 'client-id',
   ///   privateKey: '-----BEGIN RSA PRIVATE KEY-----\n...',
-  ///   email: 'test@example.iam.gserviceaccount.com',
+  ///   email: 'client@example.iam.gserviceaccount.com',
   ///   projectId: 'my-project',
   /// );
   /// ```
@@ -72,7 +69,7 @@ sealed class Credential {
     String? clientId,
     required String privateKey,
     required String email,
-    String projectId = 'test-project',
+    required String projectId,
   }) {
     return ServiceAccountCredential.fromParams(
       clientId: clientId,

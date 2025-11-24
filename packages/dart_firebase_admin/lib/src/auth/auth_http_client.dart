@@ -27,6 +27,8 @@ class AuthHttpClient {
   /// Uses unauthenticated client for emulator, authenticated for production.
   late final Future<Client> _client = _createClient();
 
+  Future<Client> get client => _client;
+
   /// Creates the appropriate HTTP client based on emulator configuration.
   Future<Client> _createClient() async {
     // If app has custom httpClient (e.g., mock for testing), always use it

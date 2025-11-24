@@ -18,6 +18,7 @@ void main() {
             clientId: 'test-client-id',
             privateKey: mockPrivateKey,
             email: mockClientEmail,
+            projectId: mockProjectId,
           ),
         ),
       );

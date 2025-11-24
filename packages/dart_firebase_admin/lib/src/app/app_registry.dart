@@ -149,14 +149,8 @@ class AppRegistry {
   /// This calls [FirebaseApp.close] on the app, which will also remove it
   /// from the registry.
   Future<void> deleteApp(FirebaseApp app) async {
-    if (!_apps.containsKey(app.name)) {
-      throw FirebaseAppException(
-        AppErrorCode.invalidArgument,
-        'Firebase app named "${app.name}" does not exist.',
-      );
-    }
-
-    await app.close();
+    final existingApp = getApp(app.name);
+    await existingApp.close();
   }
 
   /// Removes an app from the registry.
