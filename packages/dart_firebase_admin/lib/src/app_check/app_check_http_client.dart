@@ -6,11 +6,9 @@ part of 'app_check.dart';
 /// path builders, and simple API operations.
 /// Does not handle emulator routing as App Check has no emulator support.
 class AppCheckHttpClient {
-  AppCheckHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
-      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+  AppCheckHttpClient(this.app);
 
   final FirebaseApp app;
-  final ProjectIdProvider _projectIdProvider;
 
   /// Builds the app resource path for App Check operations.
   String buildAppPath(String projectId, String appId) {
@@ -27,8 +25,12 @@ class AppCheckHttpClient {
     Future<R> Function(appcheck1.FirebaseappcheckApi client, String projectId)
         fn,
   ) async {
-    final projectId = await _projectIdProvider.discoverProjectId();
-    return fn(appcheck1.FirebaseappcheckApi(await app.client), projectId);
+    final client = await app.client;
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
+    return fn(appcheck1.FirebaseappcheckApi(client), projectId);
   }
 
   /// Executes an App Check v1Beta API operation with automatic projectId injection.
@@ -38,8 +40,12 @@ class AppCheckHttpClient {
       String projectId,
     ) fn,
   ) async {
-    final projectId = await _projectIdProvider.discoverProjectId();
-    return fn(appcheck1_beta.FirebaseappcheckApi(await app.client), projectId);
+    final client = await app.client;
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
+    return fn(appcheck1_beta.FirebaseappcheckApi(client), projectId);
   }
 
   /// Exchange a custom token for an App Check token (low-level API call).

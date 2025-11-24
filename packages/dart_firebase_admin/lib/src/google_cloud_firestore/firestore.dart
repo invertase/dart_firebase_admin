@@ -7,12 +7,12 @@ import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:googleapis/firestore/v1.dart' as firestore1;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
 import '../app.dart';
 import '../object_utils.dart';
-import '../utils/project_id_provider.dart';
 import 'backoff.dart';
 import 'status_code.dart';
 import 'util.dart';
@@ -67,12 +67,8 @@ class Firestore implements FirebaseService {
   ///
   /// Throws if project ID is not available from any source.
   String get _projectId {
-    final cached = _client._projectIdProvider.cachedProjectId;
+    final cached = app.projectId;
     if (cached != null) return cached;
-
-    // Fall back to explicitly set project ID (from app options, env vars, or credentials)
-    final explicit = _client._projectIdProvider.explicitProjectId;
-    if (explicit != null) return explicit;
 
     throw StateError(
       'Project ID has not been discovered yet. '

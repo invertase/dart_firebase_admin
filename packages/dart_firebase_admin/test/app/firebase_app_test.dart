@@ -6,7 +6,6 @@ import 'package:dart_firebase_admin/security_rules.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
 import 'package:dart_firebase_admin/src/auth.dart';
-import 'package:dart_firebase_admin/src/utils/project_id_provider.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -506,8 +505,6 @@ void main() {
             // Setup the mock: httpClient returns our mock client
             when(() => mockHttpClient.client)
                 .thenAnswer((_) async => mockClient);
-            when(() => mockHttpClient.projectIdProvider)
-                .thenReturn(ProjectIdProvider(app));
 
             // Create a real request handler with mocked http client
             final requestHandler =

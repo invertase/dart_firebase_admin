@@ -1,7 +1,9 @@
-import 'package:googleapis/firebaserules/v1.dart' as firebase_rules_v1;
+import 'dart:async';
 
-import '../../dart_firebase_admin.dart';
-import '../utils/project_id_provider.dart';
+import 'package:googleapis/firebaserules/v1.dart' as firebase_rules_v1;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+
+import '../app.dart';
 
 part 'security_rules_exception.dart';
 part 'security_rules_http_client.dart';

@@ -21,20 +21,14 @@ abstract class _BaseAuth {
     _FirebaseTokenGenerator? tokenGenerator,
   })  : _authRequestHandler = authRequestHandler,
         _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
-        _sessionCookieVerifier = _createSessionCookieVerifier(
-          app,
-          authRequestHandler.projectIdProvider,
-        );
+        _sessionCookieVerifier = _createSessionCookieVerifier(app);
 
   final FirebaseApp app;
   final _AbstractAuthRequestHandler _authRequestHandler;
   final FirebaseTokenVerifier _sessionCookieVerifier;
   final _FirebaseTokenGenerator _tokenGenerator;
 
-  late final _idTokenVerifier = _createIdTokenVerifier(
-    app,
-    _authRequestHandler.projectIdProvider,
-  );
+  late final _idTokenVerifier = _createIdTokenVerifier(app);
 
   /// Generates the out of band email action link to reset a user's password.
   /// The link is generated for the user with the specified email address. The

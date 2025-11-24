@@ -12,11 +12,9 @@ final _legacyFirebaseMessagingHeaders = {
 /// path builders, and simple API operations.
 /// Does not handle emulator routing as FCM has no emulator support.
 class FirebaseMessagingHttpClient {
-  FirebaseMessagingHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
-      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+  FirebaseMessagingHttpClient(this.app);
 
   final FirebaseApp app;
-  final ProjectIdProvider _projectIdProvider;
 
   /// Builds the parent resource path for FCM operations.
   String buildParent(String projectId) {
@@ -34,7 +32,11 @@ class FirebaseMessagingHttpClient {
     Future<R> Function(fmc1.FirebaseCloudMessagingApi client, String projectId)
         fn,
   ) async {
-    final projectId = await _projectIdProvider.discoverProjectId();
+    final client = await app.client;
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
     return _run(
       (client) => fn(fmc1.FirebaseCloudMessagingApi(client), projectId),
     );

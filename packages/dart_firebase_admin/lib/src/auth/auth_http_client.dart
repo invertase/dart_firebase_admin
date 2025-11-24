@@ -1,11 +1,9 @@
 part of '../auth.dart';
 
 class AuthHttpClient {
-  AuthHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
-      : projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+  AuthHttpClient(this.app);
 
   final FirebaseApp app;
-  final ProjectIdProvider projectIdProvider;
 
   /// Gets the Auth API host URL based on emulator configuration.
   ///
@@ -326,7 +324,11 @@ class AuthHttpClient {
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client, String projectId) fn,
   ) async {
-    final projectId = await projectIdProvider.discoverProjectId();
+    final client = await this.client;
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
     return _run(
       (client) => fn(
         auth1.IdentityToolkitApi(
@@ -341,7 +343,11 @@ class AuthHttpClient {
   Future<R> v2<R>(
     Future<R> Function(auth2.IdentityToolkitApi client, String projectId) fn,
   ) async {
-    final projectId = await projectIdProvider.discoverProjectId();
+    final client = await this.client;
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
     return _run(
       (client) => fn(
         auth2.IdentityToolkitApi(
@@ -356,7 +362,11 @@ class AuthHttpClient {
   Future<R> v3<R>(
     Future<R> Function(auth3.IdentityToolkitApi client, String projectId) fn,
   ) async {
-    final projectId = await projectIdProvider.discoverProjectId();
+    final client = await this.client;
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
     return _run(
       (client) => fn(
         auth3.IdentityToolkitApi(

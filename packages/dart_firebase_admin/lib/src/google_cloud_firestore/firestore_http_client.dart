@@ -1,11 +1,9 @@
 part of 'firestore.dart';
 
 class FirestoreHttpClient {
-  FirestoreHttpClient(this.app, [ProjectIdProvider? projectIdProvider])
-      : _projectIdProvider = projectIdProvider ?? ProjectIdProvider(app);
+  FirestoreHttpClient(this.app);
 
   final FirebaseApp app;
-  final ProjectIdProvider _projectIdProvider;
 
   /// Gets the Firestore API host URL based on emulator configuration.
   ///
@@ -62,7 +60,11 @@ class FirestoreHttpClient {
   Future<R> v1<R>(
     Future<R> Function(firestore1.FirestoreApi client, String projectId) fn,
   ) async {
-    final projectId = await _projectIdProvider.discoverProjectId();
+    final client = await _client;
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
     return _run(
       (client) => fn(
         firestore1.FirestoreApi(

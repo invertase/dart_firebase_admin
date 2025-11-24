@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:googleapis/fcm/v1.dart' as fmc1;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
 import '../app.dart';
-import '../utils/project_id_provider.dart';
 
 part 'fmc_exception.dart';
 part 'messaging_api.dart';

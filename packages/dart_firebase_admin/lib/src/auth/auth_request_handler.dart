@@ -41,9 +41,6 @@ abstract class _AbstractAuthRequestHandler {
 
   AuthHttpClient get httpClient => _httpClient;
 
-  /// Exposes the ProjectIdProvider for creating token verifiers.
-  ProjectIdProvider get projectIdProvider => _httpClient.projectIdProvider;
-
   /// Generates the out of band email action link for the email specified using the action code settings provided.
   /// Returns a promise that resolves with the generated link.
   Future<String> getEmailActionLink(
