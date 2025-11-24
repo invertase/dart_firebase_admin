@@ -6,6 +6,9 @@ import 'package:test/test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 import '../mock.dart';
 
+final hasGoogleEnv =
+    Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
+
 void main() {
   late AppCheck appCheck;
 
@@ -15,9 +18,6 @@ void main() {
     final sdk = createApp();
     appCheck = AppCheck(sdk);
   });
-
-  final hasGoogleEnv =
-      Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
 
   group('AppCheck', () {
     test(

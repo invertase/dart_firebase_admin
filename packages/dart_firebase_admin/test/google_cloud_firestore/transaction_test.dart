@@ -418,7 +418,6 @@ void main() {
             .get();
         expect(snapshot1.data()!['test'], equals(2));
       },
-      skip: 'Flaky: Firestore emulator data inconsistency',
     );
 
     test(

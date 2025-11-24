@@ -5,6 +5,7 @@ import 'package:dart_firebase_admin/auth.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+import '../app_check/app_check_test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 
 Future<ProcessResult> run(
@@ -63,7 +64,9 @@ void main() {
           });
           expect(decodedToken.firebase.signInProvider, 'password');
         },
-        skip: 'Requires production mode but runs with emulator auto-detection',
+        skip: hasGoogleEnv
+            ? false
+            : 'Requires production mode but runs with emulator auto-detection',
       );
     });
   });
