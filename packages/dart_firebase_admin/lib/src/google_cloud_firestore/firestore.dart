@@ -67,8 +67,12 @@ class Firestore implements FirebaseService {
   ///
   /// Throws if project ID is not available from any source.
   String get _projectId {
-    final cached = app.projectId;
+    final cached = _client.cachedProjectId;
     if (cached != null) return cached;
+
+    // Fall back to explicitly set project ID (from app options, env vars, or credentials)
+    final explicit = app.projectId;
+    if (explicit != null) return explicit;
 
     throw StateError(
       'Project ID has not been discovered yet. '

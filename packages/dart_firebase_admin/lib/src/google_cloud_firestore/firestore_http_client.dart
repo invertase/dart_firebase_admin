@@ -5,6 +5,10 @@ class FirestoreHttpClient {
 
   final FirebaseApp app;
 
+  String? _cachedProjectId;
+
+  String? get cachedProjectId => _cachedProjectId;
+
   /// Gets the Firestore API host URL based on emulator configuration.
   ///
   /// When [Environment.firestoreEmulatorHost] is set, routes requests to
@@ -65,6 +69,7 @@ class FirestoreHttpClient {
       projectIdOverride: app.options.projectId,
       environment: Zone.current[envSymbol] as Map<String, String>?,
     );
+    _cachedProjectId = projectId;
     return _run(
       (client) => fn(
         firestore1.FirestoreApi(client, rootUrl: _firestoreApiHost.toString()),
