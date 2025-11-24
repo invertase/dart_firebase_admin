@@ -3,10 +3,9 @@
 # Fast fail the script on failures.
 set -e
 
-cd "$(dirname "$0")/../packages/dart_firebase_admin"
-
 dart pub global activate coverage
 
-firebase emulators:exec --project dart-firebase-admin --only firestore,auth "dart test --concurrency=1 --coverage=coverage" 
+firebase emulators:exec --project dart-firebase-admin --only firestore,auth "cd packages/dart_firebase_admin && dart test --concurrency=1 --coverage=coverage" 
 
-format_coverage --lcov --in=coverage --out=coverage.lcov --packages=.dart_tool/package_config.json --report-on=lib
+cd packages/dart_firebase_admin
+format_coverage --lcov --in=coverage --out=coverage.lcov --package=. --report-on=lib
