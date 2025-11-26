@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:googleapis/firebaseappcheck/v1.dart' as appcheck1;
+import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1_beta;
 import 'package:meta/meta.dart';

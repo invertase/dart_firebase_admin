@@ -305,60 +305,44 @@ class AuthHttpClient {
     });
   }
 
-  Future<R> _run<R>(Future<R> Function(googleapis_auth.AuthClient client) fn) {
+  Future<R> _run<R>(
+    Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
+  ) {
     return _authGuard(() async {
       // Use the cached client (created once based on emulator configuration)
       final client = await _client;
-      return fn(client);
+      final projectId = await client.getProjectId(
+        projectIdOverride: app.options.projectId,
+        environment: Zone.current[envSymbol] as Map<String, String>?,
+      );
+      return fn(client, projectId);
     });
   }
 
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client, String projectId) fn,
-  ) async {
-    // TODO(demolaf): this can move into _run instead
-    final client = await this.client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
-    return _run(
-      (client) => fn(
-        auth1.IdentityToolkitApi(client, rootUrl: _authApiHost.toString()),
-        projectId,
-      ),
-    );
-  }
+  ) => _run(
+    (client, projectId) => fn(
+      auth1.IdentityToolkitApi(client, rootUrl: _authApiHost.toString()),
+      projectId,
+    ),
+  );
 
   Future<R> v2<R>(
     Future<R> Function(auth2.IdentityToolkitApi client, String projectId) fn,
-  ) async {
-    final client = await this.client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
-    return _run(
-      (client) => fn(
-        auth2.IdentityToolkitApi(client, rootUrl: _authApiHost.toString()),
-        projectId,
-      ),
-    );
-  }
+  ) => _run(
+    (client, projectId) => fn(
+      auth2.IdentityToolkitApi(client, rootUrl: _authApiHost.toString()),
+      projectId,
+    ),
+  );
 
   Future<R> v3<R>(
     Future<R> Function(auth3.IdentityToolkitApi client, String projectId) fn,
-  ) async {
-    final client = await this.client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
-    return _run(
-      (client) => fn(
-        auth3.IdentityToolkitApi(client, rootUrl: _authApiHost.toString()),
-        projectId,
-      ),
-    );
-  }
+  ) => _run(
+    (client, projectId) => fn(
+      auth3.IdentityToolkitApi(client, rootUrl: _authApiHost.toString()),
+      projectId,
+    ),
+  );
 }

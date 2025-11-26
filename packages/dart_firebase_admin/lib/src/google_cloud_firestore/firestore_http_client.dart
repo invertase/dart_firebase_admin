@@ -50,11 +50,16 @@ class FirestoreHttpClient {
   }
 
   Future<R> _run<R>(
-    Future<R> Function(googleapis_auth.AuthClient client) fn,
+    Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) async {
     // Use the cached client (created once based on emulator configuration)
     final client = await _client;
-    return _firestoreGuard(() => fn(client));
+    final projectId = await client.getProjectId(
+      projectIdOverride: app.options.projectId,
+      environment: Zone.current[envSymbol] as Map<String, String>?,
+    );
+    _cachedProjectId = projectId;
+    return _firestoreGuard(() => fn(client, projectId));
   }
 
   /// Executes a Firestore v1 API operation with automatic projectId injection.
@@ -63,18 +68,10 @@ class FirestoreHttpClient {
   /// all subsequent operations. This matches the Auth service pattern.
   Future<R> v1<R>(
     Future<R> Function(firestore1.FirestoreApi client, String projectId) fn,
-  ) async {
-    final client = await _client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
-    _cachedProjectId = projectId;
-    return _run(
-      (client) => fn(
-        firestore1.FirestoreApi(client, rootUrl: _firestoreApiHost.toString()),
-        projectId,
-      ),
-    );
-  }
+  ) => _run(
+    (client, projectId) => fn(
+      firestore1.FirestoreApi(client, rootUrl: _firestoreApiHost.toString()),
+      projectId,
+    ),
+  );
 }

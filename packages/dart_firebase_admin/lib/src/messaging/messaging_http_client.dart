@@ -21,24 +21,25 @@ class FirebaseMessagingHttpClient {
     return 'projects/$projectId';
   }
 
-  Future<R> _run<R>(Future<R> Function(Client client) fn) {
-    return _fmcGuard(() => app.client.then(fn));
-  }
-
-  /// Executes a Messaging v1 API operation with automatic projectId injection.
-  Future<R> v1<R>(
-    Future<R> Function(fmc1.FirebaseCloudMessagingApi client, String projectId)
-    fn,
+  Future<R> _run<R>(
+    Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) async {
     final client = await app.client;
     final projectId = await client.getProjectId(
       projectIdOverride: app.options.projectId,
       environment: Zone.current[envSymbol] as Map<String, String>?,
     );
-    return _run(
-      (client) => fn(fmc1.FirebaseCloudMessagingApi(client), projectId),
-    );
+    return _fmcGuard(() => fn(client, projectId));
   }
+
+  /// Executes a Messaging v1 API operation with automatic projectId injection.
+  Future<R> v1<R>(
+    Future<R> Function(fmc1.FirebaseCloudMessagingApi client, String projectId)
+    fn,
+  ) => _run(
+    (client, projectId) =>
+        fn(fmc1.FirebaseCloudMessagingApi(client), projectId),
+  );
 
   /// Invokes the legacy FCM API with the provided request data.
   ///

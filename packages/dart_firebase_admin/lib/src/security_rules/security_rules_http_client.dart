@@ -10,13 +10,23 @@ class SecurityRulesHttpClient {
 
   final FirebaseApp app;
 
-  /// Executes a Security Rules v1 API operation with automatic projectId injection.
-  Future<R> v1<R>(
-    Future<R> Function(
-      firebase_rules_v1.FirebaseRulesApi client,
-      String projectId,
-    )
-    fn,
+  /// Builds the project path for Security Rules operations.
+  String buildProjectPath(String projectId) {
+    return 'projects/$projectId';
+  }
+
+  /// Builds the ruleset resource path.
+  String buildRulesetPath(String projectId, String name) {
+    return 'projects/$projectId/rulesets/$name';
+  }
+
+  /// Builds the release resource path.
+  String buildReleasePath(String projectId, String name) {
+    return 'projects/$projectId/releases/$name';
+  }
+
+  Future<R> _run<R>(
+    Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) async {
     final client = await app.client;
     final projectId = await client.getProjectId(
@@ -24,10 +34,7 @@ class SecurityRulesHttpClient {
       environment: Zone.current[envSymbol] as Map<String, String>?,
     );
     try {
-      return await fn(
-        firebase_rules_v1.FirebaseRulesApi(await app.client),
-        projectId,
-      );
+      return await fn(client, projectId);
     } on FirebaseSecurityRulesException {
       rethrow;
     } on firebase_rules_v1.DetailedApiRequestError catch (e, stack) {
@@ -60,18 +67,15 @@ class SecurityRulesHttpClient {
     }
   }
 
-  /// Builds the project path for Security Rules operations.
-  String buildProjectPath(String projectId) {
-    return 'projects/$projectId';
-  }
-
-  /// Builds the ruleset resource path.
-  String buildRulesetPath(String projectId, String name) {
-    return 'projects/$projectId/rulesets/$name';
-  }
-
-  /// Builds the release resource path.
-  String buildReleasePath(String projectId, String name) {
-    return 'projects/$projectId/releases/$name';
-  }
+  /// Executes a Security Rules v1 API operation with automatic projectId injection.
+  Future<R> v1<R>(
+    Future<R> Function(
+      firebase_rules_v1.FirebaseRulesApi client,
+      String projectId,
+    )
+    fn,
+  ) => _run(
+    (client, projectId) =>
+        fn(firebase_rules_v1.FirebaseRulesApi(client), projectId),
+  );
 }

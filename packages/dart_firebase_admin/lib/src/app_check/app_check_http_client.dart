@@ -20,18 +20,24 @@ class AppCheckHttpClient {
     return 'projects/$projectId';
   }
 
-  /// Executes an App Check v1 API operation with automatic projectId injection.
-  Future<R> v1<R>(
-    Future<R> Function(appcheck1.FirebaseappcheckApi client, String projectId)
-    fn,
+  Future<R> _run<R>(
+    Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) async {
     final client = await app.client;
     final projectId = await client.getProjectId(
       projectIdOverride: app.options.projectId,
       environment: Zone.current[envSymbol] as Map<String, String>?,
     );
-    return fn(appcheck1.FirebaseappcheckApi(client), projectId);
+    return fn(client, projectId);
   }
+
+  /// Executes an App Check v1 API operation with automatic projectId injection.
+  Future<R> v1<R>(
+    Future<R> Function(appcheck1.FirebaseappcheckApi client, String projectId)
+    fn,
+  ) => _run(
+    (client, projectId) => fn(appcheck1.FirebaseappcheckApi(client), projectId),
+  );
 
   /// Executes an App Check v1Beta API operation with automatic projectId injection.
   Future<R> v1Beta<R>(
@@ -40,14 +46,10 @@ class AppCheckHttpClient {
       String projectId,
     )
     fn,
-  ) async {
-    final client = await app.client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
-    return fn(appcheck1_beta.FirebaseappcheckApi(client), projectId);
-  }
+  ) => _run(
+    (client, projectId) =>
+        fn(appcheck1_beta.FirebaseappcheckApi(client), projectId),
+  );
 
   /// Exchange a custom token for an App Check token (low-level API call).
   ///

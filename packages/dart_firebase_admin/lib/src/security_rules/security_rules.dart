@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:googleapis/firebaserules/v1.dart' as firebase_rules_v1;
+import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 
 import '../app.dart';
