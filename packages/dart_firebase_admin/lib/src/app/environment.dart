@@ -4,6 +4,7 @@ part of '../app.dart';
 ///
 /// These constants provide type-safe access to environment variables
 /// that configure SDK behavior, credentials, and emulator connections.
+@internal
 abstract class Environment {
   /// Path to Google Application Credentials JSON file.
   ///

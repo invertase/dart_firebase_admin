@@ -1,6 +1,25 @@
 part of '../app.dart';
 
+@internal
 class AppRegistry {
+  AppRegistry._();
+
+  /// Returns the shared default instance, creating it on first access.
+  factory AppRegistry.getDefault() {
+    return _instance ??= AppRegistry._();
+  }
+
+  static AppRegistry? _instance;
+
+  /// The current instance, if one exists.
+  static AppRegistry? get instance => _instance;
+
+  /// Replaces the singleton instance. Use for testing.
+  @visibleForTesting
+  static set instance(AppRegistry? registry) {
+    _instance = registry;
+  }
+
   static const _defaultAppName = '[DEFAULT]';
 
   final Map<String, FirebaseApp> _apps = {};

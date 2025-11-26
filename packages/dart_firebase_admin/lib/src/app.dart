@@ -27,4 +27,3 @@ part 'app/exception.dart';
 part 'app/firebase_app.dart';
 part 'app/firebase_service.dart';
 
-final _defaultAppRegistry = AppRegistry();

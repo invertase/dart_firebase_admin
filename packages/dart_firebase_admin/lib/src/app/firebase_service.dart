@@ -1,5 +1,6 @@
 part of '../app.dart';
 
+@internal
 enum FirebaseServiceType {
   appCheck(name: 'app-check'),
   auth(name: 'auth'),
@@ -43,6 +44,7 @@ enum FirebaseServiceType {
 ///   }
 /// }
 /// ```
+@internal
 abstract class FirebaseService {
   FirebaseService(this.app);
 

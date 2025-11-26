@@ -25,6 +25,7 @@ class _RequestImpl extends BaseRequest {
 ///
 /// Firebase emulators expect this specific bearer token to grant full
 /// admin privileges for local development and testing.
+@internal
 class EmulatorClient implements googleapis_auth.AuthClient {
   EmulatorClient(this.client);
 

@@ -11,6 +11,8 @@ class FirebaseApp {
     required this.wasInitializedFromEnv,
   });
 
+  static final _defaultAppRegistry = AppRegistry.getDefault();
+
   /// Initializes a Firebase app.
   ///
   /// Creates a new app instance or returns an existing one if already
