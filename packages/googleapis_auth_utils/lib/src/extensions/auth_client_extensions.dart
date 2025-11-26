@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 
 part 'project_id_provider.dart';
 
 extension AuthClientX on AuthClient {
   /// Discovers the Google Cloud project ID with support for explicit sources.
   ///
-  /// Uses the singleton [_ProjectIdProvider] to discover and cache project IDs.
+  /// Uses the singleton [ProjectIdProvider] to discover and cache project IDs.
   ///
   /// Checks in the following order:
   /// 1. [projectIdOverride] - if provided
@@ -22,17 +22,17 @@ extension AuthClientX on AuthClient {
     String? projectIdOverride,
     Map<String, String>? environment,
   }) async {
-    return _ProjectIdProvider.instance.getProjectId(
+    return ProjectIdProvider.getDefault(
       this,
-      projectIdOverride: projectIdOverride,
       environment: environment,
-    );
+    ).getProjectId(projectIdOverride: projectIdOverride);
   }
 
-  /// Gets the cached project ID from the [_ProjectIdProvider].
+  /// Gets the cached project ID from the [ProjectIdProvider].
   ///
   /// Returns null if the project ID has not been discovered yet.
-  String? get cachedProjectId => _ProjectIdProvider.instance.cachedProjectId;
+  String? get cachedProjectId =>
+      ProjectIdProvider.getDefault(this).cachedProjectId;
 
   /// Discovers the default service account email.
   ///
@@ -44,21 +44,6 @@ extension AuthClientX on AuthClient {
   /// - Metadata service is unavailable
   /// - Network request fails
   Future<String?> getServiceAccountEmail() async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-          'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
-        ),
-        headers: {'Metadata-Flavor': 'Google'},
-      );
-
-      if (response.statusCode == 200) {
-        return response.body;
-      }
-    } catch (_) {
-      // Not on Compute Engine or metadata service unavailable
-    }
-
-    return null;
+    return ProjectIdProvider.getDefault(this).getServiceAccountEmail();
   }
 }

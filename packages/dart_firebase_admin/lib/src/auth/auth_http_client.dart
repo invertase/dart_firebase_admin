@@ -316,6 +316,7 @@ class AuthHttpClient {
   Future<R> v1<R>(
     Future<R> Function(auth1.IdentityToolkitApi client, String projectId) fn,
   ) async {
+    // TODO(demolaf): this can move into _run instead
     final client = await this.client;
     final projectId = await client.getProjectId(
       projectIdOverride: app.options.projectId,

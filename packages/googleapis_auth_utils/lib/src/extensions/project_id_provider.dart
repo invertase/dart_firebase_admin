@@ -1,137 +1,218 @@
 part of 'auth_client_extensions.dart';
 
-/// Provider for discovering and caching Google Cloud project IDs.
+@internal
+class FileSystem {
+  const FileSystem();
+
+  bool exists(String path) => File(path).existsSync();
+
+  Future<String> readAsString(String path) => File(path).readAsString();
+}
+
+@internal
+class ProcessRunner {
+  const ProcessRunner();
+
+  Future<ProcessResult> run(String executable, List<String> arguments) {
+    return Process.run(executable, arguments, runInShell: true);
+  }
+}
+
+@internal
+class MetadataClient {
+  MetadataClient(this._client);
+
+  final AuthClient _client;
+
+  Future<MetadataResponse> getProjectId() async {
+    final response = await _client.get(
+      Uri.parse(
+        'http://metadata.google.internal/computeMetadata/v1/project/project-id',
+      ),
+      headers: {'Metadata-Flavor': 'Google'},
+    );
+    return MetadataResponse(response.statusCode, response.body);
+  }
+
+  Future<MetadataResponse> getServiceAccountEmail() async {
+    final response = await _client.get(
+      Uri.parse(
+        'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
+      ),
+      headers: {'Metadata-Flavor': 'Google'},
+    );
+    return MetadataResponse(response.statusCode, response.body);
+  }
+}
+
+@internal
+class MetadataResponse {
+  const MetadataResponse(this.statusCode, this.body);
+
+  final int statusCode;
+  final String body;
+}
+
+/// Provider for discovering Google Cloud project IDs.
 ///
-/// This class encapsulates the pattern of discovering and caching project IDs
-/// from various sources including explicit configuration, environment variables,
-/// credential files, gcloud config, and metadata service.
-final class _ProjectIdProvider {
-  _ProjectIdProvider._();
+/// All dependencies are injected, making this fully testable.
+@internal
+class ProjectIdProvider {
+  /// Creates a provider with explicit dependencies. Use this for testing.
+  ProjectIdProvider({
+    required FileSystem fileSystem,
+    required ProcessRunner processRunner,
+    required MetadataClient metadataClient,
+    required Map<String, String> environment,
+  }) : _fileSystem = fileSystem,
+       _processRunner = processRunner,
+       _metadataClient = metadataClient,
+       _environment = environment;
 
-  static final _ProjectIdProvider _instance = _ProjectIdProvider._();
+  /// Returns a shared default instance, creating it on first access.
+  factory ProjectIdProvider.getDefault(
+    AuthClient client, {
+    Map<String, String>? environment,
+  }) {
+    return _instance ??= ProjectIdProvider(
+      fileSystem: const FileSystem(),
+      processRunner: const ProcessRunner(),
+      metadataClient: MetadataClient(client),
+      environment: environment ?? Platform.environment,
+    );
+  }
 
-  /// Gets the singleton instance of [_ProjectIdProvider].
-  static _ProjectIdProvider get instance => _instance;
+  static ProjectIdProvider? _instance;
 
-  /// Cached project ID after first discovery.
+  /// The current instance, if one exists.
+  static ProjectIdProvider? get instance => _instance;
+
+  final FileSystem _fileSystem;
+  final ProcessRunner _processRunner;
+  final MetadataClient _metadataClient;
+  final Map<String, String> _environment;
+
   String? _cachedProjectId;
 
-  /// Gets the cached project ID if it has been discovered.
-  /// Returns null if projectId has not been discovered yet.
   String? get cachedProjectId => _cachedProjectId;
 
-  /// Discovers and caches the Google Cloud project ID using the provided [client].
-  ///
-  /// Checks in the following order:
-  /// 1. [projectIdOverride]
-  /// 2. GOOGLE_CLOUD_PROJECT or GCLOUD_PROJECT environment variables
-  /// 3. GOOGLE_APPLICATION_CREDENTIALS JSON file
-  /// 4. Cloud SDK: `gcloud config config-helper --format json`
-  /// 5. GCE/Cloud Run metadata service
-  ///
-  /// The discovered project ID is cached for subsequent calls.
-  Future<String> getProjectId(
-    AuthClient client, {
-    String? projectIdOverride,
-    Map<String, String>? environment,
-  }) async {
+  Future<String> getProjectId({String? projectIdOverride}) async {
     if (_cachedProjectId != null) {
       return _cachedProjectId!;
     }
 
     // 1. Check explicit project ID
-    if (projectIdOverride != null && projectIdOverride.isNotEmpty) {
-      return _cachedProjectId = projectIdOverride;
+    if (projectIdOverride?.isNotEmpty ?? false) {
+      return (_cachedProjectId = projectIdOverride)!;
     }
 
     // 2. Check environment variables
-    final env = environment ?? Platform.environment;
-    final envProjectId = env['GOOGLE_CLOUD_PROJECT'] ?? env['GCLOUD_PROJECT'];
-    if (envProjectId != null && envProjectId.isNotEmpty) {
-      return _cachedProjectId = envProjectId;
+    final envProjectId =
+        _environment['GOOGLE_CLOUD_PROJECT'] ?? _environment['GCLOUD_PROJECT'];
+    if (envProjectId?.isNotEmpty ?? false) {
+      return (_cachedProjectId = envProjectId)!;
     }
 
-    // 3. Try to get from GOOGLE_APPLICATION_CREDENTIALS file
-    final credPath = env['GOOGLE_APPLICATION_CREDENTIALS'];
-    if (credPath != null && credPath.isNotEmpty) {
-      try {
-        final file = File(credPath);
-        if (file.existsSync()) {
-          final contents = await file.readAsString();
-          final json = jsonDecode(contents) as Map<String, dynamic>;
-          final projectId = json['project_id'] as String?;
-          if (projectId != null && projectId.isNotEmpty) {
-            return _cachedProjectId = projectId;
-          }
-        }
-      } catch (_) {
-        // Ignore errors and continue to next source
+    // 3. Try GOOGLE_APPLICATION_CREDENTIALS file
+    final credPath = _environment['GOOGLE_APPLICATION_CREDENTIALS'];
+    if (credPath?.isNotEmpty ?? false) {
+      final projectId = await _getProjectIdFromCredentialsFile(credPath!);
+      if (projectId != null) {
+        return _cachedProjectId = projectId;
       }
     }
 
     // 4. Try gcloud config
     final gcloudProjectId = await _getGcloudProjectId();
-    if (gcloudProjectId != null && gcloudProjectId.isNotEmpty) {
+    if (gcloudProjectId != null) {
       return _cachedProjectId = gcloudProjectId;
     }
 
-    // 5. Try metadata service (GCE/Cloud Run)
-    final metadataProjectId = await _getMetadataProjectId(client);
-    if (metadataProjectId != null && metadataProjectId.isNotEmpty) {
+    // 5. Try metadata service
+    final metadataProjectId = await _getMetadataProjectId();
+    if (metadataProjectId != null) {
       return _cachedProjectId = metadataProjectId;
     }
 
-    if (_cachedProjectId == null || _cachedProjectId!.isEmpty) {
-      throw Exception(
-        'Failed to determine project ID. Initialize the SDK with service '
-        'account credentials or set project ID as an app option. '
-        'Alternatively, set the GOOGLE_CLOUD_PROJECT environment variable.',
-      );
-    }
-
-    return _cachedProjectId!;
+    throw Exception(
+      'Failed to determine project ID. Initialize the SDK with service '
+      'account credentials or set project ID as an app option. '
+      'Alternatively, set the GOOGLE_CLOUD_PROJECT environment variable.',
+    );
   }
 
-  /// Attempts to get project ID from gcloud config.
+  Future<String?> _getProjectIdFromCredentialsFile(String path) async {
+    try {
+      if (!_fileSystem.exists(path)) return null;
+      final contents = await _fileSystem.readAsString(path);
+      final json = jsonDecode(contents) as Map<String, dynamic>;
+      final projectId = json['project_id'] as String?;
+      return projectId?.isNotEmpty ?? false ? projectId : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<String?> _getGcloudProjectId() async {
     try {
-      final result = await Process.run('gcloud', [
+      final result = await _processRunner.run('gcloud', [
         'config',
         'config-helper',
         '--format',
         'json',
-      ], runInShell: true);
+      ]);
 
       if (result.exitCode == 0) {
         final json =
             jsonDecode(result.stdout as String) as Map<String, dynamic>;
-        final config = json['configuration'] as Map<String, dynamic>?;
-        final properties = config?['properties'] as Map<String, dynamic>?;
+        final configuration = json['configuration'] as Map<String, dynamic>?;
+        final properties =
+            configuration?['properties'] as Map<String, dynamic>?;
         final core = properties?['core'] as Map<String, dynamic>?;
-        return core?['project'] as String?;
+        final project = core?['project'] as String?;
+        return project;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<String?> _getMetadataProjectId() async {
+    try {
+      final response = await _metadataClient.getProjectId();
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        return response.body;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Discovers the default service account email.
+  ///
+  /// This queries the GCE/Cloud Run metadata service to discover the default
+  /// service account email when running on Google Cloud infrastructure.
+  ///
+  /// Returns null if:
+  /// - Not running on GCE/Cloud Run
+  /// - Metadata service is unavailable
+  /// - Network request fails
+  Future<String?> getServiceAccountEmail() async {
+    try {
+      final response = await _metadataClient.getServiceAccountEmail();
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        return response.body;
       }
     } catch (_) {
-      // gcloud might not be installed or configured
+      // Not on Compute Engine or metadata service unavailable
     }
     return null;
   }
 
-  /// Attempts to get project ID from GCE/Cloud Run metadata service.
-  Future<String?> _getMetadataProjectId(AuthClient client) async {
-    try {
-      final response = await client.get(
-        Uri.parse(
-          'http://metadata.google.internal/computeMetadata/v1/project/project-id',
-        ),
-        headers: {'Metadata-Flavor': 'Google'},
-      );
+  @visibleForTesting
+  void clearCache() => _cachedProjectId = null;
 
-      if (response.statusCode == 200) {
-        return response.body;
-      }
-    } catch (_) {
-      // Not running on GCE/Cloud Run or metadata service unavailable
-    }
-    return null;
+  /// Replaces the singleton instance. Use for testing.
+  @visibleForTesting
+  static set instance(ProjectIdProvider? provider) {
+    _instance = provider;
   }
 }
