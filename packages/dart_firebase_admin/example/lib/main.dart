@@ -3,7 +3,9 @@ import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
 
 Future<void> main() async {
-  final admin = FirebaseApp.initializeApp();
+  final admin = FirebaseApp.initializeApp(options: AppOptions(
+    credential: Credential.fromApplicationDefaultCredentials()
+  ));
   await authExample(admin);
   await firestoreExample(admin);
   await admin.close();

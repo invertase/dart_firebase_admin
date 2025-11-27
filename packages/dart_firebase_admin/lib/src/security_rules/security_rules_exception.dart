@@ -19,7 +19,7 @@ class FirebaseSecurityRulesException extends FirebaseAdminException {
   FirebaseSecurityRulesException(
     FirebaseSecurityRulesErrorCode code,
     String? message,
-  ) : super('security-rules', code.value, message);
+  ) : super(FirebaseServiceType.securityRules.name, code.value, message);
 }
 
 const _errorMapping = {
