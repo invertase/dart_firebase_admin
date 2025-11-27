@@ -56,7 +56,11 @@ const messagingServerToClientCode = {
 class FirebaseMessagingAdminException extends FirebaseAdminException
     implements Exception {
   FirebaseMessagingAdminException(this.errorCode, [String? message])
-    : super(FirebaseServiceType.messaging.name, errorCode.code, message ?? errorCode.message);
+    : super(
+        FirebaseServiceType.messaging.name,
+        errorCode.code,
+        message ?? errorCode.message,
+      );
 
   @internal
   factory FirebaseMessagingAdminException.fromServerError({

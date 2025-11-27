@@ -3,7 +3,11 @@ part of '../auth.dart';
 class FirebaseAuthAdminException extends FirebaseAdminException
     implements Exception {
   FirebaseAuthAdminException(this.errorCode, [String? message])
-    : super(FirebaseServiceType.auth.name, errorCode.code, message ?? errorCode.message);
+    : super(
+        FirebaseServiceType.auth.name,
+        errorCode.code,
+        message ?? errorCode.message,
+      );
 
   factory FirebaseAuthAdminException.fromServerError({
     required String serverErrorCode,

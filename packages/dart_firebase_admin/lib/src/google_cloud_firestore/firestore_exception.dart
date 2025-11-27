@@ -119,7 +119,11 @@ Never _handleException(Object exception, StackTrace stackTrace) {
 class FirebaseFirestoreAdminException extends FirebaseAdminException
     implements Exception {
   FirebaseFirestoreAdminException(this.errorCode, [String? message])
-    : super(FirebaseServiceType.firestore.name, errorCode.code, message ?? errorCode.message);
+    : super(
+        FirebaseServiceType.firestore.name,
+        errorCode.code,
+        message ?? errorCode.message,
+      );
 
   @internal
   factory FirebaseFirestoreAdminException.fromServerError({
