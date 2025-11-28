@@ -11,6 +11,40 @@ import '../credential.dart';
 part 'project_id_provider.dart';
 
 extension AuthClientX on AuthClient {
+  /// Gets the [GoogleCredential] associated with this auth client.
+  ///
+  /// Returns null if this auth client was not created via [createAuthClient].
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = GoogleCredential.fromServiceAccount(file);
+  /// final client = await createAuthClient(credential, scopes);
+  ///
+  /// // Later, access the credential
+  /// final associatedCredential = client.credential;
+  /// ```
+  GoogleCredential? get credential => authClientCredentials[this];
+
+  /// Gets the service account credentials if available.
+  ///
+  /// This is a convenience getter that returns the service account credentials
+  /// from the associated [GoogleCredential], if available.
+  ///
+  /// Returns null if:
+  /// - Auth client was not created via [createAuthClient]
+  /// - Associated credential doesn't have service account credentials
+  ///
+  /// Example:
+  /// ```dart
+  /// final client = await createAuthClient(credential, scopes);
+  ///
+  /// if (client.serviceAccountCredentials != null) {
+  ///   print('Can use local signing');
+  /// }
+  /// ```
+  ServiceAccountCredentials? get serviceAccountCredentials =>
+      authClientCredentials[this]?.serviceAccountCredentials;
+
   /// Discovers the Google Cloud project ID with support for explicit sources.
   ///
   /// Uses the singleton [ProjectIdProvider] to discover and cache project IDs.
@@ -58,8 +92,8 @@ extension AuthClientX on AuthClient {
   /// The signing behavior depends on the auth client type:
   /// - [ImpersonatedAuthClient]: Uses IAM signBlob API to sign using the
   ///   target principal.
-  /// - [ServiceAccountCredentials] with private key: Signs locally using
-  ///   RSA-SHA256.
+  /// - Auth clients created via [createAuthClient] with service account
+  ///   credentials: Signs locally using RSA-SHA256.
   /// - Other auth clients: Uses IAM signBlob API with the default service
   ///   account.
   ///
@@ -72,7 +106,8 @@ extension AuthClientX on AuthClient {
   ///
   /// Example:
   /// ```dart
-  /// final authClient = await clientViaServiceAccount(credentials, scopes);
+  /// final credential = GoogleCredential.fromServiceAccount(file);
+  /// final authClient = await createAuthClient(credential, scopes);
   /// final signature = await authClient.sign('data to sign');
   /// ```
   Future<String> sign(String data, {String? endpoint}) async {
@@ -83,14 +118,12 @@ extension AuthClientX on AuthClient {
       return response.signedBlob;
     }
 
-    // Check if this is a credential-aware client with service account credentials
-    // (local signing doesn't use custom endpoint)
+    // Retrieve associated credential from Expando
+    final credential = authClientCredentials[this];
+
+    // Check if we have service account credentials for local signing
     final hasLocalSigningCapability =
-        this is CredentialAwareAuthClient &&
-        (this as CredentialAwareAuthClient)
-                .credential
-                .serviceAccountCredentials !=
-            null;
+        credential?.serviceAccountCredentials != null;
 
     // If endpoint is provided and we're NOT using local signing,
     // use custom endpoint for IAM API signing
@@ -108,7 +141,7 @@ extension AuthClientX on AuthClient {
 
     // Use CryptoSigner for local or default IAM API signing
     // CryptoSigner.fromAuthClient will automatically choose local signing
-    // for CredentialAwareAuthClient with service account credentials
+    // if credentials are available in the Expando
     final signer = CryptoSigner.fromAuthClient(this);
     final signatureBytes = await signer.sign(utf8.encode(data));
     return base64Encode(signatureBytes);

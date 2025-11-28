@@ -57,20 +57,13 @@ void main() {
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();
 
-        final client = await clientViaServiceAccount(
-          credential.serviceAccountCredentials!,
-          ['https://www.googleapis.com/auth/cloud-platform'],
-          baseClient: mockHttp,
-        );
-
-        // Wrap in CredentialAwareAuthClient
-        final credAwareClient = CredentialAwareAuthClient(
-          delegate: client,
-          credential: credential,
-        );
+        // Create auth client with associated credential
+        final client = await createAuthClient(credential, [
+          'https://www.googleapis.com/auth/cloud-platform',
+        ], baseClient: mockHttp);
 
         // Sign data
-        final signature = await credAwareClient.sign(testData);
+        final signature = await client.sign(testData);
 
         // Verify signature is base64-encoded and not empty
         expect(signature, isNotEmpty);
@@ -85,19 +78,13 @@ void main() {
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();
 
-        final client = await clientViaServiceAccount(
-          credential.serviceAccountCredentials!,
-          ['https://www.googleapis.com/auth/cloud-platform'],
-          baseClient: mockHttp,
-        );
-
-        final credAwareClient = CredentialAwareAuthClient(
-          delegate: client,
-          credential: credential,
-        );
+        // Create auth client with associated credential
+        final client = await createAuthClient(credential, [
+          'https://www.googleapis.com/auth/cloud-platform',
+        ], baseClient: mockHttp);
 
         // Sign with custom endpoint - should ignore it and use local signing
-        final signature = await credAwareClient.sign(
+        final signature = await client.sign(
           testData,
           endpoint: 'https://custom.endpoint.com',
         );
@@ -405,18 +392,12 @@ void main() {
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();
 
-        final client = await clientViaServiceAccount(
-          credential.serviceAccountCredentials!,
-          ['https://www.googleapis.com/auth/cloud-platform'],
-          baseClient: mockHttp,
-        );
+        // Create auth client with associated credential
+        final client = await createAuthClient(credential, [
+          'https://www.googleapis.com/auth/cloud-platform',
+        ], baseClient: mockHttp);
 
-        final credAwareClient = CredentialAwareAuthClient(
-          delegate: client,
-          credential: credential,
-        );
-
-        final signature = await credAwareClient.sign(testData);
+        final signature = await client.sign(testData);
 
         // Should be valid base64
         expect(() => base64Decode(signature), returnsNormally);
@@ -433,19 +414,13 @@ void main() {
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();
 
-        final client = await clientViaServiceAccount(
-          credential.serviceAccountCredentials!,
-          ['https://www.googleapis.com/auth/cloud-platform'],
-          baseClient: mockHttp,
-        );
+        // Create auth client with associated credential
+        final client = await createAuthClient(credential, [
+          'https://www.googleapis.com/auth/cloud-platform',
+        ], baseClient: mockHttp);
 
-        final credAwareClient = CredentialAwareAuthClient(
-          delegate: client,
-          credential: credential,
-        );
-
-        final signature1 = await credAwareClient.sign(testData);
-        final signature2 = await credAwareClient.sign(testData);
+        final signature1 = await client.sign(testData);
+        final signature2 = await client.sign(testData);
 
         // RSA signatures with PKCS#1 v1.5 padding are deterministic
         // (same input always produces same output with same key)

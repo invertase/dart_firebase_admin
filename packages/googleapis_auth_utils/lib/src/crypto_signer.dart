@@ -17,7 +17,7 @@ import 'credential_aware_client.dart';
 abstract class CryptoSigner {
   /// Creates a CryptoSigner from an AuthClient.
   ///
-  /// If [authClient] is a [CredentialAwareAuthClient] with service account
+  /// If [authClient] was created via [createAuthClient] with service account
   /// credentials, uses local signing. Otherwise, uses IAM API signing.
   ///
   /// [serviceAccountEmail] is only used for IAM API signing when the auth
@@ -26,13 +26,12 @@ abstract class CryptoSigner {
     auth.AuthClient authClient, {
     String? serviceAccountEmail,
   }) {
-    // Check if this is a credential-aware client with service account credentials
-    if (authClient is CredentialAwareAuthClient) {
-      final serviceAccountCreds =
-          authClient.credential.serviceAccountCredentials;
-      if (serviceAccountCreds != null) {
-        return ServiceAccountSigner(serviceAccountCreds);
-      }
+    // Check if credentials are associated with this auth client via Expando
+    final credential = authClientCredentials[authClient];
+    final serviceAccountCreds = credential?.serviceAccountCredentials;
+
+    if (serviceAccountCreds != null) {
+      return ServiceAccountSigner(serviceAccountCreds);
     }
 
     // Fall back to IAM API signing

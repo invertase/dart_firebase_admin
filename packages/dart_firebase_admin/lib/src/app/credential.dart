@@ -109,6 +109,10 @@ sealed class Credential {
   /// Returns the service account ID (email) if available.
   @internal
   String? get serviceAccountId;
+
+  /// Returns the underlying [googleapis_auth_utils.GoogleCredential].
+  @internal
+  googleapis_auth_utils.GoogleCredential get googleCredential;
 }
 
 /// Extended service account credentials that includes projectId.
@@ -152,6 +156,10 @@ final class ServiceAccountCredential extends Credential {
 
   @override
   String? get serviceAccountId => _googleCredential.serviceAccountId;
+
+  @override
+  googleapis_auth_utils.GoogleCredential get googleCredential =>
+      _googleCredential;
 }
 
 /// Application Default Credentials for Firebase Admin SDK.
@@ -184,6 +192,10 @@ final class ApplicationDefaultCredential extends Credential {
 
   @override
   String? get serviceAccountId => _googleCredential.serviceAccountId;
+
+  @override
+  googleapis_auth_utils.GoogleCredential get googleCredential =>
+      _googleCredential;
 
   /// The project ID if available from the service account file.
   ///

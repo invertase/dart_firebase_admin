@@ -99,20 +99,13 @@ class FirebaseApp {
       auth3.IdentityToolkitApi.firebaseScope,
     ];
 
-    final serviceAccountCredentials =
-        options.credential?.serviceAccountCredentials;
+    // Get or create credential
+    final credential = options.credential?.googleCredential;
 
-    // Create authenticated client using googleapis_auth
-    if (serviceAccountCredentials != null) {
-      return googleapis_auth.clientViaServiceAccount(
-        serviceAccountCredentials,
-        scopes,
-      );
-    }
-
-    return googleapis_auth.clientViaApplicationDefaultCredentials(
-      scopes: scopes,
-    );
+    // Create authenticated client using googleapis_auth_utils
+    // This associates the credential with the client via Expando,
+    // enabling features like local signing when service account keys are available
+    return googleapis_auth_utils.createAuthClient(credential, scopes);
   }
 
   /// Returns the HTTP client for this app.
