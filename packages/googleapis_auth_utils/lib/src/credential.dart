@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
+import 'package:meta/meta.dart';
+
+import 'extensions/auth_client_extensions.dart';
 
 /// Base class for Google Cloud credentials.
 ///
@@ -147,8 +150,14 @@ final class GoogleServiceAccountCredential extends GoogleCredential {
   }
 
   /// Creates a [GoogleServiceAccountCredential] from a service account JSON file.
-  factory GoogleServiceAccountCredential.fromFile(File serviceAccountFile) {
-    final content = serviceAccountFile.readAsStringSync();
+  factory GoogleServiceAccountCredential.fromFile(
+    File serviceAccountFile, {
+    @internal FileSystem? fileSystem,
+  }) {
+    final content = fileSystem != null
+        ? fileSystem.readAsString(serviceAccountFile.path)
+        : serviceAccountFile.readAsStringSync();
+
     final json = jsonDecode(content);
     if (json is! Map<String, Object?>) {
       throw CredentialParseException(

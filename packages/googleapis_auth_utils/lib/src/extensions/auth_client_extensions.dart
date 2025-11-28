@@ -6,6 +6,7 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:meta/meta.dart';
 
 import '../../googleapis_auth_utils.dart';
+import '../credential.dart';
 
 part 'project_id_provider.dart';
 
