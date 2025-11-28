@@ -141,6 +141,11 @@ class ProjectIdProvider {
     );
   }
 
+  /// Gets project ID from a service account credentials file.
+  ///
+  /// This method simply extracts the project_id field from the JSON file,
+  /// without validating the full credential structure. This is intentional
+  /// to allow discovering project IDs from partial or invalid credential files.
   Future<String?> _getProjectIdFromCredentialsFile(String path) async {
     try {
       if (!_fileSystem.exists(path)) return null;

@@ -5,9 +5,7 @@ import 'dart:io';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:meta/meta.dart';
 
-import '../credential_aware_client.dart';
-import '../crypto_signer.dart';
-import '../impersonated.dart';
+import '../../googleapis_auth_utils.dart';
 
 part 'project_id_provider.dart';
 

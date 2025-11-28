@@ -9,12 +9,12 @@ import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 /// access to the underlying ServiceAccountCredentials when available.
 ///
 /// Create credentials using one of the factory methods:
-/// - [Credential.fromServiceAccount] - For service account JSON files
-/// - [Credential.fromServiceAccountParams] - For service account parameters
-/// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
+/// - [GoogleCredential.fromServiceAccount] - For service account JSON files
+/// - [GoogleCredential.fromServiceAccountParams] - For service account parameters
+/// - [GoogleCredential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
 ///
 /// This is similar to Node.js google-auth-library's credential management.
-sealed class Credential {
+sealed class GoogleCredential {
   /// Creates a credential using Application Default Credentials (ADC).
   ///
   /// ADC attempts to find credentials in the following order:
@@ -24,10 +24,16 @@ sealed class Credential {
   ///
   /// [serviceAccountId] can optionally be provided to override the service
   /// account email if needed for specific operations.
-  factory Credential.fromApplicationDefaultCredentials({
+  /// [environment] can optionally be provided to override Platform.environment
+  /// (useful for testing with runZoned).
+  factory GoogleCredential.fromApplicationDefaultCredentials({
     String? serviceAccountId,
+    Map<String, String>? environment,
   }) {
-    return ApplicationDefaultCredential(serviceAccountId: serviceAccountId);
+    return GoogleApplicationDefaultCredential(
+      serviceAccountId: serviceAccountId,
+      environment: environment,
+    );
   }
 
   /// Creates a credential from a service account JSON file.
@@ -45,12 +51,12 @@ sealed class Credential {
   ///
   /// Example:
   /// ```dart
-  /// final credential = Credential.fromServiceAccount(
+  /// final credential = GoogleCredential.fromServiceAccount(
   ///   File('path/to/service-account.json'),
   /// );
   /// ```
-  factory Credential.fromServiceAccount(File serviceAccountFile) {
-    return ServiceAccountCredential.fromFile(serviceAccountFile);
+  factory GoogleCredential.fromServiceAccount(File serviceAccountFile) {
+    return GoogleServiceAccountCredential.fromFile(serviceAccountFile);
   }
 
   /// Creates a credential from individual service account parameters.
@@ -63,19 +69,19 @@ sealed class Credential {
   ///
   /// Example:
   /// ```dart
-  /// final credential = Credential.fromServiceAccountParams(
+  /// final credential = GoogleCredential.fromServiceAccountParams(
   ///   privateKey: '-----BEGIN PRIVATE KEY-----\n...',
   ///   email: 'my-sa@my-project.iam.gserviceaccount.com',
   ///   projectId: 'my-project',
   /// );
   /// ```
-  factory Credential.fromServiceAccountParams({
+  factory GoogleCredential.fromServiceAccountParams({
     required String privateKey,
     required String email,
     String? clientId,
     String? projectId,
   }) {
-    return ServiceAccountCredential.fromParams(
+    return GoogleServiceAccountCredential.fromParams(
       privateKey: privateKey,
       email: email,
       clientId: clientId,
@@ -84,12 +90,12 @@ sealed class Credential {
   }
 
   /// Private constructor for sealed class.
-  Credential._();
+  GoogleCredential._();
 
   /// Returns the underlying [auth.ServiceAccountCredentials] if available.
   ///
-  /// This is non-null for [ServiceAccountCredential].
-  /// For [ApplicationDefaultCredential], this is only non-null if ADC
+  /// This is non-null for [GoogleServiceAccountCredential].
+  /// For [GoogleApplicationDefaultCredential], this is only non-null if ADC
   /// found service account credentials.
   auth.ServiceAccountCredentials? get serviceAccountCredentials;
 
@@ -107,9 +113,9 @@ sealed class Credential {
 ///
 /// This wraps [auth.ServiceAccountCredentials] from googleapis_auth and optionally
 /// includes the project ID from the service account JSON file.
-final class ServiceAccountCredential extends Credential {
-  /// Creates a [ServiceAccountCredential] from a JSON object.
-  factory ServiceAccountCredential.fromJson(Map<String, Object?> json) {
+final class GoogleServiceAccountCredential extends GoogleCredential {
+  /// Creates a [GoogleServiceAccountCredential] from a JSON object.
+  factory GoogleServiceAccountCredential.fromJson(Map<String, Object?> json) {
     final projectId = json['project_id'] as String?;
 
     // Validate required fields before calling googleapis_auth
@@ -132,7 +138,7 @@ final class ServiceAccountCredential extends Credential {
     try {
       // Use googleapis_auth to parse the credentials
       final credentials = auth.ServiceAccountCredentials.fromJson(json);
-      return ServiceAccountCredential._(credentials, projectId);
+      return GoogleServiceAccountCredential._(credentials, projectId);
     } on FormatException catch (e) {
       throw CredentialParseException(
         'Invalid service account format: ${e.message}',
@@ -140,34 +146,24 @@ final class ServiceAccountCredential extends Credential {
     }
   }
 
-  /// Creates a [ServiceAccountCredential] from a service account JSON file.
-  factory ServiceAccountCredential.fromFile(File serviceAccountFile) {
-    try {
-      final content = serviceAccountFile.readAsStringSync();
-      final json = jsonDecode(content);
-      if (json is! Map<String, Object?>) {
-        throw CredentialParseException(
-          'Service account file must be a JSON object',
-        );
-      }
-
-      return ServiceAccountCredential.fromJson(json);
-    } on FileSystemException catch (e) {
+  /// Creates a [GoogleServiceAccountCredential] from a service account JSON file.
+  factory GoogleServiceAccountCredential.fromFile(File serviceAccountFile) {
+    final content = serviceAccountFile.readAsStringSync();
+    final json = jsonDecode(content);
+    if (json is! Map<String, Object?>) {
       throw CredentialParseException(
-        'Failed to read service account file: ${e.message}',
-      );
-    } on FormatException catch (e) {
-      throw CredentialParseException(
-        'Invalid JSON in service account file: ${e.message}',
+        'Service account file must be a JSON object',
       );
     }
+
+    return GoogleServiceAccountCredential.fromJson(json);
   }
 
-  /// Creates a [ServiceAccountCredential] from individual parameters.
+  /// Creates a [GoogleServiceAccountCredential] from individual parameters.
   ///
   /// This is useful when you want to provide credentials programmatically
   /// without creating a JSON file.
-  factory ServiceAccountCredential.fromParams({
+  factory GoogleServiceAccountCredential.fromParams({
     required String privateKey,
     required String email,
     String? clientId,
@@ -179,10 +175,11 @@ final class ServiceAccountCredential extends Credential {
       privateKey,
     );
 
-    return ServiceAccountCredential._(credentials, projectId);
+    return GoogleServiceAccountCredential._(credentials, projectId);
   }
 
-  ServiceAccountCredential._(this._credentials, this._projectId) : super._();
+  GoogleServiceAccountCredential._(this._credentials, this._projectId)
+    : super._();
 
   final auth.ServiceAccountCredentials _credentials;
   final String? _projectId;
@@ -220,12 +217,15 @@ final class ServiceAccountCredential extends Credential {
 /// This credential type is recommended for production environments as it allows
 /// the same code to work across different deployment environments without
 /// hardcoding credential paths.
-final class ApplicationDefaultCredential extends Credential {
-  ApplicationDefaultCredential({String? serviceAccountId})
-    : _serviceAccountId = serviceAccountId,
-      super._() {
+final class GoogleApplicationDefaultCredential extends GoogleCredential {
+  GoogleApplicationDefaultCredential({
+    String? serviceAccountId,
+    Map<String, String>? environment,
+  }) : _serviceAccountId = serviceAccountId,
+       super._() {
     // Check for GOOGLE_APPLICATION_CREDENTIALS
-    final credPath = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
+    final env = environment ?? Platform.environment;
+    final credPath = env['GOOGLE_APPLICATION_CREDENTIALS'];
     if (credPath != null && File(credPath).existsSync()) {
       try {
         final content = File(credPath).readAsStringSync();

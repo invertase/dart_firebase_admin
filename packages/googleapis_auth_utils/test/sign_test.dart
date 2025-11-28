@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
-import 'package:googleapis_auth_utils/src/credential.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -53,7 +52,7 @@ void main() {
       test('should sign using the private key', () async {
         // Load service account credentials from fixture
         final file = File('test/fixtures/service_account.json');
-        final credential = Credential.fromServiceAccount(file);
+        final credential = GoogleCredential.fromServiceAccount(file);
 
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();
@@ -81,7 +80,7 @@ void main() {
 
       test('should not use custom endpoint for local signing', () async {
         final file = File('test/fixtures/service_account.json');
-        final credential = Credential.fromServiceAccount(file);
+        final credential = GoogleCredential.fromServiceAccount(file);
 
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();
@@ -401,7 +400,7 @@ void main() {
     group('integration tests', () {
       test('signature format is base64-encoded', () async {
         final file = File('test/fixtures/service_account.json');
-        final credential = Credential.fromServiceAccount(file);
+        final credential = GoogleCredential.fromServiceAccount(file);
 
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();
@@ -429,7 +428,7 @@ void main() {
 
       test('same data produces same signature', () async {
         final file = File('test/fixtures/service_account.json');
-        final credential = Credential.fromServiceAccount(file);
+        final credential = GoogleCredential.fromServiceAccount(file);
 
         // Create a mock HTTP client to intercept OAuth token requests
         final mockHttp = MockOAuthHttpClient();

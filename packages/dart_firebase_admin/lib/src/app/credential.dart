@@ -23,9 +23,16 @@ sealed class Credential {
   factory Credential.fromApplicationDefaultCredentials({
     String? serviceAccountId,
   }) {
-    return ApplicationDefaultCredential.fromEnvironment(
-      serviceAccountId: serviceAccountId,
-    );
+    // Get environment from zone
+    final env = Zone.current[envSymbol] as Map<String, String>?;
+
+    final googleCredential =
+        googleapis_auth_utils
+            .GoogleCredential.fromApplicationDefaultCredentials(
+          serviceAccountId: serviceAccountId,
+          environment: env,
+        );
+    return ApplicationDefaultCredential._(googleCredential);
   }
 
   /// Creates a credential from a service account JSON file.
@@ -45,7 +52,13 @@ sealed class Credential {
   /// );
   /// ```
   factory Credential.fromServiceAccount(File serviceAccountFile) {
-    return ServiceAccountCredential.fromFile(serviceAccountFile);
+    try {
+      final googleCredential = googleapis_auth_utils
+          .GoogleCredential.fromServiceAccount(serviceAccountFile);
+      return ServiceAccountCredential._(googleCredential);
+    } on googleapis_auth_utils.CredentialParseException catch (e) {
+      throw FirebaseAppException(AppErrorCode.invalidCredential, e.message);
+    }
   }
 
   /// Creates a credential from individual service account parameters.
@@ -60,7 +73,7 @@ sealed class Credential {
   /// ```dart
   /// final credential = Credential.fromServiceAccountParams(
   ///   clientId: 'client-id',
-  ///   privateKey: '-----BEGIN RSA PRIVATE KEY-----\n...',
+  ///   privateKey: '-----BEGIN PRIVATE KEY-----\n...',
   ///   email: 'client@example.iam.gserviceaccount.com',
   ///   projectId: 'my-project',
   /// );
@@ -71,12 +84,18 @@ sealed class Credential {
     required String email,
     required String projectId,
   }) {
-    return ServiceAccountCredential.fromParams(
-      clientId: clientId,
-      privateKey: privateKey,
-      email: email,
-      projectId: projectId,
-    );
+    try {
+      final googleCredential =
+          googleapis_auth_utils.GoogleCredential.fromServiceAccountParams(
+            privateKey: privateKey,
+            email: email,
+            clientId: clientId,
+            projectId: projectId,
+          );
+      return ServiceAccountCredential._(googleCredential);
+    } on googleapis_auth_utils.CredentialParseException catch (e) {
+      throw FirebaseAppException(AppErrorCode.invalidCredential, e.message);
+    }
   }
 
   /// Private constructor for sealed class.
@@ -94,85 +113,45 @@ sealed class Credential {
 
 /// Extended service account credentials that includes projectId.
 ///
-/// This wraps [googleapis_auth.ServiceAccountCredentials] and adds the [projectId] field
-/// which is required for Firebase Admin SDK operations.
+/// This wraps [googleapis_auth_utils.GoogleCredential] and ensures
+/// the [projectId] field is present, which is required for Firebase Admin SDK operations.
 @internal
 final class ServiceAccountCredential extends Credential {
-  /// Creates a [ServiceAccountCredential] from a JSON object.
-  factory ServiceAccountCredential.fromJson(Map<String, Object?> json) {
-    // Extract and validate projectId - required for service accounts
-    final projectId = json['project_id'] as String?;
-    if (projectId == null || projectId.isEmpty) {
+  ServiceAccountCredential._(this._googleCredential) : super._() {
+    // Firebase requires projectId
+    if (_googleCredential.projectId == null) {
       throw FirebaseAppException(
         AppErrorCode.invalidCredential,
         'Service account JSON must contain a "project_id" property',
       );
     }
-
-    // Use parent's fromJson to create the base credentials
-    final credentials = googleapis_auth.ServiceAccountCredentials.fromJson(
-      json,
-    );
-
-    return ServiceAccountCredential._(credentials, projectId);
   }
 
-  /// Creates a [ServiceAccountCredential] from a service account JSON file.
-  factory ServiceAccountCredential.fromFile(File serviceAccountFile) {
-    final content = serviceAccountFile.readAsStringSync();
-    final json = jsonDecode(content);
-    if (json is! Map<String, Object?>) {
-      throw const FormatException('Invalid service account file');
-    }
-
-    return ServiceAccountCredential.fromJson(json);
-  }
-
-  /// Creates a [ServiceAccountCredential] from individual parameters.
-  ///
-  /// This is useful for testing when you want to provide mock credentials
-  /// without creating a JSON file.
-  factory ServiceAccountCredential.fromParams({
-    String? clientId,
-    required String privateKey,
-    required String email,
-    required String projectId,
-  }) {
-    final credentials = googleapis_auth.ServiceAccountCredentials(
-      email,
-      googleapis_auth.ClientId(clientId ?? email),
-      privateKey,
-    );
-
-    return ServiceAccountCredential._(credentials, projectId);
-  }
-
-  ServiceAccountCredential._(this._credentials, this.projectId) : super._();
-
-  final googleapis_auth.ServiceAccountCredentials _credentials;
+  final googleapis_auth_utils.GoogleCredential _googleCredential;
 
   /// The Google Cloud project ID associated with this service account.
   ///
   /// This is extracted from the `project_id` field in the service account JSON.
-  final String projectId;
+  String get projectId => _googleCredential.projectId!;
 
   /// The service account email address.
   ///
   /// This is the `client_email` field from the service account JSON.
   /// Format: `firebase-adminsdk-xxxxx@project-id.iam.gserviceaccount.com`
-  String get clientEmail => _credentials.email;
+  String get clientEmail => _googleCredential.serviceAccountCredentials!.email;
 
   /// The service account private key in PEM format.
   ///
   /// This is used to sign authentication tokens for API calls.
-  String get privateKey => _credentials.privateKey;
+  String get privateKey =>
+      _googleCredential.serviceAccountCredentials!.privateKey;
 
   @override
-  googleapis_auth.ServiceAccountCredentials get serviceAccountCredentials =>
-      _credentials;
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
+      _googleCredential.serviceAccountCredentials;
 
   @override
-  String? get serviceAccountId => _credentials.email;
+  String? get serviceAccountId => _googleCredential.serviceAccountId;
 }
 
 /// Application Default Credentials for Firebase Admin SDK.
@@ -195,63 +174,19 @@ final class ServiceAccountCredential extends Credential {
 /// - Environment variables ([Environment.googleCloudProject], [Environment.gcloudProject])
 @internal
 final class ApplicationDefaultCredential extends Credential {
-  ApplicationDefaultCredential({
-    String? serviceAccountId,
-    googleapis_auth.ServiceAccountCredentials? serviceAccountCredentials,
-    String? projectId,
-  }) : _serviceAccountId = serviceAccountId,
-       _serviceAccountCredentials = serviceAccountCredentials,
-       _projectId = projectId,
-       super._();
+  ApplicationDefaultCredential._(this._googleCredential) : super._();
 
-  /// Factory to create from environment.
-  ///
-  /// Checks [Environment.googleApplicationCredentials] for a service account file path.
-  factory ApplicationDefaultCredential.fromEnvironment({
-    String? serviceAccountId,
-  }) {
-    googleapis_auth.ServiceAccountCredentials? creds;
-    String? projectId;
-
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final maybeConfig = env[Environment.googleApplicationCredentials];
-    if (maybeConfig != null && File(maybeConfig).existsSync()) {
-      try {
-        final text = File(maybeConfig).readAsStringSync();
-        final decodedValue = jsonDecode(text);
-        if (decodedValue is Map) {
-          creds = googleapis_auth.ServiceAccountCredentials.fromJson(
-            decodedValue,
-          );
-          projectId = decodedValue['project_id'] as String?;
-        }
-      } on FormatException catch (_) {
-        // Ignore parsing errors, will fall back to metadata service
-      }
-    }
-
-    return ApplicationDefaultCredential(
-      serviceAccountId: serviceAccountId,
-      serviceAccountCredentials: creds,
-      projectId: projectId,
-    );
-  }
-
-  final String? _serviceAccountId;
-  final googleapis_auth.ServiceAccountCredentials? _serviceAccountCredentials;
-  final String? _projectId;
+  final googleapis_auth_utils.GoogleCredential _googleCredential;
 
   @override
   googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
-      _serviceAccountCredentials;
+      _googleCredential.serviceAccountCredentials;
 
   @override
-  String? get serviceAccountId =>
-      _serviceAccountId ?? _serviceAccountCredentials?.email;
+  String? get serviceAccountId => _googleCredential.serviceAccountId;
 
   /// The project ID if available from the service account file.
   ///
   /// For Compute Engine deployments, this will be null.
-  String? get projectId => _projectId;
+  String? get projectId => _googleCredential.projectId;
 }

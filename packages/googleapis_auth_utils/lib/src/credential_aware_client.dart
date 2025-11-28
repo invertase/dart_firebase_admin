@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 import 'credential.dart';
 
-/// An [AuthClient] that maintains a reference to its [Credential].
+/// An [AuthClient] that maintains a reference to its [GoogleCredential].
 ///
 /// This allows determining whether the client has access to service account
 /// credentials for local signing operations, similar to how Node.js's
@@ -40,9 +40,9 @@ class CredentialAwareAuthClient implements AuthClient {
 
   /// The credential used to create this auth client.
   ///
-  /// Access [Credential.serviceAccountCredentials] to get the underlying
+  /// Access [GoogleCredential.serviceAccountCredentials] to get the underlying
   /// service account credentials for local signing operations.
-  final Credential credential;
+  final GoogleCredential credential;
 
   @override
   AccessCredentials get credentials => _delegate.credentials;
@@ -133,7 +133,7 @@ class CredentialAwareAuthClient implements AuthClient {
   }
 }
 
-/// Creates an authenticated HTTP client from a [Credential].
+/// Creates an authenticated HTTP client from a [GoogleCredential].
 ///
 /// This is a convenience function that:
 /// 1. Creates an AuthClient using googleapis_auth
@@ -157,20 +157,20 @@ class CredentialAwareAuthClient implements AuthClient {
 /// client.close();
 /// ```
 Future<CredentialAwareAuthClient> createAuthClient(
-  Credential credential,
+  GoogleCredential credential,
   List<String> scopes, {
   http.Client? baseClient,
 }) async {
   AuthClient delegate;
 
-  if (credential is ServiceAccountCredential) {
+  if (credential is GoogleServiceAccountCredential) {
     // Use service account credentials
     delegate = await clientViaServiceAccount(
       credential.serviceAccountCredentials,
       scopes,
       baseClient: baseClient,
     );
-  } else if (credential is ApplicationDefaultCredential) {
+  } else if (credential is GoogleApplicationDefaultCredential) {
     // For ADC, check if we have service account credentials
     final serviceAccountCreds = credential.serviceAccountCredentials;
     if (serviceAccountCreds != null) {
