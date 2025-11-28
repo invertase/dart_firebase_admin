@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:meta/meta.dart';
 
-import '../utils/crypto_signer.dart';
 import 'app_check.dart';
 import 'app_check_api.dart';
 

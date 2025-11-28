@@ -5,6 +5,10 @@ import 'dart:io';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:meta/meta.dart';
 
+import '../credential_aware_client.dart';
+import '../crypto_signer.dart';
+import '../impersonated.dart';
+
 part 'project_id_provider.dart';
 
 extension AuthClientX on AuthClient {
@@ -45,5 +49,98 @@ extension AuthClientX on AuthClient {
   /// - Network request fails
   Future<String?> getServiceAccountEmail() async {
     return ProjectIdProvider.getDefault(this).getServiceAccountEmail();
+  }
+
+  /// Signs some bytes using the credentials from this auth client.
+  ///
+  /// This is the Dart equivalent of `GoogleAuth.sign()` from the Node.js
+  /// google-auth-library.
+  ///
+  /// The signing behavior depends on the auth client type:
+  /// - [ImpersonatedAuthClient]: Uses IAM signBlob API to sign using the
+  ///   target principal.
+  /// - [ServiceAccountCredentials] with private key: Signs locally using
+  ///   RSA-SHA256.
+  /// - Other auth clients: Uses IAM signBlob API with the default service
+  ///   account.
+  ///
+  /// [data] is the string to be signed.
+  /// [endpoint] is an optional custom IAM Credentials API endpoint. This is
+  /// useful when working with different universe domains. Defaults to
+  /// `https://iamcredentials.googleapis.com`.
+  ///
+  /// Returns the signature as a base64-encoded string.
+  ///
+  /// Example:
+  /// ```dart
+  /// final authClient = await clientViaServiceAccount(credentials, scopes);
+  /// final signature = await authClient.sign('data to sign');
+  /// ```
+  Future<String> sign(String data, {String? endpoint}) async {
+    // Check if this is an impersonated client
+    if (this is ImpersonatedAuthClient) {
+      final impersonated = this as ImpersonatedAuthClient;
+      final response = await impersonated.sign(data);
+      return response.signedBlob;
+    }
+
+    // Check if this is a credential-aware client with service account credentials
+    // (local signing doesn't use custom endpoint)
+    final hasLocalSigningCapability =
+        this is CredentialAwareAuthClient &&
+        (this as CredentialAwareAuthClient)
+                .credential
+                .serviceAccountCredentials !=
+            null;
+
+    // If endpoint is provided and we're NOT using local signing,
+    // use custom endpoint for IAM API signing
+    if (endpoint != null && !hasLocalSigningCapability) {
+      final email = await getServiceAccountEmail();
+      if (email == null) {
+        throw Exception(
+          'Unable to determine service account email for IAM signing. '
+          'Ensure you are running on Google Cloud infrastructure or provide '
+          'service account credentials.',
+        );
+      }
+      return _signBlobWithEndpoint(data, endpoint, email);
+    }
+
+    // Use CryptoSigner for local or default IAM API signing
+    // CryptoSigner.fromAuthClient will automatically choose local signing
+    // for CredentialAwareAuthClient with service account credentials
+    final signer = CryptoSigner.fromAuthClient(this);
+    final signatureBytes = await signer.sign(utf8.encode(data));
+    return base64Encode(signatureBytes);
+  }
+
+  /// Signs a blob using the IAM signBlob API with a custom endpoint.
+  Future<String> _signBlobWithEndpoint(
+    String data,
+    String endpoint,
+    String email,
+  ) async {
+    final url = Uri.parse(
+      '$endpoint/v1/projects/-/serviceAccounts/$email:signBlob',
+    );
+
+    final body = {'payload': base64Encode(utf8.encode(data))};
+
+    final response = await post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to sign blob via IAM API. '
+        'Status: ${response.statusCode}, Body: ${response.body}',
+      );
+    }
+
+    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+    return responseData['signedBlob'] as String;
   }
 }

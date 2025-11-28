@@ -29,9 +29,7 @@ class AppCheck implements FirebaseService {
   @override
   final FirebaseApp app;
   final AppCheckRequestHandler _requestHandler;
-  late final _tokenGenerator = AppCheckTokenGenerator(
-    CryptoSigner.fromApp(app),
-  );
+  late final _tokenGenerator = AppCheckTokenGenerator(app.createCryptoSigner());
   late final _appCheckTokenVerifier = AppCheckTokenVerifier(app);
 
   /// Creates a new [AppCheckToken] that can be sent

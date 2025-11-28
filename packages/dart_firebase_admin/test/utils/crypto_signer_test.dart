@@ -1,5 +1,6 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/src/utils/crypto_signer.dart';
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:test/test.dart';
 
 import '../mock_service_account.dart';
@@ -21,7 +22,7 @@ void main() {
             ),
           ),
         );
-        signer = CryptoSigner.fromApp(app);
+        signer = app.createCryptoSigner();
       });
 
       test('algorithm should be RS256', () {
