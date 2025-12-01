@@ -165,7 +165,7 @@ void main() {
                 () => registry.fetchOptionsFromEnvironment(),
                 throwsA(
                   isA<FirebaseAppException>()
-                      .having((e) => e.code, 'code', 'invalid-argument')
+                      .having((e) => e.code, 'code', 'app/invalid-argument')
                       .having(
                         (e) => e.message,
                         'message',
@@ -188,7 +188,7 @@ void main() {
               () => registry.fetchOptionsFromEnvironment(),
               throwsA(
                 isA<FirebaseAppException>()
-                    .having((e) => e.code, 'code', 'invalid-argument')
+                    .having((e) => e.code, 'code', 'app/invalid-argument')
                     .having(
                       (e) => e.message,
                       'message',
@@ -238,7 +238,7 @@ void main() {
                 isA<FirebaseAppException>().having(
                   (e) => e.code,
                   'code',
-                  'invalid-app-options',
+                  'app/invalid-app-options',
                 ),
               ),
             );
@@ -263,7 +263,7 @@ void main() {
                 isA<FirebaseAppException>().having(
                   (e) => e.code,
                   'code',
-                  'invalid-app-options',
+                  'app/invalid-app-options',
                 ),
               ),
             );
@@ -306,7 +306,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.code,
               'code',
-              'duplicate-app',
+              'app/duplicate-app',
             ),
           ),
         );
@@ -365,7 +365,7 @@ void main() {
           ),
           throwsA(
             isA<FirebaseAppException>()
-                .having((e) => e.code, 'code', 'invalid-app-name')
+                .having((e) => e.code, 'code', 'app/invalid-app-name')
                 .having(
                   (e) => e.message,
                   'message',
@@ -380,7 +380,7 @@ void main() {
           () => registry.getApp(''),
           throwsA(
             isA<FirebaseAppException>()
-                .having((e) => e.code, 'code', 'invalid-app-name')
+                .having((e) => e.code, 'code', 'app/invalid-app-name')
                 .having(
                   (e) => e.message,
                   'message',
@@ -417,7 +417,7 @@ void main() {
           () => registry.getApp(),
           throwsA(
             isA<FirebaseAppException>()
-                .having((e) => e.code, 'code', 'no-app')
+                .having((e) => e.code, 'code', 'app/no-app')
                 .having(
                   (e) => e.message,
                   'message',
@@ -435,7 +435,7 @@ void main() {
           () => registry.getApp('my-app'),
           throwsA(
             isA<FirebaseAppException>()
-                .having((e) => e.code, 'code', 'no-app')
+                .having((e) => e.code, 'code', 'app/no-app')
                 .having(
                   (e) => e.message,
                   'message',

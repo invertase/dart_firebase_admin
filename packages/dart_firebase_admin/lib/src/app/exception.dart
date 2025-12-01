@@ -11,6 +11,16 @@ class FirebaseArrayIndexError {
 
   /// The error object.
   final FirebaseAdminException error;
+
+  /// Converts this error to a JSON-serializable map.
+  ///
+  /// This is useful for structured logging and error reporting.
+  /// The returned map contains:
+  /// - `index`: The index of the errored item
+  /// - `error`: The serialized error object (with code and message)
+  Map<String, dynamic> toJson() {
+    return {'index': index, 'error': error.toJson()};
+  }
 }
 
 /// A set of platform level error codes.
@@ -77,6 +87,27 @@ abstract class FirebaseAdminException implements Exception {
   /// it generally does not convey meaningful information to end users,
   /// this message should not be displayed in your application.
   String get message => _message ?? _platformErrorCodeMessage(_code);
+
+  /// Converts this exception to a JSON-serializable map.
+  ///
+  /// This is useful for structured logging and error reporting in GCP Cloud Logging.
+  /// The returned map contains:
+  /// - `code`: The error code string (e.g., "auth/invalid-uid")
+  /// - `message`: The error message
+  ///
+  /// Example:
+  /// ```dart
+  /// try {
+  ///   // ...
+  /// } catch (e) {
+  ///   if (e is FirebaseAdminException) {
+  ///     print(jsonEncode(e.toJson())); // Logs structured JSON
+  ///   }
+  /// }
+  /// ```
+  Map<String, dynamic> toJson() {
+    return {'code': code, 'message': message};
+  }
 
   @override
   String toString() {

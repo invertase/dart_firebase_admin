@@ -1,22 +1,12 @@
 part of '../app.dart';
 
 /// Exception thrown for Firebase app initialization and lifecycle errors.
-class FirebaseAppException implements Exception {
+class FirebaseAppException extends FirebaseAdminException {
   FirebaseAppException(this.errorCode, [String? message])
-    : code = errorCode.code,
-      _message = message;
+    : super('app', errorCode.code, message ?? errorCode.message);
 
   /// The error code object containing code and default message.
   final AppErrorCode errorCode;
-
-  /// The error code string.
-  final String code;
-
-  /// Custom error message, if provided.
-  final String? _message;
-
-  /// The error message. Returns custom message if provided, otherwise default.
-  String get message => _message ?? errorCode.message;
 
   @override
   String toString() => 'FirebaseAppException($code): $message';

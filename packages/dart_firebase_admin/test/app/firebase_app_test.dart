@@ -91,7 +91,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.code,
               'code',
-              AppErrorCode.noApp.code,
+              'app/no-app',
             ),
           ),
         );
@@ -129,7 +129,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.code,
               'code',
-              AppErrorCode.noApp.code,
+              'app/no-app',
             ),
           ),
         );
@@ -196,7 +196,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.code,
               'code',
-              AppErrorCode.noApp.code,
+              'app/no-app',
             ),
           ),
         );
@@ -375,7 +375,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.code,
               'code',
-              AppErrorCode.appDeleted.code,
+              'app/app-deleted',
             ),
           ),
         );
@@ -385,7 +385,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.code,
               'code',
-              AppErrorCode.appDeleted.code,
+              'app/app-deleted',
             ),
           ),
         );
@@ -466,7 +466,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.code,
               'code',
-              AppErrorCode.appDeleted.code,
+              'app/app-deleted',
             ),
           ),
         );
@@ -551,7 +551,7 @@ void main() {
                 isA<FirebaseAppException>().having(
                   (e) => e.code,
                   'code',
-                  AppErrorCode.appDeleted.code,
+                  'app/app-deleted',
                 ),
               ),
             );
