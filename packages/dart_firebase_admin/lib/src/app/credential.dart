@@ -101,6 +101,27 @@ sealed class Credential {
   /// Private constructor for sealed class.
   Credential._();
 
+  /// Returns a Google OAuth2 access token.
+  ///
+  /// This method obtains a valid access token that can be used to authenticate
+  /// API requests to Google Cloud services. The token is automatically refreshed
+  /// if expired.
+  ///
+  /// The returned [googleapis_auth.AccessToken] contains:
+  /// - [googleapis_auth.AccessToken.data]: The token string to use in Authorization headers
+  /// - [googleapis_auth.AccessToken.expiry]: The DateTime when the token expires
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = Credential.fromServiceAccount(file);
+  /// final token = await credential.getAccessToken();
+  /// print('Token: ${token.data}');
+  /// print('Expires at: ${token.expiry}');
+  /// ```
+  Future<googleapis_auth.AccessToken> getAccessToken() {
+    return googleCredential.getAccessToken();
+  }
+
   /// Returns the underlying [googleapis_auth.ServiceAccountCredentials] if this is a
   /// [ServiceAccountCredential], null otherwise.
   @internal
