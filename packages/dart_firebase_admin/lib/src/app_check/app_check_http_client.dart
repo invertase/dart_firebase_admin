@@ -5,6 +5,7 @@ part of 'app_check.dart';
 /// Handles HTTP client management, googleapis API client creation,
 /// path builders, and simple API operations.
 /// Does not handle emulator routing as App Check has no emulator support.
+@internal
 class AppCheckHttpClient {
   AppCheckHttpClient(this.app);
 

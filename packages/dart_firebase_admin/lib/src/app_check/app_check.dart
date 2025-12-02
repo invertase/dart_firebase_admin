@@ -23,14 +23,27 @@ class AppCheck implements FirebaseService {
     return app.getOrInitService(FirebaseServiceType.appCheck.name, AppCheck._);
   }
 
-  AppCheck._(this.app, {@internal AppCheckRequestHandler? requestHandler})
-    : _requestHandler = requestHandler ?? AppCheckRequestHandler(app);
+  AppCheck._(this.app)
+    : _requestHandler = AppCheckRequestHandler(app),
+      _tokenGenerator = AppCheckTokenGenerator(app.createCryptoSigner()),
+      _appCheckTokenVerifier = AppCheckTokenVerifier(app);
+
+  @internal
+  AppCheck.internal(
+    this.app, {
+    AppCheckRequestHandler? requestHandler,
+    AppCheckTokenGenerator? tokenGenerator,
+    AppCheckTokenVerifier? tokenVerifier,
+  }) : _requestHandler = requestHandler ?? AppCheckRequestHandler(app),
+       _tokenGenerator =
+           tokenGenerator ?? AppCheckTokenGenerator(app.createCryptoSigner()),
+       _appCheckTokenVerifier = tokenVerifier ?? AppCheckTokenVerifier(app);
 
   @override
   final FirebaseApp app;
   final AppCheckRequestHandler _requestHandler;
-  late final _tokenGenerator = AppCheckTokenGenerator(app.createCryptoSigner());
-  late final _appCheckTokenVerifier = AppCheckTokenVerifier(app);
+  final AppCheckTokenGenerator _tokenGenerator;
+  final AppCheckTokenVerifier _appCheckTokenVerifier;
 
   /// Creates a new [AppCheckToken] that can be sent
   /// back to a client.
@@ -43,6 +56,13 @@ class AppCheck implements FirebaseService {
     String appId, [
     AppCheckTokenOptions? options,
   ]) async {
+    if (appId.isEmpty) {
+      throw FirebaseAppCheckException(
+        AppCheckErrorCode.invalidArgument,
+        '`appId` must be a non-empty string.',
+      );
+    }
+
     final customToken = await _tokenGenerator.createCustomToken(appId, options);
 
     return _requestHandler.exchangeToken(customToken, appId);
@@ -61,6 +81,13 @@ class AppCheck implements FirebaseService {
     String appCheckToken, [
     VerifyAppCheckTokenOptions? options,
   ]) async {
+    if (appCheckToken.isEmpty) {
+      throw FirebaseAppCheckException(
+        AppCheckErrorCode.invalidArgument,
+        '`appCheckToken` must be a non-empty string.',
+      );
+    }
+
     final decodedToken = await _appCheckTokenVerifier.verifyToken(
       appCheckToken,
     );

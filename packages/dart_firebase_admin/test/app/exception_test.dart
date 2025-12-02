@@ -201,8 +201,9 @@ void main() {
 
         expect(json['index'], 10);
         expect(json['error'], isA<Map<String, dynamic>>());
-        expect(json['error']['code'], 'auth/user-not-found');
-        expect(json['error']['message'], isNotEmpty);
+        final errorMap = json['error'] as Map<String, dynamic>;
+        expect(errorMap['code'], 'auth/user-not-found');
+        expect(errorMap['message'], isNotEmpty);
       });
     });
   });
@@ -228,8 +229,10 @@ void main() {
       }
 
       expect(errors, hasLength(1));
-      expect(errors[0]['error']['code'], 'app/invalid-credential');
-      expect(errors[0]['error']['message'], 'Service account file is invalid');
+      final firstError = errors[0];
+      final errorDetail = firstError['error'] as Map<String, dynamic>;
+      expect(errorDetail['code'], 'app/invalid-credential');
+      expect(errorDetail['message'], 'Service account file is invalid');
     });
 
     test('can serialize batch errors for logging', () {
