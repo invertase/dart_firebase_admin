@@ -77,7 +77,7 @@ typedef CreateTenantRequest = UpdateTenantRequest;
 /// For OIDC/SAML provider configuration management, `TenantAwareAuth` instances should
 /// be used instead of a `Tenant` to retrieve the list of configured IdPs on a tenant.
 /// When configuring these providers, note that tenants will inherit
-/// whitelisted domains and authenticated redirect URIs of their parent project.
+/// allowed domains and authenticated redirect URIs of their parent project.
 ///
 /// All other settings of a tenant will also be inherited. These will need to be managed
 /// from the Cloud Console UI.

@@ -6,8 +6,8 @@ const _oneHourInSeconds = 60 * 60;
 const _firebaseAudience =
     'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit';
 
-// List of blacklisted claims which cannot be provided when creating a custom token
-const _blacklistedClaims = [
+// List of reserved claims which cannot be provided when creating a custom token
+const _reservedClaims = [
   'acr',
   'amr',
   'at_hash',
@@ -60,7 +60,7 @@ class _FirebaseTokenGenerator {
     final claims = <String, Object?>{...?developerClaims};
     if (developerClaims != null) {
       for (final key in developerClaims.keys) {
-        if (_blacklistedClaims.contains(key)) {
+        if (_reservedClaims.contains(key)) {
           throw FirebaseAuthAdminException(
             AuthClientErrorCode.invalidArgument,
             'Developer claim "$key" is reserved and cannot be specified.',

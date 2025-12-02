@@ -149,7 +149,7 @@ const authServerToClientCode = {
   'TENANT_ID_MISMATCH': AuthClientErrorCode.mismatchingTenantId,
   // Token expired error.
   'TOKEN_EXPIRED': AuthClientErrorCode.idTokenExpired,
-  // Continue URL provided in ActionCodeSettings has a domain that is not whitelisted.
+  // Continue URL provided in ActionCodeSettings has a domain that is not allowed.
   'UNAUTHORIZED_DOMAIN': AuthClientErrorCode.unauthorizedDomain,
   // A multi-factor user requires a supported first factor.
   'UNSUPPORTED_FIRST_FACTOR': AuthClientErrorCode.unsupportedFirstFactor,
@@ -544,7 +544,7 @@ enum AuthClientErrorCode {
   unauthorizedDomain(
     code: 'unauthorized-continue-uri',
     message:
-        'The domain of the continue URL is not whitelisted. Whitelist the domain in the '
+        'The domain of the continue URL is not allowed. Add the domain to the allow list in the '
         'Firebase console.',
   ),
   unsupportedFirstFactor(

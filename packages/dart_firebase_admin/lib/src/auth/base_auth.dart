@@ -46,7 +46,7 @@ abstract class _BaseAuth {
   ///     if it is installed.
   ///     If the actionCodeSettings is not specified, no URL is appended to the
   ///     action URL.
-  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     The state URL provided must belong to a domain that is allowed by the
   ///     developer in the console. Otherwise an error is thrown.
   ///     Mobile app redirects are only applicable if the developer configures
   ///     and accepts the Firebase Dynamic Links terms of service.
@@ -79,7 +79,7 @@ abstract class _BaseAuth {
   ///     the app if it is installed.
   ///     If the actionCodeSettings is not specified, no URL is appended to the
   ///     action URL.
-  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     The state URL provided must belong to a domain that is allowed by the
   ///     developer in the console. Otherwise an error is thrown.
   ///     Mobile app redirects are only applicable if the developer configures
   ///     and accepts the Firebase Dynamic Links terms of service.
@@ -144,7 +144,7 @@ abstract class _BaseAuth {
   ///     the app if it is installed.
   ///     If the actionCodeSettings is not specified, no URL is appended to the
   ///     action URL.
-  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     The state URL provided must belong to a domain that is allowed by the
   ///     developer in the console. Otherwise an error is thrown.
   ///     Mobile app redirects are only applicable if the developer configures
   ///     and accepts the Firebase Dynamic Links terms of service.
