@@ -1,4 +1,5 @@
 import 'package:dart_firebase_admin/auth.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:test/test.dart';
 
 import '../google_cloud_firestore/util/helpers.dart';
@@ -9,7 +10,6 @@ void main() {
 
   setUp(() {
     final sdk = createApp(tearDown: () => cleanup(auth));
-    sdk.useEmulator();
     auth = Auth(sdk);
     tenantManager = auth.tenantManager;
   });
@@ -18,9 +18,7 @@ void main() {
     group('createTenant', () {
       test('creates tenant with minimal configuration', () async {
         final tenant = await tenantManager.createTenant(
-          CreateTenantRequest(
-            displayName: 'Test Tenant',
-          ),
+          CreateTenantRequest(displayName: 'Test Tenant'),
         );
 
         expect(tenant.tenantId, isNotEmpty);
@@ -41,9 +39,7 @@ void main() {
               state: MultiFactorConfigState.enabled,
               factorIds: ['phone'],
             ),
-            testPhoneNumbers: {
-              '+11234567890': '123456',
-            },
+            testPhoneNumbers: {'+11234567890': '123456'},
             smsRegionConfig: const AllowByDefaultSmsRegionConfig(
               disallowedRegions: ['US', 'CA'],
             ),
@@ -96,9 +92,8 @@ void main() {
 
       test('throws on invalid display name', () async {
         expect(
-          () => tenantManager.createTenant(
-            CreateTenantRequest(displayName: ''),
-          ),
+          () =>
+              tenantManager.createTenant(CreateTenantRequest(displayName: '')),
           throwsA(isA<FirebaseAuthAdminException>()),
         );
       });
@@ -108,9 +103,7 @@ void main() {
           () => tenantManager.createTenant(
             CreateTenantRequest(
               displayName: 'Test',
-              testPhoneNumbers: {
-                'invalid': '123456',
-              },
+              testPhoneNumbers: {'invalid': '123456'},
             ),
           ),
           throwsA(isA<FirebaseAuthAdminException>()),
@@ -142,8 +135,9 @@ void main() {
           CreateTenantRequest(displayName: 'Retrieve Test'),
         );
 
-        final retrievedTenant =
-            await tenantManager.getTenant(createdTenant.tenantId);
+        final retrievedTenant = await tenantManager.getTenant(
+          createdTenant.tenantId,
+        );
 
         expect(retrievedTenant.tenantId, equals(createdTenant.tenantId));
         expect(retrievedTenant.displayName, equals('Retrieve Test'));
@@ -152,7 +146,7 @@ void main() {
       test('throws on non-existent tenant', () async {
         // Note: Firebase Auth Emulator has inconsistent behavior with non-existent
         // resources and may not throw proper errors. Skip this test for emulator.
-        if (!auth.app.isUsingEmulator) {
+        if (!Environment.isAuthEmulatorEnabled()) {
           expect(
             () => tenantManager.getTenant('non-existent-tenant-id'),
             throwsA(isA<FirebaseAuthAdminException>()),
@@ -210,7 +204,7 @@ void main() {
       test('throws on invalid tenant ID', () async {
         // Note: Firebase Auth Emulator may not properly validate tenant IDs.
         // Skip this test for emulator.
-        if (!auth.app.isUsingEmulator) {
+        if (!Environment.isAuthEmulatorEnabled()) {
           expect(
             () => tenantManager.updateTenant(
               'invalid-tenant-id',
@@ -278,7 +272,7 @@ void main() {
 
         // Note: Firebase Auth Emulator may not properly delete tenants or
         // may have eventual consistency. Skip verification for emulator.
-        if (!auth.app.isUsingEmulator) {
+        if (!Environment.isAuthEmulatorEnabled()) {
           expect(
             () => tenantManager.getTenant(tenant.tenantId),
             throwsA(isA<FirebaseAuthAdminException>()),
@@ -289,7 +283,7 @@ void main() {
       test('throws on deleting non-existent tenant', () async {
         // Note: Firebase Auth Emulator may silently succeed instead of throwing
         // on non-existent resources. Skip this test for emulator.
-        if (!auth.app.isUsingEmulator) {
+        if (!Environment.isAuthEmulatorEnabled()) {
           expect(
             () => tenantManager.deleteTenant('non-existent-tenant-id'),
             throwsA(isA<FirebaseAuthAdminException>()),
@@ -314,7 +308,7 @@ void main() {
         // Note: Firebase Auth Emulator does not fully support tenant-scoped
         // user operations. Skip this test for emulator.
         // See: https://firebase.google.com/docs/emulator-suite/connect_auth
-        if (auth.app.isUsingEmulator) {
+        if (Environment.isAuthEmulatorEnabled()) {
           return;
         }
 
@@ -334,9 +328,7 @@ void main() {
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final email = 'tenant-user-$timestamp@example.com';
 
-        final user = await tenantAuth.createUser(
-          CreateRequest(email: email),
-        );
+        final user = await tenantAuth.createUser(CreateRequest(email: email));
 
         expect(user.uid, isNotEmpty);
         expect(user.email, equals(email));
@@ -349,7 +341,7 @@ void main() {
         // Note: Firebase Auth Emulator does not fully support tenant-scoped
         // user operations. Skip this test for emulator.
         // See: https://firebase.google.com/docs/emulator-suite/connect_auth
-        if (auth.app.isUsingEmulator) {
+        if (Environment.isAuthEmulatorEnabled()) {
           return;
         }
 
@@ -400,7 +392,7 @@ void main() {
 }
 
 Future<void> cleanup(Auth auth) async {
-  if (!auth.app.isUsingEmulator) {
+  if (!Environment.isAuthEmulatorEnabled()) {
     throw Exception('Cannot cleanup non-emulator app');
   }
 

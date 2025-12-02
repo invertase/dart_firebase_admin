@@ -1,7 +1,8 @@
 import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:test/test.dart';
+
+import '../mock_service_account.dart';
 
 void main() {
   group('TenantManager', () {
@@ -69,10 +70,7 @@ void main() {
       final tenants = <Tenant>[];
       const pageToken = 'next-page-token';
 
-      final result = ListTenantsResult(
-        tenants: tenants,
-        pageToken: pageToken,
-      );
+      final result = ListTenantsResult(tenants: tenants, pageToken: pageToken);
 
       expect(result.tenants, equals(tenants));
       expect(result.pageToken, equals(pageToken));
@@ -175,9 +173,7 @@ void main() {
 
   group('CreateTenantRequest', () {
     test('is an alias for UpdateTenantRequest', () {
-      final request = CreateTenantRequest(
-        displayName: 'New Tenant',
-      );
+      final request = CreateTenantRequest(displayName: 'New Tenant');
 
       expect(request, isA<UpdateTenantRequest>());
       expect(request.displayName, equals('New Tenant'));
@@ -186,17 +182,16 @@ void main() {
 }
 
 // Mock app for testing
-FirebaseAdminApp _createMockApp() {
-  return FirebaseAdminApp.initializeApp(
-    'test-project',
-    _MockCredential(),
+FirebaseApp _createMockApp() {
+  return FirebaseApp.initializeApp(
+    options: AppOptions(
+      projectId: 'test-project',
+      credential: Credential.fromServiceAccountParams(
+        clientId: 'test-client-id',
+        privateKey: mockPrivateKey,
+        email: mockClientEmail,
+        projectId: 'test-project',
+      ),
+    ),
   );
-}
-
-class _MockCredential implements Credential {
-  @override
-  String? get serviceAccountId => null;
-
-  @override
-  auth.ServiceAccountCredentials? get serviceAccountCredentials => null;
 }

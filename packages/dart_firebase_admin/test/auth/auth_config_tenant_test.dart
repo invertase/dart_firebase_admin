@@ -51,9 +51,7 @@ void main() {
 
   group('MultiFactorConfig', () {
     test('creates config with state only', () {
-      final config = MultiFactorConfig(
-        state: MultiFactorConfigState.enabled,
-      );
+      final config = MultiFactorConfig(state: MultiFactorConfigState.enabled);
 
       expect(config.state, equals(MultiFactorConfigState.enabled));
       expect(config.factorIds, isNull);
@@ -85,7 +83,7 @@ void main() {
   group('SmsRegionConfig', () {
     group('AllowByDefaultSmsRegionConfig', () {
       test('creates config with disallowed regions', () {
-        final config = AllowByDefaultSmsRegionConfig(
+        const config = AllowByDefaultSmsRegionConfig(
           disallowedRegions: ['US', 'CA'],
         );
 
@@ -93,33 +91,30 @@ void main() {
       });
 
       test('serializes to JSON', () {
-        final config = AllowByDefaultSmsRegionConfig(
+        const config = AllowByDefaultSmsRegionConfig(
           disallowedRegions: ['US', 'CA'],
         );
 
         final json = config.toJson();
+        final allowByDefault = json['allowByDefault'] as Map<String, dynamic>;
 
-        expect(json['allowByDefault'], isNotNull);
-        expect(
-          json['allowByDefault']['disallowedRegions'],
-          containsAll(['US', 'CA']),
-        );
+        expect(allowByDefault, isNotNull);
+        expect(allowByDefault['disallowedRegions'], containsAll(['US', 'CA']));
       });
 
       test('handles empty disallowed regions', () {
-        final config = AllowByDefaultSmsRegionConfig(
-          disallowedRegions: [],
-        );
+        const config = AllowByDefaultSmsRegionConfig(disallowedRegions: []);
 
         final json = config.toJson();
+        final allowByDefault = json['allowByDefault'] as Map<String, dynamic>;
 
-        expect(json['allowByDefault']['disallowedRegions'], isEmpty);
+        expect(allowByDefault['disallowedRegions'], isEmpty);
       });
     });
 
     group('AllowlistOnlySmsRegionConfig', () {
       test('creates config with allowed regions', () {
-        final config = AllowlistOnlySmsRegionConfig(
+        const config = AllowlistOnlySmsRegionConfig(
           allowedRegions: ['US', 'GB'],
         );
 
@@ -127,27 +122,24 @@ void main() {
       });
 
       test('serializes to JSON', () {
-        final config = AllowlistOnlySmsRegionConfig(
+        const config = AllowlistOnlySmsRegionConfig(
           allowedRegions: ['US', 'GB'],
         );
 
         final json = config.toJson();
+        final allowlistOnly = json['allowlistOnly'] as Map<String, dynamic>;
 
-        expect(json['allowlistOnly'], isNotNull);
-        expect(
-          json['allowlistOnly']['allowedRegions'],
-          containsAll(['US', 'GB']),
-        );
+        expect(allowlistOnly, isNotNull);
+        expect(allowlistOnly['allowedRegions'], containsAll(['US', 'GB']));
       });
 
       test('handles empty allowed regions', () {
-        final config = AllowlistOnlySmsRegionConfig(
-          allowedRegions: [],
-        );
+        const config = AllowlistOnlySmsRegionConfig(allowedRegions: []);
 
         final json = config.toJson();
+        final allowlistOnly = json['allowlistOnly'] as Map<String, dynamic>;
 
-        expect(json['allowlistOnly']['allowedRegions'], isEmpty);
+        expect(allowlistOnly['allowedRegions'], isEmpty);
       });
     });
   });
@@ -209,10 +201,7 @@ void main() {
 
   group('PasswordPolicyEnforcementState', () {
     test('has correct values', () {
-      expect(
-        PasswordPolicyEnforcementState.enforce.value,
-        equals('ENFORCE'),
-      );
+      expect(PasswordPolicyEnforcementState.enforce.value, equals('ENFORCE'));
       expect(PasswordPolicyEnforcementState.off.value, equals('OFF'));
     });
   });
@@ -308,28 +297,25 @@ void main() {
       );
 
       final json = config.toJson();
+      final constraints = json['constraints'] as Map<String, dynamic>;
 
       expect(json['enforcementState'], equals('ENFORCE'));
       expect(json['forceUpgradeOnSignin'], isTrue);
-      expect(json['constraints'], isNotNull);
-      expect(json['constraints']['requireUppercase'], isTrue);
-      expect(json['constraints']['minLength'], equals(8));
+      expect(constraints, isNotNull);
+      expect(constraints['requireUppercase'], isTrue);
+      expect(constraints['minLength'], equals(8));
     });
   });
 
   group('EmailPrivacyConfig', () {
     test('creates config with improved privacy enabled', () {
-      final config = EmailPrivacyConfig(
-        enableImprovedEmailPrivacy: true,
-      );
+      final config = EmailPrivacyConfig(enableImprovedEmailPrivacy: true);
 
       expect(config.enableImprovedEmailPrivacy, isTrue);
     });
 
     test('creates config with improved privacy disabled', () {
-      final config = EmailPrivacyConfig(
-        enableImprovedEmailPrivacy: false,
-      );
+      final config = EmailPrivacyConfig(enableImprovedEmailPrivacy: false);
 
       expect(config.enableImprovedEmailPrivacy, isFalse);
     });
@@ -341,9 +327,7 @@ void main() {
     });
 
     test('serializes to JSON', () {
-      final config = EmailPrivacyConfig(
-        enableImprovedEmailPrivacy: true,
-      );
+      final config = EmailPrivacyConfig(enableImprovedEmailPrivacy: true);
 
       final json = config.toJson();
 

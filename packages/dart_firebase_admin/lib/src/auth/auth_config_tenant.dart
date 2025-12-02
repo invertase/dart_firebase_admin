@@ -20,10 +20,7 @@ part of '../auth.dart';
 
 /// The email sign in provider configuration.
 class EmailSignInProviderConfig {
-  EmailSignInProviderConfig({
-    required this.enabled,
-    this.passwordRequired,
-  });
+  EmailSignInProviderConfig({required this.enabled, this.passwordRequired});
 
   /// Whether email provider is enabled.
   final bool enabled;
@@ -33,21 +30,16 @@ class EmailSignInProviderConfig {
   final bool? passwordRequired;
 
   Map<String, dynamic> toJson() => {
-        'enabled': enabled,
-        if (passwordRequired != null) 'passwordRequired': passwordRequired,
-      };
+    'enabled': enabled,
+    if (passwordRequired != null) 'passwordRequired': passwordRequired,
+  };
 }
 
 /// Internal class for email sign-in configuration.
 class _EmailSignInConfig implements EmailSignInProviderConfig {
-  _EmailSignInConfig({
-    required this.enabled,
-    this.passwordRequired,
-  });
+  _EmailSignInConfig({required this.enabled, this.passwordRequired});
 
-  factory _EmailSignInConfig.fromServerResponse(
-    Map<String, dynamic> response,
-  ) {
+  factory _EmailSignInConfig.fromServerResponse(Map<String, dynamic> response) {
     final allowPasswordSignup = response['allowPasswordSignup'];
     if (allowPasswordSignup == null) {
       throw FirebaseAuthAdminException(
@@ -85,9 +77,9 @@ class _EmailSignInConfig implements EmailSignInProviderConfig {
 
   @override
   Map<String, dynamic> toJson() => {
-        'enabled': enabled,
-        if (passwordRequired != null) 'passwordRequired': passwordRequired,
-      };
+    'enabled': enabled,
+    if (passwordRequired != null) 'passwordRequired': passwordRequired,
+  };
 }
 
 // ============================================================================
@@ -121,10 +113,7 @@ enum MultiFactorConfigState {
 
 /// Interface representing a multi-factor configuration.
 class MultiFactorConfig {
-  MultiFactorConfig({
-    required this.state,
-    this.factorIds,
-  });
+  MultiFactorConfig({required this.state, this.factorIds});
 
   /// The multi-factor config state.
   final MultiFactorConfigState state;
@@ -134,17 +123,14 @@ class MultiFactorConfig {
   final List<AuthFactorType>? factorIds;
 
   Map<String, dynamic> toJson() => {
-        'state': state.value,
-        if (factorIds != null) 'factorIds': factorIds,
-      };
+    'state': state.value,
+    if (factorIds != null) 'factorIds': factorIds,
+  };
 }
 
 /// Internal class for multi-factor authentication configuration.
 class _MultiFactorAuthConfig implements MultiFactorConfig {
-  _MultiFactorAuthConfig({
-    required this.state,
-    this.factorIds,
-  });
+  _MultiFactorAuthConfig({required this.state, this.factorIds});
 
   factory _MultiFactorAuthConfig.fromServerResponse(
     Map<String, dynamic> response,
@@ -202,9 +188,9 @@ class _MultiFactorAuthConfig implements MultiFactorConfig {
 
   @override
   Map<String, dynamic> toJson() => {
-        'state': state.value,
-        if (factorIds != null) 'factorIds': factorIds,
-      };
+    'state': state.value,
+    if (factorIds != null) 'factorIds': factorIds,
+  };
 }
 
 // ============================================================================
@@ -223,9 +209,7 @@ sealed class SmsRegionConfig {
 /// Defines a policy of allowing every region by default and adding disallowed
 /// regions to a disallow list.
 class AllowByDefaultSmsRegionConfig extends SmsRegionConfig {
-  const AllowByDefaultSmsRegionConfig({
-    required this.disallowedRegions,
-  });
+  const AllowByDefaultSmsRegionConfig({required this.disallowedRegions});
 
   /// Two letter unicode region codes to disallow as defined by
   /// https://cldr.unicode.org/
@@ -233,18 +217,14 @@ class AllowByDefaultSmsRegionConfig extends SmsRegionConfig {
 
   @override
   Map<String, dynamic> toJson() => {
-        'allowByDefault': {
-          'disallowedRegions': disallowedRegions,
-        },
-      };
+    'allowByDefault': {'disallowedRegions': disallowedRegions},
+  };
 }
 
 /// Defines a policy of only allowing regions by explicitly adding them to an
 /// allowlist.
 class AllowlistOnlySmsRegionConfig extends SmsRegionConfig {
-  const AllowlistOnlySmsRegionConfig({
-    required this.allowedRegions,
-  });
+  const AllowlistOnlySmsRegionConfig({required this.allowedRegions});
 
   /// Two letter unicode region codes to allow as defined by
   /// https://cldr.unicode.org/
@@ -252,10 +232,8 @@ class AllowlistOnlySmsRegionConfig extends SmsRegionConfig {
 
   @override
   Map<String, dynamic> toJson() => {
-        'allowlistOnly': {
-          'allowedRegions': allowedRegions,
-        },
-      };
+    'allowlistOnly': {'allowedRegions': allowedRegions},
+  };
 }
 
 // ============================================================================
@@ -300,13 +278,12 @@ class RecaptchaConfig {
   final bool? useAccountDefender;
 
   Map<String, dynamic> toJson() => {
-        if (emailPasswordEnforcementState != null)
-          'emailPasswordEnforcementState': emailPasswordEnforcementState!.value,
-        if (phoneEnforcementState != null)
-          'phoneEnforcementState': phoneEnforcementState!.value,
-        if (useAccountDefender != null)
-          'useAccountDefender': useAccountDefender,
-      };
+    if (emailPasswordEnforcementState != null)
+      'emailPasswordEnforcementState': emailPasswordEnforcementState!.value,
+    if (phoneEnforcementState != null)
+      'phoneEnforcementState': phoneEnforcementState!.value,
+    if (useAccountDefender != null) 'useAccountDefender': useAccountDefender,
+  };
 }
 
 /// Internal class for reCAPTCHA authentication configuration.
@@ -323,10 +300,10 @@ class _RecaptchaAuthConfig implements RecaptchaConfig {
     return _RecaptchaAuthConfig(
       emailPasswordEnforcementState:
           response['emailPasswordEnforcementState'] != null
-              ? RecaptchaProviderEnforcementState.fromString(
-                  response['emailPasswordEnforcementState'] as String,
-                )
-              : null,
+          ? RecaptchaProviderEnforcementState.fromString(
+              response['emailPasswordEnforcementState'] as String,
+            )
+          : null,
       phoneEnforcementState: response['phoneEnforcementState'] != null
           ? RecaptchaProviderEnforcementState.fromString(
               response['phoneEnforcementState'] as String,
@@ -364,13 +341,12 @@ class _RecaptchaAuthConfig implements RecaptchaConfig {
 
   @override
   Map<String, dynamic> toJson() => {
-        if (emailPasswordEnforcementState != null)
-          'emailPasswordEnforcementState': emailPasswordEnforcementState!.value,
-        if (phoneEnforcementState != null)
-          'phoneEnforcementState': phoneEnforcementState!.value,
-        if (useAccountDefender != null)
-          'useAccountDefender': useAccountDefender,
-      };
+    if (emailPasswordEnforcementState != null)
+      'emailPasswordEnforcementState': emailPasswordEnforcementState!.value,
+    if (phoneEnforcementState != null)
+      'phoneEnforcementState': phoneEnforcementState!.value,
+    if (useAccountDefender != null) 'useAccountDefender': useAccountDefender,
+  };
 }
 
 // ============================================================================
@@ -423,14 +399,14 @@ class CustomStrengthOptionsConfig {
   final int? maxLength;
 
   Map<String, dynamic> toJson() => {
-        if (requireUppercase != null) 'requireUppercase': requireUppercase,
-        if (requireLowercase != null) 'requireLowercase': requireLowercase,
-        if (requireNonAlphanumeric != null)
-          'requireNonAlphanumeric': requireNonAlphanumeric,
-        if (requireNumeric != null) 'requireNumeric': requireNumeric,
-        if (minLength != null) 'minLength': minLength,
-        if (maxLength != null) 'maxLength': maxLength,
-      };
+    if (requireUppercase != null) 'requireUppercase': requireUppercase,
+    if (requireLowercase != null) 'requireLowercase': requireLowercase,
+    if (requireNonAlphanumeric != null)
+      'requireNonAlphanumeric': requireNonAlphanumeric,
+    if (requireNumeric != null) 'requireNumeric': requireNumeric,
+    if (minLength != null) 'minLength': minLength,
+    if (maxLength != null) 'maxLength': maxLength,
+  };
 }
 
 /// A password policy configuration for a project or tenant
@@ -451,12 +427,11 @@ class PasswordPolicyConfig {
   final CustomStrengthOptionsConfig? constraints;
 
   Map<String, dynamic> toJson() => {
-        if (enforcementState != null)
-          'enforcementState': enforcementState!.value,
-        if (forceUpgradeOnSignin != null)
-          'forceUpgradeOnSignin': forceUpgradeOnSignin,
-        if (constraints != null) 'constraints': constraints!.toJson(),
-      };
+    if (enforcementState != null) 'enforcementState': enforcementState!.value,
+    if (forceUpgradeOnSignin != null)
+      'forceUpgradeOnSignin': forceUpgradeOnSignin,
+    if (constraints != null) 'constraints': constraints!.toJson(),
+  };
 }
 
 /// Internal class for password policy authentication configuration.
@@ -498,8 +473,9 @@ class _PasswordPolicyAuthConfig implements PasswordPolicyConfig {
     }
 
     return _PasswordPolicyAuthConfig(
-      enforcementState:
-          PasswordPolicyEnforcementState.fromString(stateValue as String),
+      enforcementState: PasswordPolicyEnforcementState.fromString(
+        stateValue as String,
+      ),
       forceUpgradeOnSignin: response['forceUpgradeOnSignin'] as bool? ?? false,
       constraints: constraints,
     );
@@ -546,12 +522,11 @@ class _PasswordPolicyAuthConfig implements PasswordPolicyConfig {
 
   @override
   Map<String, dynamic> toJson() => {
-        if (enforcementState != null)
-          'enforcementState': enforcementState!.value,
-        if (forceUpgradeOnSignin != null)
-          'forceUpgradeOnSignin': forceUpgradeOnSignin,
-        if (constraints != null) 'constraints': constraints!.toJson(),
-      };
+    if (enforcementState != null) 'enforcementState': enforcementState!.value,
+    if (forceUpgradeOnSignin != null)
+      'forceUpgradeOnSignin': forceUpgradeOnSignin,
+    if (constraints != null) 'constraints': constraints!.toJson(),
+  };
 }
 
 // ============================================================================
@@ -560,15 +535,13 @@ class _PasswordPolicyAuthConfig implements PasswordPolicyConfig {
 
 /// The email privacy configuration of a project or tenant.
 class EmailPrivacyConfig {
-  EmailPrivacyConfig({
-    this.enableImprovedEmailPrivacy,
-  });
+  EmailPrivacyConfig({this.enableImprovedEmailPrivacy});
 
   /// Whether enhanced email privacy is enabled.
   final bool? enableImprovedEmailPrivacy;
 
   Map<String, dynamic> toJson() => {
-        if (enableImprovedEmailPrivacy != null)
-          'enableImprovedEmailPrivacy': enableImprovedEmailPrivacy,
-      };
+    if (enableImprovedEmailPrivacy != null)
+      'enableImprovedEmailPrivacy': enableImprovedEmailPrivacy,
+  };
 }

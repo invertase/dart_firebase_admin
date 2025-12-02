@@ -93,10 +93,10 @@ class Tenant {
     _RecaptchaAuthConfig? recaptchaConfig,
     _PasswordPolicyAuthConfig? passwordPolicyConfig,
     this.emailPrivacyConfig,
-  })  : _emailSignInConfig = emailSignInConfig,
-        _multiFactorConfig = multiFactorConfig,
-        _recaptchaConfig = recaptchaConfig,
-        _passwordPolicyConfig = passwordPolicyConfig;
+  }) : _emailSignInConfig = emailSignInConfig,
+       _multiFactorConfig = multiFactorConfig,
+       _recaptchaConfig = recaptchaConfig,
+       _passwordPolicyConfig = passwordPolicyConfig;
 
   /// Factory constructor to create a Tenant from a server response.
   factory Tenant._fromResponse(Map<String, dynamic> response) {
@@ -278,13 +278,13 @@ class Tenant {
     if (tenantOptions.passwordPolicyConfig != null) {
       request['passwordPolicyConfig'] =
           _PasswordPolicyAuthConfig.buildServerRequest(
-        tenantOptions.passwordPolicyConfig!,
-      );
+            tenantOptions.passwordPolicyConfig!,
+          );
     }
 
     if (tenantOptions.emailPrivacyConfig != null) {
-      request['emailPrivacyConfig'] =
-          tenantOptions.emailPrivacyConfig!.toJson();
+      request['emailPrivacyConfig'] = tenantOptions.emailPrivacyConfig!
+          .toJson();
     }
 
     return request;

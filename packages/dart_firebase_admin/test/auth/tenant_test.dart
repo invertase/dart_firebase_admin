@@ -69,9 +69,7 @@ void main() {
     });
 
     test('CreateTenantRequest is an alias for UpdateTenantRequest', () {
-      final request = CreateTenantRequest(
-        displayName: 'New Tenant',
-      );
+      final request = CreateTenantRequest(displayName: 'New Tenant');
 
       expect(request, isA<UpdateTenantRequest>());
       expect(request.displayName, equals('New Tenant'));
