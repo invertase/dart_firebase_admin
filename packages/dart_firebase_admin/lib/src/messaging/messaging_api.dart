@@ -1015,7 +1015,7 @@ class NotificationMessagePayload {
 }
 
 // Keys which are not allowed in the messaging data payload object.
-const _blacklistedDataPayloadKeys = {'from'};
+const _disallowedDataPayloadKeys = {'from'};
 
 /// Interface representing a Firebase Cloud Messaging message payload. One or
 /// both of the `data` and `notification` keys are required.
@@ -1033,11 +1033,11 @@ class MessagingPayload {
 
     if (data != null) {
       for (final key in data!.keys) {
-        if (_blacklistedDataPayloadKeys.contains(key) ||
+        if (_disallowedDataPayloadKeys.contains(key) ||
             key.startsWith('google.')) {
           throw FirebaseMessagingAdminException(
             MessagingClientErrorCode.invalidPayload,
-            'Messaging payload contains the blacklisted "data.$key" property.',
+            'Messaging payload contains the disallowed "data.$key" property.',
           );
         }
       }

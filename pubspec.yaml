@@ -10,6 +10,7 @@ dev_dependencies:
 
 workspace:
   - packages/dart_firebase_admin
+  - packages/dart_firebase_admin/example
   # - packages/googleapis_dart_storage
   - packages/googleapis_auth_utils
 
