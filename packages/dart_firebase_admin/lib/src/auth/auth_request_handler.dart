@@ -21,6 +21,7 @@ const _minSessionCookieDurationSecs = 5 * 60;
 /// Maximum allowed session cookie duration in seconds (2 weeks).
 const _maxSessionCookieDurationSecs = 14 * 24 * 60 * 60;
 
+// TODO(demolaf): this could be an enum instead.
 /// List of supported email action request types.
 const _emailActionRequestTypes = {
   'PASSWORD_RESET',
@@ -30,10 +31,13 @@ const _emailActionRequestTypes = {
 };
 
 abstract class _AbstractAuthRequestHandler {
-  _AbstractAuthRequestHandler(this.app) : _httpClient = _AuthHttpClient(app);
+  _AbstractAuthRequestHandler(this.app, {@internal AuthHttpClient? httpClient})
+    : _httpClient = httpClient ?? AuthHttpClient(app);
 
-  final FirebaseAdminApp app;
-  final _AuthHttpClient _httpClient;
+  final FirebaseApp app;
+  final AuthHttpClient _httpClient;
+
+  AuthHttpClient get httpClient => _httpClient;
 
   /// Generates the out of band email action link for the email specified using the action code settings provided.
   /// Returns a promise that resolves with the generated link.
@@ -52,7 +56,8 @@ abstract class _AbstractAuthRequestHandler {
 
     // ActionCodeSettings required for email link sign-in to determine the url where the sign-in will
     // be completed.
-
+    // TODO(demolaf): find and replace anywhere _emailActionRequestTypes
+    //  are hardcoded like the one below i.e. requestType == 'EMAIL_SIGNIN'
     if (actionCodeSettings == null && requestType == 'EMAIL_SIGNIN') {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.invalidArgument,
@@ -79,7 +84,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Lists the OIDC configurations (single batch only) with a size of maxResults and starting from
   /// the offset as specified by pageToken.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListOAuthIdpConfigsResponse>
-      listOAuthIdpConfigs({int? maxResults, String? pageToken}) async {
+  listOAuthIdpConfigs({int? maxResults, String? pageToken}) async {
     final response = await _httpClient.listOAuthIdpConfigs(
       pageSize: maxResults ?? _maxListProviderConfigurationPageSize,
       pageToken: pageToken,
@@ -94,7 +99,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Lists the SAML configurations (single batch only) with a size of maxResults and starting from
   /// the offset as specified by pageToken.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListInboundSamlConfigsResponse>
-      listInboundSamlConfigs({int? maxResults, String? pageToken}) async {
+  listInboundSamlConfigs({int? maxResults, String? pageToken}) async {
     final response = await _httpClient.listInboundSamlConfigs(
       pageSize: maxResults ?? _maxListProviderConfigurationPageSize,
       pageToken: pageToken,
@@ -108,10 +113,9 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Creates a new OIDC provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      createOAuthIdpConfig(
-    OIDCAuthProviderConfig options,
-  ) async {
-    final request = _OIDCConfig.buildServerRequest(options) ??
+  createOAuthIdpConfig(OIDCAuthProviderConfig options) async {
+    final request =
+        _OIDCConfig.buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig();
 
     final response = await _httpClient.createOAuthIdpConfig(request);
@@ -130,10 +134,9 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Creates a new SAML provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      createInboundSamlConfig(
-    SAMLAuthProviderConfig options,
-  ) async {
-    final request = _SAMLConfig.buildServerRequest(options) ??
+  createInboundSamlConfig(SAMLAuthProviderConfig options) async {
+    final request =
+        _SAMLConfig.buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig();
 
     final response = await _httpClient.createInboundSamlConfig(request);
@@ -186,8 +189,9 @@ abstract class _AbstractAuthRequestHandler {
     final request = auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoRequest(
       localId: uid,
       // validSince is in UTC seconds.
-      validSince:
-          (DateTime.now().millisecondsSinceEpoch / 1000).floor().toString(),
+      validSince: (DateTime.now().millisecondsSinceEpoch / 1000)
+          .floor()
+          .toString(),
     );
 
     final response = await _httpClient.setAccountInfo(request);
@@ -196,7 +200,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Updates an existing OIDC provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      updateOAuthIdpConfig(
+  updateOAuthIdpConfig(
     String providerId,
     OIDCUpdateAuthProviderRequest options,
   ) async {
@@ -230,7 +234,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Updates an existing SAML provider configuration with the properties provided.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      updateInboundSamlConfig(
+  updateInboundSamlConfig(
     String providerId,
     SAMLUpdateAuthProviderRequest options,
   ) async {
@@ -262,18 +266,16 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Looks up an OIDC provider configuration by provider ID.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      getOAuthIdpConfig(String providerId) {
+  getOAuthIdpConfig(String providerId) {
     if (!_OIDCConfig.isProviderId(providerId)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidProviderId,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
     return _httpClient.getOauthIdpConfig(providerId);
   }
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      getInboundSamlConfig(String providerId) {
+  getInboundSamlConfig(String providerId) {
     if (!_SAMLConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
@@ -284,9 +286,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Deletes an OIDC configuration identified by a providerId.
   Future<void> deleteOAuthIdpConfig(String providerId) {
     if (!_OIDCConfig.isProviderId(providerId)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidProviderId,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
     return _httpClient.deleteOauthIdpConfig(providerId);
@@ -295,9 +295,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Deletes a SAML configuration identified by a providerId.
   Future<void> deleteInboundSamlConfig(String providerId) {
     if (!_SAMLConfig.isProviderId(providerId)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidProviderId,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
     return _httpClient.deleteInboundSamlConfig(providerId);
@@ -311,11 +309,11 @@ abstract class _AbstractAuthRequestHandler {
     final validDuration = expiresIn / 1000;
     final request =
         auth1.GoogleCloudIdentitytoolkitV1CreateSessionCookieRequest(
-      idToken: idToken,
-      validDuration: validDuration.toString(),
-    );
+          idToken: idToken,
+          validDuration: validDuration.toString(),
+        );
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       // Validate the ID token is a non-empty string.
       if (idToken.isEmpty) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidIdToken);
@@ -331,7 +329,7 @@ abstract class _AbstractAuthRequestHandler {
 
       final response = await client.projects.createSessionCookie(
         request,
-        app.projectId,
+        projectId,
       );
 
       final sessionCookie = response.sessionCookie;
@@ -388,10 +386,10 @@ abstract class _AbstractAuthRequestHandler {
       return userImportBuilder.buildResponse([]);
     }
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       final response = await client.projects.accounts_1.batchCreate(
         request,
-        app.projectId,
+        projectId,
       );
       // No error object is returned if no error encountered.
       // Rewrite response as UserImportResult and re-insert client previously detected errors.
@@ -413,10 +411,7 @@ abstract class _AbstractAuthRequestHandler {
   /// users and the next page token if available. For the last page, an empty list of users
   /// and no page token are returned.
   Future<auth1.GoogleCloudIdentitytoolkitV1DownloadAccountResponse>
-      downloadAccount({
-    required int? maxResults,
-    required String? pageToken,
-  }) {
+  downloadAccount({required int? maxResults, required String? pageToken}) {
     maxResults ??= _maxDownloadAccountPageSize;
     if (pageToken != null && pageToken.isEmpty) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
@@ -429,9 +424,9 @@ abstract class _AbstractAuthRequestHandler {
       );
     }
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       return client.projects.accounts_1.batchGet(
-        app.projectId,
+        projectId,
         maxResults: maxResults,
         nextPageToken: pageToken,
       );
@@ -444,19 +439,16 @@ abstract class _AbstractAuthRequestHandler {
   ) async {
     assertIsUid(uid);
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       return client.projects.accounts_1.delete(
         auth1.GoogleCloudIdentitytoolkitV1DeleteAccountRequest(localId: uid),
-        app.projectId,
+        projectId,
       );
     });
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsResponse>
-      deleteAccounts(
-    List<String> uids, {
-    required bool force,
-  }) async {
+  deleteAccounts(List<String> uids, {required bool force}) async {
     if (uids.isEmpty) {
       return auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsResponse();
     } else if (uids.length > _maxDeleteAccountsBatchSize) {
@@ -466,13 +458,13 @@ abstract class _AbstractAuthRequestHandler {
       );
     }
 
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       return client.projects.accounts_1.batchDelete(
         auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsRequest(
           localIds: uids,
           force: force,
         ),
-        app.projectId,
+        projectId,
       );
     });
   }
@@ -482,7 +474,7 @@ abstract class _AbstractAuthRequestHandler {
   /// A [Future] that resolves when the operation completes
   /// with the user id that was created.
   Future<String> createNewAccount(CreateRequest properties) async {
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       var mfaInfo = properties.multiFactor?.enrolledFactors
           .map((info) => info.toGoogleCloudIdentitytoolkitV1MfaFactor())
           .toList();
@@ -500,7 +492,7 @@ abstract class _AbstractAuthRequestHandler {
           phoneNumber: properties.phoneNumber?.value,
           photoUrl: properties.photoURL?.value,
         ),
-        app.projectId,
+        projectId,
       );
 
       final localId = response.localId;
@@ -516,10 +508,10 @@ abstract class _AbstractAuthRequestHandler {
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoResponse>
-      _accountsLookup(
+  _accountsLookup(
     auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest request,
   ) async {
-    return _httpClient.v1((client) async {
+    return _httpClient.v1((client, projectId) async {
       final response = await client.accounts.lookup(request);
       final users = response.users;
       if (users == null || users.isEmpty) {
@@ -557,9 +549,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Looks up a user by phone number.
   Future<auth1.GoogleCloudIdentitytoolkitV1UserInfo>
-      getAccountInfoByPhoneNumber(
-    String phoneNumber,
-  ) async {
+  getAccountInfoByPhoneNumber(String phoneNumber) async {
     assertIsPhoneNumber(phoneNumber);
 
     final response = await _accountsLookup(
@@ -572,7 +562,7 @@ abstract class _AbstractAuthRequestHandler {
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1UserInfo>
-      getAccountInfoByFederatedUid({
+  getAccountInfoByFederatedUid({
     required String providerId,
     required String rawId,
   }) async {
@@ -596,9 +586,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Looks up multiple users by their identifiers (uid, email, etc).
   Future<auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoResponse>
-      getAccountInfoByIdentifiers(
-    List<UserIdentifier> identifiers,
-  ) async {
+  getAccountInfoByIdentifiers(List<UserIdentifier> identifiers) async {
     if (identifiers.isEmpty) {
       return auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoResponse(
         users: [],
@@ -629,7 +617,9 @@ abstract class _AbstractAuthRequestHandler {
       }
     }
 
-    return _httpClient.v1((client) => client.accounts.lookup(request));
+    return _httpClient.v1(
+      (client, projectId) => client.accounts.lookup(request),
+    );
   }
 
   /// Edits an existing user.
@@ -694,8 +684,8 @@ abstract class _AbstractAuthRequestHandler {
     List<String>? deleteProvider;
     if (isPhoneNumberDeleted) deleteProvider = ['phone'];
 
-    final linkProviderUserInfo =
-        properties.providerToLink?._toProviderUserInfo();
+    final linkProviderUserInfo = properties.providerToLink
+        ?._toProviderUserInfo();
 
     final providerToUnlink = properties.providersToUnlink;
     if (providerToUnlink != null) {
@@ -729,8 +719,8 @@ abstract class _AbstractAuthRequestHandler {
   }
 }
 
-class _AuthRequestHandler extends _AbstractAuthRequestHandler {
-  _AuthRequestHandler(super.app);
+class AuthRequestHandler extends _AbstractAuthRequestHandler {
+  AuthRequestHandler(super.app, {@internal super.httpClient});
 
   // TODO getProjectConfig
   // TODO updateProjectConfig
@@ -833,11 +823,13 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
       if (response.recaptchaConfig != null)
         'recaptchaConfig': _recaptchaConfigToJson(response.recaptchaConfig!),
       if (response.passwordPolicyConfig != null)
-        'passwordPolicyConfig':
-            _passwordPolicyConfigToJson(response.passwordPolicyConfig!),
+        'passwordPolicyConfig': _passwordPolicyConfigToJson(
+          response.passwordPolicyConfig!,
+        ),
       if (response.emailPrivacyConfig != null)
-        'emailPrivacyConfig':
-            _emailPrivacyConfigToJson(response.emailPrivacyConfig!),
+        'emailPrivacyConfig': _emailPrivacyConfigToJson(
+          response.emailPrivacyConfig!,
+        ),
     };
   }
 
@@ -906,11 +898,13 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
                     null)
                   'containsNumericCharacter':
                       version.customStrengthOptions!.containsNumericCharacter,
-                if (version.customStrengthOptions!
+                if (version
+                        .customStrengthOptions!
                         .containsNonAlphanumericCharacter !=
                     null)
                   'containsNonAlphanumericCharacter': version
-                      .customStrengthOptions!.containsNonAlphanumericCharacter,
+                      .customStrengthOptions!
+                      .containsNonAlphanumericCharacter,
                 if (version.customStrengthOptions!.minPasswordLength != null)
                   'minPasswordLength':
                       version.customStrengthOptions!.minPasswordLength,
@@ -936,7 +930,7 @@ class _AuthRequestHandler extends _AbstractAuthRequestHandler {
 /// Tenant-aware request handler extending the abstract auth request handler.
 class _TenantAwareAuthRequestHandler extends _AbstractAuthRequestHandler {
   _TenantAwareAuthRequestHandler(super.app, this.tenantId)
-      : _tenantHttpClient = _TenantAwareAuthHttpClient(app, tenantId);
+    : _tenantHttpClient = _TenantAwareAuthHttpClient(app, tenantId);
 
   final String tenantId;
   final _TenantAwareAuthHttpClient _tenantHttpClient;
@@ -945,274 +939,321 @@ class _TenantAwareAuthRequestHandler extends _AbstractAuthRequestHandler {
   _TenantAwareAuthHttpClient get _httpClient => _tenantHttpClient;
 }
 
-class _AuthHttpClient {
-  _AuthHttpClient(this.app);
+// class _AuthHttpClient {
+//   _AuthHttpClient(this.app);
+//
+//   final FirebaseAdminApp app;
+//
+//   String _buildParent() => 'projects/${app.projectId}';
+//
+//   String _buildOAuthIpdParent(String parentId) =>
+//       'projects/${app.projectId}/'
+//       'oauthIdpConfigs/$parentId';
+//
+//   String _buildSamlParent(String parentId) =>
+//       'projects/${app.projectId}/'
+//       'inboundSamlConfigs/$parentId';
+//
+//   Future<auth1.GoogleCloudIdentitytoolkitV1GetOobCodeResponse> getOobCode(
+//     auth1.GoogleCloudIdentitytoolkitV1GetOobCodeRequest request,
+//   ) {
+//     return v1((client) async {
+//       final email = request.email;
+//       if (email == null || !isEmail(email)) {
+//         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidEmail);
+//       }
+//
+//       final newEmail = request.newEmail;
+//       if (newEmail != null && !isEmail(newEmail)) {
+//         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidEmail);
+//       }
+//
+//       if (!_emailActionRequestTypes.contains(request.requestType)) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.invalidArgument,
+//           '"${request.requestType}" is not a supported email action request type.',
+//         );
+//       }
+//
+//       final response = await client.accounts.sendOobCode(request);
+//
+//       if (response.oobLink == null) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.internalError,
+//           'INTERNAL ASSERT FAILED: Unable to generate email action link',
+//         );
+//       }
+//
+//       return response;
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListInboundSamlConfigsResponse>
+//   listInboundSamlConfigs({required int pageSize, String? pageToken}) {
+//     return v2((client) {
+//       if (pageToken != null && pageToken.isEmpty) {
+//         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
+//       }
+//
+//       if (pageSize <= 0 || pageSize > _maxListProviderConfigurationPageSize) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.invalidArgument,
+//           'Required "maxResults" must be a positive integer that does not exceed '
+//           '$_maxListProviderConfigurationPageSize.',
+//         );
+//       }
+//
+//       return client.projects.inboundSamlConfigs.list(
+//         _buildParent(),
+//         pageSize: pageSize,
+//         pageToken: pageToken,
+//       );
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListOAuthIdpConfigsResponse>
+//   listOAuthIdpConfigs({required int pageSize, String? pageToken}) {
+//     return v2((client) {
+//       if (pageToken != null && pageToken.isEmpty) {
+//         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
+//       }
+//
+//       if (pageSize <= 0 || pageSize > _maxListProviderConfigurationPageSize) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.invalidArgument,
+//           'Required "maxResults" must be a positive integer that does not exceed '
+//           '$_maxListProviderConfigurationPageSize.',
+//         );
+//       }
+//
+//       return client.projects.oauthIdpConfigs.list(
+//         _buildParent(),
+//         pageSize: pageSize,
+//         pageToken: pageToken,
+//       );
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
+//   createOAuthIdpConfig(
+//     auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
+//   ) {
+//     return v2((client) async {
+//       final response = await client.projects.oauthIdpConfigs.create(
+//         request,
+//         _buildParent(),
+//       );
+//
+//       final name = response.name;
+//       if (name == null || name.isEmpty) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.internalError,
+//           'INTERNAL ASSERT FAILED: Unable to create OIDC configuration',
+//         );
+//       }
+//
+//       return response;
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
+//   createInboundSamlConfig(
+//     auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
+//   ) {
+//     return v2((client) async {
+//       final response = await client.projects.inboundSamlConfigs.create(
+//         request,
+//         _buildParent(),
+//       );
+//
+//       final name = response.name;
+//       if (name == null || name.isEmpty) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.internalError,
+//           'INTERNAL ASSERT FAILED: Unable to create SAML configuration',
+//         );
+//       }
+//
+//       return response;
+//     });
+//   }
+//
+//   Future<void> deleteOauthIdpConfig(String providerId) {
+//     return v2((client) async {
+//       await client.projects.oauthIdpConfigs.delete(
+//         _buildOAuthIpdParent(providerId),
+//       );
+//     });
+//   }
+//
+//   Future<void> deleteInboundSamlConfig(String providerId) {
+//     return v2((client) async {
+//       await client.projects.inboundSamlConfigs.delete(
+//         _buildSamlParent(providerId),
+//       );
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
+//   updateInboundSamlConfig(
+//     auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
+//     String providerId, {
+//     required String? updateMask,
+//   }) {
+//     return v2((client) async {
+//       final response = await client.projects.inboundSamlConfigs.patch(
+//         request,
+//         _buildSamlParent(providerId),
+//         updateMask: updateMask,
+//       );
+//
+//       if (response.name == null || response.name!.isEmpty) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.internalError,
+//           'INTERNAL ASSERT FAILED: Unable to update SAML configuration',
+//         );
+//       }
+//
+//       return response;
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
+//   updateOAuthIdpConfig(
+//     auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
+//     String providerId, {
+//     required String? updateMask,
+//   }) {
+//     return v2((client) async {
+//       final response = await client.projects.oauthIdpConfigs.patch(
+//         request,
+//         _buildOAuthIpdParent(providerId),
+//         updateMask: updateMask,
+//       );
+//
+//       if (response.name == null || response.name!.isEmpty) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.internalError,
+//           'INTERNAL ASSERT FAILED: Unable to update OIDC configuration',
+//         );
+//       }
+//
+//       return response;
+//     });
+//   }
+//
+//   Future<auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoResponse>
+//   setAccountInfo(
+//     auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoRequest request,
+//   ) {
+//     return v1((client) async {
+//       // TODO should this use account/project/update or account/update?
+//       // Or maybe both?
+//       // ^ Depending on it, use tenantId... Or do we? The request seems to reject tenantID args
+//       final response = await client.accounts.update(request);
+//
+//       final localId = response.localId;
+//       if (localId == null) {
+//         throw FirebaseAuthAdminException(AuthClientErrorCode.userNotFound);
+//       }
+//       return response;
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
+//   getOauthIdpConfig(String providerId) {
+//     return v2((client) async {
+//       final response = await client.projects.oauthIdpConfigs.get(
+//         _buildOAuthIpdParent(providerId),
+//       );
+//
+//       final name = response.name;
+//       if (name == null || name.isEmpty) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.internalError,
+//           'INTERNAL ASSERT FAILED: Unable to get OIDC configuration',
+//         );
+//       }
+//
+//       return response;
+//     });
+//   }
+//
+//   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
+//   getInboundSamlConfig(String providerId) {
+//     return v2((client) async {
+//       final response = await client.projects.inboundSamlConfigs.get(
+//         _buildSamlParent(providerId),
+//       );
+//
+//       final name = response.name;
+//       if (name == null || name.isEmpty) {
+//         throw FirebaseAuthAdminException(
+//           AuthClientErrorCode.internalError,
+//           'INTERNAL ASSERT FAILED: Unable to get SAML configuration',
+//         );
+//       }
+//
+//       return response;
+//     });
+//   }
+//
+//   Future<R> _run<R>(Future<R> Function(Client client) fn) {
+//     return _authGuard(() => app.client.then(fn));
+//   }
+//
+//   Future<R> v1<R>(Future<R> Function(auth1.IdentityToolkitApi client) fn) {
+//     return _run(
+//       (client) => fn(
+//         auth1.IdentityToolkitApi(client, rootUrl: app.authApiHost.toString()),
+//       ),
+//     );
+//   }
+//
+//   Future<R> v2<R>(
+//     Future<R> Function(auth2.IdentityToolkitApi client) fn,
+//   ) async {
+//     return _run(
+//       (client) => fn(
+//         auth2.IdentityToolkitApi(client, rootUrl: app.authApiHost.toString()),
+//       ),
+//     );
+//   }
+//
+//   Future<R> v3<R>(
+//     Future<R> Function(auth3.IdentityToolkitApi client) fn,
+//   ) async {
+//     return _run(
+//       (client) => fn(
+//         auth3.IdentityToolkitApi(client, rootUrl: app.authApiHost.toString()),
+//       ),
+//     );
+//   }
+// }
 
-  final FirebaseAdminApp app;
+/// Tenant-aware HTTP client that builds tenant-specific resource paths.
+class _TenantAwareAuthHttpClient extends AuthHttpClient {
+  _TenantAwareAuthHttpClient(super.app, this.tenantId);
 
-  String _buildParent() => 'projects/${app.projectId}';
+  final String tenantId;
 
-  String _buildOAuthIpdParent(String parentId) => 'projects/${app.projectId}/'
-      'oauthIdpConfigs/$parentId';
+  @override
+  String buildParent(String projectId) =>
+      'projects/$projectId/tenants/$tenantId';
 
-  String _buildSamlParent(String parentId) => 'projects/${app.projectId}/'
-      'inboundSamlConfigs/$parentId';
+  @override
+  String buildOAuthIdpParent(String projectId, String parentId) =>
+      'projects/$projectId/tenants/$tenantId/oauthIdpConfigs/$parentId';
 
-  Future<auth1.GoogleCloudIdentitytoolkitV1GetOobCodeResponse> getOobCode(
-    auth1.GoogleCloudIdentitytoolkitV1GetOobCodeRequest request,
-  ) {
-    return v1((client) async {
-      final email = request.email;
-      if (email == null || !isEmail(email)) {
-        throw FirebaseAuthAdminException(AuthClientErrorCode.invalidEmail);
-      }
-
-      final newEmail = request.newEmail;
-      if (newEmail != null && !isEmail(newEmail)) {
-        throw FirebaseAuthAdminException(AuthClientErrorCode.invalidEmail);
-      }
-
-      if (!_emailActionRequestTypes.contains(request.requestType)) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.invalidArgument,
-          '"${request.requestType}" is not a supported email action request type.',
-        );
-      }
-
-      final response = await client.accounts.sendOobCode(request);
-
-      if (response.oobLink == null) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'INTERNAL ASSERT FAILED: Unable to generate email action link',
-        );
-      }
-
-      return response;
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListInboundSamlConfigsResponse>
-      listInboundSamlConfigs({
-    required int pageSize,
-    String? pageToken,
-  }) {
-    return v2((client) {
-      if (pageToken != null && pageToken.isEmpty) {
-        throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
-      }
-
-      if (pageSize <= 0 || pageSize > _maxListProviderConfigurationPageSize) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.invalidArgument,
-          'Required "maxResults" must be a positive integer that does not exceed '
-          '$_maxListProviderConfigurationPageSize.',
-        );
-      }
-
-      return client.projects.inboundSamlConfigs.list(
-        _buildParent(),
-        pageSize: pageSize,
-        pageToken: pageToken,
-      );
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListOAuthIdpConfigsResponse>
-      listOAuthIdpConfigs({
-    required int pageSize,
-    String? pageToken,
-  }) {
-    return v2((client) {
-      if (pageToken != null && pageToken.isEmpty) {
-        throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
-      }
-
-      if (pageSize <= 0 || pageSize > _maxListProviderConfigurationPageSize) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.invalidArgument,
-          'Required "maxResults" must be a positive integer that does not exceed '
-          '$_maxListProviderConfigurationPageSize.',
-        );
-      }
-
-      return client.projects.oauthIdpConfigs.list(
-        _buildParent(),
-        pageSize: pageSize,
-        pageToken: pageToken,
-      );
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      createOAuthIdpConfig(
-    auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
-  ) {
-    return v2((client) async {
-      final response = await client.projects.oauthIdpConfigs.create(
-        request,
-        _buildParent(),
-      );
-
-      final name = response.name;
-      if (name == null || name.isEmpty) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'INTERNAL ASSERT FAILED: Unable to create OIDC configuration',
-        );
-      }
-
-      return response;
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      createInboundSamlConfig(
-    auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
-  ) {
-    return v2((client) async {
-      final response = await client.projects.inboundSamlConfigs.create(
-        request,
-        _buildParent(),
-      );
-
-      final name = response.name;
-      if (name == null || name.isEmpty) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'INTERNAL ASSERT FAILED: Unable to create SAML configuration',
-        );
-      }
-
-      return response;
-    });
-  }
-
-  Future<void> deleteOauthIdpConfig(String providerId) {
-    return v2((client) async {
-      await client.projects.oauthIdpConfigs.delete(
-        _buildOAuthIpdParent(providerId),
-      );
-    });
-  }
-
-  Future<void> deleteInboundSamlConfig(String providerId) {
-    return v2((client) async {
-      await client.projects.inboundSamlConfigs.delete(
-        _buildSamlParent(providerId),
-      );
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      updateInboundSamlConfig(
-    auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
-    String providerId, {
-    required String? updateMask,
-  }) {
-    return v2((client) async {
-      final response = await client.projects.inboundSamlConfigs.patch(
-        request,
-        _buildSamlParent(providerId),
-        updateMask: updateMask,
-      );
-
-      if (response.name == null || response.name!.isEmpty) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'INTERNAL ASSERT FAILED: Unable to update SAML configuration',
-        );
-      }
-
-      return response;
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      updateOAuthIdpConfig(
-    auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
-    String providerId, {
-    required String? updateMask,
-  }) {
-    return v2((client) async {
-      final response = await client.projects.oauthIdpConfigs.patch(
-        request,
-        _buildOAuthIpdParent(providerId),
-        updateMask: updateMask,
-      );
-
-      if (response.name == null || response.name!.isEmpty) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'INTERNAL ASSERT FAILED: Unable to update OIDC configuration',
-        );
-      }
-
-      return response;
-    });
-  }
-
-  Future<auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoResponse>
-      setAccountInfo(
-    auth1.GoogleCloudIdentitytoolkitV1SetAccountInfoRequest request,
-  ) {
-    return v1((client) async {
-      // TODO should this use account/project/update or account/update?
-      // Or maybe both?
-      // ^ Depending on it, use tenantId... Or do we? The request seems to reject tenantID args
-      final response = await client.accounts.update(request);
-
-      final localId = response.localId;
-      if (localId == null) {
-        throw FirebaseAuthAdminException(AuthClientErrorCode.userNotFound);
-      }
-      return response;
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
-      getOauthIdpConfig(String providerId) {
-    return v2((client) async {
-      final response = await client.projects.oauthIdpConfigs.get(
-        _buildOAuthIpdParent(providerId),
-      );
-
-      final name = response.name;
-      if (name == null || name.isEmpty) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'INTERNAL ASSERT FAILED: Unable to get OIDC configuration',
-        );
-      }
-
-      return response;
-    });
-  }
-
-  Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
-      getInboundSamlConfig(String providerId) {
-    return v2((client) async {
-      final response = await client.projects.inboundSamlConfigs.get(
-        _buildSamlParent(providerId),
-      );
-
-      final name = response.name;
-      if (name == null || name.isEmpty) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'INTERNAL ASSERT FAILED: Unable to get SAML configuration',
-        );
-      }
-
-      return response;
-    });
-  }
+  @override
+  String buildSamlParent(String projectId, String parentId) =>
+      'projects/$projectId/tenants/$tenantId/inboundSamlConfigs/$parentId';
 
   /// Gets a tenant by tenant ID.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> getTenant(
     String tenantId,
   ) {
-    return v2((client) async {
+    return super.v2((client, projectId) async {
       if (tenantId.isEmpty) {
         throw FirebaseAuthAdminException(
           AuthClientErrorCode.invalidTenantId,
@@ -1221,7 +1262,7 @@ class _AuthHttpClient {
       }
 
       final response = await client.projects.tenants.get(
-        'projects/${app.projectId}/tenants/$tenantId',
+        buildParent(projectId),
       );
 
       if (response.name == null || response.name!.isEmpty) {
@@ -1237,11 +1278,8 @@ class _AuthHttpClient {
 
   /// Lists tenants with pagination.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListTenantsResponse>
-      listTenants({
-    required int maxResults,
-    String? pageToken,
-  }) {
-    return v2((client) {
+  listTenants({required int maxResults, String? pageToken}) {
+    return super.v2((client, projectId) {
       if (pageToken != null && pageToken.isEmpty) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidPageToken);
       }
@@ -1256,7 +1294,7 @@ class _AuthHttpClient {
       }
 
       return client.projects.tenants.list(
-        _buildParent(),
+        buildParent(projectId),
         pageSize: maxResults,
         pageToken: pageToken,
       );
@@ -1265,7 +1303,7 @@ class _AuthHttpClient {
 
   /// Deletes a tenant by tenant ID.
   Future<auth2.GoogleProtobufEmpty> deleteTenant(String tenantId) {
-    return v2((client) async {
+    return super.v2((client, projectId) async {
       if (tenantId.isEmpty) {
         throw FirebaseAuthAdminException(
           AuthClientErrorCode.invalidTenantId,
@@ -1274,7 +1312,7 @@ class _AuthHttpClient {
       }
 
       return client.projects.tenants.delete(
-        'projects/${app.projectId}/tenants/$tenantId',
+        buildParent(projectId),
       );
     });
   }
@@ -1283,12 +1321,12 @@ class _AuthHttpClient {
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> createTenant(
     Map<String, dynamic> tenantOptions,
   ) {
-    return v2((client) async {
+    return super.v2((client, projectId) async {
       final request = _buildTenantRequest(tenantOptions);
 
       final response = await client.projects.tenants.create(
         request,
-        _buildParent(),
+        buildParent(projectId),
       );
 
       final name = response.name;
@@ -1309,7 +1347,7 @@ class _AuthHttpClient {
     String tenantId,
     Map<String, dynamic> tenantOptions,
   ) {
-    return v2((client) async {
+    return super.v2((client, projectId) async {
       if (tenantId.isEmpty) {
         throw FirebaseAuthAdminException(
           AuthClientErrorCode.invalidTenantId,
@@ -1322,7 +1360,7 @@ class _AuthHttpClient {
 
       final response = await client.projects.tenants.patch(
         request,
-        'projects/${app.projectId}/tenants/$tenantId',
+        buildParent(projectId),
         updateMask: updateMask,
       );
 
@@ -1362,13 +1400,15 @@ class _AuthHttpClient {
     }
 
     if (options['mfaConfig'] != null) {
-      request.mfaConfig =
-          _buildMfaConfig(options['mfaConfig'] as Map<String, dynamic>);
+      request.mfaConfig = _buildMfaConfig(
+        options['mfaConfig'] as Map<String, dynamic>,
+      );
     }
 
     if (options['testPhoneNumbers'] != null) {
-      request.testPhoneNumbers =
-          Map<String, String>.from(options['testPhoneNumbers'] as Map);
+      request.testPhoneNumbers = Map<String, String>.from(
+        options['testPhoneNumbers'] as Map,
+      );
     }
 
     if (options['smsRegionConfig'] != null) {
@@ -1418,21 +1458,21 @@ class _AuthHttpClient {
       final allowByDefault = config['allowByDefault'] as Map<String, dynamic>;
       smsConfig.allowByDefault =
           auth2.GoogleCloudIdentitytoolkitAdminV2AllowByDefault(
-        disallowedRegions:
-            (allowByDefault['disallowedRegions'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList(),
-      );
+            disallowedRegions:
+                (allowByDefault['disallowedRegions'] as List<dynamic>?)
+                    ?.map((e) => e as String)
+                    .toList(),
+          );
     }
 
     if (config['allowlistOnly'] != null) {
       final allowlistOnly = config['allowlistOnly'] as Map<String, dynamic>;
       smsConfig.allowlistOnly =
           auth2.GoogleCloudIdentitytoolkitAdminV2AllowlistOnly(
-        allowedRegions: (allowlistOnly['allowedRegions'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList(),
-      );
+            allowedRegions: (allowlistOnly['allowedRegions'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList(),
+          );
     }
 
     return smsConfig;
@@ -1450,9 +1490,7 @@ class _AuthHttpClient {
   }
 
   auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyConfig
-      _buildPasswordPolicyConfig(
-    Map<String, dynamic> config,
-  ) {
+  _buildPasswordPolicyConfig(Map<String, dynamic> config) {
     final policyConfig =
         auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyConfig();
 
@@ -1469,24 +1507,23 @@ class _AuthHttpClient {
     if (config['passwordPolicyVersions'] != null) {
       policyConfig.passwordPolicyVersions =
           (config['passwordPolicyVersions'] as List<dynamic>).map((version) {
-        final versionMap = version as Map<String, dynamic>;
-        return auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyVersion(
-          customStrengthOptions: versionMap['customStrengthOptions'] != null
-              ? _buildCustomStrengthOptions(
-                  versionMap['customStrengthOptions'] as Map<String, dynamic>,
-                )
-              : null,
-        );
-      }).toList();
+            final versionMap = version as Map<String, dynamic>;
+            return auth2.GoogleCloudIdentitytoolkitAdminV2PasswordPolicyVersion(
+              customStrengthOptions: versionMap['customStrengthOptions'] != null
+                  ? _buildCustomStrengthOptions(
+                      versionMap['customStrengthOptions']
+                          as Map<String, dynamic>,
+                    )
+                  : null,
+            );
+          }).toList();
     }
 
     return policyConfig;
   }
 
   auth2.GoogleCloudIdentitytoolkitAdminV2CustomStrengthOptions
-      _buildCustomStrengthOptions(
-    Map<String, dynamic> options,
-  ) {
+  _buildCustomStrengthOptions(Map<String, dynamic> options) {
     return auth2.GoogleCloudIdentitytoolkitAdminV2CustomStrengthOptions(
       containsLowercaseCharacter:
           options['containsLowercaseCharacter'] as bool?,
@@ -1501,9 +1538,7 @@ class _AuthHttpClient {
   }
 
   auth2.GoogleCloudIdentitytoolkitAdminV2EmailPrivacyConfig
-      _buildEmailPrivacyConfig(
-    Map<String, dynamic> config,
-  ) {
+  _buildEmailPrivacyConfig(Map<String, dynamic> config) {
     return auth2.GoogleCloudIdentitytoolkitAdminV2EmailPrivacyConfig(
       enableImprovedEmailPrivacy: config['enableImprovedEmailPrivacy'] as bool?,
     );
@@ -1524,67 +1559,4 @@ class _AuthHttpClient {
 
     return fields.join(',');
   }
-
-  Future<R> _run<R>(
-    Future<R> Function(Client client) fn,
-  ) {
-    return _authGuard(() => app.client.then(fn));
-  }
-
-  Future<R> v1<R>(
-    Future<R> Function(auth1.IdentityToolkitApi client) fn,
-  ) {
-    return _run(
-      (client) => fn(
-        auth1.IdentityToolkitApi(
-          client,
-          rootUrl: app.authApiHost.toString(),
-        ),
-      ),
-    );
-  }
-
-  Future<R> v2<R>(
-    Future<R> Function(auth2.IdentityToolkitApi client) fn,
-  ) async {
-    return _run(
-      (client) => fn(
-        auth2.IdentityToolkitApi(
-          client,
-          rootUrl: app.authApiHost.toString(),
-        ),
-      ),
-    );
-  }
-
-  Future<R> v3<R>(
-    Future<R> Function(auth3.IdentityToolkitApi client) fn,
-  ) async {
-    return _run(
-      (client) => fn(
-        auth3.IdentityToolkitApi(
-          client,
-          rootUrl: app.authApiHost.toString(),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tenant-aware HTTP client that builds tenant-specific resource paths.
-class _TenantAwareAuthHttpClient extends _AuthHttpClient {
-  _TenantAwareAuthHttpClient(super.app, this.tenantId);
-
-  final String tenantId;
-
-  @override
-  String _buildParent() => 'projects/${app.projectId}/tenants/$tenantId';
-
-  @override
-  String _buildOAuthIpdParent(String parentId) =>
-      'projects/${app.projectId}/tenants/$tenantId/oauthIdpConfigs/$parentId';
-
-  @override
-  String _buildSamlParent(String parentId) =>
-      'projects/${app.projectId}/tenants/$tenantId/inboundSamlConfigs/$parentId';
 }

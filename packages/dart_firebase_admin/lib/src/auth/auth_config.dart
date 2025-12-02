@@ -1,24 +1,17 @@
 part of '../auth.dart';
 
 /// The possible types for [AuthProviderConfigFilter._type].
-enum _AuthProviderConfigFilterType {
-  saml,
-  oidc,
-}
+enum _AuthProviderConfigFilterType { saml, oidc }
 
 /// The filter interface used for listing provider configurations. This is used
 /// when specifying how to list configured identity providers via
 /// [_BaseAuth.listProviderConfigs].
 class AuthProviderConfigFilter {
-  AuthProviderConfigFilter.oidc({
-    this.maxResults,
-    this.pageToken,
-  }) : _type = _AuthProviderConfigFilterType.oidc;
+  AuthProviderConfigFilter.oidc({this.maxResults, this.pageToken})
+    : _type = _AuthProviderConfigFilterType.oidc;
 
-  AuthProviderConfigFilter.saml({
-    this.maxResults,
-    this.pageToken,
-  }) : _type = _AuthProviderConfigFilterType.saml;
+  AuthProviderConfigFilter.saml({this.maxResults, this.pageToken})
+    : _type = _AuthProviderConfigFilterType.saml;
 
   /// The Auth provider configuration filter. This can be either `saml` or `oidc`.
   /// The former is used to look up SAML providers only, while the latter is used
@@ -473,8 +466,9 @@ class _OIDCConfig extends OIDCAuthProviderConfig {
   /// Returns the provider ID corresponding to the resource name if available.
   static String? getProviderIdFromResourceName(String resourceName) {
     // name is of form projects/project1/oauthIdpConfigs/providerId1
-    final matchProviderRes =
-        RegExp(r'\/oauthIdpConfigs\/(oidc\..*)$').firstMatch(resourceName);
+    final matchProviderRes = RegExp(
+      r'\/oauthIdpConfigs\/(oidc\..*)$',
+    ).firstMatch(resourceName);
     if (matchProviderRes == null || matchProviderRes.groupCount < 2) {
       return null;
     }
@@ -506,8 +500,9 @@ class _SAMLConfig extends SAMLAuthProviderConfig {
     final ssoURL = idpConfig?.ssoUrl;
     final spConfig = response.spConfig;
     final spEntityId = spConfig?.spEntityId;
-    final providerId =
-        response.name.let(_SAMLConfig.getProviderIdFromResourceName);
+    final providerId = response.name.let(
+      _SAMLConfig.getProviderIdFromResourceName,
+    );
 
     if (idpConfig == null ||
         idpEntityId == null ||
@@ -536,7 +531,7 @@ class _SAMLConfig extends SAMLAuthProviderConfig {
   }
 
   static v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig?
-      buildServerRequest(
+  buildServerRequest(
     _SAMLAuthProviderRequestBase options, {
     bool ignoreMissingFields = false,
   }) {
@@ -554,7 +549,8 @@ class _SAMLConfig extends SAMLAuthProviderConfig {
               callbackUri: options.callbackURL,
               spEntityId: options.rpEntityId,
             ),
-      idpConfig: options.idpEntityId == null &&
+      idpConfig:
+          options.idpEntityId == null &&
               options.ssoURL == null &&
               options.x509Certificates == null
           ? null
@@ -575,8 +571,9 @@ class _SAMLConfig extends SAMLAuthProviderConfig {
 
   static String? getProviderIdFromResourceName(String resourceName) {
     // name is of form projects/project1/inboundSamlConfigs/providerId1
-    final matchProviderRes =
-        RegExp(r'\/inboundSamlConfigs\/(saml\..*)$').firstMatch(resourceName);
+    final matchProviderRes = RegExp(
+      r'\/inboundSamlConfigs\/(saml\..*)$',
+    ).firstMatch(resourceName);
     if (matchProviderRes == null || matchProviderRes.groupCount < 2) {
       return null;
     }
@@ -701,9 +698,9 @@ class CreateRequest extends _BaseUpdateRequest {
     this.multiFactor,
     this.uid,
   }) : assert(
-          multiFactor is! MultiFactorUpdateSettings,
-          'MultiFactorUpdateSettings is not supported for create requests.',
-        );
+         multiFactor is! MultiFactorUpdateSettings,
+         'MultiFactorUpdateSettings is not supported for create requests.',
+       );
 
   /// The user's `uid`.
   final String? uid;
@@ -798,9 +795,9 @@ class _BaseUpdateRequest {
     required this.password,
     Object? phoneNumber = _sentinel,
     Object? photoURL = _sentinel,
-  })  : displayName = _Box.unwrap(displayName),
-        phoneNumber = _Box.unwrap(phoneNumber),
-        photoURL = _Box.unwrap(photoURL);
+  }) : displayName = _Box.unwrap(displayName),
+       phoneNumber = _Box.unwrap(phoneNumber),
+       photoURL = _Box.unwrap(photoURL);
 
   /// Whether or not the user is disabled: `true` for disabled;
   /// `false` for enabled.
@@ -890,9 +887,7 @@ class MultiFactorUpdateSettings {
 
 /// The multi-factor related user settings for create operations.
 class MultiFactorCreateSettings {
-  MultiFactorCreateSettings({
-    required this.enrolledFactors,
-  });
+  MultiFactorCreateSettings({required this.enrolledFactors});
 
   /// The created user's list of enrolled second factors.
   final List<CreateMultiFactorInfoRequest> enrolledFactors;
@@ -911,7 +906,7 @@ class CreatePhoneMultiFactorInfoRequest extends CreateMultiFactorInfoRequest {
 
   @override
   v1.GoogleCloudIdentitytoolkitV1MfaFactor
-      toGoogleCloudIdentitytoolkitV1MfaFactor() {
+  toGoogleCloudIdentitytoolkitV1MfaFactor() {
     return v1.GoogleCloudIdentitytoolkitV1MfaFactor(
       displayName: displayName,
       // TODO param is optional, but phoneNumber is required.
@@ -923,15 +918,13 @@ class CreatePhoneMultiFactorInfoRequest extends CreateMultiFactorInfoRequest {
 /// Interface representing base properties of a user-enrolled second factor for a
 /// `CreateRequest`.
 sealed class CreateMultiFactorInfoRequest {
-  CreateMultiFactorInfoRequest({
-    required this.displayName,
-  });
+  CreateMultiFactorInfoRequest({required this.displayName});
 
   /// The optional display name for an enrolled second factor.
   final String? displayName;
 
   v1.GoogleCloudIdentitytoolkitV1MfaFactor
-      toGoogleCloudIdentitytoolkitV1MfaFactor();
+  toGoogleCloudIdentitytoolkitV1MfaFactor();
 }
 
 /// Interface representing a phone specific user-enrolled second factor

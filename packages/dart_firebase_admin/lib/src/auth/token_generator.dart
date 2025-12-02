@@ -25,10 +25,7 @@ const _blacklistedClaims = [
 ];
 
 class _FirebaseTokenGenerator {
-  _FirebaseTokenGenerator(
-    this._signer, {
-    required this.tenantId,
-  }) {
+  _FirebaseTokenGenerator(this._signer, {required this.tenantId}) {
     final tenantId = this.tenantId;
     if (tenantId != null && tenantId.isEmpty) {
       throw FirebaseAuthAdminException(
@@ -75,10 +72,7 @@ class _FirebaseTokenGenerator {
     try {
       final account = await _signer.getAccountId();
 
-      final header = {
-        'alg': _signer.algorithm,
-        'typ': 'JWT',
-      };
+      final header = {'alg': _signer.algorithm, 'typ': 'JWT'};
       final iat = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final body = {
         'aud': _firebaseAudience,
@@ -101,8 +95,9 @@ class _FirebaseTokenGenerator {
   }
 
   String _encodeSegment(Object? segment) {
-    final buffer =
-        segment is Uint8List ? segment : utf8.encode(jsonEncode(segment));
+    final buffer = segment is Uint8List
+        ? segment
+        : utf8.encode(jsonEncode(segment));
     return base64Encode(buffer).replaceFirst(RegExp(r'=+$'), '');
   }
 }

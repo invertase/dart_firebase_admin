@@ -1,5 +1,5 @@
+import 'package:dart_firebase_admin/app_check.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:dart_firebase_admin/src/app_check/app_check_api_internal.dart';
 import 'package:dart_firebase_admin/src/app_check/token_verifier.dart';
 import 'package:test/test.dart';
 
@@ -8,15 +8,18 @@ import '../mock_service_account.dart';
 void main() {
   group('AppCheckTokenVerifier', () {
     late AppCheckTokenVerifier verifier;
-    late FirebaseAdminApp app;
+    late FirebaseApp app;
 
     setUp(() {
-      app = FirebaseAdminApp.initializeApp(
-        '$mockProjectId-token-verifier',
-        Credential.fromServiceAccountParams(
-          clientId: 'test-client-id',
-          privateKey: mockPrivateKey,
-          email: mockClientEmail,
+      app = FirebaseApp.initializeApp(
+        name: '$mockProjectId-token-verifier',
+        options: AppOptions(
+          credential: Credential.fromServiceAccountParams(
+            clientId: 'test-client-id',
+            privateKey: mockPrivateKey,
+            email: mockClientEmail,
+            projectId: mockProjectId,
+          ),
         ),
       );
       verifier = AppCheckTokenVerifier(app);

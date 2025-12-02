@@ -1,5 +1,13 @@
-import '../../dart_firebase_admin.dart';
-import 'security_rules_api_internals.dart';
+import 'dart:async';
+
+import 'package:googleapis/firebaserules/v1.dart' as firebase_rules_v1;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+
+import '../app.dart';
+
+part 'security_rules_exception.dart';
+part 'security_rules_http_client.dart';
+part 'security_rules_request_handler.dart';
 
 /// A source file containing some Firebase security rules. The content includes raw
 /// source code including text formatting, indentation and comments.
@@ -13,8 +21,8 @@ class RulesFile {
 /// Required metadata associated with a ruleset.
 class RulesetMetadata {
   RulesetMetadata._from(RulesetResponse rs)
-      : name = _stripProjectIdPrefix(rs.name),
-        createTime = DateTime.parse(rs.createTime).toIso8601String();
+    : name = _stripProjectIdPrefix(rs.name),
+      createTime = DateTime.parse(rs.createTime).toIso8601String();
 
   /// Name of the [Ruleset] as a short string. This can be directly passed into APIs
   /// like [SecurityRules.getRuleset] and [SecurityRules.deleteRuleset].
@@ -27,8 +35,8 @@ class RulesetMetadata {
 /// A page of ruleset metadata.
 class RulesetMetadataList {
   RulesetMetadataList._fromResponse(ListRulesetsResponse response)
-      : rulesets = response.rulesets.map(RulesetMetadata._from).toList(),
-        nextPageToken = response.nextPageToken;
+    : rulesets = response.rulesets.map(RulesetMetadata._from).toList(),
+      nextPageToken = response.nextPageToken;
 
   /// A batch of ruleset metadata.
   final List<RulesetMetadata> rulesets;
@@ -39,22 +47,29 @@ class RulesetMetadataList {
 
 /// A set of Firebase security rules.
 class Ruleset extends RulesetMetadata {
-  Ruleset._fromResponse(super.rs)
-      : source = rs.source.files,
-        super._from();
+  Ruleset._fromResponse(super.rs) : source = rs.source.files, super._from();
 
   final List<RulesFile> source;
 }
 
 /// The Firebase `SecurityRules` service interface.
-class SecurityRules {
-  SecurityRules(this.app);
+class SecurityRules implements FirebaseService {
+  /// Creates or returns the cached SecurityRules instance for the given app.
+  factory SecurityRules(FirebaseApp app) {
+    return app.getOrInitService(
+      FirebaseServiceType.securityRules.name,
+      SecurityRules._,
+    );
+  }
+
+  SecurityRules._(this.app);
 
   static const _cloudFirestore = 'cloud.firestore';
   static const _firebaseStorage = 'firebase.storage';
 
-  final FirebaseAdminApp app;
-  late final _client = SecurityRulesApiClient(app);
+  @override
+  final FirebaseApp app;
+  late final _requestHandler = SecurityRulesRequestHandler(app);
 
   /// Gets the [Ruleset] identified by the given
   /// name. The input name should be the short name string without the project ID
@@ -65,7 +80,7 @@ class SecurityRules {
   /// [name] - Name of the [Ruleset] to retrieve.
   /// Returns a future that fulfills with the specified [Ruleset].
   Future<Ruleset> getRuleset(String name) async {
-    final rulesetResponse = await _client.getRuleset(name);
+    final rulesetResponse = await _requestHandler.getRuleset(name);
 
     return Ruleset._fromResponse(rulesetResponse);
   }
@@ -99,7 +114,7 @@ class SecurityRules {
   /// [ruleset] - Name of the ruleset to apply.
   /// Returns a future that fulfills when the ruleset is released.
   Future<void> releaseFirestoreRuleset(String ruleset) async {
-    await _client.updateOrCreateRelease(_cloudFirestore, ruleset);
+    await _requestHandler.updateOrCreateRelease(_cloudFirestore, ruleset);
   }
 
   /// Gets the [Ruleset] currently applied to a
@@ -109,8 +124,9 @@ class SecurityRules {
   /// Returns a future that fulfills with the Cloud Storage ruleset.
   Future<Ruleset> getStorageRuleset(String bucket) async {
     final bucketName = bucket;
-    final ruleset =
-        await _getRulesetForRelease('$_firebaseStorage/$bucketName');
+    final ruleset = await _getRulesetForRelease(
+      '$_firebaseStorage/$bucketName',
+    );
 
     return ruleset;
   }
@@ -139,7 +155,10 @@ class SecurityRules {
   ///   containing the name.
   /// Returns a future that fulfills when the ruleset is released.
   Future<void> releaseStorageRuleset(String ruleset, String bucket) async {
-    await _client.updateOrCreateRelease('$_firebaseStorage/$bucket', ruleset);
+    await _requestHandler.updateOrCreateRelease(
+      '$_firebaseStorage/$bucket',
+      ruleset,
+    );
   }
 
   /// Creates a new [Ruleset] from the given [RulesFile].
@@ -147,13 +166,9 @@ class SecurityRules {
   /// [file] - Rules file to include in the new [Ruleset].
   /// Returns a future that fulfills with the newly created [Ruleset].
   Future<Ruleset> createRuleset(RulesFile file) async {
-    final ruleset = RulesetContent(
-      source: RulesetSource(
-        files: [file],
-      ),
-    );
+    final ruleset = RulesetContent(source: RulesetSource(files: [file]));
 
-    final rulesetResponse = await _client.createRuleset(ruleset);
+    final rulesetResponse = await _requestHandler.createRuleset(ruleset);
     return Ruleset._fromResponse(rulesetResponse);
   }
 
@@ -166,7 +181,7 @@ class SecurityRules {
   /// [name] - Name of the [Ruleset] to delete.
   /// Returns a future that fulfills when the [Ruleset] is deleted.
   Future<void> deleteRuleset(String name) {
-    return _client.deleteRuleset(name);
+    return _requestHandler.deleteRuleset(name);
   }
 
   /// Retrieves a page of ruleset metadata.
@@ -180,7 +195,7 @@ class SecurityRules {
     int pageSize = 100,
     String? nextPageToken,
   }) async {
-    final response = await _client.listRulesets(
+    final response = await _requestHandler.listRulesets(
       pageSize: pageSize,
       pageToken: nextPageToken,
     );
@@ -188,10 +203,15 @@ class SecurityRules {
   }
 
   Future<Ruleset> _getRulesetForRelease(String releaseName) async {
-    final release = await _client.getRelease(releaseName);
+    final release = await _requestHandler.getRelease(releaseName);
     final rulesetName = release.rulesetName;
 
     return getRuleset(_stripProjectIdPrefix(rulesetName));
+  }
+
+  @override
+  Future<void> delete() async {
+    // SecurityRules service cleanup if needed
   }
 }
 

@@ -30,10 +30,10 @@ class ExponentialBackoffSetting {
 class ExponentialBackoff {
   ExponentialBackoff({
     ExponentialBackoffSetting options = const ExponentialBackoffSetting(),
-  })  : initialDelayMs = options.initialDelayMs ?? defaultBackOffInitialDelayMs,
-        backoffFactor = options.backoffFactor ?? defaultBackOffFactor,
-        maxDelayMs = options.maxDelayMs ?? defaultBackOffMaxDelayMs,
-        jitterFactor = options.jitterFactor ?? defaultJitterFactor;
+  }) : initialDelayMs = options.initialDelayMs ?? defaultBackOffInitialDelayMs,
+       backoffFactor = options.backoffFactor ?? defaultBackOffFactor,
+       maxDelayMs = options.maxDelayMs ?? defaultBackOffMaxDelayMs,
+       jitterFactor = options.jitterFactor ?? defaultJitterFactor;
 
   static const defaultBackOffInitialDelayMs = 1000;
   static const defaultBackOffFactor = 1.5;

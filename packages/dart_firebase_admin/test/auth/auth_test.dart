@@ -5,6 +5,7 @@ import 'package:dart_firebase_admin/auth.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+import '../app_check/app_check_test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 
 Future<ProcessResult> run(
@@ -26,26 +27,16 @@ Future<ProcessResult> run(
   return process;
 }
 
-Future<void> npmInstall({
-  String? workDir,
-}) async =>
+Future<void> npmInstall({String? workDir}) async =>
     run('npm', ['install'], workDir: workDir);
 
 /// Run test/client/get_id_token.js
 Future<String> getIdToken() async {
-  final path = p.join(
-    Directory.current.path,
-    'test',
-    'client',
-  );
+  final path = p.join(Directory.current.path, 'test', 'client');
 
   await npmInstall(workDir: path);
 
-  final process = await run(
-    'node',
-    ['get_id_token.js'],
-    workDir: path,
-  );
+  final process = await run('node', ['get_id_token.js'], workDir: path);
 
   return (process.stdout as String).trim();
 }
@@ -53,24 +44,30 @@ Future<String> getIdToken() async {
 void main() {
   group('FirebaseAuth', () {
     group('verifyIdToken', () {
-      test('in prod', () async {
-        final app = createApp(useEmulator: false);
-        final auth = Auth(app);
+      test(
+        'verifies ID token from Firebase Auth production',
+        () async {
+          final app = createApp();
+          final auth = Auth(app);
 
-        final token = await getIdToken();
-        final decodedToken = await auth.verifyIdToken(token);
+          final token = await getIdToken();
+          final decodedToken = await auth.verifyIdToken(token);
 
-        expect(decodedToken.aud, 'dart-firebase-admin');
-        expect(decodedToken.uid, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-        expect(decodedToken.sub, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-        expect(decodedToken.email, 'foo@google.com');
-        expect(decodedToken.emailVerified, false);
-        expect(decodedToken.phoneNumber, isNull);
-        expect(decodedToken.firebase.identities, {
-          'email': ['foo@google.com'],
-        });
-        expect(decodedToken.firebase.signInProvider, 'password');
-      });
+          expect(decodedToken.aud, 'dart-firebase-admin');
+          expect(decodedToken.uid, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
+          expect(decodedToken.sub, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
+          expect(decodedToken.email, 'foo@google.com');
+          expect(decodedToken.emailVerified, false);
+          expect(decodedToken.phoneNumber, isNull);
+          expect(decodedToken.firebase.identities, {
+            'email': ['foo@google.com'],
+          });
+          expect(decodedToken.firebase.signInProvider, 'password');
+        },
+        skip: hasGoogleEnv
+            ? false
+            : 'Requires production mode but runs with emulator auto-detection',
+      );
     });
   });
 }

@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 
 import '../utils/crypto_signer.dart';
+import 'app_check.dart';
 import 'app_check_api.dart';
-import 'app_check_api_internal.dart';
 
 // Audience to use for Firebase App Check Custom tokens
 const firebaseAppCheckAudience =
@@ -32,10 +32,7 @@ class AppCheckTokenGenerator {
     try {
       final account = await signer.getAccountId();
 
-      final header = {
-        'alg': signer.algorithm,
-        'typ': 'JWT',
-      };
+      final header = {'alg': signer.algorithm, 'typ': 'JWT'};
       final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
       final body = {
         'iss': account,

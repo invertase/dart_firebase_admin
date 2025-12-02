@@ -239,9 +239,7 @@ class DocumentSnapshot<T> {
 
     if (protoField == null) return null;
 
-    return Optional(
-      ref.firestore._serializer.decodeValue(protoField),
-    );
+    return Optional(ref.firestore._serializer.decodeValue(protoField));
   }
 
   firestore1.Value? _protoField(FieldPath field) {
@@ -282,10 +280,10 @@ class DocumentSnapshot<T> {
 
   @override
   int get hashCode => Object.hash(
-        runtimeType,
-        ref,
-        const DeepCollectionEquality().hash(_fieldsProto),
-      );
+    runtimeType,
+    ref,
+    const DeepCollectionEquality().hash(_fieldsProto),
+  );
 }
 
 class _DocumentSnapshotBuilder<T> {
@@ -380,11 +378,7 @@ class _DocumentTransform<T> {
   ) {
     final transforms = <FieldPath, _FieldTransform>{};
 
-    void encode(
-      Object? val,
-      FieldPath path, {
-      required bool allowTransforms,
-    }) {
+    void encode(Object? val, FieldPath path, {required bool allowTransforms}) {
       if (val is _FieldTransform && val.includeInDocumentTransform) {
         if (allowTransforms) {
           transforms[path] = val;
@@ -396,11 +390,7 @@ class _DocumentTransform<T> {
       } else if (val is List<Object?>) {
         val.forEachIndexed((i, value) {
           // We need to verify that no array value contains a document transform
-          encode(
-            value,
-            path._append('$i'),
-            allowTransforms: false,
-          );
+          encode(value, path._append('$i'), allowTransforms: false);
         });
       } else if (val is Map<Object?, Object?>) {
         for (final entry in val.entries) {
@@ -417,10 +407,7 @@ class _DocumentTransform<T> {
       encode(entry.value, entry.key, allowTransforms: true);
     }
 
-    return _DocumentTransform(
-      ref: ref,
-      transforms: transforms,
-    );
+    return _DocumentTransform(ref: ref, transforms: transforms);
   }
 
   final DocumentReference<T> ref;
@@ -472,7 +459,7 @@ class Precondition {
 
 class _DocumentMask {
   _DocumentMask(List<FieldPath> fieldPaths)
-      : _sortedPaths = fieldPaths.sorted((a, b) => a.compareTo(b));
+    : _sortedPaths = fieldPaths.sorted((a, b) => a.compareTo(b));
 
   factory _DocumentMask.fromUpdateMap(Map<FieldPath, Object?> data) {
     final fieldPaths = <FieldPath>[];

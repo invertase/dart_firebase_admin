@@ -18,10 +18,7 @@ part of '../auth.dart';
 /// [TenantManager.listTenants] operation.
 /// Contains the list of tenants for the current batch and the next page token if available.
 class ListTenantsResult {
-  ListTenantsResult({
-    required this.tenants,
-    this.pageToken,
-  });
+  ListTenantsResult({required this.tenants, this.pageToken});
 
   /// The list of [Tenant] objects for the downloaded batch.
   final List<Tenant> tenants;
@@ -50,13 +47,12 @@ class TenantAwareAuth extends _BaseAuth {
   ///
   /// [app] - The app that created this tenant.
   /// [tenantId] - The corresponding tenant ID.
-  TenantAwareAuth._(FirebaseAdminApp app, this.tenantId)
-      : super(
-          app: app,
-          authRequestHandler: _TenantAwareAuthRequestHandler(app, tenantId),
-          tokenGenerator:
-              _createFirebaseTokenGenerator(app, tenantId: tenantId),
-        );
+  TenantAwareAuth._(FirebaseApp app, this.tenantId)
+    : super(
+        app: app,
+        authRequestHandler: _TenantAwareAuthRequestHandler(app, tenantId),
+        tokenGenerator: _createFirebaseTokenGenerator(app, tenantId: tenantId),
+      );
 
   /// The tenant identifier corresponding to this `TenantAwareAuth` instance.
   /// All calls to the user management APIs, OIDC/SAML provider management APIs, email link
@@ -111,10 +107,7 @@ class TenantAwareAuth extends _BaseAuth {
     // Verify the ID token and check tenant ID before creating session cookie.
     await verifyIdToken(idToken);
 
-    return super.createSessionCookie(
-      idToken,
-      expiresIn: expiresIn,
-    );
+    return super.createSessionCookie(idToken, expiresIn: expiresIn);
   }
 
   /// Verifies a Firebase session cookie. Returns a [Future] with the session cookie's decoded claims
@@ -161,11 +154,11 @@ class TenantManager {
   ///
   /// The app parameter is the app for this TenantManager instance.
   TenantManager._(this._app)
-      : _authRequestHandler = _AuthRequestHandler(_app),
-        _tenantsMap = {};
+    : _authRequestHandler = AuthRequestHandler(_app),
+      _tenantsMap = {};
 
-  final FirebaseAdminApp _app;
-  final _AuthRequestHandler _authRequestHandler;
+  final FirebaseApp _app;
+  final AuthRequestHandler _authRequestHandler;
   final Map<String, TenantAwareAuth> _tenantsMap;
 
   /// Returns a `TenantAwareAuth` instance bound to the given tenant ID.
@@ -220,8 +213,9 @@ class TenantManager {
     final tenantsList = response['tenants'] as List<dynamic>?;
     if (tenantsList != null) {
       for (final tenantResponse in tenantsList) {
-        tenants
-            .add(Tenant._fromResponse(tenantResponse as Map<String, dynamic>));
+        tenants.add(
+          Tenant._fromResponse(tenantResponse as Map<String, dynamic>),
+        );
       }
     }
 

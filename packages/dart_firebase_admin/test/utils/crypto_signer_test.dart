@@ -10,12 +10,15 @@ void main() {
       late CryptoSigner signer;
 
       setUp(() {
-        final app = FirebaseAdminApp.initializeApp(
-          '$mockProjectId-crypto',
-          Credential.fromServiceAccountParams(
-            clientId: 'test-client-id',
-            privateKey: mockPrivateKey,
-            email: mockClientEmail,
+        final app = FirebaseApp.initializeApp(
+          name: '$mockProjectId-crypto',
+          options: AppOptions(
+            credential: Credential.fromServiceAccountParams(
+              clientId: 'test-client-id',
+              privateKey: mockPrivateKey,
+              email: mockClientEmail,
+              projectId: mockProjectId,
+            ),
           ),
         );
         signer = CryptoSigner.fromApp(app);
@@ -61,18 +64,12 @@ void main() {
           CryptoSignerErrorCode.invalidArgument,
           equals('invalid-argument'),
         );
-        expect(
-          CryptoSignerErrorCode.internalError,
-          equals('internal-error'),
-        );
+        expect(CryptoSignerErrorCode.internalError, equals('internal-error'));
         expect(
           CryptoSignerErrorCode.invalidCredential,
           equals('invalid-credential'),
         );
-        expect(
-          CryptoSignerErrorCode.serverError,
-          equals('server-error'),
-        );
+        expect(CryptoSignerErrorCode.serverError, equals('server-error'));
       });
     });
   });

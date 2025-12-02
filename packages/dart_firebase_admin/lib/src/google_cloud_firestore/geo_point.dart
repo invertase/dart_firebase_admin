@@ -4,10 +4,7 @@ part of 'firestore.dart';
 /// location is represented as a latitude/longitude pair.
 @immutable
 final class GeoPoint implements _Serializable {
-  GeoPoint({
-    required this.latitude,
-    required this.longitude,
-  }) {
+  GeoPoint({required this.latitude, required this.longitude}) {
     if (latitude.isNaN) {
       throw ArgumentError.value(
         latitude,

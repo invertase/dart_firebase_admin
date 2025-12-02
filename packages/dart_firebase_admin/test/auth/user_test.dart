@@ -17,14 +17,11 @@ void main() {
       );
 
       final json = metadata.toJson();
-      expect(
-        json,
-        {
-          'lastSignInTime': '0',
-          'creationTime': '0',
-          'lastRefreshTime': now.toIso8601String(),
-        },
-      );
+      expect(json, {
+        'lastSignInTime': '0',
+        'creationTime': '0',
+        'lastRefreshTime': now.toIso8601String(),
+      });
 
       final recoded = UserMetadata.fromResponse(
         auth1.GoogleCloudIdentitytoolkitV1UserInfo(

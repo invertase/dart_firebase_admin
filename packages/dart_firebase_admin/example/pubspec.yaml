@@ -2,8 +2,12 @@ name: dart_firebase_admin_example
 publish_to: none
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: '>=3.9.0 <4.0.0'
 
 dependencies:
   dart_firebase_admin:
     path: ../
+
+dependency_overrides:
+  googleapis_auth_utils:
+    path: ../../googleapis_auth_utils

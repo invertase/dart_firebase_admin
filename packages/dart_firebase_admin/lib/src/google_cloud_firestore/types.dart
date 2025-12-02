@@ -2,9 +2,8 @@ part of 'firestore.dart';
 
 typedef UpdateMap = Map<FieldPath, Object?>;
 
-typedef FromFirestore<T> = T Function(
-  QueryDocumentSnapshot<DocumentData> value,
-);
+typedef FromFirestore<T> =
+    T Function(QueryDocumentSnapshot<DocumentData> value);
 typedef ToFirestore<T> = DocumentData Function(T value);
 
 DocumentData _jsonFromFirestore(QueryDocumentSnapshot<DocumentData> value) {

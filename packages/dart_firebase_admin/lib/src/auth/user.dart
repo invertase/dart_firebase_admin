@@ -59,8 +59,9 @@ class UserRecord {
     // If the password hash is redacted (probably due to missing permissions)
     // then clear it out, similar to how the salt is returned. (Otherwise, it
     // *looks* like a b64-encoded hash is present, which is confusing.)
-    final passwordHash =
-        response.passwordHash == _b64Redacted ? null : response.passwordHash;
+    final passwordHash = response.passwordHash == _b64Redacted
+        ? null
+        : response.passwordHash;
 
     final customAttributes = response.customAttributes;
     final customClaims = customAttributes != null
@@ -80,8 +81,9 @@ class UserRecord {
       );
     }
 
-    MultiFactorSettings? multiFactor =
-        MultiFactorSettings.fromResponse(response);
+    MultiFactorSettings? multiFactor = MultiFactorSettings.fromResponse(
+      response,
+    );
     if (multiFactor.enrolledFactors.isEmpty) {
       multiFactor = null;
     }
@@ -215,16 +217,14 @@ class UserInfo {
 
   UserInfo.fromResponse(
     auth1.GoogleCloudIdentitytoolkitV1ProviderUserInfo response,
-  )   : uid = response.rawId,
-        displayName = response.displayName,
-        email = response.email,
-        photoUrl = response.photoUrl,
-        providerId = response.providerId,
-        phoneNumber = response.phoneNumber {
+  ) : uid = response.rawId,
+      displayName = response.displayName,
+      email = response.email,
+      photoUrl = response.photoUrl,
+      providerId = response.providerId,
+      phoneNumber = response.phoneNumber {
     if (response.rawId == null || response.providerId == null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.internalError,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.internalError);
     }
   }
 
@@ -281,16 +281,16 @@ abstract class MultiFactorInfo {
 
   MultiFactorInfo.fromResponse(
     auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
-  )   : uid = response.mfaEnrollmentId.orThrow(
-          () => throw FirebaseAuthAdminException(
-            AuthClientErrorCode.internalError,
-            'INTERNAL ASSERT FAILED: No uid found for MFA info.',
-          ),
+  ) : uid = response.mfaEnrollmentId.orThrow(
+        () => throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: No uid found for MFA info.',
         ),
-        displayName = response.displayName,
-        enrollmentTime = response.enrolledAt
-            .let(int.parse)
-            .let(DateTime.fromMillisecondsSinceEpoch);
+      ),
+      displayName = response.displayName,
+      enrollmentTime = response.enrolledAt
+          .let(int.parse)
+          .let(DateTime.fromMillisecondsSinceEpoch);
 
   /// Initializes the MultiFactorInfo associated subclass using the server side.
   /// If no MultiFactorInfo is associated with the response, null is returned.
@@ -348,8 +348,8 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   /// Initializes the PhoneMultiFactorInfo object using the server side response.
   @internal
   PhoneMultiFactorInfo.fromResponse(super.response)
-      : phoneNumber = response.phoneInfo,
-        super.fromResponse();
+    : phoneNumber = response.phoneInfo,
+      super.fromResponse();
 
   /// The phone number associated with a phone second factor.
   final String? phoneNumber;
@@ -359,10 +359,7 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
 
   @override
   Map<String, Object?> _toJson() {
-    return {
-      ...super._toJson(),
-      'phoneNumber': phoneNumber,
-    };
+    return {...super._toJson(), 'phoneNumber': phoneNumber};
   }
 }
 
@@ -377,15 +374,14 @@ class UserMetadata {
   });
 
   @internal
-  UserMetadata.fromResponse(
-    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
-  )   : creationTime = DateTime.fromMillisecondsSinceEpoch(
-          int.parse(response.createdAt!),
-        ),
-        lastSignInTime = response.lastLoginAt.let((lastLoginAt) {
-          return DateTime.fromMillisecondsSinceEpoch(int.parse(lastLoginAt));
-        }),
-        lastRefreshTime = response.lastRefreshAt.let(DateTime.parse);
+  UserMetadata.fromResponse(auth1.GoogleCloudIdentitytoolkitV1UserInfo response)
+    : creationTime = DateTime.fromMillisecondsSinceEpoch(
+        int.parse(response.createdAt!),
+      ),
+      lastSignInTime = response.lastLoginAt.let((lastLoginAt) {
+        return DateTime.fromMillisecondsSinceEpoch(int.parse(lastLoginAt));
+      }),
+      lastRefreshTime = response.lastRefreshAt.let(DateTime.parse);
 
   final DateTime creationTime;
   final DateTime? lastSignInTime;

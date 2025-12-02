@@ -6,27 +6,30 @@ import 'package:test/test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 import '../mock.dart';
 
+final hasGoogleEnv =
+    Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
+
 void main() {
   late AppCheck appCheck;
 
   setUpAll(registerFallbacks);
 
   setUp(() {
-    final sdk = createApp(useEmulator: false);
+    final sdk = createApp();
     appCheck = AppCheck(sdk);
   });
 
-  final hasGoogleEnv =
-      Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
-
   group('AppCheck', () {
     test(
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-        'e2e', () async {
-      final token = await appCheck
-          .createToken('1:559949546715:android:13025aec6cc3243d0ab8fe');
+      skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+      'e2e',
+      () async {
+        final token = await appCheck.createToken(
+          '1:559949546715:android:13025aec6cc3243d0ab8fe',
+        );
 
-      await appCheck.verifyToken(token.token);
-    });
+        await appCheck.verifyToken(token.token);
+      },
+    );
   });
 }

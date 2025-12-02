@@ -1,9 +1,5 @@
 class ParsedResource {
-  ParsedResource({
-    this.projectId,
-    this.locationId,
-    required this.resourceId,
-  });
+  ParsedResource({this.projectId, this.locationId, required this.resourceId});
 
   /// Parses the top level resources of a given resource name.
   /// Supports both full and partial resources names, example:

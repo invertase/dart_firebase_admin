@@ -30,32 +30,31 @@ void main() {
         }
       }
 
-      queryEquals(
-        [
-          queryA.where('a', WhereFilter.equal, '1'),
-          queryB.where('a', WhereFilter.equal, '1'),
-        ],
-      );
-
-      queryEquals(
-        [
-          queryA
-              .where('a', WhereFilter.equal, '1')
-              .where('b', WhereFilter.equal, 2),
-          queryB
-              .where('a', WhereFilter.equal, '1')
-              .where('b', WhereFilter.equal, 2),
-        ],
-      );
+      queryEquals([
+        queryA.where('a', WhereFilter.equal, '1'),
+        queryB.where('a', WhereFilter.equal, '1'),
+      ]);
 
       queryEquals([
-        queryA.orderBy('__name__'),
-        queryA.orderBy('__name__', descending: false),
-        queryB.orderBy(FieldPath.documentId),
-      ], [
-        queryA.orderBy('foo'),
-        queryB.orderBy(FieldPath.documentId, descending: true),
+        queryA
+            .where('a', WhereFilter.equal, '1')
+            .where('b', WhereFilter.equal, 2),
+        queryB
+            .where('a', WhereFilter.equal, '1')
+            .where('b', WhereFilter.equal, 2),
       ]);
+
+      queryEquals(
+        [
+          queryA.orderBy('__name__'),
+          queryA.orderBy('__name__', descending: false),
+          queryB.orderBy(FieldPath.documentId),
+        ],
+        [
+          queryA.orderBy('foo'),
+          queryB.orderBy(FieldPath.documentId, descending: true),
+        ],
+      );
 
       queryEquals(
         [queryA.limit(0), queryB.limit(0).limit(0)],
@@ -67,32 +66,41 @@ void main() {
         [queryA, queryB.offset(10)],
       );
 
-      queryEquals([
-        queryA.orderBy('foo').startAt(['a']),
-        queryB.orderBy('foo').startAt(['a']),
-      ], [
-        queryA.orderBy('foo').startAfter(['a']),
-        queryB.orderBy('foo').endAt(['a']),
-        queryA.orderBy('foo').endBefore(['a']),
-        queryB.orderBy('foo').startAt(['b']),
-        queryA.orderBy('bar').startAt(['a']),
-      ]);
+      queryEquals(
+        [
+          queryA.orderBy('foo').startAt(['a']),
+          queryB.orderBy('foo').startAt(['a']),
+        ],
+        [
+          queryA.orderBy('foo').startAfter(['a']),
+          queryB.orderBy('foo').endAt(['a']),
+          queryA.orderBy('foo').endBefore(['a']),
+          queryB.orderBy('foo').startAt(['b']),
+          queryA.orderBy('bar').startAt(['a']),
+        ],
+      );
 
-      queryEquals([
-        queryA.orderBy('foo').startAfter(['a']),
-        queryB.orderBy('foo').startAfter(['a']),
-      ], [
-        queryA.orderBy('foo').startAfter(['b']),
-        queryB.orderBy('bar').startAfter(['a']),
-      ]);
+      queryEquals(
+        [
+          queryA.orderBy('foo').startAfter(['a']),
+          queryB.orderBy('foo').startAfter(['a']),
+        ],
+        [
+          queryA.orderBy('foo').startAfter(['b']),
+          queryB.orderBy('bar').startAfter(['a']),
+        ],
+      );
 
-      queryEquals([
-        queryA.orderBy('foo').endBefore(['a']),
-        queryB.orderBy('foo').endBefore(['a']),
-      ], [
-        queryA.orderBy('foo').endBefore(['b']),
-        queryB.orderBy('bar').endBefore(['a']),
-      ]);
+      queryEquals(
+        [
+          queryA.orderBy('foo').endBefore(['a']),
+          queryB.orderBy('foo').endBefore(['a']),
+        ],
+        [
+          queryA.orderBy('foo').endBefore(['b']),
+          queryB.orderBy('bar').endBefore(['a']),
+        ],
+      );
 
       queryEquals(
         [
@@ -105,18 +113,16 @@ void main() {
         ],
       );
 
-      queryEquals(
-        [
-          queryA
-              .orderBy('foo')
-              .orderBy('__name__')
-              .startAt(['b', queryA.doc('c')]),
-          queryB
-              .orderBy('foo')
-              .orderBy('__name__')
-              .startAt(['b', queryA.doc('c')]),
-        ],
-      );
+      queryEquals([
+        queryA.orderBy('foo').orderBy('__name__').startAt([
+          'b',
+          queryA.doc('c'),
+        ]),
+        queryB.orderBy('foo').orderBy('__name__').startAt([
+          'b',
+          queryA.doc('c'),
+        ]),
+      ]);
     });
 
     test('accepts all variations', () async {
@@ -142,11 +148,12 @@ void main() {
     // TODO handle retries
 
     test('propagates withConverter() through QueryOptions', () async {
-      final collection =
-          firestore.collection('withConverterQueryOptions').withConverter<int>(
-                fromFirestore: (snapshot) => snapshot.data()['value']! as int,
-                toFirestore: (value) => {'value': value},
-              );
+      final collection = firestore
+          .collection('withConverterQueryOptions')
+          .withConverter<int>(
+            fromFirestore: (snapshot) => snapshot.data()['value']! as int,
+            toFirestore: (value) => {'value': value},
+          );
 
       await collection.doc('doc').set(42);
       await collection.doc('doc2').set(1);
@@ -172,7 +179,8 @@ void main() {
               Filter.where('a', WhereFilter.equal, 0),
             ]),
           )
-          .startAt([1]).limit(3);
+          .startAt([1])
+          .limit(3);
 
       await Future.wait([
         collection.doc('0').set({'a': 0}),
@@ -216,11 +224,9 @@ void main() {
         'a': {'b': 1},
       });
 
-      final snapshot = await collection.where(
-        'a',
-        WhereFilter.equal,
-        {'b': 1},
-      ).get();
+      final snapshot = await collection.where('a', WhereFilter.equal, {
+        'b': 1,
+      }).get();
 
       expect(snapshot.docs.single.ref, doc);
     });
@@ -262,8 +268,9 @@ void main() {
       await collection.doc('b').set({'foo': 'bar'});
       await collection.doc('a').set({'foo': 'bar'});
 
-      final snapshot =
-          await collection.where('foo', WhereFilter.isIn, ['bar']).get();
+      final snapshot = await collection.where('foo', WhereFilter.isIn, [
+        'bar',
+      ]).get();
 
       expect(snapshot.docs.map((doc) => doc.id), ['a', 'b']);
     });
@@ -283,28 +290,29 @@ void main() {
     });
 
     test(
-        'throws if FieldPath.documentId is used with array-contains/array-contains-any',
-        () {
-      final collection = firestore.collection('whereArrayContainsValidation');
+      'throws if FieldPath.documentId is used with array-contains/array-contains-any',
+      () {
+        final collection = firestore.collection('whereArrayContainsValidation');
 
-      expect(
-        () => collection.where(
-          FieldPath.documentId,
-          WhereFilter.arrayContains,
-          [collection.doc('doc')],
-        ),
-        throwsA(isA<ArgumentError>()),
-      );
+        expect(
+          () => collection.where(
+            FieldPath.documentId,
+            WhereFilter.arrayContains,
+            [collection.doc('doc')],
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
 
-      expect(
-        () => collection.where(
-          FieldPath.documentId,
-          WhereFilter.arrayContainsAny,
-          [collection.doc('doc')],
-        ),
-        throwsA(isA<ArgumentError>()),
-      );
-    });
+        expect(
+          () => collection.where(
+            FieldPath.documentId,
+            WhereFilter.arrayContainsAny,
+            [collection.doc('doc')],
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
 
     test('rejects field paths as value', () {
       final collection = firestore.collection('whereFieldPathValue');
@@ -341,11 +349,7 @@ void main() {
       await collection.doc('doc2').set({'a': 42});
 
       final snapshot = await collection
-          .where(
-            'a',
-            WhereFilter.equal,
-            null,
-          )
+          .where('a', WhereFilter.equal, null)
           .get();
 
       expect(snapshot.docs.single.ref, doc);
@@ -359,11 +363,7 @@ void main() {
       await collection.doc('doc2').set({'a': null});
 
       final snapshot = await collection
-          .where(
-            'a',
-            WhereFilter.notEqual,
-            null,
-          )
+          .where('a', WhereFilter.notEqual, null)
           .get();
 
       expect(snapshot.docs.single.ref, doc);
@@ -413,7 +413,8 @@ void main() {
       expect(
         () => collection
             .where('foo', WhereFilter.equal, 0)
-            .startAt(['foo']).where('bar', WhereFilter.equal, 0),
+            .startAt(['foo'])
+            .where('bar', WhereFilter.equal, 0),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -460,8 +461,11 @@ void main() {
       await collection.doc('b').set({'foo': 2});
       await collection.doc('c').set({'foo': 3});
 
-      final snapshot =
-          await collection.orderBy('foo').limitToLast(1).limitToLast(2).get();
+      final snapshot = await collection
+          .orderBy('foo')
+          .limitToLast(1)
+          .limitToLast(2)
+          .get();
       expect(snapshot.docs.map((doc) => doc.id), ['c', 'b']);
     });
   });

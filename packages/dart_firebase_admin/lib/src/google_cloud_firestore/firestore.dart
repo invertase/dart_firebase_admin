@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:googleapis/firestore/v1.dart' as firestore1;
+import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
@@ -22,8 +25,8 @@ part 'document_reader.dart';
 part 'field_value.dart';
 part 'filter.dart';
 part 'firestore.freezed.dart';
-part 'firestore_api_request_internal.dart';
 part 'firestore_exception.dart';
+part 'firestore_http_client.dart';
 part 'geo_point.dart';
 part 'path.dart';
 part 'reference.dart';
@@ -33,22 +36,61 @@ part 'transaction.dart';
 part 'types.dart';
 part 'write_batch.dart';
 
-class Firestore {
-  Firestore(this.app, {Settings? settings})
-      : _settings = settings ?? Settings();
+class Firestore implements FirebaseService {
+  /// Creates or returns the cached Firestore instance for the given app.
+  ///
+  /// Note: Settings can only be specified on the first call. Subsequent calls
+  /// will return the cached instance and ignore any new settings.
+  factory Firestore(FirebaseApp app, {Settings? settings}) {
+    return app.getOrInitService(
+      FirebaseServiceType.firestore.name,
+      (app) => Firestore._(app, settings: settings),
+    );
+  }
+
+  Firestore._(this.app, {Settings? settings})
+    : _settings = settings ?? Settings();
 
   /// Returns the Database ID for this Firestore instance.
   String get _databaseId => _settings.databaseId ?? '(default)';
 
-  /// The Database ID, using the format 'projects/${app.projectId}/databases/$_databaseId'
-  String get _formattedDatabaseName {
-    return 'projects/${app.projectId}/databases/$_databaseId';
+  /// Gets the project ID for synchronous operations.
+  ///
+  /// Returns the cached project ID from async discovery if available.
+  /// Otherwise, falls back to explicitly specified project ID from:
+  /// 1. app.options.projectId
+  /// 2. ServiceAccountCredential.projectId
+  /// 3. GOOGLE_CLOUD_PROJECT or GCLOUD_PROJECT environment variables
+  ///
+  /// This matches Node.js Firestore behavior where explicit project IDs
+  /// are immediately available for synchronous operations like serialization.
+  ///
+  /// Throws if project ID is not available from any source.
+  String get _projectId {
+    final cached = _client.cachedProjectId;
+    if (cached != null) return cached;
+
+    // Fall back to explicitly set project ID (from app options, env vars, or credentials)
+    final explicit = app.projectId;
+    if (explicit != null) return explicit;
+
+    throw StateError(
+      'Project ID has not been discovered yet. '
+      'Initialize the SDK with service account credentials, set project ID '
+      'as an app option, or set the GOOGLE_CLOUD_PROJECT environment variable.',
+    );
   }
 
-  final FirebaseAdminApp app;
+  /// The Database ID, using the format 'projects/${projectId}/databases/$_databaseId'
+  String get _formattedDatabaseName {
+    return 'projects/$_projectId/databases/$_databaseId';
+  }
+
+  @override
+  final FirebaseApp app;
   final Settings _settings;
 
-  late final _client = _FirestoreHttpClient(app);
+  late final _client = FirestoreHttpClient(app);
   late final _serializer = _Serializer(this);
 
   // TODO batch
@@ -105,7 +147,7 @@ class Firestore {
 
     return DocumentReference._(
       firestore: this,
-      path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      path: path,
       converter: _jsonConverter,
     );
   }
@@ -132,7 +174,7 @@ class Firestore {
 
     return CollectionReference._(
       firestore: this,
-      path: path._toQualifiedResourcePath(app.projectId, _databaseId),
+      path: path,
       converter: _jsonConverter,
     );
   }
@@ -225,6 +267,20 @@ class Firestore {
 
     return transaction._runTransaction(updateFuntion);
   }
+
+  @override
+  Future<void> delete() async {
+    // Close HTTP client if we created it (emulator mode)
+    // In production mode, we use app.client which is closed by the app
+    if (Environment.isFirestoreEmulatorEnabled()) {
+      try {
+        final client = await _client._client;
+        client.close();
+      } catch (_) {
+        // Ignore errors if client wasn't initialized
+      }
+    }
+  }
 }
 
 class SettingsCredentials {
@@ -250,34 +306,6 @@ class Settings with _$Settings {
   }) = _Settings;
 }
 
-class _FirestoreHttpClient {
-  _FirestoreHttpClient(this.app);
-
-  // TODO needs to send "owner" as bearer token when using the emulator
-  final FirebaseAdminApp app;
-
-  // TODO refactor with auth
-  // TODO is it fine to use AuthClient?
-  Future<R> _run<R>(
-    Future<R> Function(Client client) fn,
-  ) {
-    return _firestoreGuard(() => app.client.then(fn));
-  }
-
-  Future<R> v1<R>(
-    Future<R> Function(firestore1.FirestoreApi client) fn,
-  ) {
-    return _run(
-      (client) => fn(
-        firestore1.FirestoreApi(
-          client,
-          rootUrl: app.firestoreApiHost.toString(),
-        ),
-      ),
-    );
-  }
-}
-
 sealed class TransactionOptions {
   bool get readOnly;
 
@@ -299,7 +327,7 @@ class ReadOnlyTransactionOptions extends TransactionOptions {
 
 class ReadWriteTransactionOptions extends TransactionOptions {
   ReadWriteTransactionOptions({int maxAttempts = 5})
-      : _maxAttempts = maxAttempts;
+    : _maxAttempts = maxAttempts;
 
   final int _maxAttempts;
 

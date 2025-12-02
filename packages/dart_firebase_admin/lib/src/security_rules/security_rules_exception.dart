@@ -1,4 +1,4 @@
-import '../app.dart';
+part of 'security_rules.dart';
 
 enum FirebaseSecurityRulesErrorCode {
   alreadyExists('already-exists'),
@@ -21,3 +21,11 @@ class FirebaseSecurityRulesException extends FirebaseAdminException {
     String? message,
   ) : super('security-rules', code.value, message);
 }
+
+const _errorMapping = {
+  'ALREADY_EXISTS': FirebaseSecurityRulesErrorCode.alreadyExists,
+  'NOT_FOUND': FirebaseSecurityRulesErrorCode.notFound,
+  'RESOURCE_EXHAUSTED': FirebaseSecurityRulesErrorCode.resourceExhausted,
+  'UNAUTHENTICATED': FirebaseSecurityRulesErrorCode.authenticationError,
+  'UNKNOWN': FirebaseSecurityRulesErrorCode.unknownError,
+};

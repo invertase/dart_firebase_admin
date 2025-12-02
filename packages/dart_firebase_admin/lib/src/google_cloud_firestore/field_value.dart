@@ -320,11 +320,7 @@ class _ServerTimestampTransform implements _FieldTransform {
   void validate() {}
 }
 
-enum _AllowDeletes {
-  none,
-  root,
-  all;
-}
+enum _AllowDeletes { none, root, all }
 
 /// The maximum depth of a Firestore object.
 const _maxDepth = 20;
@@ -360,8 +356,9 @@ void _validateUserInput(
     );
   }
 
-  final fieldPathMessage =
-      path == null ? '' : ' (found in field ${path._formattedName})';
+  final fieldPathMessage = path == null
+      ? ''
+      : ' (found in field ${path._formattedName})';
 
   switch (value) {
     case List<Object?>():

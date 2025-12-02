@@ -9,16 +9,14 @@ import 'package:meta/meta.dart';
 import 'package:pem/pem.dart';
 import 'package:pointycastle/export.dart' as pointy;
 
-import '../../dart_firebase_admin.dart';
+import '../app.dart';
 
 Future<R> _v1<R>(
-  FirebaseAdminApp app,
+  FirebaseApp app,
   Future<R> Function(iam_credentials_v1.IAMCredentialsApi client) fn,
 ) async {
   try {
-    return await fn(
-      iam_credentials_v1.IAMCredentialsApi(await app.client),
-    );
+    return await fn(iam_credentials_v1.IAMCredentialsApi(await app.client));
   } on iam_credentials_v1.ApiRequestError catch (e) {
     throw CryptoSignerException(
       CryptoSignerErrorCode.serverError,
@@ -29,9 +27,9 @@ Future<R> _v1<R>(
 
 @internal
 abstract class CryptoSigner {
-  static CryptoSigner fromApp(FirebaseAdminApp app) {
-    final credential = app.credential;
-    final serviceAccountCredentials = credential.serviceAccountCredentials;
+  static CryptoSigner fromApp(FirebaseApp app) {
+    final credential = app.options.credential;
+    final serviceAccountCredentials = credential?.serviceAccountCredentials;
     if (serviceAccountCredentials != null) {
       return _ServiceAccountSigner(serviceAccountCredentials);
     }
@@ -50,12 +48,13 @@ abstract class CryptoSigner {
 }
 
 class _IAMSigner implements CryptoSigner {
-  _IAMSigner(this.app) : _serviceAccountId = app.credential.serviceAccountId;
+  _IAMSigner(this.app)
+    : _serviceAccountId = app.options.credential?.serviceAccountId;
 
   @override
   String get algorithm => 'RS256';
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   String? _serviceAccountId;
 
   @override
@@ -68,9 +67,7 @@ class _IAMSigner implements CryptoSigner {
       Uri.parse(
         'http://metadata/computeMetadata/v1/instance/service-accounts/default/email',
       ),
-      headers: {
-        'Metadata-Flavor': 'Google',
-      },
+      headers: {'Metadata-Flavor': 'Google'},
     );
 
     if (response.statusCode != 200) {
@@ -91,9 +88,7 @@ class _IAMSigner implements CryptoSigner {
 
     final response = await _v1(app, (client) {
       return client.projects.serviceAccounts.signBlob(
-        iam_credentials_v1.SignBlobRequest(
-          payload: base64Encode(buffer),
-        ),
+        iam_credentials_v1.SignBlobRequest(payload: base64Encode(buffer)),
         'projects/-/serviceAccounts/$serviceAccount',
       );
     });

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_firebase_admin/auth.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -16,7 +17,6 @@ void main() {
 
   setUp(() {
     final sdk = createApp(tearDown: () => cleanup(auth));
-    sdk.useEmulator();
     auth = Auth(sdk);
   });
 
@@ -38,14 +38,13 @@ void main() {
                 ),
               ),
               400,
-              headers: {
-                'content-type': 'application/json',
-              },
+              headers: {'content-type': 'application/json'},
             ),
           ),
         );
 
-        final app = createApp(client: clientMock);
+        // Use unique app name so we get a new app with the mock client
+        final app = createApp(client: clientMock, name: 'test-$messagingError');
         final handler = Auth(app);
 
         await expectLater(
@@ -72,10 +71,7 @@ void main() {
 
     test('supports specifying uid', () async {
       final user = await auth.createUser(
-        CreateRequest(
-          email: 'example@gmail.com',
-          uid: '42',
-        ),
+        CreateRequest(email: 'example@gmail.com', uid: '42'),
       );
 
       expect(user.uid, '42');
@@ -102,9 +98,9 @@ void main() {
       expect(user.email, 'example@gmail.com');
       expect(user.multiFactor?.enrolledFactors, hasLength(1));
       expect(
-        user.multiFactor?.enrolledFactors
-            .cast<PhoneMultiFactorInfo>()
-            .map((e) => (e.phoneNumber, e.displayName)),
+        user.multiFactor?.enrolledFactors.cast<PhoneMultiFactorInfo>().map(
+          (e) => (e.phoneNumber, e.displayName),
+        ),
         [(phoneNumber, 'home phone')],
       );
     });
@@ -115,10 +111,7 @@ void main() {
       );
 
       final user2 = auth.createUser(
-        CreateRequest(
-          uid: user.uid,
-          email: 'user2@gmail.com',
-        ),
+        CreateRequest(uid: user.uid, email: 'user2@gmail.com'),
       );
 
       expect(
@@ -147,9 +140,7 @@ void main() {
 
   test('getUserByPhoneNumber', () async {
     const phoneNumber = '+16505550002';
-    final user = await auth.createUser(
-      CreateRequest(phoneNumber: phoneNumber),
-    );
+    final user = await auth.createUser(CreateRequest(phoneNumber: phoneNumber));
 
     final user2 = await auth.getUserByPhoneNumber(user.phoneNumber!);
 
@@ -175,9 +166,7 @@ void main() {
         ],
       );
 
-      await auth.importUsers(
-        [importUser],
-      );
+      await auth.importUsers([importUser]);
 
       final user = await auth.getUserByProviderUid(
         providerId: 'google.com',
@@ -191,16 +180,12 @@ void main() {
   group('updateUser', () {
     test('supports updating email', () async {
       final user = await auth.createUser(
-        CreateRequest(
-          email: 'testuser@example.com',
-        ),
+        CreateRequest(email: 'testuser@example.com'),
       );
 
       final updatedUser = await auth.updateUser(
         user.uid,
-        UpdateRequest(
-          email: 'updateduser@example.com',
-        ),
+        UpdateRequest(email: 'updateduser@example.com'),
       );
 
       expect(updatedUser.email, equals('updateduser@example.com'));
@@ -212,7 +197,7 @@ void main() {
 }
 
 Future<void> cleanup(Auth auth) async {
-  if (!auth.app.isUsingEmulator) {
+  if (!Environment.isAuthEmulatorEnabled()) {
     throw Exception('Cannot cleanup non-emulator app');
   }
 

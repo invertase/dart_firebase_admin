@@ -1,17 +1,36 @@
+import 'dart:async';
+
+import 'package:googleapis/firebaseappcheck/v1.dart' as appcheck1;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1_beta;
+import 'package:meta/meta.dart';
+
 import '../app.dart';
 import '../utils/crypto_signer.dart';
+import '../utils/jwt.dart';
 import 'app_check_api.dart';
-import 'app_check_api_internal.dart';
 import 'token_generator.dart';
 import 'token_verifier.dart';
 
-class AppCheck {
-  AppCheck(this.app);
+part 'app_check_exception.dart';
+part 'app_check_http_client.dart';
+part 'app_check_request_handler.dart';
 
-  final FirebaseAdminApp app;
-  late final _tokenGenerator =
-      AppCheckTokenGenerator(CryptoSigner.fromApp(app));
-  late final _client = AppCheckApiClient(app);
+class AppCheck implements FirebaseService {
+  /// Creates or returns the cached AppCheck instance for the given app.
+  factory AppCheck(FirebaseApp app) {
+    return app.getOrInitService(FirebaseServiceType.appCheck.name, AppCheck._);
+  }
+
+  AppCheck._(this.app, {@internal AppCheckRequestHandler? requestHandler})
+    : _requestHandler = requestHandler ?? AppCheckRequestHandler(app);
+
+  @override
+  final FirebaseApp app;
+  final AppCheckRequestHandler _requestHandler;
+  late final _tokenGenerator = AppCheckTokenGenerator(
+    CryptoSigner.fromApp(app),
+  );
   late final _appCheckTokenVerifier = AppCheckTokenVerifier(app);
 
   /// Creates a new [AppCheckToken] that can be sent
@@ -27,7 +46,7 @@ class AppCheck {
   ]) async {
     final customToken = await _tokenGenerator.createCustomToken(appId, options);
 
-    return _client.exchangeToken(customToken, appId);
+    return _requestHandler.exchangeToken(customToken, appId);
   }
 
   /// Verifies a Firebase App Check token (JWT). If the token is valid, the promise is
@@ -43,12 +62,14 @@ class AppCheck {
     String appCheckToken, [
     VerifyAppCheckTokenOptions? options,
   ]) async {
-    final decodedToken =
-        await _appCheckTokenVerifier.verifyToken(appCheckToken);
+    final decodedToken = await _appCheckTokenVerifier.verifyToken(
+      appCheckToken,
+    );
 
     if (options?.consume ?? false) {
-      final alreadyConsumed =
-          await _client.verifyReplayProtection(appCheckToken);
+      final alreadyConsumed = await _requestHandler.verifyReplayProtection(
+        appCheckToken,
+      );
       return VerifyAppCheckTokenResponse(
         alreadyConsumed: alreadyConsumed,
         appId: decodedToken.appId,
@@ -61,5 +82,10 @@ class AppCheck {
       appId: decodedToken.appId,
       token: decodedToken,
     );
+  }
+
+  @override
+  Future<void> delete() async {
+    // AppCheck service cleanup if needed
   }
 }

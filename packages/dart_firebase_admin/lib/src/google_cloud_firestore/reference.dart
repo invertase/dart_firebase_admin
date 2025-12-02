@@ -5,9 +5,7 @@ final class CollectionReference<T> extends Query<T> {
     required super.firestore,
     required _ResourcePath path,
     required _FirestoreDataConverter<T> converter,
-  }) : super._(
-          queryOptions: _QueryOptions.forCollectionQuery(path, converter),
-        );
+  }) : super._(queryOptions: _QueryOptions.forCollectionQuery(path, converter));
 
   _ResourcePath get _resourcePath => _queryOptions.parentPath._append(id);
 
@@ -85,12 +83,12 @@ final class CollectionReference<T> extends Query<T> {
   /// document reference (e.g. via [DocumentReference.get]) will return a
   /// [DocumentSnapshot] whose [DocumentSnapshot.exists] property is `false`.
   Future<List<DocumentReference<T>>> listDocuments() async {
-    final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
-      firestore.app.projectId,
-      firestore._databaseId,
-    );
+    final response = await firestore._client.v1((client, projectId) {
+      final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
+        projectId,
+        firestore._databaseId,
+      );
 
-    final response = await firestore._client.v1((client) {
       return client.projects.databases.documents.list(
         parentPath._formattedName,
         id,
@@ -117,11 +115,7 @@ final class CollectionReference<T> extends Query<T> {
   /// it a document ID automatically.
   Future<DocumentReference<T>> add(T data) async {
     final firestoreData = _queryOptions.converter.toFirestore(data);
-    _validateDocumentData(
-      'data',
-      firestoreData,
-      allowDeletes: false,
-    );
+    _validateDocumentData('data', firestoreData, allowDeletes: false);
 
     final documentRef = doc();
     final jsonDocumentRef = documentRef.withConverter<DocumentData>(
@@ -139,11 +133,8 @@ final class CollectionReference<T> extends Query<T> {
   }) {
     return CollectionReference<U>._(
       firestore: firestore,
-      path: _queryOptions.parentPath._append(id) as _QualifiedResourcePath,
-      converter: (
-        fromFirestore: fromFirestore,
-        toFirestore: toFirestore,
-      ),
+      path: _queryOptions.parentPath._append(id),
+      converter: (fromFirestore: fromFirestore, toFirestore: toFirestore),
     );
   }
 
@@ -160,8 +151,8 @@ final class DocumentReference<T> implements _Serializable {
     required this.firestore,
     required _ResourcePath path,
     required _FirestoreDataConverter<T> converter,
-  })  : _converter = converter,
-        _path = path;
+  }) : _converter = converter,
+       _path = path;
 
   final _ResourcePath _path;
   final _FirestoreDataConverter<T> _converter;
@@ -192,12 +183,10 @@ final class DocumentReference<T> implements _Serializable {
   }
 
   /// The string representation of the DocumentReference's location.
+  /// This can only be called after projectId has been discovered.
   String get _formattedName {
     return _path
-        ._toQualifiedResourcePath(
-          firestore.app.projectId,
-          firestore._databaseId,
-        )
+        ._toQualifiedResourcePath(firestore._projectId, firestore._databaseId)
         ._formattedName;
   }
 
@@ -213,7 +202,7 @@ final class DocumentReference<T> implements _Serializable {
   /// });
   /// ```
   Future<List<CollectionReference<DocumentData>>> listCollections() {
-    return firestore._client.v1((a) async {
+    return firestore._client.v1((a, projectId) async {
       final request = firestore1.ListCollectionIdsRequest(
         // Setting `pageSize` to an arbitrarily large value lets the backend cap
         // the page size (currently to 300). Note that the backend rejects
@@ -229,9 +218,7 @@ final class DocumentReference<T> implements _Serializable {
       final ids = result.collectionIds ?? [];
       ids.sort((a, b) => a.compareTo(b));
 
-      return [
-        for (final id in ids) collection(id),
-      ];
+      return [for (final id in ids) collection(id)];
     });
   }
 
@@ -245,10 +232,7 @@ final class DocumentReference<T> implements _Serializable {
     return DocumentReference<R>._(
       firestore: firestore,
       path: _path,
-      converter: (
-        fromFirestore: fromFirestore,
-        toFirestore: toFirestore,
-      ),
+      converter: (fromFirestore: fromFirestore, toFirestore: toFirestore),
     );
   }
 
@@ -319,14 +303,10 @@ final class DocumentReference<T> implements _Serializable {
     Precondition? precondition,
   ]) async {
     final writeBatch = WriteBatch._(firestore)
-      ..update(
-        this,
-        {
-          for (final entry in data.entries)
-            FieldPath.from(entry.key): entry.value,
-        },
-        precondition: precondition,
-      );
+      ..update(this, {
+        for (final entry in data.entries)
+          FieldPath.from(entry.key): entry.value,
+      }, precondition: precondition);
 
     final results = await writeBatch.commit();
     return results.single;
@@ -385,10 +365,7 @@ final class DocumentReference<T> implements _Serializable {
   int get hashCode => Object.hash(runtimeType, firestore, _path, _converter);
 }
 
-bool _valuesEqual(
-  List<firestore1.Value>? a,
-  List<firestore1.Value>? b,
-) {
+bool _valuesEqual(List<firestore1.Value>? a, List<firestore1.Value>? b) {
   if (a == null) return b == null;
   if (b == null) return false;
 
@@ -422,8 +399,9 @@ bool _valueEqual(firestore1.Value a, firestore1.Value b) {
         return false;
       }
 
-      for (final MapEntry(:key, :value) in mapValue.fields?.entries ??
-          const <MapEntry<String, firestore1.Value>>[]) {
+      for (final MapEntry(:key, :value)
+          in mapValue.fields?.entries ??
+              const <MapEntry<String, firestore1.Value>>[]) {
         final bValue = bMap.fields?[key];
         if (bValue == null) return false;
         if (!_valueEqual(value, bValue)) return false;
@@ -456,20 +434,15 @@ class _QueryCursor {
   }
 
   @override
-  int get hashCode => Object.hash(
-        before,
-        const ListEquality<firestore1.Value>().hash(values),
-      );
+  int get hashCode =>
+      Object.hash(before, const ListEquality<firestore1.Value>().hash(values));
 }
 
 /*
  * Denotes whether a provided limit is applied to the beginning or the end of
  * the result set.
  */
-enum LimitType {
-  first,
-  last,
-}
+enum LimitType { first, last }
 
 enum _Direction {
   ascending('ASCENDING'),
@@ -493,9 +466,7 @@ class _FieldOrder {
 
   firestore1.Order _toProto() {
     return firestore1.Order(
-      field: firestore1.FieldReference(
-        fieldPath: fieldPath._formattedName,
-      ),
+      field: firestore1.FieldReference(fieldPath: fieldPath._formattedName),
       direction: direction.value,
     );
   }
@@ -526,9 +497,9 @@ class _QueryOptions<T> with _$QueryOptions<T> {
     firestore1.Projection? projection,
     LimitType? limitType,
     int? offset,
+
     // Whether to select all documents under `parentPath`. By default, only
     // collections that match `collectionId` are selected.
-
     @Default(false) bool kindless,
     // Whether to require consistent documents when restarting the query. By
     // default, restarting the query uses the readTime offset of the original
@@ -569,9 +540,7 @@ class _QueryOptions<T> with _$QueryOptions<T> {
 
   bool get hasFieldOrders => fieldOrders.isNotEmpty;
 
-  _QueryOptions<U> withConverter<U>(
-    _FirestoreDataConverter<U> converter,
-  ) {
+  _QueryOptions<U> withConverter<U>(_FirestoreDataConverter<U> converter) {
     return _QueryOptions<U>(
       converter: converter,
       parentPath: parentPath,
@@ -612,7 +581,7 @@ sealed class _FilterInternal {
   int get hashCode;
 }
 
-class _CompositeFilterInternal implements _FilterInternal {
+class _CompositeFilterInternal extends _FilterInternal {
   _CompositeFilterInternal({required this.op, required this.filters});
 
   final _CompositeOperator op;
@@ -622,12 +591,12 @@ class _CompositeFilterInternal implements _FilterInternal {
   bool get isConjunction => op == _CompositeOperator.and;
 
   @override
-  late final flattenedFilters = filters.fold<List<_FieldFilterInternal>>(
-    [],
-    (allFilters, subFilter) {
-      return allFilters..addAll(subFilter.flattenedFilters);
-    },
-  );
+  late final flattenedFilters = filters.fold<List<_FieldFilterInternal>>([], (
+    allFilters,
+    subFilter,
+  ) {
+    return allFilters..addAll(subFilter.flattenedFilters);
+  });
 
   @override
   FieldPath? get firstInequalityField {
@@ -660,7 +629,7 @@ class _CompositeFilterInternal implements _FilterInternal {
   int get hashCode => Object.hash(runtimeType, op, filters);
 }
 
-class _FieldFilterInternal implements _FilterInternal {
+class _FieldFilterInternal extends _FilterInternal {
   _FieldFilterInternal({
     required this.field,
     required this.op,
@@ -695,9 +664,7 @@ class _FieldFilterInternal implements _FilterInternal {
     if (value is num && value.isNaN) {
       return firestore1.Filter(
         unaryFilter: firestore1.UnaryFilter(
-          field: firestore1.FieldReference(
-            fieldPath: field._formattedName,
-          ),
+          field: firestore1.FieldReference(fieldPath: field._formattedName),
           op: op == WhereFilter.equal ? 'IS_NAN' : 'IS_NOT_NAN',
         ),
       );
@@ -706,9 +673,7 @@ class _FieldFilterInternal implements _FilterInternal {
     if (value == null) {
       return firestore1.Filter(
         unaryFilter: firestore1.UnaryFilter(
-          field: firestore1.FieldReference(
-            fieldPath: field._formattedName,
-          ),
+          field: firestore1.FieldReference(fieldPath: field._formattedName),
           op: op == WhereFilter.equal ? 'IS_NULL' : 'IS_NOT_NULL',
         ),
       );
@@ -716,9 +681,7 @@ class _FieldFilterInternal implements _FilterInternal {
 
     return firestore1.Filter(
       fieldFilter: firestore1.FieldFilter(
-        field: firestore1.FieldReference(
-          fieldPath: field._formattedName,
-        ),
+        field: firestore1.FieldReference(fieldPath: field._formattedName),
         op: op.proto,
         value: serializer.encodeValue(value),
       ),
@@ -782,12 +745,10 @@ base class Query<T> {
   }) {
     return Query<U>._(
       firestore: firestore,
-      queryOptions: _queryOptions.withConverter(
-        (
-          fromFirestore: fromFirestore,
-          toFirestore: toFirestore,
-        ),
-      ),
+      queryOptions: _queryOptions.withConverter((
+        fromFirestore: fromFirestore,
+        toFirestore: toFirestore,
+      )),
     );
   }
 
@@ -808,9 +769,7 @@ base class Query<T> {
     }
 
     if (fieldValues == null) {
-      throw ArgumentError(
-        'You must specify "fieldValues" or "snapshot".',
-      );
+      throw ArgumentError('You must specify "fieldValues" or "snapshot".');
     }
 
     if (fieldValues.length > fieldOrders.length) {
@@ -929,10 +888,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       startAt: startAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that starts at the provided
@@ -951,10 +907,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       startAt: startAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that starts after the
@@ -984,10 +937,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       startAt: startAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that starts after the
@@ -1007,10 +957,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       startAt: startAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that ends before the set of
@@ -1039,10 +986,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       endAt: endAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that ends before the set of
@@ -1061,10 +1005,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       endAt: endAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that ends at the provided
@@ -1093,10 +1034,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       endAt: endAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that ends at the provided
@@ -1116,10 +1054,7 @@ base class Query<T> {
       fieldOrders: fieldOrders,
       endAt: endAt,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Executes the query and returns the results as a [QuerySnapshot].
@@ -1136,12 +1071,9 @@ base class Query<T> {
   Future<QuerySnapshot<T>> get() => _get(transactionId: null);
 
   Future<QuerySnapshot<T>> _get({required String? transactionId}) async {
-    final response = await firestore._client.v1((client) async {
+    final response = await firestore._client.v1((client, projectId) async {
       return client.projects.databases.documents.runQuery(
-        _toProto(
-          transactionId: transactionId,
-          readTime: null,
-        ),
+        _toProto(transactionId: transactionId, readTime: null),
         _buildProtoParentPath(),
       );
     });
@@ -1160,18 +1092,19 @@ base class Query<T> {
             e.readTime,
             firestore,
           );
-          final finalDoc = _DocumentSnapshotBuilder(
-            snapshot.ref.withConverter<T>(
-              fromFirestore: _queryOptions.converter.fromFirestore,
-              toFirestore: _queryOptions.converter.toFirestore,
-            ),
-          )
-            // Recreate the QueryDocumentSnapshot with the DocumentReference
-            // containing the original converter.
-            ..fieldsProto = firestore1.MapValue(fields: document.fields)
-            ..readTime = snapshot.readTime
-            ..createTime = snapshot.createTime
-            ..updateTime = snapshot.updateTime;
+          final finalDoc =
+              _DocumentSnapshotBuilder(
+                  snapshot.ref.withConverter<T>(
+                    fromFirestore: _queryOptions.converter.fromFirestore,
+                    toFirestore: _queryOptions.converter.toFirestore,
+                  ),
+                )
+                // Recreate the QueryDocumentSnapshot with the DocumentReference
+                // containing the original converter.
+                ..fieldsProto = firestore1.MapValue(fields: document.fields)
+                ..readTime = snapshot.readTime
+                ..createTime = snapshot.createTime
+                ..updateTime = snapshot.updateTime;
 
           return finalDoc.build();
         })
@@ -1180,19 +1113,12 @@ base class Query<T> {
         .cast<QueryDocumentSnapshot<T>>()
         .toList();
 
-    return QuerySnapshot<T>._(
-      query: this,
-      readTime: readTime,
-      docs: snapshots,
-    );
+    return QuerySnapshot<T>._(query: this, readTime: readTime, docs: snapshots);
   }
 
   String _buildProtoParentPath() {
     return _queryOptions.parentPath
-        ._toQualifiedResourcePath(
-          firestore.app.projectId,
-          firestore._databaseId,
-        )
+        ._toQualifiedResourcePath(firestore._projectId, firestore._databaseId)
         ._formattedName;
   }
 
@@ -1201,9 +1127,7 @@ base class Query<T> {
     required Timestamp? readTime,
   }) {
     if (readTime != null && transactionId != null) {
-      throw ArgumentError(
-        'readTime and transactionId cannot both be set.',
-      );
+      throw ArgumentError('readTime and transactionId cannot both be set.');
     }
 
     final structuredQuery = _toStructuredQuery();
@@ -1222,8 +1146,10 @@ base class Query<T> {
         final dir = order.direction == _Direction.descending
             ? _Direction.ascending
             : _Direction.descending;
-        return _FieldOrder(fieldPath: order.fieldPath, direction: dir)
-            ._toProto();
+        return _FieldOrder(
+          fieldPath: order.fieldPath,
+          direction: dir,
+        )._toProto();
       }).toList();
 
       // Swap the cursors to match the now-flipped query ordering.
@@ -1281,8 +1207,9 @@ base class Query<T> {
     }
 
     if (_queryOptions.hasFieldOrders) {
-      structuredQuery.orderBy =
-          _queryOptions.fieldOrders.map((o) => o._toProto()).toList();
+      structuredQuery.orderBy = _queryOptions.fieldOrders
+          .map((o) => o._toProto())
+          .toList();
     }
 
     structuredQuery.startAt = _toCursor(_queryOptions.startAt);
@@ -1340,11 +1267,7 @@ base class Query<T> {
   /// });
   /// ```
   /// {@endtemplate}
-  Query<T> whereFieldPath(
-    FieldPath fieldPath,
-    WhereFilter op,
-    Object? value,
-  ) {
+  Query<T> whereFieldPath(FieldPath fieldPath, WhereFilter op, Object? value) {
     return whereFilter(Filter.where(fieldPath, op, value));
   }
 
@@ -1383,10 +1306,7 @@ base class Query<T> {
     final options = _queryOptions.copyWith(
       filters: [..._queryOptions.filters, parsedFilter],
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   _FilterInternal _parseFilter(Filter filter) {
@@ -1537,10 +1457,7 @@ base class Query<T> {
   ///   });
   /// });
   /// ```
-  Query<T> orderByFieldPath(
-    FieldPath fieldPath, {
-    bool descending = false,
-  }) {
+  Query<T> orderByFieldPath(FieldPath fieldPath, {bool descending = false}) {
     if (_queryOptions.startAt != null || _queryOptions.endAt != null) {
       throw ArgumentError(
         'Cannot specify an orderBy() constraint after calling '
@@ -1556,10 +1473,7 @@ base class Query<T> {
     final options = _queryOptions.copyWith(
       fieldOrders: [..._queryOptions.fieldOrders, newOrder],
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that's additionally sorted
@@ -1581,14 +1495,8 @@ base class Query<T> {
   ///   });
   /// });
   /// ```
-  Query<T> orderBy(
-    Object path, {
-    bool descending = false,
-  }) {
-    return orderByFieldPath(
-      FieldPath.from(path),
-      descending: descending,
-    );
+  Query<T> orderBy(Object path, {bool descending = false}) {
+    return orderByFieldPath(FieldPath.from(path), descending: descending);
   }
 
   /// Creates and returns a new [Query] that only returns the first matching documents.
@@ -1612,10 +1520,7 @@ base class Query<T> {
       limit: limit,
       limitType: LimitType.first,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Creates and returns a new [Query] that only returns the last matching
@@ -1640,10 +1545,7 @@ base class Query<T> {
       limit: limit,
       limitType: LimitType.last,
     );
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   /// Specifies the offset of the returned results.
@@ -1664,10 +1566,7 @@ base class Query<T> {
   /// ```
   Query<T> offset(int offset) {
     final options = _queryOptions.copyWith(offset: offset);
-    return Query<T>._(
-      firestore: firestore,
-      queryOptions: options,
-    );
+    return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
   @mustBeOverridden
@@ -1803,7 +1702,7 @@ class AggregateField {
     return const AggregateField._(
       fieldPath: null,
       alias: 'count',
-      type: _AggregateType.count,
+      type: AggregateType.count,
     );
   }
 
@@ -1823,7 +1722,7 @@ class AggregateField {
     return AggregateField._(
       fieldPath: fieldName,
       alias: 'sum_$fieldName',
-      type: _AggregateType.sum,
+      type: AggregateType.sum,
     );
   }
 
@@ -1843,7 +1742,7 @@ class AggregateField {
     return AggregateField._(
       fieldPath: fieldName,
       alias: 'avg_$fieldName',
-      type: _AggregateType.average,
+      type: AggregateType.average,
     );
   }
 
@@ -1854,23 +1753,21 @@ class AggregateField {
   final String alias;
 
   /// The type of aggregation.
-  final _AggregateType type;
+  final AggregateType type;
 
   /// Converts this public field to the internal representation.
-  _AggregateFieldInternal _toInternal() {
+  AggregateFieldInternal _toInternal() {
     firestore1.Aggregation aggregation;
     switch (type) {
-      case _AggregateType.count:
-        aggregation = firestore1.Aggregation(
-          count: firestore1.Count(),
-        );
-      case _AggregateType.sum:
+      case AggregateType.count:
+        aggregation = firestore1.Aggregation(count: firestore1.Count());
+      case AggregateType.sum:
         aggregation = firestore1.Aggregation(
           sum: firestore1.Sum(
             field: firestore1.FieldReference(fieldPath: fieldPath),
           ),
         );
-      case _AggregateType.average:
+      case AggregateType.average:
         aggregation = firestore1.Aggregation(
           avg: firestore1.Avg(
             field: firestore1.FieldReference(fieldPath: fieldPath),
@@ -1878,19 +1775,12 @@ class AggregateField {
         );
     }
 
-    return _AggregateFieldInternal(
-      alias: alias,
-      aggregation: aggregation,
-    );
+    return AggregateFieldInternal(alias: alias, aggregation: aggregation);
   }
 }
 
 /// The type of aggregation to perform.
-enum _AggregateType {
-  count,
-  sum,
-  average,
-}
+enum AggregateType { count, sum, average }
 
 /// Create a CountAggregateField object that can be used to compute
 /// the count of documents in the result set of a query.
@@ -1898,11 +1788,7 @@ enum _AggregateType {
 class count extends AggregateField {
   /// Creates a count aggregation.
   const count()
-      : super._(
-          fieldPath: null,
-          alias: 'count',
-          type: _AggregateType.count,
-        );
+    : super._(fieldPath: null, alias: 'count', type: AggregateType.count);
 }
 
 /// Create an object that can be used to compute the sum of a specified field
@@ -1911,11 +1797,7 @@ class count extends AggregateField {
 class sum extends AggregateField {
   /// Creates a sum aggregation for the specified field.
   const sum(this.field)
-      : super._(
-          fieldPath: field,
-          alias: 'sum_$field',
-          type: _AggregateType.sum,
-        );
+    : super._(fieldPath: field, alias: 'sum_$field', type: AggregateType.sum);
 
   /// The field to sum.
   final String field;
@@ -1927,11 +1809,11 @@ class sum extends AggregateField {
 class average extends AggregateField {
   /// Creates an average aggregation for the specified field.
   const average(this.field)
-      : super._(
-          fieldPath: field,
-          alias: 'avg_$field',
-          type: _AggregateType.average,
-        );
+    : super._(
+        fieldPath: field,
+        alias: 'avg_$field',
+        type: AggregateType.average,
+      );
 
   /// The field to average.
   final String field;
@@ -1939,8 +1821,9 @@ class average extends AggregateField {
 
 /// Internal representation of an aggregation field.
 @immutable
-class _AggregateFieldInternal {
-  const _AggregateFieldInternal({
+@internal
+class AggregateFieldInternal {
+  const AggregateFieldInternal({
     required this.alias,
     required this.aggregation,
   });
@@ -1950,7 +1833,7 @@ class _AggregateFieldInternal {
 
   @override
   bool operator ==(Object other) {
-    return other is _AggregateFieldInternal &&
+    return other is AggregateFieldInternal &&
         alias == other.alias &&
         // For count aggregations, we just check that both have count set
         ((aggregation.count != null && other.aggregation.count != null) ||
@@ -1960,26 +1843,23 @@ class _AggregateFieldInternal {
 
   @override
   int get hashCode => Object.hash(
-        alias,
-        aggregation.count != null ||
-            aggregation.sum != null ||
-            aggregation.avg != null,
-      );
+    alias,
+    aggregation.count != null ||
+        aggregation.sum != null ||
+        aggregation.avg != null,
+  );
 }
 
 /// Calculates aggregations over an underlying query.
 @immutable
 class AggregateQuery {
-  const AggregateQuery._({
-    required this.query,
-    required this.aggregations,
-  });
+  const AggregateQuery._({required this.query, required this.aggregations});
 
   /// The query whose aggregations will be calculated by this object.
   final Query<Object?> query;
 
   @internal
-  final List<_AggregateFieldInternal> aggregations;
+  final List<AggregateFieldInternal> aggregations;
 
   /// Executes the aggregate query and returns the results as an
   /// [AggregateQuerySnapshot].
@@ -2008,7 +1888,7 @@ class AggregateQuery {
       ),
     );
 
-    final response = await firestore._client.v1((client) async {
+    final response = await firestore._client.v1((client, projectId) async {
       return client.projects.databases.documents.runAggregationQuery(
         aggregationQuery,
         query._buildProtoParentPath(),
@@ -2048,15 +1928,17 @@ class AggregateQuery {
   bool operator ==(Object other) {
     return other is AggregateQuery &&
         query == other.query &&
-        const ListEquality<_AggregateFieldInternal>()
-            .equals(aggregations, other.aggregations);
+        const ListEquality<AggregateFieldInternal>().equals(
+          aggregations,
+          other.aggregations,
+        );
   }
 
   @override
   int get hashCode => Object.hash(
-        query,
-        const ListEquality<_AggregateFieldInternal>().hash(aggregations),
-      );
+    query,
+    const ListEquality<AggregateFieldInternal>().hash(aggregations),
+  );
 }
 
 /// The results of executing an aggregation query.
@@ -2167,26 +2049,27 @@ class QuerySnapshot<T> {
     return other is QuerySnapshot<T> &&
         runtimeType == other.runtimeType &&
         query == other.query &&
-        const ListEquality<QueryDocumentSnapshot<Object?>>()
-            .equals(docs, other.docs) &&
-        const ListEquality<DocumentChange<Object?>>()
-            .equals(docChanges, other.docChanges);
+        const ListEquality<QueryDocumentSnapshot<Object?>>().equals(
+          docs,
+          other.docs,
+        ) &&
+        const ListEquality<DocumentChange<Object?>>().equals(
+          docChanges,
+          other.docChanges,
+        );
   }
 
   @override
   int get hashCode => Object.hash(
-        runtimeType,
-        query,
-        const ListEquality<QueryDocumentSnapshot<Object?>>().hash(docs),
-        const ListEquality<DocumentChange<Object?>>().hash(docChanges),
-      );
+    runtimeType,
+    query,
+    const ListEquality<QueryDocumentSnapshot<Object?>>().hash(docs),
+    const ListEquality<DocumentChange<Object?>>().hash(docChanges),
+  );
 }
 
 /// Validates that 'value' can be used as a query value.
-void _validateQueryValue(
-  String arg,
-  Object? value,
-) {
+void _validateQueryValue(String arg, Object? value) {
   _validateUserInput(
     arg,
     value,

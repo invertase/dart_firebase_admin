@@ -6,8 +6,10 @@ String _toGoogleDateTime({required int seconds, required int nanoseconds}) {
   var formattedDate = DateFormat('yyyy-MM-ddTHH:mm:ss').format(date);
 
   if (nanoseconds > 0) {
-    final nanoString =
-        nanoseconds.toString().padLeft(9, '0'); // Ensure it has 9 digits
+    final nanoString = nanoseconds.toString().padLeft(
+      9,
+      '0',
+    ); // Ensure it has 9 digits
     formattedDate = '$formattedDate.$nanoString';
   }
 
