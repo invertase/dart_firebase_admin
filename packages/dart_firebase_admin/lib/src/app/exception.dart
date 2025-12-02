@@ -30,7 +30,7 @@ String _platformErrorCodeMessage(String code) {
     case 'PERMISSION_DENIED':
       return 'Client does not have sufficient permission. This can happen because the OAuth token does not have the right scopes, the client does not have permission, or the API has not been enabled for the client project.';
     case 'NOT_FOUND':
-      return 'Specified resource not found, or the request is rejected due to undisclosed reasons such as whitelisting.';
+      return 'Specified resource not found, or the request is rejected due to undisclosed reasons such as allow list restrictions.';
     case 'CONFLICT':
       return 'Concurrency conflict, such as read-modify-write conflict. Only used by a few legacy services. Most services use ABORTED or ALREADY_EXISTS instead of this. Refer to the service-specific documentation to see which one to handle in your code.';
     case 'ABORTED':

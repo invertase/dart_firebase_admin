@@ -44,8 +44,6 @@ class AuthHttpClient {
     return app.client;
   }
 
-  // TODO handle tenants
-
   /// Builds the parent resource path for project-level operations.
   String buildParent(String projectId) {
     return 'projects/$projectId';
@@ -59,6 +57,11 @@ class AuthHttpClient {
   /// Builds the parent path for SAML config operations.
   String buildSamlParent(String projectId, String parentId) {
     return 'projects/$projectId/inboundSamlConfigs/$parentId';
+  }
+
+  /// Builds the resource path for a specific tenant.
+  String buildTenantParent(String projectId, String tenantId) {
+    return 'projects/$projectId/tenants/$tenantId';
   }
 
   Future<auth1.GoogleCloudIdentitytoolkitV1GetOobCodeResponse> getOobCode(
@@ -305,6 +308,113 @@ class AuthHttpClient {
     });
   }
 
+  // Tenant management methods
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> getTenant(
+    String tenantId,
+  ) {
+    return v2((client, projectId) async {
+      if (tenantId.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidTenantId,
+          'Tenant ID must be a non-empty string.',
+        );
+      }
+
+      final response = await client.projects.tenants.get(
+        buildTenantParent(projectId, tenantId),
+      );
+
+      if (response.name == null || response.name!.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: Unable to get tenant',
+        );
+      }
+
+      return response;
+    });
+  }
+
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListTenantsResponse>
+  listTenants({required int maxResults, String? pageToken}) {
+    return v2((client, projectId) async {
+      final response = await client.projects.tenants.list(
+        buildParent(projectId),
+        pageSize: maxResults,
+        pageToken: pageToken,
+      );
+
+      return response;
+    });
+  }
+
+  Future<auth2.GoogleProtobufEmpty> deleteTenant(String tenantId) {
+    return v2((client, projectId) async {
+      if (tenantId.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidTenantId,
+          'Tenant ID must be a non-empty string.',
+        );
+      }
+
+      return client.projects.tenants.delete(
+        buildTenantParent(projectId, tenantId),
+      );
+    });
+  }
+
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> createTenant(
+    auth2.GoogleCloudIdentitytoolkitAdminV2Tenant request,
+  ) {
+    return v2((client, projectId) async {
+      final response = await client.projects.tenants.create(
+        request,
+        buildParent(projectId),
+      );
+
+      if (response.name == null || response.name!.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: Unable to create new tenant',
+        );
+      }
+
+      return response;
+    });
+  }
+
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Tenant> updateTenant(
+    String tenantId,
+    auth2.GoogleCloudIdentitytoolkitAdminV2Tenant request,
+  ) {
+    return v2((client, projectId) async {
+      if (tenantId.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidTenantId,
+          'Tenant ID must be a non-empty string.',
+        );
+      }
+
+      final name = buildTenantParent(projectId, tenantId);
+      final updateMask = request.toJson().keys.join(',');
+
+      final response = await client.projects.tenants.patch(
+        request,
+        name,
+        updateMask: updateMask,
+      );
+
+      if (response.name == null || response.name!.isEmpty) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: Unable to update tenant',
+        );
+      }
+
+      return response;
+    });
+  }
+
   Future<R> _run<R>(
     Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) {
@@ -345,4 +455,23 @@ class AuthHttpClient {
       projectId,
     ),
   );
+}
+
+/// Tenant-aware HTTP client that builds tenant-specific resource paths.
+class _TenantAwareAuthHttpClient extends AuthHttpClient {
+  _TenantAwareAuthHttpClient(super.app, this.tenantId);
+
+  final String tenantId;
+
+  @override
+  String buildParent(String projectId) =>
+      'projects/$projectId/tenants/$tenantId';
+
+  @override
+  String buildOAuthIdpParent(String projectId, String parentId) =>
+      'projects/$projectId/tenants/$tenantId/oauthIdpConfigs/$parentId';
+
+  @override
+  String buildSamlParent(String projectId, String parentId) =>
+      'projects/$projectId/tenants/$tenantId/inboundSamlConfigs/$parentId';
 }
