@@ -99,8 +99,10 @@ extension AuthClientX on AuthClient {
   ///
   /// [data] is the string to be signed.
   /// [endpoint] is an optional custom IAM Credentials API endpoint. This is
-  /// useful when working with different universe domains. Defaults to
-  /// `https://iamcredentials.googleapis.com`.
+  /// useful when working with different universe domains. If not provided,
+  /// the endpoint is automatically determined from the credential's universe
+  /// domain (e.g., `https://iamcredentials.googleapis.com` for the default
+  /// universe, or a custom universe domain from the service account JSON).
   ///
   /// Returns the signature as a base64-encoded string.
   ///
@@ -118,16 +120,15 @@ extension AuthClientX on AuthClient {
       return response.signedBlob;
     }
 
-    // Retrieve associated credential from Expando
-    final credential = authClientCredentials[this];
-
     // Check if we have service account credentials for local signing
-    final hasLocalSigningCapability =
-        credential?.serviceAccountCredentials != null;
+    final hasLocalSigningCapability = serviceAccountCredentials != null;
 
-    // If endpoint is provided and we're NOT using local signing,
-    // use custom endpoint for IAM API signing
-    if (endpoint != null && !hasLocalSigningCapability) {
+    // Determine the IAM endpoint based on universe domain
+    final universeDomain = credential?.universeDomain ?? 'googleapis.com';
+    endpoint ??= 'https://iamcredentials.$universeDomain';
+
+    // If we're NOT using local signing, use IAM API signing
+    if (!hasLocalSigningCapability) {
       final email = await getServiceAccountEmail();
       if (email == null) {
         throw Exception(
@@ -139,9 +140,9 @@ extension AuthClientX on AuthClient {
       return _signBlobWithEndpoint(data, endpoint, email);
     }
 
-    // Use CryptoSigner for local or default IAM API signing
+    // Use CryptoSigner for local signing
     // CryptoSigner.fromAuthClient will automatically choose local signing
-    // if credentials are available in the Expando
+    // if credentials are available
     final signer = CryptoSigner.fromAuthClient(this);
     final signatureBytes = await signer.sign(utf8.encode(data));
     return base64Encode(signatureBytes);

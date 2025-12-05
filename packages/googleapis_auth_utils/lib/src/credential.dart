@@ -84,6 +84,7 @@ sealed class GoogleCredential {
   /// - [email]: The service account email address (required)
   /// - [clientId]: The OAuth2 client ID (optional, defaults to email)
   /// - [projectId]: The Google Cloud project ID (optional)
+  /// - [universeDomain]: The universe domain (optional, defaults to 'googleapis.com')
   /// - [authClient]: Optional authenticated client to use instead of creating a new one
   ///
   /// Example:
@@ -99,6 +100,7 @@ sealed class GoogleCredential {
     required String email,
     String? clientId,
     String? projectId,
+    String? universeDomain,
     auth_io.AuthClient? authClient,
   }) {
     return GoogleServiceAccountCredential.fromParams(
@@ -106,6 +108,7 @@ sealed class GoogleCredential {
       email: email,
       clientId: clientId,
       projectId: projectId,
+      universeDomain: universeDomain,
       authClient: authClient,
     );
   }
@@ -128,6 +131,20 @@ sealed class GoogleCredential {
   /// For service account credentials, this is extracted from the JSON file.
   /// For ADC on Compute Engine, this may be null.
   String? get projectId;
+
+  /// Returns the universe domain for this credential.
+  ///
+  /// The universe domain identifies which Google Cloud universe to use.
+  /// Defaults to 'googleapis.com' for the default public cloud.
+  ///
+  /// For service account credentials, this is extracted from the JSON file's
+  /// 'universe_domain' field. For ADC, this is extracted from the credentials
+  /// or defaults to 'googleapis.com'.
+  ///
+  /// Example values:
+  /// - 'googleapis.com' (default public cloud)
+  /// - Custom universe domains for government or sovereign clouds
+  String get universeDomain;
 
   /// Returns a Google OAuth2 access token.
   ///
@@ -160,6 +177,8 @@ final class GoogleServiceAccountCredential extends GoogleCredential {
     auth_io.AuthClient? authClient,
   }) {
     final projectId = json['project_id'] as String?;
+    final universeDomain =
+        json['universe_domain'] as String? ?? 'googleapis.com';
 
     // Validate required fields before calling googleapis_auth
     if (json['type'] != 'service_account') {
@@ -184,6 +203,7 @@ final class GoogleServiceAccountCredential extends GoogleCredential {
       return GoogleServiceAccountCredential._(
         credentials,
         projectId,
+        universeDomain,
         authClient,
       );
     } on FormatException catch (e) {
@@ -225,6 +245,7 @@ final class GoogleServiceAccountCredential extends GoogleCredential {
     required String email,
     String? clientId,
     String? projectId,
+    String? universeDomain,
     auth_io.AuthClient? authClient,
   }) {
     final credentials = auth.ServiceAccountCredentials(
@@ -233,17 +254,24 @@ final class GoogleServiceAccountCredential extends GoogleCredential {
       privateKey,
     );
 
-    return GoogleServiceAccountCredential._(credentials, projectId, authClient);
+    return GoogleServiceAccountCredential._(
+      credentials,
+      projectId,
+      universeDomain ?? 'googleapis.com',
+      authClient,
+    );
   }
 
   GoogleServiceAccountCredential._(
     this._credentials,
     this._projectId,
+    this._universeDomain,
     this._authClient,
   ) : super._();
 
   final auth.ServiceAccountCredentials _credentials;
   final String? _projectId;
+  final String _universeDomain;
   auth_io.AuthClient? _authClient;
 
   /// The service account email address.
@@ -264,6 +292,9 @@ final class GoogleServiceAccountCredential extends GoogleCredential {
 
   @override
   String? get projectId => _projectId;
+
+  @override
+  String get universeDomain => _universeDomain;
 
   @override
   Future<auth.AccessToken> getAccessToken() async {
@@ -316,6 +347,8 @@ final class GoogleApplicationDefaultCredential extends GoogleCredential {
             json,
           );
           _projectId = json['project_id'] as String?;
+          _universeDomain =
+              json['universe_domain'] as String? ?? 'googleapis.com';
         }
       } catch (_) {
         // Ignore parsing errors, will fall back to metadata service
@@ -326,6 +359,7 @@ final class GoogleApplicationDefaultCredential extends GoogleCredential {
   final String? _serviceAccountId;
   auth.ServiceAccountCredentials? _serviceAccountCredentials;
   String? _projectId;
+  String _universeDomain = 'googleapis.com';
   auth_io.AuthClient? _authClient;
 
   @override
@@ -338,6 +372,9 @@ final class GoogleApplicationDefaultCredential extends GoogleCredential {
 
   @override
   String? get projectId => _projectId;
+
+  @override
+  String get universeDomain => _universeDomain;
 
   @override
   Future<auth.AccessToken> getAccessToken() async {

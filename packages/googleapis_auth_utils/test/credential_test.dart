@@ -186,4 +186,91 @@ void main() {
       });
     });
   });
+
+  group('GoogleCredential.universeDomain', () {
+    test('defaults to googleapis.com for service account credentials', () {
+      final credential = GoogleCredential.fromServiceAccountParams(
+        privateKey: _fakeRSAKey,
+        email: 'test@example.com',
+      );
+
+      expect(credential.universeDomain, 'googleapis.com');
+    });
+
+    test('extracts universe_domain from service account JSON', () {
+      final json = {
+        'type': 'service_account',
+        'project_id': 'test-project',
+        'private_key_id': 'key123',
+        'private_key': _fakeRSAKey,
+        'client_email': 'test@example.iam.gserviceaccount.com',
+        'client_id': '123456789',
+        'universe_domain': 'my-custom-universe.com',
+      };
+
+      final credential = GoogleServiceAccountCredential.fromJson(json);
+
+      expect(credential.universeDomain, 'my-custom-universe.com');
+      expect(credential.projectId, 'test-project');
+    });
+
+    test('can be set via fromParams', () {
+      final credential = GoogleCredential.fromServiceAccountParams(
+        privateKey: _fakeRSAKey,
+        email: 'test@example.com',
+        universeDomain: 'my-universe.example.com',
+      );
+
+      expect(credential.universeDomain, 'my-universe.example.com');
+    });
+
+    test('defaults to googleapis.com when not in JSON', () {
+      final json = {
+        'type': 'service_account',
+        'project_id': 'test-project',
+        'private_key_id': 'key123',
+        'private_key': _fakeRSAKey,
+        'client_email': 'test@example.iam.gserviceaccount.com',
+        'client_id': '123456789',
+      };
+
+      final credential = GoogleServiceAccountCredential.fromJson(json);
+
+      expect(credential.universeDomain, 'googleapis.com');
+    });
+
+    test('extracts from ADC file', () {
+      final file = File('test/fixtures/service_account_with_universe.json')
+        ..createSync(recursive: true)
+        ..writeAsStringSync(
+          jsonEncode({
+            'type': 'service_account',
+            'project_id': 'test-project',
+            'private_key_id': 'key123',
+            'private_key': _fakeRSAKey,
+            'client_email': 'test@example.iam.gserviceaccount.com',
+            'client_id': '123456789',
+            'universe_domain': 'adc-universe.example.com',
+          }),
+        );
+
+      try {
+        final credential = GoogleCredential.fromApplicationDefaultCredentials(
+          environment: {'GOOGLE_APPLICATION_CREDENTIALS': file.path},
+        );
+
+        expect(credential.universeDomain, 'adc-universe.example.com');
+      } finally {
+        file.deleteSync();
+      }
+    });
+
+    test('defaults to googleapis.com for ADC without universe_domain', () {
+      final credential = GoogleCredential.fromApplicationDefaultCredentials(
+        environment: {'GOOGLE_APPLICATION_CREDENTIALS': '/nonexistent/path'},
+      );
+
+      expect(credential.universeDomain, 'googleapis.com');
+    });
+  });
 }
