@@ -13,6 +13,9 @@ extension CryptoSignerFromApp on FirebaseApp {
       return ServiceAccountSigner(serviceAccountCredentials);
     }
 
-    return IAMSigner.lazy(client, options.serviceAccountId);
+    return IAMSigner.lazy(
+      client,
+      serviceAccountEmail: options.serviceAccountId,
+    );
   }
 }

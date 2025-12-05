@@ -12,6 +12,8 @@ class MockAuthClient extends Mock implements AuthClient {}
 
 class FakeUri extends Fake implements Uri {}
 
+class FakeBaseRequest extends Fake implements http.BaseRequest {}
+
 // Mock HTTP client for intercepting OAuth token requests
 class MockOAuthHttpClient extends Mock implements http.Client {
   @override
@@ -42,11 +44,13 @@ void main() {
   setUpAll(() {
     registerFallbackValue(FakeUri());
     registerFallbackValue(<String, String>{});
+    registerFallbackValue(FakeBaseRequest());
   });
 
   group('sign()', () {
     const testData = 'abc123';
     const signedBlob = 'erutangis'; // "signature" reversed
+    final signedBlobBase64 = base64Encode(utf8.encode(signedBlob));
 
     group('with ServiceAccountCredentials (local signing)', () {
       test('should sign using the private key', () async {
@@ -270,21 +274,21 @@ void main() {
             ),
           ).thenAnswer((_) async => http.Response(serviceAccountEmail, 200));
 
-          // Mock the IAM signBlob API call
-          final iamUrl = Uri.parse(
-            '$customEndpoint/v1/projects/-/serviceAccounts/$serviceAccountEmail:signBlob',
-          );
-
-          when(
-            () => mockClient.post(
-              iamUrl,
-              headers: {'Content-Type': 'application/json'},
-              body: any(named: 'body'),
-            ),
-          ).thenAnswer(
-            (_) async =>
-                http.Response(jsonEncode({'signedBlob': signedBlob}), 200),
-          );
+          // Mock the IAM signBlob API call via send()
+          when(() => mockClient.send(any())).thenAnswer((invocation) async {
+            final request =
+                invocation.positionalArguments[0] as http.BaseRequest;
+            if (request.url.path.contains(':signBlob')) {
+              return http.StreamedResponse(
+                Stream.value(
+                  utf8.encode(jsonEncode({'signedBlob': signedBlobBase64})),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            return http.StreamedResponse(Stream.value([]), 404);
+          });
 
           // Sign data with custom endpoint
           final signature = await mockClient.sign(
@@ -292,18 +296,10 @@ void main() {
             endpoint: customEndpoint,
           );
 
-          expect(signature, signedBlob);
+          expect(signature, signedBlobBase64);
 
-          // Verify IAM API was called
-          verify(
-            () => mockClient.post(
-              iamUrl,
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({
-                'payload': base64Encode(utf8.encode(testData)),
-              }),
-            ),
-          ).called(1);
+          // Verify IAM API was called via send()
+          verify(() => mockClient.send(any())).called(greaterThan(0));
         },
       );
 
@@ -321,35 +317,34 @@ void main() {
           ),
         ).thenAnswer((_) async => http.Response(serviceAccountEmail, 200));
 
-        final iamUrl = Uri.parse(
-          '$customEndpoint/v1/projects/-/serviceAccounts/$serviceAccountEmail:signBlob',
-        );
-
-        when(
-          () => mockClient.post(
-            iamUrl,
-            headers: {'Content-Type': 'application/json'},
-            body: any(named: 'body'),
-          ),
-        ).thenAnswer(
-          (_) async =>
-              http.Response(jsonEncode({'signedBlob': signedBlob}), 200),
-        );
+        // Mock the IAM signBlob API call via send()
+        when(() => mockClient.send(any())).thenAnswer((invocation) async {
+          final request = invocation.positionalArguments[0] as http.BaseRequest;
+          if (request.url.toString().contains(customEndpoint) &&
+              request.url.path.contains(':signBlob')) {
+            return http.StreamedResponse(
+              Stream.value(
+                utf8.encode(jsonEncode({'signedBlob': signedBlobBase64})),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.StreamedResponse(Stream.value([]), 404);
+        });
 
         final signature = await mockClient.sign(
           testData,
           endpoint: customEndpoint,
         );
 
-        expect(signature, signedBlob);
+        expect(signature, signedBlobBase64);
 
-        verify(
-          () => mockClient.post(
-            iamUrl,
-            headers: any(named: 'headers'),
-            body: any(named: 'body'),
-          ),
-        ).called(1);
+        // Verify custom endpoint was used
+        final captured = verify(() => mockClient.send(captureAny())).captured;
+        expect(captured.isNotEmpty, true);
+        final capturedRequest = captured.first as http.BaseRequest;
+        expect(capturedRequest.url.toString(), contains(customEndpoint));
       });
 
       test('should throw when service account email is not available', () async {
@@ -365,15 +360,12 @@ void main() {
           ),
         ).thenAnswer((_) async => http.Response('', 404));
 
-        // Also mock post to avoid null errors (though it shouldn't be reached)
-        when(
-          () => mockClient.post(
-            any(),
-            headers: any(named: 'headers'),
-            body: any(named: 'body'),
+        // Mock send() to avoid null errors (though it shouldn't be reached)
+        when(() => mockClient.send(any())).thenAnswer(
+          (_) async => http.StreamedResponse(
+            Stream.value(utf8.encode(jsonEncode({'error': 'not found'}))),
+            404,
           ),
-        ).thenAnswer(
-          (_) async => http.Response(jsonEncode({'error': 'not found'}), 404),
         );
 
         // Sign with custom endpoint should fail

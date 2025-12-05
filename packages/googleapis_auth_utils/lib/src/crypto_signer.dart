@@ -22,9 +22,12 @@ abstract class CryptoSigner {
   ///
   /// [serviceAccountEmail] is only used for IAM API signing when the auth
   /// client doesn't have service account credentials.
+  /// [endpoint] is an optional custom IAM Credentials API endpoint for universe
+  /// domain support. Defaults to `https://iamcredentials.googleapis.com/`.
   static CryptoSigner fromAuthClient(
     auth.AuthClient authClient, {
     String? serviceAccountEmail,
+    String? endpoint,
   }) {
     // Check if credentials are associated with this auth client via Expando
     final credential = authClientCredentials[authClient];
@@ -35,7 +38,11 @@ abstract class CryptoSigner {
     }
 
     // Fall back to IAM API signing
-    return IAMSigner(authClient, serviceAccountEmail);
+    return IAMSigner(
+      authClient,
+      serviceAccountEmail: serviceAccountEmail,
+      endpoint: endpoint,
+    );
   }
 
   /// The name of the signing algorithm.
@@ -51,14 +58,22 @@ abstract class CryptoSigner {
 /// IAM API-based signer.
 class IAMSigner implements CryptoSigner {
   /// Creates an IAMSigner with an AuthClient.
-  IAMSigner(auth.AuthClient authClient, [this._serviceAccountEmail])
-    : _authClientFuture = Future.value(authClient);
+  IAMSigner(
+    auth.AuthClient authClient, {
+    String? serviceAccountEmail,
+    String? endpoint,
+  }) : _authClientFuture = Future.value(authClient),
+       _serviceAccountEmail = serviceAccountEmail,
+       _endpoint = endpoint;
 
   /// Creates an IAMSigner with a Future<AuthClient> (for lazy initialization).
   IAMSigner.lazy(
-    Future<auth.AuthClient> authClient, [
-    this._serviceAccountEmail,
-  ]) : _authClientFuture = authClient;
+    Future<auth.AuthClient> authClient, {
+    String? serviceAccountEmail,
+    String? endpoint,
+  }) : _authClientFuture = authClient,
+       _serviceAccountEmail = serviceAccountEmail,
+       _endpoint = endpoint;
 
   @override
   String get algorithm => 'RS256';
@@ -66,6 +81,7 @@ class IAMSigner implements CryptoSigner {
   final Future<auth.AuthClient> _authClientFuture;
   auth.AuthClient? _authClient;
   String? _serviceAccountEmail;
+  final String? _endpoint;
 
   /// Gets the resolved AuthClient, caching it after first resolution.
   Future<auth.AuthClient> get _client async {
@@ -107,7 +123,13 @@ class IAMSigner implements CryptoSigner {
     final client = await _client;
 
     try {
-      final api = iam_credentials_v1.IAMCredentialsApi(client);
+      final api = _endpoint != null
+          ? iam_credentials_v1.IAMCredentialsApi(
+              client,
+              rootUrl: _endpoint.endsWith('/') ? _endpoint : '$_endpoint/',
+            )
+          : iam_credentials_v1.IAMCredentialsApi(client);
+
       final response = await api.projects.serviceAccounts.signBlob(
         iam_credentials_v1.SignBlobRequest(payload: base64Encode(buffer)),
         'projects/-/serviceAccounts/$serviceAccount',

@@ -153,26 +153,12 @@ extension AuthClientX on AuthClient {
     String endpoint,
     String email,
   ) async {
-    final url = Uri.parse(
-      '$endpoint/v1/projects/-/serviceAccounts/$email:signBlob',
+    final signer = CryptoSigner.fromAuthClient(
+      this,
+      serviceAccountEmail: email,
+      endpoint: endpoint,
     );
-
-    final body = {'payload': base64Encode(utf8.encode(data))};
-
-    final response = await post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to sign blob via IAM API. '
-        'Status: ${response.statusCode}, Body: ${response.body}',
-      );
-    }
-
-    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-    return responseData['signedBlob'] as String;
+    final signatureBytes = await signer.sign(utf8.encode(data));
+    return base64Encode(signatureBytes);
   }
 }
