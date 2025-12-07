@@ -19,6 +19,8 @@ class FirebaseAuthAdminException extends FirebaseAdminException
     String? customMessage;
     if (colonSeparator != -1) {
       customMessage = serverErrorCode.substring(colonSeparator + 1).trim();
+      // Treat empty string as null (matches Node.js behavior with || operator)
+      if (customMessage.isEmpty) customMessage = null;
       serverErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
     }
     // If not found, default to internal error.
