@@ -68,6 +68,8 @@ const authServerToClientCode = {
   'INVALID_CONTINUE_URI': AuthClientErrorCode.invalidContinueUri,
   // Dynamic link domain in provided ActionCodeSettings is not authorized.
   'INVALID_DYNAMIC_LINK_DOMAIN': AuthClientErrorCode.invalidDynamicLinkDomain,
+  // Hosting link domain in provided ActionCodeSettings is not owned by the current project.
+  'INVALID_HOSTING_LINK_DOMAIN': AuthClientErrorCode.invalidHostingLinkDomain,
   // uploadAccount provides an email that already exists.
   'DUPLICATE_EMAIL': AuthClientErrorCode.emailAlreadyExists,
   // uploadAccount provides a localId that already exists.
@@ -105,6 +107,8 @@ const authServerToClientCode = {
   'INVALID_PROJECT_ID': AuthClientErrorCode.invalidProjectId,
   // Invalid provider ID.
   'INVALID_PROVIDER_ID': AuthClientErrorCode.invalidProviderId,
+  // Invalid service account.
+  'INVALID_SERVICE_ACCOUNT': AuthClientErrorCode.invalidServiceAccount,
   // Invalid testing phone number.
   'INVALID_TESTING_PHONE_NUMBER': AuthClientErrorCode.invalidTestingPhoneNumber,
   // Invalid tenant type.
@@ -327,6 +331,12 @@ enum AuthClientErrorCode {
     message:
         'The hashing algorithm salt separator field must be a valid byte buffer.',
   ),
+  invalidHostingLinkDomain(
+    code: 'invalid-hosting-link-domain',
+    message:
+        'The provided hosting link domain is not configured or authorized '
+        'for the current project.',
+  ),
   invalidLastSignInTime(
     code: 'invalid-last-sign-in-time',
     message: 'The last sign-in time must be a valid UTC date string.',
@@ -393,6 +403,10 @@ enum AuthClientErrorCode {
     message:
         'The session cookie duration must be a valid number in milliseconds '
         'between 5 minutes and 2 weeks.',
+  ),
+  invalidServiceAccount(
+    code: 'invalid-service-account',
+    message: 'Invalid service account.',
   ),
   invalidTenantId(
     code: 'invalid-tenant-id',
