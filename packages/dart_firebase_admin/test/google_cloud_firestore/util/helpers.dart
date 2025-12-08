@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+
 import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:googleapis_auth/auth_io.dart';
@@ -6,6 +8,11 @@ import 'package:http/http.dart' show ClientException;
 import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
+
+/// Whether Google Application Default Credentials are available.
+/// Used to skip tests that require production Firebase access.
+final hasGoogleEnv =
+    Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
 
 /// Validates that required emulator environment variables are set.
 ///

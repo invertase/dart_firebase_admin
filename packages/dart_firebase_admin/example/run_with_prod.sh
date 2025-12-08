@@ -21,7 +21,7 @@
 
 # Service account credentials file path
 # See: Environment.googleApplicationCredentials
-export GOOGLE_APPLICATION_CREDENTIALS=serviceAccountKey.json
+export GOOGLE_APPLICATION_CREDENTIALS=service-account-key.json
 
 # (Optional) Explicit project ID - uncomment if needed
 # See: Environment.googleCloudProject

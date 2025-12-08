@@ -49,6 +49,10 @@ class AuthHttpClient {
     return 'projects/$projectId';
   }
 
+  String buildProjectConfigParent(String projectId) {
+    return '${buildParent(projectId)}/config';
+  }
+
   /// Builds the parent path for OAuth IDP config operations.
   String buildOAuthIdpParent(String projectId, String parentId) {
     return 'projects/$projectId/oauthIdpConfigs/$parentId';
@@ -418,7 +422,7 @@ class AuthHttpClient {
   // Project Config management methods
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2Config> getConfig() {
     return v2((client, projectId) async {
-      final name = buildParent(projectId);
+      final name = buildProjectConfigParent(projectId);
       final response = await client.projects.getConfig(name);
       return response;
     });
@@ -429,7 +433,7 @@ class AuthHttpClient {
     String updateMask,
   ) {
     return v2((client, projectId) async {
-      final name = buildParent(projectId);
+      final name = buildProjectConfigParent(projectId);
       final response = await client.projects.updateConfig(
         request,
         name,

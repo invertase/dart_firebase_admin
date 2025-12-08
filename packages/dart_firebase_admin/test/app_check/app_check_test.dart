@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dart_firebase_admin/app_check.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
@@ -11,9 +9,6 @@ import 'package:test/test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
-
-final hasGoogleEnv =
-    Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
 
 // Mock classes
 class MockAppCheckRequestHandler extends Mock
