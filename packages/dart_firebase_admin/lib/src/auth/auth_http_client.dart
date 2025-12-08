@@ -415,6 +415,30 @@ class AuthHttpClient {
     });
   }
 
+  // Project Config management methods
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Config> getConfig() {
+    return v2((client, projectId) async {
+      final name = buildParent(projectId);
+      final response = await client.projects.getConfig(name);
+      return response;
+    });
+  }
+
+  Future<auth2.GoogleCloudIdentitytoolkitAdminV2Config> updateConfig(
+    auth2.GoogleCloudIdentitytoolkitAdminV2Config request,
+    String updateMask,
+  ) {
+    return v2((client, projectId) async {
+      final name = buildParent(projectId);
+      final response = await client.projects.updateConfig(
+        request,
+        name,
+        updateMask: updateMask,
+      );
+      return response;
+    });
+  }
+
   Future<R> _run<R>(
     Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) {

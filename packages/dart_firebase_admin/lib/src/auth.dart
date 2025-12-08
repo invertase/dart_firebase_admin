@@ -31,6 +31,8 @@ part 'auth/auth_http_client.dart';
 part 'auth/auth_request_handler.dart';
 part 'auth/base_auth.dart';
 part 'auth/identifier.dart';
+part 'auth/project_config.dart';
+part 'auth/project_config_manager.dart';
 part 'auth/tenant.dart';
 part 'auth/tenant_manager.dart';
 part 'auth/token_generator.dart';

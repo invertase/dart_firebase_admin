@@ -722,8 +722,27 @@ abstract class _AbstractAuthRequestHandler {
 class AuthRequestHandler extends _AbstractAuthRequestHandler {
   AuthRequestHandler(super.app, {@internal super.httpClient});
 
-  // TODO getProjectConfig
-  // TODO updateProjectConfig
+  /// Gets the current project's config.
+  Future<Map<String, dynamic>> getProjectConfig() async {
+    final response = await _httpClient.getConfig();
+    return _projectConfigResponseToJson(response);
+  }
+
+  /// Updates the current project's config.
+  Future<Map<String, dynamic>> updateProjectConfig(
+    UpdateProjectConfigRequest options,
+  ) async {
+    final requestMap = options.buildServerRequest();
+    final request = auth2.GoogleCloudIdentitytoolkitAdminV2Config.fromJson(
+      requestMap,
+    );
+
+    // Generate update mask from request keys
+    final updateMask = requestMap.keys.join(',');
+
+    final response = await _httpClient.updateConfig(request, updateMask);
+    return _projectConfigResponseToJson(response);
+  }
 
   /// Looks up a tenant by tenant ID.
   Future<Map<String, dynamic>> _getTenant(String tenantId) async {
@@ -929,6 +948,38 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
     return {
       if (config.enableImprovedEmailPrivacy != null)
         'enableImprovedEmailPrivacy': config.enableImprovedEmailPrivacy,
+    };
+  }
+
+  Map<String, dynamic> _mobileLinksConfigToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2MobileLinksConfig config,
+  ) {
+    return {if (config.domain != null) 'domain': config.domain};
+  }
+
+  /// Helper method to convert project config response to JSON format.
+  Map<String, dynamic> _projectConfigResponseToJson(
+    auth2.GoogleCloudIdentitytoolkitAdminV2Config response,
+  ) {
+    return {
+      if (response.smsRegionConfig != null)
+        'smsRegionConfig': _smsRegionConfigToJson(response.smsRegionConfig!),
+      // Backend API returns "mfa" for project config
+      if (response.mfa != null) 'mfa': _mfaConfigToJson(response.mfa!),
+      if (response.recaptchaConfig != null)
+        'recaptchaConfig': _recaptchaConfigToJson(response.recaptchaConfig!),
+      if (response.passwordPolicyConfig != null)
+        'passwordPolicyConfig': _passwordPolicyConfigToJson(
+          response.passwordPolicyConfig!,
+        ),
+      if (response.emailPrivacyConfig != null)
+        'emailPrivacyConfig': _emailPrivacyConfigToJson(
+          response.emailPrivacyConfig!,
+        ),
+      if (response.mobileLinksConfig != null)
+        'mobileLinksConfig': _mobileLinksConfigToJson(
+          response.mobileLinksConfig!,
+        ),
     };
   }
 }

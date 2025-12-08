@@ -46,5 +46,14 @@ class Auth extends _BaseAuth implements FirebaseService {
     return _tenantManager ??= TenantManager._(app);
   }
 
-  // TODO projectConfigManager
+  ProjectConfigManager? _projectConfigManager;
+
+  /// The [ProjectConfigManager] instance associated with the current project.
+  ///
+  /// This provides methods to get and update the project configuration,
+  /// including SMS regions, multi-factor authentication, reCAPTCHA, password policy,
+  /// email privacy, and mobile links settings.
+  ProjectConfigManager get projectConfigManager {
+    return _projectConfigManager ??= ProjectConfigManager._(app);
+  }
 }
