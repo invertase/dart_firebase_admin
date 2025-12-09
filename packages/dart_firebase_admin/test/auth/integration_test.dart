@@ -194,6 +194,370 @@ void main() {
       expect(user2.uid, equals(user.uid));
     });
   });
+
+  group('Email Action Links Integration', () {
+    group('generatePasswordResetLink', () {
+      test(
+        'generates password reset link without ActionCodeSettings',
+        () async {
+          // Create a test user first
+          final user = await auth.createUser(
+            CreateRequest(email: 'reset-test@example.com'),
+          );
+
+          final link = await auth.generatePasswordResetLink(user.email!);
+
+          expect(link, isNotEmpty);
+          expect(link, contains('oobCode='));
+          expect(link, contains('mode=resetPassword'));
+        },
+      );
+
+      test('generates password reset link with ActionCodeSettings', () async {
+        // Create a test user first
+        final user = await auth.createUser(
+          CreateRequest(email: 'reset-settings-test@example.com'),
+        );
+
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'https://example.com/finishReset',
+          handleCodeInApp: false,
+        );
+
+        final link = await auth.generatePasswordResetLink(
+          user.email!,
+          actionCodeSettings: actionCodeSettings,
+        );
+
+        expect(link, isNotEmpty);
+        expect(link, contains('oobCode='));
+        expect(link, contains('mode=resetPassword'));
+        expect(link, contains('continueUrl='));
+      });
+
+      test(
+        'generates password reset link with ActionCodeSettings including dynamicLinkDomain',
+        () async {
+          // Create a test user first
+          final user = await auth.createUser(
+            CreateRequest(email: 'reset-dynamic-test@example.com'),
+          );
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com/finishReset',
+            handleCodeInApp: true,
+            // ignore: deprecated_member_use_from_same_package
+            dynamicLinkDomain: 'example.page.link',
+          );
+
+          final link = await auth.generatePasswordResetLink(
+            user.email!,
+            actionCodeSettings: actionCodeSettings,
+          );
+
+          expect(link, isNotEmpty);
+          expect(link, contains('oobCode='));
+          expect(link, contains('mode=resetPassword'));
+        },
+      );
+
+      test(
+        'generates password reset link with ActionCodeSettings including linkDomain (new property)',
+        () async {
+          // Create a test user first
+          final user = await auth.createUser(
+            CreateRequest(email: 'reset-linkdomain-test@example.com'),
+          );
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com/finishReset',
+            handleCodeInApp: true,
+            linkDomain: 'example.page.link', // Using new linkDomain property
+          );
+
+          final link = await auth.generatePasswordResetLink(
+            user.email!,
+            actionCodeSettings: actionCodeSettings,
+          );
+
+          expect(link, isNotEmpty);
+          expect(link, contains('oobCode='));
+          expect(link, contains('mode=resetPassword'));
+        },
+      );
+    });
+
+    group('generateEmailVerificationLink', () {
+      test(
+        'generates email verification link without ActionCodeSettings',
+        () async {
+          // Create a test user first
+          final user = await auth.createUser(
+            CreateRequest(email: 'verify-test@example.com'),
+          );
+
+          final link = await auth.generateEmailVerificationLink(user.email!);
+
+          expect(link, isNotEmpty);
+          expect(link, contains('oobCode='));
+          expect(link, contains('mode=verifyEmail'));
+        },
+      );
+
+      test(
+        'generates email verification link with ActionCodeSettings',
+        () async {
+          // Create a test user first
+          final user = await auth.createUser(
+            CreateRequest(email: 'verify-settings-test@example.com'),
+          );
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com/finishVerification',
+          );
+
+          final link = await auth.generateEmailVerificationLink(
+            user.email!,
+            actionCodeSettings: actionCodeSettings,
+          );
+
+          expect(link, isNotEmpty);
+          expect(link, contains('oobCode='));
+          expect(link, contains('mode=verifyEmail'));
+        },
+      );
+    });
+
+    group('generateSignInWithEmailLink', () {
+      test('generates sign-in with email link', () async {
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'https://example.com/finishSignIn',
+          handleCodeInApp: true,
+        );
+
+        final link = await auth.generateSignInWithEmailLink(
+          'signin-test@example.com',
+          actionCodeSettings,
+        );
+
+        expect(link, isNotEmpty);
+        expect(link, contains('oobCode='));
+        expect(link, contains('mode=signIn'));
+      });
+
+      test('validates ActionCodeSettings.url is a valid URI', () async {
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'not a valid url',
+          handleCodeInApp: true,
+        );
+
+        expect(
+          () => auth.generateSignInWithEmailLink(
+            'test@example.com',
+            actionCodeSettings,
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              AuthClientErrorCode.invalidContinueUri,
+            ),
+          ),
+        );
+      });
+
+      test(
+        'validates ActionCodeSettings.dynamicLinkDomain is not empty',
+        () async {
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com',
+            handleCodeInApp: true,
+            // ignore: deprecated_member_use_from_same_package
+            dynamicLinkDomain: '',
+          );
+
+          expect(
+            () => auth.generateSignInWithEmailLink(
+              'test@example.com',
+              actionCodeSettings,
+            ),
+            throwsA(
+              isA<FirebaseAuthAdminException>().having(
+                (e) => e.errorCode,
+                'errorCode',
+                AuthClientErrorCode.invalidDynamicLinkDomain,
+              ),
+            ),
+          );
+        },
+      );
+
+      test('validates ActionCodeSettings.linkDomain is not empty', () async {
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'https://example.com',
+          handleCodeInApp: true,
+          linkDomain: '',
+        );
+
+        expect(
+          () => auth.generateSignInWithEmailLink(
+            'test@example.com',
+            actionCodeSettings,
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              AuthClientErrorCode.invalidHostingLinkDomain,
+            ),
+          ),
+        );
+      });
+    });
+
+    group('generateVerifyAndChangeEmailLink', () {
+      test(
+        'generates verify and change email link without ActionCodeSettings',
+        () async {
+          final user = await auth.createUser(
+            CreateRequest(email: 'change-email-test@example.com'),
+          );
+
+          final link = await auth.generateVerifyAndChangeEmailLink(
+            user.email!,
+            'newemail@example.com',
+          );
+
+          expect(link, isNotEmpty);
+          expect(link, contains('oobCode='));
+          expect(link, contains('mode=verifyAndChangeEmail'));
+        },
+      );
+
+      test(
+        'generates verify and change email link with ActionCodeSettings',
+        () async {
+          final user = await auth.createUser(
+            CreateRequest(email: 'change-email-settings-test@example.com'),
+          );
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com/finishChangeEmail',
+          );
+
+          final link = await auth.generateVerifyAndChangeEmailLink(
+            user.email!,
+            'newemail2@example.com',
+            actionCodeSettings: actionCodeSettings,
+          );
+
+          expect(link, isNotEmpty);
+          expect(link, contains('oobCode='));
+          expect(link, contains('mode=verifyAndChangeEmail'));
+        },
+      );
+
+      test('generates verify and change email link with linkDomain', () async {
+        final user = await auth.createUser(
+          CreateRequest(email: 'change-email-linkdomain-test@example.com'),
+        );
+
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'https://example.com/finishChangeEmail',
+          linkDomain: 'example.page.link',
+        );
+
+        final link = await auth.generateVerifyAndChangeEmailLink(
+          user.email!,
+          'newemail3@example.com',
+          actionCodeSettings: actionCodeSettings,
+        );
+
+        expect(link, isNotEmpty);
+        expect(link, contains('oobCode='));
+        expect(link, contains('mode=verifyAndChangeEmail'));
+      });
+
+      test('validates ActionCodeSettings.url is a valid URI', () async {
+        final user = await auth.createUser(
+          CreateRequest(email: 'change-email-validation-test@example.com'),
+        );
+
+        final actionCodeSettings = ActionCodeSettings(url: 'not a valid url');
+
+        expect(
+          () => auth.generateVerifyAndChangeEmailLink(
+            user.email!,
+            'new@example.com',
+            actionCodeSettings: actionCodeSettings,
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              AuthClientErrorCode.invalidContinueUri,
+            ),
+          ),
+        );
+      });
+
+      test(
+        'validates ActionCodeSettings.dynamicLinkDomain is not empty',
+        () async {
+          final user = await auth.createUser(
+            CreateRequest(email: 'change-email-validation2-test@example.com'),
+          );
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com',
+            // ignore: deprecated_member_use_from_same_package
+            dynamicLinkDomain: '',
+          );
+
+          expect(
+            () => auth.generateVerifyAndChangeEmailLink(
+              user.email!,
+              'new@example.com',
+              actionCodeSettings: actionCodeSettings,
+            ),
+            throwsA(
+              isA<FirebaseAuthAdminException>().having(
+                (e) => e.errorCode,
+                'errorCode',
+                AuthClientErrorCode.invalidDynamicLinkDomain,
+              ),
+            ),
+          );
+        },
+      );
+
+      test('validates ActionCodeSettings.linkDomain is not empty', () async {
+        final user = await auth.createUser(
+          CreateRequest(email: 'change-email-validation3-test@example.com'),
+        );
+
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'https://example.com',
+          linkDomain: '',
+        );
+
+        expect(
+          () => auth.generateVerifyAndChangeEmailLink(
+            user.email!,
+            'new@example.com',
+            actionCodeSettings: actionCodeSettings,
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              AuthClientErrorCode.invalidHostingLinkDomain,
+            ),
+          ),
+        );
+      });
+    });
+  });
 }
 
 Future<void> cleanup(Auth auth) async {
