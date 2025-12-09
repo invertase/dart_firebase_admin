@@ -396,9 +396,3 @@ class UserMetadata {
     };
   }
 }
-
-/// Export [UserMetadata.toJson] for testing purposes.
-@internal
-extension UserMetadataToJson on UserMetadata {
-  Map<String, Object?> toJsonForTest() => toJson();
-}
