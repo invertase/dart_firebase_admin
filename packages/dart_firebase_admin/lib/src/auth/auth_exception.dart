@@ -68,8 +68,6 @@ const authServerToClientCode = {
   'INVALID_CONFIG_ID': AuthClientErrorCode.invalidProviderId,
   // ActionCodeSettings missing continue URL.
   'INVALID_CONTINUE_URI': AuthClientErrorCode.invalidContinueUri,
-  // Dynamic link domain in provided ActionCodeSettings is not authorized.
-  'INVALID_DYNAMIC_LINK_DOMAIN': AuthClientErrorCode.invalidDynamicLinkDomain,
   // Hosting link domain in provided ActionCodeSettings is not owned by the current project.
   'INVALID_HOSTING_LINK_DOMAIN': AuthClientErrorCode.invalidHostingLinkDomain,
   // uploadAccount provides an email that already exists.
@@ -269,12 +267,6 @@ enum AuthClientErrorCode {
   invalidDisplayName(
     code: 'invalid-display-name',
     message: 'The displayName field must be a valid string.',
-  ),
-  invalidDynamicLinkDomain(
-    code: 'invalid-dynamic-link-domain',
-    message:
-        'The provided dynamic link domain is not configured or authorized '
-        'for the current project.',
   ),
   invalidEmailVerified(
     code: 'invalid-email-verified',

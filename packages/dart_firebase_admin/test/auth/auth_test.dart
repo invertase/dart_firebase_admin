@@ -109,55 +109,6 @@ void main() {
           expect(link, equals('https://example.com/reset?oobCode=ABC123'));
         });
 
-        test('generates link with ActionCodeSettings', () async {
-          final clientMock = ClientMock();
-
-          when(() => clientMock.send(any())).thenAnswer((_) {
-            return Future.value(
-              StreamedResponse(
-                Stream.value(
-                  utf8.encode(
-                    jsonEncode({
-                      'oobLink': 'https://example.com/reset?oobCode=ABC123',
-                    }),
-                  ),
-                ),
-                200,
-                headers: {'content-type': 'application/json'},
-              ),
-            );
-          });
-
-          final app = createApp(
-            client: clientMock,
-            name: 'test-reset-link-with-settings',
-          );
-          final testAuth = Auth(app);
-
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://myapp.example.com/finishReset',
-            handleCodeInApp: true,
-            iOS: ActionCodeSettingsIos('com.example.myapp'),
-            android: ActionCodeSettingsAndroid(
-              packageName: 'com.example.myapp',
-              installApp: true,
-              minimumVersion: '12',
-            ),
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: 'myapp.page.link',
-          );
-
-          final link = await testAuth.generatePasswordResetLink(
-            'test@example.com',
-            actionCodeSettings: actionCodeSettings,
-          );
-
-          expect(link, equals('https://example.com/reset?oobCode=ABC123'));
-
-          // Verify that send was called (meaning ActionCodeSettings was processed)
-          verify(() => clientMock.send(any())).called(1);
-        });
-
         test('validates email is required', () async {
           expect(
             () => auth.generatePasswordResetLink(''),
@@ -182,31 +133,6 @@ void main() {
             ),
           );
         });
-
-        test(
-          'validates ActionCodeSettings.dynamicLinkDomain is not empty',
-          () async {
-            final actionCodeSettings = ActionCodeSettings(
-              url: 'https://example.com',
-              // ignore: deprecated_member_use_from_same_package
-              dynamicLinkDomain: '', // Empty string should fail
-            );
-
-            expect(
-              () => auth.generatePasswordResetLink(
-                'test@example.com',
-                actionCodeSettings: actionCodeSettings,
-              ),
-              throwsA(
-                isA<FirebaseAuthAdminException>().having(
-                  (e) => e.errorCode,
-                  'errorCode',
-                  AuthClientErrorCode.invalidDynamicLinkDomain,
-                ),
-              ),
-            );
-          },
-        );
 
         test('validates ActionCodeSettings.linkDomain is not empty', () async {
           final actionCodeSettings = ActionCodeSettings(
@@ -272,92 +198,6 @@ void main() {
       });
 
       group('generateEmailVerificationLink', () {
-        test('generates link with ActionCodeSettings', () async {
-          final clientMock = ClientMock();
-
-          when(() => clientMock.send(any())).thenAnswer((_) {
-            return Future.value(
-              StreamedResponse(
-                Stream.value(
-                  utf8.encode(
-                    jsonEncode({
-                      'oobLink': 'https://example.com/verify?oobCode=XYZ789',
-                    }),
-                  ),
-                ),
-                200,
-                headers: {'content-type': 'application/json'},
-              ),
-            );
-          });
-
-          final app = createApp(client: clientMock, name: 'test-verify-link');
-          final testAuth = Auth(app);
-
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://myapp.example.com/finishVerification',
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: 'myapp.page.link',
-          );
-
-          final link = await testAuth.generateEmailVerificationLink(
-            'test@example.com',
-            actionCodeSettings: actionCodeSettings,
-          );
-
-          expect(link, equals('https://example.com/verify?oobCode=XYZ789'));
-
-          // Verify that send was called (meaning ActionCodeSettings was processed)
-          verify(() => clientMock.send(any())).called(1);
-        });
-
-        test('generates link with all ActionCodeSettings properties', () async {
-          final clientMock = ClientMock();
-
-          when(() => clientMock.send(any())).thenAnswer((_) {
-            return Future.value(
-              StreamedResponse(
-                Stream.value(
-                  utf8.encode(
-                    jsonEncode({
-                      'oobLink': 'https://example.com/verify?oobCode=XYZ789',
-                    }),
-                  ),
-                ),
-                200,
-                headers: {'content-type': 'application/json'},
-              ),
-            );
-          });
-
-          final app = createApp(
-            client: clientMock,
-            name: 'test-verify-link-all-properties',
-          );
-          final testAuth = Auth(app);
-
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://myapp.example.com/finishVerification',
-            handleCodeInApp: true,
-            iOS: ActionCodeSettingsIos('com.example.myapp'),
-            android: ActionCodeSettingsAndroid(
-              packageName: 'com.example.myapp',
-              installApp: true,
-              minimumVersion: '12',
-            ),
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: 'myapp.page.link',
-          );
-
-          final link = await testAuth.generateEmailVerificationLink(
-            'test@example.com',
-            actionCodeSettings: actionCodeSettings,
-          );
-
-          expect(link, equals('https://example.com/verify?oobCode=XYZ789'));
-          verify(() => clientMock.send(any())).called(1);
-        });
-
         test('generates link with linkDomain (new property)', () async {
           final clientMock = ClientMock();
 
@@ -422,31 +262,6 @@ void main() {
           );
         });
 
-        test(
-          'validates ActionCodeSettings.dynamicLinkDomain is not empty',
-          () async {
-            final actionCodeSettings = ActionCodeSettings(
-              url: 'https://example.com',
-              // ignore: deprecated_member_use_from_same_package
-              dynamicLinkDomain: '',
-            );
-
-            expect(
-              () => auth.generateEmailVerificationLink(
-                'test@example.com',
-                actionCodeSettings: actionCodeSettings,
-              ),
-              throwsA(
-                isA<FirebaseAuthAdminException>().having(
-                  (e) => e.errorCode,
-                  'errorCode',
-                  AuthClientErrorCode.invalidDynamicLinkDomain,
-                ),
-              ),
-            );
-          },
-        );
-
         test('validates ActionCodeSettings.linkDomain is not empty', () async {
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://example.com',
@@ -495,53 +310,6 @@ void main() {
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishSignIn',
             handleCodeInApp: true,
-          );
-
-          final link = await testAuth.generateSignInWithEmailLink(
-            'test@example.com',
-            actionCodeSettings,
-          );
-
-          expect(link, equals('https://example.com/signin?oobCode=DEF456'));
-          verify(() => clientMock.send(any())).called(1);
-        });
-
-        test('generates link with all ActionCodeSettings properties', () async {
-          final clientMock = ClientMock();
-
-          when(() => clientMock.send(any())).thenAnswer((_) {
-            return Future.value(
-              StreamedResponse(
-                Stream.value(
-                  utf8.encode(
-                    jsonEncode({
-                      'oobLink': 'https://example.com/signin?oobCode=DEF456',
-                    }),
-                  ),
-                ),
-                200,
-                headers: {'content-type': 'application/json'},
-              ),
-            );
-          });
-
-          final app = createApp(
-            client: clientMock,
-            name: 'test-signin-link-all-properties',
-          );
-          final testAuth = Auth(app);
-
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://myapp.example.com/finishSignIn',
-            handleCodeInApp: true,
-            iOS: ActionCodeSettingsIos('com.example.myapp'),
-            android: ActionCodeSettingsAndroid(
-              packageName: 'com.example.myapp',
-              installApp: true,
-              minimumVersion: '12',
-            ),
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: 'myapp.page.link',
           );
 
           final link = await testAuth.generateSignInWithEmailLink(
@@ -635,58 +403,6 @@ void main() {
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishChangeEmail',
-          );
-
-          final link = await testAuth.generateVerifyAndChangeEmailLink(
-            'old@example.com',
-            'new@example.com',
-            actionCodeSettings: actionCodeSettings,
-          );
-
-          expect(
-            link,
-            equals('https://example.com/changeEmail?oobCode=GHI789'),
-          );
-          verify(() => clientMock.send(any())).called(1);
-        });
-
-        test('generates link with all ActionCodeSettings properties', () async {
-          final clientMock = ClientMock();
-
-          when(() => clientMock.send(any())).thenAnswer((_) {
-            return Future.value(
-              StreamedResponse(
-                Stream.value(
-                  utf8.encode(
-                    jsonEncode({
-                      'oobLink':
-                          'https://example.com/changeEmail?oobCode=GHI789',
-                    }),
-                  ),
-                ),
-                200,
-                headers: {'content-type': 'application/json'},
-              ),
-            );
-          });
-
-          final app = createApp(
-            client: clientMock,
-            name: 'test-change-email-link-all-properties',
-          );
-          final testAuth = Auth(app);
-
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://myapp.example.com/finishChangeEmail',
-            handleCodeInApp: true,
-            iOS: ActionCodeSettingsIos('com.example.myapp'),
-            android: ActionCodeSettingsAndroid(
-              packageName: 'com.example.myapp',
-              installApp: true,
-              minimumVersion: '12',
-            ),
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: 'myapp.page.link',
           );
 
           final link = await testAuth.generateVerifyAndChangeEmailLink(

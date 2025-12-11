@@ -247,7 +247,7 @@ void main() {
       expect(json['enrolledFactors'], isList);
       expect(json['enrolledFactors'], hasLength(1));
       final enrolledFactors = json['enrolledFactors']! as List;
-      expect(enrolledFactors[0]['uid'], 'mfa-1');
+      expect((enrolledFactors[0] as Map<String, dynamic>)['uid'], 'mfa-1');
     });
   });
 

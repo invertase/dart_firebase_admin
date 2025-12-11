@@ -36,7 +36,6 @@ class ActionCodeSettings {
     this.handleCodeInApp,
     this.iOS,
     this.android,
-    @Deprecated('Use linkDomain instead') this.dynamicLinkDomain,
     this.linkDomain,
   });
 
@@ -71,16 +70,6 @@ class ActionCodeSettings {
   /// upgrade the app.
   final ActionCodeSettingsAndroid? android;
 
-  /// Defines the dynamic link domain to use for the current link if it is to be
-  /// opened using Firebase Dynamic Links, as multiple dynamic link domains can be
-  /// configured per project. This field provides the ability to explicitly choose
-  /// configured per project. This fields provides the ability explicitly choose
-  /// one. If none is provided, the oldest domain is used by default.
-  ///
-  /// **DEPRECATED:** Use [linkDomain] instead.
-  @Deprecated('Use linkDomain instead')
-  final String? dynamicLinkDomain;
-
   /// Defines the link domain to use for the current link. This can be a custom
   /// domain configured in your Firebase project or a Firebase Dynamic Link domain.
   /// If none is provided, the oldest configured domain is used by default.
@@ -91,8 +80,6 @@ class _ActionCodeSettingsBuilder {
   _ActionCodeSettingsBuilder(ActionCodeSettings actionCodeSettings)
     : _continueUrl = actionCodeSettings.url,
       _canHandleCodeInApp = actionCodeSettings.handleCodeInApp ?? false,
-      // ignore: deprecated_member_use_from_same_package
-      _dynamicLinkDomain = actionCodeSettings.dynamicLinkDomain,
       _linkDomain = actionCodeSettings.linkDomain,
       _ibi = actionCodeSettings.iOS?.bundleId,
       _apn = actionCodeSettings.android?.packageName,
@@ -100,15 +87,6 @@ class _ActionCodeSettingsBuilder {
       _installApp = actionCodeSettings.android?.installApp ?? false {
     if (Uri.tryParse(actionCodeSettings.url) == null) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidContinueUri);
-    }
-
-    // Validate dynamicLinkDomain if provided
-    // ignore: deprecated_member_use_from_same_package
-    final dynamicLinkDomain = actionCodeSettings.dynamicLinkDomain;
-    if (dynamicLinkDomain != null && dynamicLinkDomain.isEmpty) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidDynamicLinkDomain,
-      );
     }
 
     // Validate linkDomain if provided
@@ -153,7 +131,6 @@ class _ActionCodeSettingsBuilder {
   final bool _installApp;
   final String? _ibi;
   final bool _canHandleCodeInApp;
-  final String? _dynamicLinkDomain;
   final String? _linkDomain;
 
   void buildRequest(
@@ -161,8 +138,6 @@ class _ActionCodeSettingsBuilder {
   ) {
     request.continueUrl = _continueUrl;
     request.canHandleCodeInApp = _canHandleCodeInApp;
-    // Set both fields - Google API supports both (dynamicLinkDomain is deprecated)
-    request.dynamicLinkDomain = _dynamicLinkDomain;
     request.linkDomain = _linkDomain;
     request.androidPackageName = _apn;
     request.androidMinimumVersion = _amv;

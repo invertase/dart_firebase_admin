@@ -236,32 +236,6 @@ void main() {
       });
 
       test(
-        'generates password reset link with ActionCodeSettings including dynamicLinkDomain',
-        () async {
-          // Create a test user first
-          final user = await auth.createUser(
-            CreateRequest(email: 'reset-dynamic-test@example.com'),
-          );
-
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://example.com/finishReset',
-            handleCodeInApp: true,
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: 'example.page.link',
-          );
-
-          final link = await auth.generatePasswordResetLink(
-            user.email!,
-            actionCodeSettings: actionCodeSettings,
-          );
-
-          expect(link, isNotEmpty);
-          expect(link, contains('oobCode='));
-          expect(link, contains('mode=resetPassword'));
-        },
-      );
-
-      test(
         'generates password reset link with ActionCodeSettings including linkDomain (new property)',
         () async {
           // Create a test user first
@@ -365,32 +339,6 @@ void main() {
           ),
         );
       });
-
-      test(
-        'validates ActionCodeSettings.dynamicLinkDomain is not empty',
-        () async {
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://example.com',
-            handleCodeInApp: true,
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: '',
-          );
-
-          expect(
-            () => auth.generateSignInWithEmailLink(
-              'test@example.com',
-              actionCodeSettings,
-            ),
-            throwsA(
-              isA<FirebaseAuthAdminException>().having(
-                (e) => e.errorCode,
-                'errorCode',
-                AuthClientErrorCode.invalidDynamicLinkDomain,
-              ),
-            ),
-          );
-        },
-      );
 
       test('validates ActionCodeSettings.linkDomain is not empty', () async {
         final actionCodeSettings = ActionCodeSettings(
@@ -500,36 +448,6 @@ void main() {
           ),
         );
       });
-
-      test(
-        'validates ActionCodeSettings.dynamicLinkDomain is not empty',
-        () async {
-          final user = await auth.createUser(
-            CreateRequest(email: 'change-email-validation2-test@example.com'),
-          );
-
-          final actionCodeSettings = ActionCodeSettings(
-            url: 'https://example.com',
-            // ignore: deprecated_member_use_from_same_package
-            dynamicLinkDomain: '',
-          );
-
-          expect(
-            () => auth.generateVerifyAndChangeEmailLink(
-              user.email!,
-              'new@example.com',
-              actionCodeSettings: actionCodeSettings,
-            ),
-            throwsA(
-              isA<FirebaseAuthAdminException>().having(
-                (e) => e.errorCode,
-                'errorCode',
-                AuthClientErrorCode.invalidDynamicLinkDomain,
-              ),
-            ),
-          );
-        },
-      );
 
       test('validates ActionCodeSettings.linkDomain is not empty', () async {
         final user = await auth.createUser(
