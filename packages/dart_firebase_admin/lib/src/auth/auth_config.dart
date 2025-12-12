@@ -903,16 +903,6 @@ class CreatePhoneMultiFactorInfoRequest extends CreateMultiFactorInfoRequest {
 
   /// The phone number associated with a phone second factor.
   final String phoneNumber;
-
-  @override
-  v1.GoogleCloudIdentitytoolkitV1MfaFactor
-  toGoogleCloudIdentitytoolkitV1MfaFactor() {
-    return v1.GoogleCloudIdentitytoolkitV1MfaFactor(
-      displayName: displayName,
-      // TODO param is optional, but phoneNumber is required.
-      phoneInfo: phoneNumber,
-    );
-  }
 }
 
 /// Interface representing base properties of a user-enrolled second factor for a
@@ -924,7 +914,15 @@ sealed class CreateMultiFactorInfoRequest {
   final String? displayName;
 
   v1.GoogleCloudIdentitytoolkitV1MfaFactor
-  toGoogleCloudIdentitytoolkitV1MfaFactor();
+  toGoogleCloudIdentitytoolkitV1MfaFactor() {
+    return switch (this) {
+      CreatePhoneMultiFactorInfoRequest(:final phoneNumber) =>
+        v1.GoogleCloudIdentitytoolkitV1MfaFactor(
+          displayName: displayName,
+          phoneInfo: phoneNumber,
+        ),
+    };
+  }
 }
 
 /// Interface representing a phone specific user-enrolled second factor
@@ -970,14 +968,13 @@ sealed class UpdateMultiFactorInfoRequest {
   final DateTime? enrollmentTime;
 
   v1.GoogleCloudIdentitytoolkitV1MfaEnrollment toMfaEnrollment() {
-    final that = this;
-    return switch (that) {
-      UpdatePhoneMultiFactorInfoRequest() =>
+    return switch (this) {
+      UpdatePhoneMultiFactorInfoRequest(:final phoneNumber) =>
         v1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
           mfaEnrollmentId: uid,
           displayName: displayName,
           // Required for all phone second factors.
-          phoneInfo: that.phoneNumber,
+          phoneInfo: phoneNumber,
           enrolledAt: enrollmentTime?.toUtc().toIso8601String(),
         ),
     };
