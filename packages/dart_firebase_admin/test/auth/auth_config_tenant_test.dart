@@ -348,4 +348,188 @@ void main() {
       expect(authFactorTypePhone, equals('phone'));
     });
   });
+
+  group('TotpMultiFactorProviderConfig', () {
+    test('creates config without adjacentIntervals', () {
+      final config = TotpMultiFactorProviderConfig();
+
+      expect(config.adjacentIntervals, isNull);
+    });
+
+    test('creates config with valid adjacentIntervals', () {
+      final config = TotpMultiFactorProviderConfig(adjacentIntervals: 5);
+
+      expect(config.adjacentIntervals, equals(5));
+    });
+
+    test('creates config with minimum adjacentIntervals (0)', () {
+      final config = TotpMultiFactorProviderConfig(adjacentIntervals: 0);
+
+      expect(config.adjacentIntervals, equals(0));
+    });
+
+    test('creates config with maximum adjacentIntervals (10)', () {
+      final config = TotpMultiFactorProviderConfig(adjacentIntervals: 10);
+
+      expect(config.adjacentIntervals, equals(10));
+    });
+
+    test('throws when adjacentIntervals is negative', () {
+      expect(
+        () => TotpMultiFactorProviderConfig(adjacentIntervals: -1),
+        throwsA(
+          isA<FirebaseAuthAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            AuthClientErrorCode.invalidArgument,
+          ),
+        ),
+      );
+    });
+
+    test('throws when adjacentIntervals exceeds maximum', () {
+      expect(
+        () => TotpMultiFactorProviderConfig(adjacentIntervals: 11),
+        throwsA(
+          isA<FirebaseAuthAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            AuthClientErrorCode.invalidArgument,
+          ),
+        ),
+      );
+    });
+
+    test('serializes to JSON with adjacentIntervals', () {
+      final config = TotpMultiFactorProviderConfig(adjacentIntervals: 3);
+
+      final json = config.toJson();
+
+      expect(json['adjacentIntervals'], equals(3));
+    });
+
+    test('serializes to JSON without adjacentIntervals', () {
+      final config = TotpMultiFactorProviderConfig();
+
+      final json = config.toJson();
+
+      expect(json.containsKey('adjacentIntervals'), isFalse);
+    });
+  });
+
+  group('MultiFactorProviderConfig', () {
+    test('creates config with required fields', () {
+      final config = MultiFactorProviderConfig(
+        state: MultiFactorConfigState.enabled,
+        totpProviderConfig: TotpMultiFactorProviderConfig(),
+      );
+
+      expect(config.state, equals(MultiFactorConfigState.enabled));
+      expect(config.totpProviderConfig, isNotNull);
+    });
+
+    test('throws when totpProviderConfig is not provided', () {
+      expect(
+        () => MultiFactorProviderConfig(state: MultiFactorConfigState.enabled),
+        throwsA(
+          isA<FirebaseAuthAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            AuthClientErrorCode.invalidConfig,
+          ),
+        ),
+      );
+    });
+
+    test('serializes to JSON correctly', () {
+      final config = MultiFactorProviderConfig(
+        state: MultiFactorConfigState.enabled,
+        totpProviderConfig: TotpMultiFactorProviderConfig(adjacentIntervals: 5),
+      );
+
+      final json = config.toJson();
+
+      expect(json['state'], equals('ENABLED'));
+      expect(json['totpProviderConfig'], isA<Map<String, dynamic>>());
+      expect(
+        (json['totpProviderConfig']
+            as Map<String, dynamic>)['adjacentIntervals'],
+        equals(5),
+      );
+    });
+
+    test('serializes to JSON with disabled state', () {
+      final config = MultiFactorProviderConfig(
+        state: MultiFactorConfigState.disabled,
+        totpProviderConfig: TotpMultiFactorProviderConfig(),
+      );
+
+      final json = config.toJson();
+
+      expect(json['state'], equals('DISABLED'));
+      expect(json['totpProviderConfig'], isA<Map<String, dynamic>>());
+    });
+  });
+
+  group('MultiFactorConfig', () {
+    test('creates config with providerConfigs', () {
+      final config = MultiFactorConfig(
+        state: MultiFactorConfigState.enabled,
+        providerConfigs: [
+          MultiFactorProviderConfig(
+            state: MultiFactorConfigState.enabled,
+            totpProviderConfig: TotpMultiFactorProviderConfig(
+              adjacentIntervals: 3,
+            ),
+          ),
+        ],
+      );
+
+      expect(config.providerConfigs, isNotNull);
+      expect(config.providerConfigs, hasLength(1));
+      expect(
+        config.providerConfigs![0].totpProviderConfig?.adjacentIntervals,
+        equals(3),
+      );
+    });
+
+    test('serializes to JSON with providerConfigs', () {
+      final config = MultiFactorConfig(
+        state: MultiFactorConfigState.enabled,
+        providerConfigs: [
+          MultiFactorProviderConfig(
+            state: MultiFactorConfigState.enabled,
+            totpProviderConfig: TotpMultiFactorProviderConfig(
+              adjacentIntervals: 7,
+            ),
+          ),
+        ],
+      );
+
+      final json = config.toJson();
+
+      expect(json['providerConfigs'], isList);
+      expect(json['providerConfigs'], hasLength(1));
+      final providerConfig =
+          (json['providerConfigs'] as List)[0] as Map<String, dynamic>;
+      expect(providerConfig['state'], equals('ENABLED'));
+      expect(
+        (providerConfig['totpProviderConfig']
+            as Map<String, dynamic>)['adjacentIntervals'],
+        equals(7),
+      );
+    });
+
+    test('serializes to JSON without providerConfigs', () {
+      final config = MultiFactorConfig(
+        state: MultiFactorConfigState.disabled,
+        factorIds: [authFactorTypePhone],
+      );
+
+      final json = config.toJson();
+
+      expect(json.containsKey('providerConfigs'), isFalse);
+      expect(json['factorIds'], isNotNull);
+    });
+  });
 }

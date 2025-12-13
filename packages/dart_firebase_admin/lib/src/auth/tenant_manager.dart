@@ -95,8 +95,8 @@ class TenantAwareAuth extends _BaseAuth {
   /// The session cookie JWT will have the same payload claims as the provided ID token.
   ///
   /// [idToken] - The Firebase ID token to exchange for a session cookie.
-  /// [expiresIn] - The session cookie custom expiration in milliseconds. The minimum allowed is
-  ///   5 minutes and the maxium allowed is 2 weeks.
+  /// [sessionCookieOptions] - The session cookie options which includes custom expiration
+  ///   in milliseconds. The minimum allowed is 5 minutes and the maxium allowed is 2 weeks.
   ///
   /// Returns a [Future] that resolves with the created session cookie.
   @override

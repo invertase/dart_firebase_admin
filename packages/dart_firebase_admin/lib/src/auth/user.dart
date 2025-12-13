@@ -303,10 +303,12 @@ abstract class MultiFactorInfo {
     // PhoneMultiFactorInfo, TotpMultiFactorInfo currently available.
     try {
       final phoneInfo = response.phoneInfo;
-      // TODO Support TotpMultiFactorInfo
+      final totpInfo = response.totpInfo;
 
       if (phoneInfo != null) {
         return PhoneMultiFactorInfo.fromResponse(response);
+      } else if (totpInfo != null) {
+        return TotpMultiFactorInfo.fromResponse(response);
       }
       // Ignore the other SDK unsupported MFA factors to prevent blocking developers using the current SDK.
     } catch (e) {
@@ -360,6 +362,34 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   @override
   Map<String, Object?> toJson() {
     return {...super.toJson(), 'phoneNumber': phoneNumber};
+  }
+}
+
+/// Represents TOTP (Time-based One-time Password) information for second factor authentication.
+/// This class is used with authenticator apps like Google Authenticator, Authy, etc.
+/// It serves as a marker class with no additional properties beyond what's inherited from MultiFactorInfo.
+class TotpInfo {
+  /// Creates a new [TotpInfo] instance.
+  TotpInfo();
+}
+
+/// Interface representing a TOTP specific user-enrolled second factor.
+class TotpMultiFactorInfo extends MultiFactorInfo {
+  /// Initializes the TotpMultiFactorInfo object using the server side response.
+  @internal
+  TotpMultiFactorInfo.fromResponse(super.response)
+    : totpInfo = TotpInfo(),
+      super.fromResponse();
+
+  /// The `TotpInfo` struct associated with a second factor.
+  final TotpInfo totpInfo;
+
+  @override
+  MultiFactorId get factorId => MultiFactorId.totp;
+
+  @override
+  Map<String, Object?> toJson() {
+    return {...super.toJson(), 'totpInfo': <String, dynamic>{}};
   }
 }
 

@@ -225,6 +225,162 @@ void main() {
       );
 
       test(
+        'updates multi-factor authentication with TOTP provider config',
+        () async {
+          final updatedConfig = await projectConfigManager.updateProjectConfig(
+            UpdateProjectConfigRequest(
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.enabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(updatedConfig, isA<ProjectConfig>());
+
+          if (updatedConfig.multiFactorConfig != null) {
+            expect(
+              updatedConfig.multiFactorConfig!.state,
+              equals(MultiFactorConfigState.enabled),
+            );
+            expect(updatedConfig.multiFactorConfig!.providerConfigs, isNotNull);
+            if (updatedConfig.multiFactorConfig!.providerConfigs != null) {
+              expect(
+                updatedConfig.multiFactorConfig!.providerConfigs!.length,
+                equals(1),
+              );
+              expect(
+                updatedConfig.multiFactorConfig!.providerConfigs![0].state,
+                equals(MultiFactorConfigState.enabled),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
+
+      test(
+        'updates TOTP provider config with adjacentIntervals',
+        () async {
+          final updatedConfig = await projectConfigManager.updateProjectConfig(
+            UpdateProjectConfigRequest(
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.enabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(
+                      adjacentIntervals: 5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(updatedConfig, isA<ProjectConfig>());
+
+          if (updatedConfig.multiFactorConfig != null) {
+            final providerConfigs =
+                updatedConfig.multiFactorConfig!.providerConfigs;
+            if (providerConfigs != null && providerConfigs.isNotEmpty) {
+              expect(
+                providerConfigs[0].totpProviderConfig?.adjacentIntervals,
+                equals(5),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
+
+      test(
+        'updates MFA with both SMS and TOTP enabled',
+        () async {
+          final updatedConfig = await projectConfigManager.updateProjectConfig(
+            UpdateProjectConfigRequest(
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                factorIds: ['phone'],
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.enabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(
+                      adjacentIntervals: 3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(updatedConfig, isA<ProjectConfig>());
+
+          if (updatedConfig.multiFactorConfig != null) {
+            expect(
+              updatedConfig.multiFactorConfig!.state,
+              equals(MultiFactorConfigState.enabled),
+            );
+            expect(
+              updatedConfig.multiFactorConfig!.factorIds,
+              contains('phone'),
+            );
+            final providerConfigs =
+                updatedConfig.multiFactorConfig!.providerConfigs;
+            if (providerConfigs != null && providerConfigs.isNotEmpty) {
+              expect(
+                providerConfigs[0].state,
+                equals(MultiFactorConfigState.enabled),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
+
+      test(
+        'updates TOTP provider config with disabled state',
+        () async {
+          final updatedConfig = await projectConfigManager.updateProjectConfig(
+            UpdateProjectConfigRequest(
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.disabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(updatedConfig, isA<ProjectConfig>());
+
+          if (updatedConfig.multiFactorConfig != null) {
+            final providerConfigs =
+                updatedConfig.multiFactorConfig!.providerConfigs;
+            if (providerConfigs != null && providerConfigs.isNotEmpty) {
+              expect(
+                providerConfigs[0].state,
+                equals(MultiFactorConfigState.disabled),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
+
+      test(
         'updates reCAPTCHA configuration',
         () async {
           final updatedConfig = await projectConfigManager.updateProjectConfig(

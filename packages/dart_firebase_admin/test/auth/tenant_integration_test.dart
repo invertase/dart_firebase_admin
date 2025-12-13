@@ -90,6 +90,93 @@ void main() {
         // may not be supported by the emulator
       });
 
+      test(
+        'creates tenant with TOTP provider config',
+        () async {
+          final tenant = await tenantManager.createTenant(
+            CreateTenantRequest(
+              displayName: 'TOTP Tenant',
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.enabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(
+                      adjacentIntervals: 5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(tenant.tenantId, isNotEmpty);
+          expect(tenant.displayName, equals('TOTP Tenant'));
+
+          if (tenant.multiFactorConfig != null) {
+            expect(
+              tenant.multiFactorConfig!.state,
+              equals(MultiFactorConfigState.enabled),
+            );
+            final providerConfigs = tenant.multiFactorConfig!.providerConfigs;
+            if (providerConfigs != null && providerConfigs.isNotEmpty) {
+              expect(
+                providerConfigs[0].state,
+                equals(MultiFactorConfigState.enabled),
+              );
+              expect(
+                providerConfigs[0].totpProviderConfig?.adjacentIntervals,
+                equals(5),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
+
+      test(
+        'creates tenant with both SMS and TOTP MFA',
+        () async {
+          final tenant = await tenantManager.createTenant(
+            CreateTenantRequest(
+              displayName: 'Combined MFA Tenant',
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                factorIds: ['phone'],
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.enabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(
+                      adjacentIntervals: 3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(tenant.tenantId, isNotEmpty);
+
+          if (tenant.multiFactorConfig != null) {
+            expect(
+              tenant.multiFactorConfig!.state,
+              equals(MultiFactorConfigState.enabled),
+            );
+            expect(tenant.multiFactorConfig!.factorIds, contains('phone'));
+            final providerConfigs = tenant.multiFactorConfig!.providerConfigs;
+            if (providerConfigs != null && providerConfigs.isNotEmpty) {
+              expect(
+                providerConfigs[0].totpProviderConfig?.adjacentIntervals,
+                equals(3),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
+
       test('throws on invalid display name', () async {
         expect(
           () =>
@@ -200,6 +287,97 @@ void main() {
         expect(updatedTenant.emailSignInConfig!.enabled, isTrue);
         expect(updatedTenant.emailSignInConfig!.passwordRequired, isTrue);
       });
+
+      test(
+        'updates tenant with TOTP provider config',
+        () async {
+          final tenant = await tenantManager.createTenant(
+            CreateTenantRequest(displayName: 'TOTP Update Test'),
+          );
+
+          final updatedTenant = await tenantManager.updateTenant(
+            tenant.tenantId,
+            UpdateTenantRequest(
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.enabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(
+                      adjacentIntervals: 7,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(updatedTenant.tenantId, equals(tenant.tenantId));
+
+          if (updatedTenant.multiFactorConfig != null) {
+            final providerConfigs =
+                updatedTenant.multiFactorConfig!.providerConfigs;
+            if (providerConfigs != null && providerConfigs.isNotEmpty) {
+              expect(
+                providerConfigs[0].totpProviderConfig?.adjacentIntervals,
+                equals(7),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
+
+      test(
+        'updates tenant with combined SMS and TOTP MFA',
+        () async {
+          final tenant = await tenantManager.createTenant(
+            CreateTenantRequest(displayName: 'Combined MFA Update Test'),
+          );
+
+          final updatedTenant = await tenantManager.updateTenant(
+            tenant.tenantId,
+            UpdateTenantRequest(
+              multiFactorConfig: MultiFactorConfig(
+                state: MultiFactorConfigState.enabled,
+                factorIds: ['phone'],
+                providerConfigs: [
+                  MultiFactorProviderConfig(
+                    state: MultiFactorConfigState.enabled,
+                    totpProviderConfig: TotpMultiFactorProviderConfig(
+                      adjacentIntervals: 5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          expect(updatedTenant.tenantId, equals(tenant.tenantId));
+
+          if (updatedTenant.multiFactorConfig != null) {
+            expect(
+              updatedTenant.multiFactorConfig!.state,
+              equals(MultiFactorConfigState.enabled),
+            );
+            expect(
+              updatedTenant.multiFactorConfig!.factorIds,
+              contains('phone'),
+            );
+            final providerConfigs =
+                updatedTenant.multiFactorConfig!.providerConfigs;
+            if (providerConfigs != null && providerConfigs.isNotEmpty) {
+              expect(
+                providerConfigs[0].totpProviderConfig?.adjacentIntervals,
+                equals(5),
+              );
+            }
+          }
+        },
+        skip:
+            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
+      );
 
       test('throws on invalid tenant ID', () async {
         // Note: Firebase Auth Emulator may not properly validate tenant IDs.

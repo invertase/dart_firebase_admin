@@ -111,26 +111,93 @@ enum MultiFactorConfigState {
   }
 }
 
+/// Interface representing configuration settings for TOTP second factor auth.
+class TotpMultiFactorProviderConfig {
+  /// Creates a new [TotpMultiFactorProviderConfig] instance.
+  TotpMultiFactorProviderConfig({this.adjacentIntervals}) {
+    final intervals = adjacentIntervals;
+    if (intervals != null && (intervals < 0 || intervals > 10)) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidArgument,
+        '"adjacentIntervals" must be a valid number between 0 and 10 (both inclusive).',
+      );
+    }
+  }
+
+  /// The allowed number of adjacent intervals that will be used for verification
+  /// to compensate for clock skew. Valid range is 0-10 (inclusive).
+  final int? adjacentIntervals;
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (adjacentIntervals != null) 'adjacentIntervals': adjacentIntervals,
+    };
+  }
+}
+
+/// Interface representing a multi-factor auth provider configuration.
+/// This interface is used for second factor auth providers other than SMS.
+/// Currently, only TOTP is supported.
+class MultiFactorProviderConfig {
+  /// Creates a new [MultiFactorProviderConfig] instance.
+  MultiFactorProviderConfig({required this.state, this.totpProviderConfig}) {
+    // Since TOTP is the only provider config available right now, it must be defined
+    if (totpProviderConfig == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"totpProviderConfig" must be defined.',
+      );
+    }
+  }
+
+  /// Indicates whether this multi-factor provider is enabled or disabled.
+  final MultiFactorConfigState state;
+
+  /// TOTP multi-factor provider config.
+  final TotpMultiFactorProviderConfig? totpProviderConfig;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'state': state.value,
+      if (totpProviderConfig != null)
+        'totpProviderConfig': totpProviderConfig!.toJson(),
+    };
+  }
+}
+
 /// Interface representing a multi-factor configuration.
 class MultiFactorConfig {
-  MultiFactorConfig({required this.state, this.factorIds});
+  MultiFactorConfig({
+    required this.state,
+    this.factorIds,
+    this.providerConfigs,
+  });
 
   /// The multi-factor config state.
   final MultiFactorConfigState state;
 
   /// The list of identifiers for enabled second factors.
-  /// Currently only 'phone' is supported.
+  /// Currently 'phone' and 'totp' are supported.
   final List<AuthFactorType>? factorIds;
+
+  /// The configuration for multi-factor auth providers.
+  final List<MultiFactorProviderConfig>? providerConfigs;
 
   Map<String, dynamic> toJson() => {
     'state': state.value,
     if (factorIds != null) 'factorIds': factorIds,
+    if (providerConfigs != null)
+      'providerConfigs': providerConfigs!.map((e) => e.toJson()).toList(),
   };
 }
 
 /// Internal class for multi-factor authentication configuration.
 class _MultiFactorAuthConfig implements MultiFactorConfig {
-  _MultiFactorAuthConfig({required this.state, this.factorIds});
+  _MultiFactorAuthConfig({
+    required this.state,
+    this.factorIds,
+    this.providerConfigs,
+  });
 
   factory _MultiFactorAuthConfig.fromServerResponse(
     Map<String, dynamic> response,
@@ -155,9 +222,37 @@ class _MultiFactorAuthConfig implements MultiFactorConfig {
       }
     }
 
+    // Parse provider configs
+    final providerConfigsData = response['providerConfigs'] as List<dynamic>?;
+    final providerConfigs = <MultiFactorProviderConfig>[];
+
+    if (providerConfigsData != null) {
+      for (final configData in providerConfigsData) {
+        if (configData is! Map<String, dynamic>) continue;
+
+        final configState = configData['state'] as String?;
+        if (configState == null) continue;
+
+        final totpConfigData =
+            configData['totpProviderConfig'] as Map<String, dynamic>?;
+        if (totpConfigData != null) {
+          final adjacentIntervals = totpConfigData['adjacentIntervals'] as int?;
+          providerConfigs.add(
+            MultiFactorProviderConfig(
+              state: MultiFactorConfigState.fromString(configState),
+              totpProviderConfig: TotpMultiFactorProviderConfig(
+                adjacentIntervals: adjacentIntervals,
+              ),
+            ),
+          );
+        }
+      }
+    }
+
     return _MultiFactorAuthConfig(
       state: MultiFactorConfigState.fromString(stateValue as String),
       factorIds: factorIds.isEmpty ? null : factorIds,
+      providerConfigs: providerConfigs.isEmpty ? null : providerConfigs,
     );
   }
 
@@ -177,6 +272,26 @@ class _MultiFactorAuthConfig implements MultiFactorConfig {
       request['enabledProviders'] = enabledProviders;
     }
 
+    // Build provider configs
+    if (options.providerConfigs != null) {
+      final providerConfigsData = <Map<String, dynamic>>[];
+      for (final config in options.providerConfigs!) {
+        final configData = <String, dynamic>{'state': config.state.value};
+
+        if (config.totpProviderConfig != null) {
+          final totpData = <String, dynamic>{};
+          if (config.totpProviderConfig!.adjacentIntervals != null) {
+            totpData['adjacentIntervals'] =
+                config.totpProviderConfig!.adjacentIntervals;
+          }
+          configData['totpProviderConfig'] = totpData;
+        }
+
+        providerConfigsData.add(configData);
+      }
+      request['providerConfigs'] = providerConfigsData;
+    }
+
     return request;
   }
 
@@ -187,9 +302,14 @@ class _MultiFactorAuthConfig implements MultiFactorConfig {
   final List<AuthFactorType>? factorIds;
 
   @override
+  final List<MultiFactorProviderConfig>? providerConfigs;
+
+  @override
   Map<String, dynamic> toJson() => {
     'state': state.value,
     if (factorIds != null) 'factorIds': factorIds,
+    if (providerConfigs != null)
+      'providerConfigs': providerConfigs!.map((e) => e.toJson()).toList(),
   };
 }
 

@@ -190,6 +190,146 @@ void main() {
     });
   });
 
+  group('TotpInfo', () {
+    test('can be instantiated', () {
+      final totpInfo = TotpInfo();
+      expect(totpInfo, isNotNull);
+      expect(totpInfo, isA<TotpInfo>());
+    });
+  });
+
+  group('TotpMultiFactorInfo', () {
+    test('fromResponse with all fields', () {
+      final mfaInfo = TotpMultiFactorInfo.fromResponse(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          mfaEnrollmentId: 'totp-123',
+          displayName: 'My Authenticator',
+          totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+          enrolledAt: '1234567890000',
+        ),
+      );
+
+      expect(mfaInfo.uid, 'totp-123');
+      expect(mfaInfo.displayName, 'My Authenticator');
+      expect(mfaInfo.totpInfo, isA<TotpInfo>());
+      expect(mfaInfo.factorId, MultiFactorId.totp);
+      expect(
+        mfaInfo.enrollmentTime,
+        DateTime.fromMillisecondsSinceEpoch(1234567890000),
+      );
+    });
+
+    test('fromResponse with minimal fields', () {
+      final mfaInfo = TotpMultiFactorInfo.fromResponse(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          mfaEnrollmentId: 'totp-456',
+          totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+          enrolledAt: '1000000000000',
+        ),
+      );
+
+      expect(mfaInfo.uid, 'totp-456');
+      expect(mfaInfo.displayName, isNull);
+      expect(mfaInfo.totpInfo, isNotNull);
+      expect(mfaInfo.factorId, MultiFactorId.totp);
+    });
+
+    test('fromResponse throws when mfaEnrollmentId is missing', () {
+      expect(
+        () => TotpMultiFactorInfo.fromResponse(
+          auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+            totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+          ),
+        ),
+        throwsA(isA<FirebaseAuthAdminException>()),
+      );
+    });
+
+    test('toJson includes totpInfo', () {
+      final mfaInfo = TotpMultiFactorInfo.fromResponse(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          mfaEnrollmentId: 'totp-789',
+          displayName: 'Work Authenticator',
+          totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+          enrolledAt: '2000000000000',
+        ),
+      );
+
+      final json = mfaInfo.toJson();
+      expect(json['uid'], 'totp-789');
+      expect(json['displayName'], 'Work Authenticator');
+      expect(json['totpInfo'], isA<Map<String, dynamic>>());
+      expect(json['factorId'], 'totp');
+      expect(json['enrollmentTime'], isNotNull);
+    });
+  });
+
+  group('MultiFactorInfo.initMultiFactorInfo', () {
+    test('returns PhoneMultiFactorInfo when phoneInfo is present', () {
+      final mfaInfo = MultiFactorInfo.initMultiFactorInfo(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          mfaEnrollmentId: 'phone-1',
+          phoneInfo: '+15555555555',
+          enrolledAt: '1000',
+        ),
+      );
+
+      expect(mfaInfo, isA<PhoneMultiFactorInfo>());
+      expect(mfaInfo?.factorId, MultiFactorId.phone);
+    });
+
+    test('returns TotpMultiFactorInfo when totpInfo is present', () {
+      final mfaInfo = MultiFactorInfo.initMultiFactorInfo(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          mfaEnrollmentId: 'totp-1',
+          totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+          enrolledAt: '1000',
+        ),
+      );
+
+      expect(mfaInfo, isA<TotpMultiFactorInfo>());
+      expect(mfaInfo?.factorId, MultiFactorId.totp);
+    });
+
+    test('prefers phoneInfo over totpInfo when both are present', () {
+      final mfaInfo = MultiFactorInfo.initMultiFactorInfo(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          mfaEnrollmentId: 'both-1',
+          phoneInfo: '+15555555555',
+          totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+          enrolledAt: '1000',
+        ),
+      );
+
+      expect(mfaInfo, isA<PhoneMultiFactorInfo>());
+      expect(mfaInfo?.factorId, MultiFactorId.phone);
+    });
+
+    test('returns null when neither phoneInfo nor totpInfo is present', () {
+      final mfaInfo = MultiFactorInfo.initMultiFactorInfo(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          mfaEnrollmentId: 'unknown-1',
+          enrolledAt: '1000',
+        ),
+      );
+
+      expect(mfaInfo, isNull);
+    });
+
+    test('returns null and ignores errors', () {
+      // Test that errors are caught and null is returned
+      final mfaInfo = MultiFactorInfo.initMultiFactorInfo(
+        auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+          // Missing mfaEnrollmentId will cause error
+          phoneInfo: '+15555555555',
+          enrolledAt: '1000',
+        ),
+      );
+
+      expect(mfaInfo, isNull);
+    });
+  });
+
   group('MultiFactorSettings', () {
     test('fromResponse with enrolled factors', () {
       final settings = MultiFactorSettings.fromResponse(
@@ -248,6 +388,85 @@ void main() {
       expect(json['enrolledFactors'], hasLength(1));
       final enrolledFactors = json['enrolledFactors']! as List;
       expect((enrolledFactors[0] as Map<String, dynamic>)['uid'], 'mfa-1');
+    });
+
+    test('fromResponse with TOTP enrolled factors', () {
+      final settings = MultiFactorSettings.fromResponse(
+        auth1.GoogleCloudIdentitytoolkitV1UserInfo(
+          mfaInfo: [
+            auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+              mfaEnrollmentId: 'totp-factor-1',
+              totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+              displayName: 'Google Authenticator',
+              enrolledAt: '1000',
+            ),
+            auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+              mfaEnrollmentId: 'totp-factor-2',
+              totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+              displayName: 'Authy',
+              enrolledAt: '2000',
+            ),
+          ],
+        ),
+      );
+
+      expect(settings.enrolledFactors, hasLength(2));
+      expect(settings.enrolledFactors[0], isA<TotpMultiFactorInfo>());
+      expect(settings.enrolledFactors[0].uid, 'totp-factor-1');
+      expect(settings.enrolledFactors[1], isA<TotpMultiFactorInfo>());
+      expect(settings.enrolledFactors[1].uid, 'totp-factor-2');
+    });
+
+    test('fromResponse with mixed phone and TOTP factors', () {
+      final settings = MultiFactorSettings.fromResponse(
+        auth1.GoogleCloudIdentitytoolkitV1UserInfo(
+          mfaInfo: [
+            auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+              mfaEnrollmentId: 'phone-1',
+              phoneInfo: '+15555555555',
+              enrolledAt: '1000',
+            ),
+            auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+              mfaEnrollmentId: 'totp-1',
+              totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+              enrolledAt: '2000',
+            ),
+            auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+              mfaEnrollmentId: 'phone-2',
+              phoneInfo: '+16666666666',
+              enrolledAt: '3000',
+            ),
+          ],
+        ),
+      );
+
+      expect(settings.enrolledFactors, hasLength(3));
+      expect(settings.enrolledFactors[0], isA<PhoneMultiFactorInfo>());
+      expect(settings.enrolledFactors[1], isA<TotpMultiFactorInfo>());
+      expect(settings.enrolledFactors[2], isA<PhoneMultiFactorInfo>());
+    });
+
+    test('toJson with TOTP factors', () {
+      final settings = MultiFactorSettings.fromResponse(
+        auth1.GoogleCloudIdentitytoolkitV1UserInfo(
+          mfaInfo: [
+            auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
+              mfaEnrollmentId: 'totp-test',
+              totpInfo: auth1.GoogleCloudIdentitytoolkitV1TotpInfo(),
+              displayName: 'My App',
+              enrolledAt: '9999',
+            ),
+          ],
+        ),
+      );
+
+      final json = settings.toJson();
+      final enrolledFactors = json['enrolledFactors']! as List;
+      final totpFactor = enrolledFactors[0] as Map<String, dynamic>;
+      expect(totpFactor['uid'], 'totp-test');
+      expect(totpFactor['factorId'], 'totp');
+      expect(totpFactor['displayName'], 'My App');
+      expect(totpFactor['totpInfo'], isA<Map<String, dynamic>>());
     });
   });
 
