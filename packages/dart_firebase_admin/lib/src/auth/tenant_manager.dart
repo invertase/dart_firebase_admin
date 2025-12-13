@@ -101,13 +101,13 @@ class TenantAwareAuth extends _BaseAuth {
   /// Returns a [Future] that resolves with the created session cookie.
   @override
   Future<String> createSessionCookie(
-    String idToken, {
-    required int expiresIn,
-  }) async {
+    String idToken,
+    SessionCookieOptions sessionCookieOptions,
+  ) async {
     // Verify the ID token and check tenant ID before creating session cookie.
     await verifyIdToken(idToken);
 
-    return super.createSessionCookie(idToken, expiresIn: expiresIn);
+    return super.createSessionCookie(idToken, sessionCookieOptions);
   }
 
   /// Verifies a Firebase session cookie. Returns a [Future] with the session cookie's decoded claims

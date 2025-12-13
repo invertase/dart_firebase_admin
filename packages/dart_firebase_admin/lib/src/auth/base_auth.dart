@@ -398,12 +398,12 @@ abstract class _BaseAuth {
   /// for code samples and detailed documentation.
   ///
   Future<String> createSessionCookie(
-    String idToken, {
-    required int expiresIn,
-  }) async {
+    String idToken,
+    SessionCookieOptions sessionCookieOptions,
+  ) async {
     return _authRequestHandler.createSessionCookie(
       idToken,
-      expiresIn: expiresIn,
+      expiresIn: sessionCookieOptions.expiresIn,
     );
   }
 
@@ -853,4 +853,19 @@ class UserImportResult {
   /// An array of errors corresponding to the provided users to import. The
   /// length of this array is equal to [failureCount].
   final List<FirebaseArrayIndexError> errors;
+}
+
+/// Interface representing the session cookie options needed for the
+/// [_BaseAuth.createSessionCookie] method.
+class SessionCookieOptions {
+  /// Creates a new [SessionCookieOptions] with the specified expiration time.
+  ///
+  /// The [expiresIn] is the session cookie custom expiration in milliseconds.
+  /// The minimum allowed is 5 minutes (300000 ms) and the maximum allowed is 2 weeks (1209600000 ms).
+  const SessionCookieOptions({required this.expiresIn});
+
+  /// The session cookie custom expiration in milliseconds.
+  ///
+  /// The minimum allowed is 5 minutes (300000 ms) and the maximum allowed is 2 weeks (1209600000 ms).
+  final int expiresIn;
 }
