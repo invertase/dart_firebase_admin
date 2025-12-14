@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
+import 'util/helpers.dart';
 
 // Mock classes
 class MockAppCheckRequestHandler extends Mock
@@ -327,7 +328,8 @@ void main() {
       late AppCheck realAppCheck;
 
       setUp(() {
-        final sdk = createApp();
+        if (!hasGoogleEnv) return;
+        final sdk = createProductionApp();
         realAppCheck = AppCheck(sdk);
       });
 

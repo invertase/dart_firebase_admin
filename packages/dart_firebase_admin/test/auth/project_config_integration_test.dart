@@ -1,82 +1,36 @@
+// Firebase ProjectConfig Integration Tests - Emulator Safe
+//
+// These tests work with Firebase Auth Emulator and test basic ProjectConfig operations.
+// For production-only tests (MFA, TOTP, reCAPTCHA), see project_config_integration_prod_test.dart
+//
+// Run with:
+//   FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 dart test test/auth/project_config_integration_test.dart
+
 import 'package:dart_firebase_admin/auth.dart';
-import 'package:dart_firebase_admin/src/app.dart';
 import 'package:test/test.dart';
 
-import '../google_cloud_firestore/util/helpers.dart';
+import 'util/helpers.dart';
 
 void main() {
   late Auth auth;
   late ProjectConfigManager projectConfigManager;
-  ProjectConfig? originalConfig;
 
   setUp(() {
-    final app = createApp();
-    auth = Auth(app);
+    auth = createAuthForTest();
     projectConfigManager = auth.projectConfigManager;
   });
 
   group('ProjectConfigManager', () {
-    // Save original config before running update tests
-    setUpAll(() async {
-      if (hasGoogleEnv) {
-        final app = FirebaseApp.initializeApp(
-          name: 'save-config-app',
-          options: const AppOptions(projectId: projectId),
-        );
-        final testAuth = Auth(app);
-        try {
-          originalConfig = await testAuth.projectConfigManager
-              .getProjectConfig();
-          // ignore: avoid_print
-          print('Original config saved for restoration after tests');
-        } finally {
-          await app.close();
-        }
-      }
-    });
-
-    // Restore original config after all tests complete
-    tearDownAll(() async {
-      if (hasGoogleEnv && originalConfig != null) {
-        final app = FirebaseApp.initializeApp(
-          name: 'restore-config-app',
-          options: const AppOptions(projectId: projectId),
-        );
-        final testAuth = Auth(app);
-        try {
-          await testAuth.projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              smsRegionConfig: originalConfig!.smsRegionConfig,
-              multiFactorConfig: originalConfig!.multiFactorConfig,
-              recaptchaConfig: originalConfig!.recaptchaConfig,
-              passwordPolicyConfig: originalConfig!.passwordPolicyConfig,
-              emailPrivacyConfig: originalConfig!.emailPrivacyConfig,
-              mobileLinksConfig: originalConfig!.mobileLinksConfig,
-            ),
-          );
-          // ignore: avoid_print
-          print('Original config restored successfully');
-        } finally {
-          await app.close();
-        }
-      }
-    });
     group('getProjectConfig', () {
-      test(
-        'retrieves current project configuration',
-        () async {
-          final config = await projectConfigManager.getProjectConfig();
+      test('retrieves current project configuration', () async {
+        final config = await projectConfigManager.getProjectConfig();
 
-          // ProjectConfig should always be returned, even if fields are null
-          expect(config, isA<ProjectConfig>());
+        // ProjectConfig should always be returned, even if fields are null
+        expect(config, isA<ProjectConfig>());
 
-          // Depending on project setup, some fields may or may not be configured
-          // We just verify the response structure is correct
-        },
-        // skip: hasGoogleEnv
-        //     ? false
-        //     : 'Requires GOOGLE_APPLICATION_CREDENTIALS - ProjectConfig not supported in Auth emulator',
-      );
+        // Depending on project setup, some fields may or may not be configured
+        // We just verify the response structure is correct
+      });
 
       test('returns config with proper types for all fields', () async {
         final config = await projectConfigManager.getProjectConfig();
@@ -199,213 +153,6 @@ void main() {
         }
       });
 
-      test(
-        'updates multi-factor authentication configuration',
-        () async {
-          final updatedConfig = await projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              multiFactorConfig: MultiFactorConfig(
-                state: MultiFactorConfigState.enabled,
-                factorIds: ['phone'],
-              ),
-            ),
-          );
-
-          expect(updatedConfig, isA<ProjectConfig>());
-
-          if (updatedConfig.multiFactorConfig != null) {
-            expect(
-              updatedConfig.multiFactorConfig!.state,
-              equals(MultiFactorConfigState.enabled),
-            );
-          }
-        },
-        skip:
-            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
-      );
-
-      test(
-        'updates multi-factor authentication with TOTP provider config',
-        () async {
-          final updatedConfig = await projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              multiFactorConfig: MultiFactorConfig(
-                state: MultiFactorConfigState.enabled,
-                providerConfigs: [
-                  MultiFactorProviderConfig(
-                    state: MultiFactorConfigState.enabled,
-                    totpProviderConfig: TotpMultiFactorProviderConfig(),
-                  ),
-                ],
-              ),
-            ),
-          );
-
-          expect(updatedConfig, isA<ProjectConfig>());
-
-          if (updatedConfig.multiFactorConfig != null) {
-            expect(
-              updatedConfig.multiFactorConfig!.state,
-              equals(MultiFactorConfigState.enabled),
-            );
-            expect(updatedConfig.multiFactorConfig!.providerConfigs, isNotNull);
-            if (updatedConfig.multiFactorConfig!.providerConfigs != null) {
-              expect(
-                updatedConfig.multiFactorConfig!.providerConfigs!.length,
-                equals(1),
-              );
-              expect(
-                updatedConfig.multiFactorConfig!.providerConfigs![0].state,
-                equals(MultiFactorConfigState.enabled),
-              );
-            }
-          }
-        },
-        skip:
-            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
-      );
-
-      test(
-        'updates TOTP provider config with adjacentIntervals',
-        () async {
-          final updatedConfig = await projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              multiFactorConfig: MultiFactorConfig(
-                state: MultiFactorConfigState.enabled,
-                providerConfigs: [
-                  MultiFactorProviderConfig(
-                    state: MultiFactorConfigState.enabled,
-                    totpProviderConfig: TotpMultiFactorProviderConfig(
-                      adjacentIntervals: 5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-
-          expect(updatedConfig, isA<ProjectConfig>());
-
-          if (updatedConfig.multiFactorConfig != null) {
-            final providerConfigs =
-                updatedConfig.multiFactorConfig!.providerConfigs;
-            if (providerConfigs != null && providerConfigs.isNotEmpty) {
-              expect(
-                providerConfigs[0].totpProviderConfig?.adjacentIntervals,
-                equals(5),
-              );
-            }
-          }
-        },
-        skip:
-            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
-      );
-
-      test(
-        'updates MFA with both SMS and TOTP enabled',
-        () async {
-          final updatedConfig = await projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              multiFactorConfig: MultiFactorConfig(
-                state: MultiFactorConfigState.enabled,
-                factorIds: ['phone'],
-                providerConfigs: [
-                  MultiFactorProviderConfig(
-                    state: MultiFactorConfigState.enabled,
-                    totpProviderConfig: TotpMultiFactorProviderConfig(
-                      adjacentIntervals: 3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-
-          expect(updatedConfig, isA<ProjectConfig>());
-
-          if (updatedConfig.multiFactorConfig != null) {
-            expect(
-              updatedConfig.multiFactorConfig!.state,
-              equals(MultiFactorConfigState.enabled),
-            );
-            expect(
-              updatedConfig.multiFactorConfig!.factorIds,
-              contains('phone'),
-            );
-            final providerConfigs =
-                updatedConfig.multiFactorConfig!.providerConfigs;
-            if (providerConfigs != null && providerConfigs.isNotEmpty) {
-              expect(
-                providerConfigs[0].state,
-                equals(MultiFactorConfigState.enabled),
-              );
-            }
-          }
-        },
-        skip:
-            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
-      );
-
-      test(
-        'updates TOTP provider config with disabled state',
-        () async {
-          final updatedConfig = await projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              multiFactorConfig: MultiFactorConfig(
-                state: MultiFactorConfigState.enabled,
-                providerConfigs: [
-                  MultiFactorProviderConfig(
-                    state: MultiFactorConfigState.disabled,
-                    totpProviderConfig: TotpMultiFactorProviderConfig(),
-                  ),
-                ],
-              ),
-            ),
-          );
-
-          expect(updatedConfig, isA<ProjectConfig>());
-
-          if (updatedConfig.multiFactorConfig != null) {
-            final providerConfigs =
-                updatedConfig.multiFactorConfig!.providerConfigs;
-            if (providerConfigs != null && providerConfigs.isNotEmpty) {
-              expect(
-                providerConfigs[0].state,
-                equals(MultiFactorConfigState.disabled),
-              );
-            }
-          }
-        },
-        skip:
-            'Requires GCIP (Google Cloud Identity Platform) - MFA not available in standard Firebase Auth',
-      );
-
-      test(
-        'updates reCAPTCHA configuration',
-        () async {
-          final updatedConfig = await projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              recaptchaConfig: RecaptchaConfig(
-                emailPasswordEnforcementState:
-                    RecaptchaProviderEnforcementState.enforce,
-                phoneEnforcementState: RecaptchaProviderEnforcementState.audit,
-              ),
-            ),
-          );
-
-          expect(updatedConfig, isA<ProjectConfig>());
-
-          if (updatedConfig.recaptchaConfig != null) {
-            expect(
-              updatedConfig.recaptchaConfig!.emailPasswordEnforcementState,
-              equals(RecaptchaProviderEnforcementState.enforce),
-            );
-          }
-        },
-        skip:
-            'Requires reCAPTCHA Enterprise configuration - phone auth enforcement must align with toll fraud settings',
-      );
-
       test('updates password policy configuration', () async {
         final updatedConfig = await projectConfigManager.updateProjectConfig(
           UpdateProjectConfigRequest(
@@ -450,49 +197,6 @@ void main() {
           );
         }
       });
-
-      test(
-        'updates multiple configuration fields at once',
-        () async {
-          final updatedConfig = await projectConfigManager.updateProjectConfig(
-            UpdateProjectConfigRequest(
-              emailPrivacyConfig: EmailPrivacyConfig(
-                enableImprovedEmailPrivacy: true,
-              ),
-              multiFactorConfig: MultiFactorConfig(
-                state: MultiFactorConfigState.enabled,
-                factorIds: ['phone'],
-              ),
-              mobileLinksConfig: const MobileLinksConfig(
-                domain: MobileLinksDomain.firebaseDynamicLinkDomain,
-              ),
-            ),
-          );
-
-          expect(updatedConfig, isA<ProjectConfig>());
-
-          if (updatedConfig.emailPrivacyConfig != null) {
-            expect(
-              updatedConfig.emailPrivacyConfig!.enableImprovedEmailPrivacy,
-              isTrue,
-            );
-          }
-          if (updatedConfig.multiFactorConfig != null) {
-            expect(
-              updatedConfig.multiFactorConfig!.state,
-              equals(MultiFactorConfigState.enabled),
-            );
-          }
-          if (updatedConfig.mobileLinksConfig != null) {
-            expect(
-              updatedConfig.mobileLinksConfig!.domain,
-              equals(MobileLinksDomain.firebaseDynamicLinkDomain),
-            );
-          }
-        },
-        skip:
-            'Requires GCIP (Google Cloud Identity Platform) - includes MFA configuration',
-      );
 
       test('get and update maintain consistency', () async {
         final initialConfig = await projectConfigManager.getProjectConfig();
