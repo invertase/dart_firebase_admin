@@ -113,7 +113,24 @@ class FirebaseTokenVerifier {
   }
 
   Future<dart_jsonwebtoken.JWT> _safeDecode(String jtwToken) async {
-    return _authGuard(() => dart_jsonwebtoken.JWT.decode(jtwToken));
+    try {
+      return dart_jsonwebtoken.JWT.decode(jtwToken);
+    } catch (error, stackTrace) {
+      // JWT.decode() throws JWTUndefinedException for invalid tokens
+      // Convert to FirebaseAuthAdminException with auth/argument-error
+      final verifyJwtTokenDocsMessage =
+          ' See ${tokenInfo.url} '
+          'for details on how to retrieve $_shortNameArticle ${tokenInfo.shortName}.';
+      final errorMessage =
+          '${tokenInfo.jwtName} has invalid format.$verifyJwtTokenDocsMessage';
+      Error.throwWithStackTrace(
+        FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidArgument,
+          errorMessage,
+        ),
+        stackTrace,
+      );
+    }
   }
 
   Future<void> _verifySignature(
