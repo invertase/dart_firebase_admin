@@ -1,45 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dart_firebase_admin/auth.dart';
+import 'package:dart_firebase_admin/src/app.dart';
+import 'package:googleapis/identitytoolkit/v1.dart';
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 import '../mock.dart';
-
-Future<ProcessResult> run(
-  String executable,
-  List<String> arguments, {
-  String? workDir,
-}) async {
-  final process = await Process.run(
-    executable,
-    arguments,
-    stdoutEncoding: utf8,
-    workingDirectory: workDir,
-  );
-
-  if (process.exitCode != 0) {
-    throw Exception(process.stderr);
-  }
-
-  return process;
-}
-
-Future<void> npmInstall({String? workDir}) async =>
-    run('npm', ['install'], workDir: workDir);
-
-/// Run test/client/get_id_token.js
-Future<String> getIdToken() async {
-  final path = p.join(Directory.current.path, 'test', 'client');
-
-  await npmInstall(workDir: path);
-
-  final process = await run('node', ['get_id_token.js'], workDir: path);
-
-  return (process.stdout as String).trim();
-}
 
 void main() {
   late Auth auth;
@@ -55,23 +24,78 @@ void main() {
     group('verifyIdToken', () {
       test(
         'verifies ID token from Firebase Auth production',
-        () async {
-          final app = createApp();
-          final authProd = Auth(app);
+        () {
+          // Remove emulator env var from the zone environment
+          final prodEnv = Map<String, String>.from(Platform.environment);
+          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-          final token = await getIdToken();
-          final decodedToken = await authProd.verifyIdToken(token);
+          return runZoned(() async {
+            final appName =
+                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+            final app = FirebaseApp.initializeApp(name: appName);
+            final authProd = Auth(app);
 
-          expect(decodedToken.aud, 'dart-firebase-admin');
-          expect(decodedToken.uid, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-          expect(decodedToken.sub, 'TmpgnnHo3JRjzQZjgBaYzQDyyZi2');
-          expect(decodedToken.email, 'foo@google.com');
-          expect(decodedToken.emailVerified, false);
-          expect(decodedToken.phoneNumber, isNull);
-          expect(decodedToken.firebase.identities, {
-            'email': ['foo@google.com'],
-          });
-          expect(decodedToken.firebase.signInProvider, 'password');
+            try {
+              // Helper function to exchange custom token for ID token
+              Future<String> getIdTokenFromCustomToken(
+                String customToken,
+              ) async {
+                final client = await authProd.app.client;
+                final api = IdentityToolkitApi(client);
+
+                final request =
+                    GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                      token: customToken,
+                      returnSecureToken: true,
+                    );
+
+                final response = await api.accounts.signInWithCustomToken(
+                  request,
+                );
+
+                if (response.idToken == null || response.idToken!.isEmpty) {
+                  throw Exception(
+                    'Failed to exchange custom token for ID token: No idToken in response',
+                  );
+                }
+
+                return response.idToken!;
+              }
+
+              // Create a user and get ID token
+              const email = 'foo@google.com';
+              const password =
+                  'TestPassword123!'; // Meets all password requirements
+              UserRecord? user;
+              try {
+                user = await authProd.createUser(
+                  CreateRequest(email: email, password: password),
+                );
+
+                final customToken = await authProd.createCustomToken(user.uid);
+                final token = await getIdTokenFromCustomToken(customToken);
+                final decodedToken = await authProd.verifyIdToken(token);
+
+                expect(decodedToken.aud, 'dart-firebase-admin');
+                expect(decodedToken.uid, user.uid);
+                expect(decodedToken.sub, user.uid);
+                expect(decodedToken.email, email);
+                expect(decodedToken.emailVerified, false);
+                expect(decodedToken.phoneNumber, isNull);
+                expect(decodedToken.firebase.identities, {
+                  'email': [email],
+                });
+                // When signing in with custom token, signInProvider is 'custom'
+                expect(decodedToken.firebase.signInProvider, 'custom');
+              } finally {
+                if (user != null) {
+                  await authProd.deleteUser(user.uid);
+                }
+              }
+            } finally {
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv});
         },
         skip: hasGoogleEnv
             ? false
@@ -1133,6 +1157,8 @@ void main() {
     });
 
     group('verifySessionCookie', () {
+      // TODO(demolaf): implement this we can pick some ideas from 'Session Cookies (Production)'
+      //  in auth_integration_prod_test.dart
       test(
         'verifies valid session cookie',
         () async {

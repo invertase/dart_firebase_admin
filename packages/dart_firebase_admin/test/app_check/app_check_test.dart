@@ -1,5 +1,7 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:dart_firebase_admin/app_check.dart';
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
 import 'package:dart_firebase_admin/src/app_check/token_generator.dart';
 import 'package:dart_firebase_admin/src/app_check/token_verifier.dart';
@@ -9,7 +11,6 @@ import 'package:test/test.dart';
 import '../google_cloud_firestore/util/helpers.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
-import 'util/helpers.dart';
 
 // Mock classes
 class MockAppCheckRequestHandler extends Mock
@@ -325,72 +326,112 @@ void main() {
     });
 
     group('e2e', () {
-      late AppCheck realAppCheck;
-
-      setUp(() {
-        if (!hasGoogleEnv) return;
-        final sdk = createProductionApp();
-        realAppCheck = AppCheck(sdk);
-      });
-
       test(
         skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should create and verify token',
-        () async {
-          final token = await realAppCheck.createToken(
-            '1:559949546715:android:13025aec6cc3243d0ab8fe',
-          );
+        () {
+          // Remove emulator env var from the zone environment
+          final prodEnv = Map<String, String>.from(Platform.environment);
+          // App Check doesn't have emulator yet, but keep pattern consistent
+          // prodEnv.remove(Environment.appCheckEmulatorHost);
 
-          expect(token.token, isNotEmpty);
-          expect(token.ttlMillis, greaterThan(0));
+          return runZoned(() async {
+            final appName =
+                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+            final app = FirebaseApp.initializeApp(name: appName);
+            final appCheck = AppCheck(app);
 
-          final result = await realAppCheck.verifyToken(token.token);
+            try {
+              final token = await appCheck.createToken(
+                '1:559949546715:android:13025aec6cc3243d0ab8fe',
+              );
 
-          expect(result.appId, isNotEmpty);
-          expect(result.token, isNotNull);
-          expect(result.alreadyConsumed, isNull);
+              expect(token.token, isNotEmpty);
+              expect(token.ttlMillis, greaterThan(0));
+
+              final result = await appCheck.verifyToken(token.token);
+
+              expect(result.appId, isNotEmpty);
+              expect(result.token, isNotNull);
+              expect(result.alreadyConsumed, isNull);
+            } finally {
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv});
         },
       );
 
       test(
         skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should create token with custom ttl',
-        () async {
-          final token = await realAppCheck.createToken(
-            '1:559949546715:android:13025aec6cc3243d0ab8fe',
-            AppCheckTokenOptions(ttlMillis: const Duration(hours: 2)),
-          );
+        () {
+          // Remove emulator env var from the zone environment
+          final prodEnv = Map<String, String>.from(Platform.environment);
+          // App Check doesn't have emulator yet, but keep pattern consistent
+          // prodEnv.remove(Environment.appCheckEmulatorHost);
 
-          expect(token.token, isNotEmpty);
-          // TTL might not be exactly what we requested, but should be reasonable
-          expect(token.ttlMillis, greaterThan(0));
+          return runZoned(() async {
+            final appName =
+                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+            final app = FirebaseApp.initializeApp(name: appName);
+            final appCheck = AppCheck(app);
+
+            try {
+              final token = await appCheck.createToken(
+                '1:559949546715:android:13025aec6cc3243d0ab8fe',
+                AppCheckTokenOptions(ttlMillis: const Duration(hours: 2)),
+              );
+
+              expect(token.token, isNotEmpty);
+              // TTL might not be exactly what we requested, but should be reasonable
+              expect(token.ttlMillis, greaterThan(0));
+            } finally {
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv});
         },
       );
 
       test(
         skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should verify token with consume option',
-        () async {
-          final token = await realAppCheck.createToken(
-            '1:559949546715:android:13025aec6cc3243d0ab8fe',
-          );
+        () {
+          // Remove emulator env var from the zone environment
+          final prodEnv = Map<String, String>.from(Platform.environment);
+          // App Check doesn't have emulator yet, but keep pattern consistent
+          // prodEnv.remove(Environment.appCheckEmulatorHost);
 
-          final result = await realAppCheck.verifyToken(
-            token.token,
-            VerifyAppCheckTokenOptions()..consume = true,
-          );
+          return runZoned(() async {
+            final appName =
+                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+            final app = FirebaseApp.initializeApp(name: appName);
+            final appCheck = AppCheck(app);
 
-          expect(result.appId, isNotEmpty);
-          expect(result.token, isNotNull);
-          expect(result.alreadyConsumed, equals(false));
+            try {
+              final token = await appCheck.createToken(
+                '1:559949546715:android:13025aec6cc3243d0ab8fe',
+              );
 
-          // Verify same token again - should be marked as consumed
-          final result2 = await realAppCheck.verifyToken(
-            token.token,
-            VerifyAppCheckTokenOptions()..consume = true,
-          );
+              final result = await appCheck.verifyToken(
+                token.token,
+                VerifyAppCheckTokenOptions()..consume = true,
+              );
 
-          expect(result2.alreadyConsumed, equals(true));
+              expect(result.appId, isNotEmpty);
+              expect(result.token, isNotNull);
+              expect(result.alreadyConsumed, equals(false));
+
+              // Verify same token again - should be marked as consumed
+              final result2 = await appCheck.verifyToken(
+                token.token,
+                VerifyAppCheckTokenOptions()..consume = true,
+              );
+
+              expect(result2.alreadyConsumed, equals(true));
+            } finally {
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv});
         },
       );
     });

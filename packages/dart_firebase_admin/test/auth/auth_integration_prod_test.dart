@@ -31,178 +31,268 @@ import '../google_cloud_firestore/util/helpers.dart';
 
 const _uid = Uuid();
 
-/// Helper to create Auth instance for production tests.
-/// Uses runZoned to temporarily disable emulator env vars.
-Auth createProductionAuth() {
-  late Auth auth;
-  late FirebaseApp app;
-
-  // Remove emulator env var from the zone environment
-  final prodEnv = Map<String, String>.from(Platform.environment);
-  prodEnv.remove(Environment.firebaseAuthEmulatorHost);
-
-  runZoned(() {
-    final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-    app = FirebaseApp.initializeApp(name: appName);
-    auth = Auth(app);
-
-    addTearDown(() async {
-      // Clean up users
-      try {
-        final users = await auth.listUsers();
-        await Future.wait([
-          for (final user in users.users) auth.deleteUser(user.uid),
-        ]);
-      } catch (_) {
-        // Ignore cleanup errors
-      }
-      await app.close();
-    });
-  }, zoneValues: {envSymbol: prodEnv});
-
-  return auth;
-}
-
 void main() {
   group('setCustomUserClaims (Production)', () {
-    late Auth auth;
-
-    setUp(() {
-      if (!hasGoogleEnv) return;
-      auth = createProductionAuth();
-    });
-
     test(
       'clears custom claims when null is passed',
-      () async {
-        final user = await auth.createUser(CreateRequest(uid: _uid.v4()));
-        await auth.setCustomUserClaims(
-          user.uid,
-          customUserClaims: {'role': 'admin'},
-        );
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        await auth.setCustomUserClaims(user.uid);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        final updatedUser = await auth.getUser(user.uid);
-        expect(updatedUser.customClaims, isNull);
+          UserRecord? user;
+          try {
+            user = await testAuth.createUser(CreateRequest(uid: _uid.v4()));
+            await testAuth.setCustomUserClaims(
+              user.uid,
+              customUserClaims: {'role': 'admin'},
+            );
+
+            await testAuth.setCustomUserClaims(user.uid);
+
+            final updatedUser = await testAuth.getUser(user.uid);
+            // When custom claims are cleared, Firebase returns an empty map, not null
+            // This matches Node SDK behavior: expect(userRecord.customClaims).to.deep.equal({})
+            expect(updatedUser.customClaims, isEmpty);
+          } finally {
+            if (user != null) {
+              await testAuth.deleteUser(user.uid);
+            }
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
-          : 'Requires production (emulator returns {} instead of null)',
+          : 'Requires production to verify custom claims clearing',
     );
   });
 
   group('Session Cookies (Production)', () {
-    late Auth auth;
-
-    setUp(() {
-      if (!hasGoogleEnv) return;
-      auth = createProductionAuth();
-    });
-
-    // Helper function to exchange custom token for ID token
-    Future<String> getIdTokenFromCustomToken(String customToken) async {
-      final client = await auth.app.client;
-      final api = IdentityToolkitApi(client);
-
-      final request = GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
-        token: customToken,
-        returnSecureToken: true,
-      );
-
-      final response = await api.accounts.signInWithCustomToken(request);
-
-      if (response.idToken == null || response.idToken!.isEmpty) {
-        throw Exception(
-          'Failed to exchange custom token for ID token: No idToken in response',
-        );
-      }
-
-      return response.idToken!;
-    }
-
+    // Note: Session cookies require GCIP (Google Cloud Identity Platform)
+    // and are not available in the Auth Emulator. Most tests wrap the test body
+    // in runZoned to ensure the zone environment (without emulator) stays active.
     test(
       'creates and verifies a valid session cookie',
-      () async {
-        final user = await auth.createUser(CreateRequest(uid: _uid.v4()));
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        final customToken = await auth.createCustomToken(user.uid);
-        final idToken = await getIdTokenFromCustomToken(customToken);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        const expiresIn = 24 * 60 * 60 * 1000; // 24 hours
-        final sessionCookie = await auth.createSessionCookie(
-          idToken,
-          const SessionCookieOptions(expiresIn: expiresIn),
-        );
+          // Helper function to exchange custom token for ID token
+          Future<String> getIdTokenFromCustomToken(String customToken) async {
+            final client = await testAuth.app.client;
+            final api = IdentityToolkitApi(client);
 
-        expect(sessionCookie, isNotEmpty);
+            final request =
+                GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                  token: customToken,
+                  returnSecureToken: true,
+                );
 
-        final decodedToken = await auth.verifySessionCookie(sessionCookie);
-        expect(decodedToken.uid, equals(user.uid));
-        expect(decodedToken.iss, contains('session.firebase.google.com'));
+            final response = await api.accounts.signInWithCustomToken(request);
+
+            if (response.idToken == null || response.idToken!.isEmpty) {
+              throw Exception(
+                'Failed to exchange custom token for ID token: No idToken in response',
+              );
+            }
+
+            return response.idToken!;
+          }
+
+          UserRecord? user;
+          try {
+            user = await testAuth.createUser(CreateRequest(uid: _uid.v4()));
+
+            final customToken = await testAuth.createCustomToken(user.uid);
+            final idToken = await getIdTokenFromCustomToken(customToken);
+
+            const expiresIn = 24 * 60 * 60 * 1000; // 24 hours
+            final sessionCookie = await testAuth.createSessionCookie(
+              idToken,
+              const SessionCookieOptions(expiresIn: expiresIn),
+            );
+
+            expect(sessionCookie, isNotEmpty);
+
+            final decodedToken = await testAuth.verifySessionCookie(
+              sessionCookie,
+            );
+            expect(decodedToken.uid, equals(user.uid));
+            expect(decodedToken.iss, contains('session.firebase.google.com'));
+          } finally {
+            if (user != null) {
+              await testAuth.deleteUser(user.uid);
+            }
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
           : 'Session cookies require GCIP (not available in emulator)',
     );
 
+    // Note: Session cookies require GCIP (Google Cloud Identity Platform)
+    // and are not available in the Auth Emulator. This test wraps the test body
+    // in runZoned to ensure the zone environment (without emulator) stays active.
     test(
       'creates a revocable session cookie',
-      () async {
-        final user = await auth.createUser(CreateRequest(uid: _uid.v4()));
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        final customToken = await auth.createCustomToken(user.uid);
-        final idToken = await getIdTokenFromCustomToken(customToken);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        const expiresIn = 24 * 60 * 60 * 1000;
-        final sessionCookie = await auth.createSessionCookie(
-          idToken,
-          const SessionCookieOptions(expiresIn: expiresIn),
-        );
+          // Helper function to exchange custom token for ID token
+          Future<String> getIdTokenFromCustomToken(String customToken) async {
+            final client = await testAuth.app.client;
+            final api = IdentityToolkitApi(client);
 
-        final decodedToken = await auth.verifySessionCookie(sessionCookie);
-        expect(decodedToken.uid, equals(user.uid));
+            final request =
+                GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                  token: customToken,
+                  returnSecureToken: true,
+                );
 
-        await Future<void>.delayed(const Duration(seconds: 2));
-        await auth.revokeRefreshTokens(user.uid);
+            final response = await api.accounts.signInWithCustomToken(request);
 
-        await auth.verifySessionCookie(sessionCookie);
+            if (response.idToken == null || response.idToken!.isEmpty) {
+              throw Exception(
+                'Failed to exchange custom token for ID token: No idToken in response',
+              );
+            }
 
-        await expectLater(
-          () => auth.verifySessionCookie(sessionCookie, checkRevoked: true),
-          throwsA(
-            isA<FirebaseAuthAdminException>().having(
-              (e) => e.code,
-              'code',
-              'auth/session-cookie-revoked',
-            ),
-          ),
-        );
+            return response.idToken!;
+          }
+
+          try {
+            final user = await testAuth.createUser(
+              CreateRequest(uid: _uid.v4()),
+            );
+
+            final customToken = await testAuth.createCustomToken(user.uid);
+            final idToken = await getIdTokenFromCustomToken(customToken);
+
+            const expiresIn = 24 * 60 * 60 * 1000;
+            final sessionCookie = await testAuth.createSessionCookie(
+              idToken,
+              const SessionCookieOptions(expiresIn: expiresIn),
+            );
+
+            final decodedToken = await testAuth.verifySessionCookie(
+              sessionCookie,
+            );
+            expect(decodedToken.uid, equals(user.uid));
+
+            await Future<void>.delayed(const Duration(seconds: 2));
+            await testAuth.revokeRefreshTokens(user.uid);
+
+            // Without checkRevoked, should not throw
+            await testAuth.verifySessionCookie(sessionCookie);
+
+            // With checkRevoked: true, should throw
+            await expectLater(
+              () => testAuth.verifySessionCookie(
+                sessionCookie,
+                checkRevoked: true,
+              ),
+              throwsA(
+                isA<FirebaseAuthAdminException>().having(
+                  (e) => e.code,
+                  'code',
+                  'auth/session-cookie-revoked',
+                ),
+              ),
+            );
+            await testAuth.deleteUser(user.uid);
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
           : 'Session cookies require GCIP (not available in emulator)',
     );
 
+    // Note: Session cookies require GCIP (Google Cloud Identity Platform)
+    // and are not available in the Auth Emulator. This test wraps the test body
+    // in runZoned to ensure the zone environment (without emulator) stays active.
     test(
       'fails when ID token is revoked',
-      () async {
-        final user = await auth.createUser(CreateRequest(uid: _uid.v4()));
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        final customToken = await auth.createCustomToken(user.uid);
-        final idToken = await getIdTokenFromCustomToken(customToken);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        await Future<void>.delayed(const Duration(seconds: 2));
-        await auth.revokeRefreshTokens(user.uid);
+          // Helper function to exchange custom token for ID token
+          Future<String> getIdTokenFromCustomToken(String customToken) async {
+            final client = await testAuth.app.client;
+            final api = IdentityToolkitApi(client);
 
-        const expiresIn = 24 * 60 * 60 * 1000;
-        await expectLater(
-          () => auth.createSessionCookie(
-            idToken,
-            const SessionCookieOptions(expiresIn: expiresIn),
-          ),
-          throwsA(isA<FirebaseAuthAdminException>()),
-        );
+            final request =
+                GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                  token: customToken,
+                  returnSecureToken: true,
+                );
+
+            final response = await api.accounts.signInWithCustomToken(request);
+
+            if (response.idToken == null || response.idToken!.isEmpty) {
+              throw Exception(
+                'Failed to exchange custom token for ID token: No idToken in response',
+              );
+            }
+
+            return response.idToken!;
+          }
+
+          UserRecord? user;
+          try {
+            user = await testAuth.createUser(CreateRequest(uid: _uid.v4()));
+
+            final customToken = await testAuth.createCustomToken(user.uid);
+            final idToken = await getIdTokenFromCustomToken(customToken);
+
+            await Future<void>.delayed(const Duration(seconds: 2));
+            await testAuth.revokeRefreshTokens(user.uid);
+
+            const expiresIn = 24 * 60 * 60 * 1000;
+            await expectLater(
+              () => testAuth.createSessionCookie(
+                idToken,
+                const SessionCookieOptions(expiresIn: expiresIn),
+              ),
+              throwsA(isA<FirebaseAuthAdminException>()),
+            );
+          } finally {
+            if (user != null) {
+              await testAuth.deleteUser(user.uid);
+            }
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
@@ -211,17 +301,31 @@ void main() {
 
     test(
       'verifySessionCookie rejects invalid session cookie',
-      () async {
-        await expectLater(
-          () => auth.verifySessionCookie('invalid-session-cookie'),
-          throwsA(
-            isA<FirebaseAuthAdminException>().having(
-              (e) => e.code,
-              'code',
-              'auth/argument-error',
-            ),
-          ),
-        );
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
+
+          try {
+            await expectLater(
+              () => testAuth.verifySessionCookie('invalid-session-cookie'),
+              throwsA(
+                isA<FirebaseAuthAdminException>().having(
+                  (e) => e.code,
+                  'code',
+                  'auth/argument-error',
+                ),
+              ),
+            );
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
@@ -230,39 +334,52 @@ void main() {
   });
 
   group('getUsers (Production)', () {
-    late Auth auth;
-
-    setUp(() {
-      if (!hasGoogleEnv) return;
-      auth = createProductionAuth();
-    });
-
     test(
       'gets multiple users by different identifiers',
-      () async {
-        final user1 = await auth.createUser(
-          CreateRequest(
-            uid: _uid.v4(),
-            email: 'user1-${_uid.v4()}@example.com',
-          ),
-        );
-        final user2 = await auth.createUser(
-          CreateRequest(
-            uid: _uid.v4(),
-            phoneNumber:
-                '+1${DateTime.now().millisecondsSinceEpoch % 10000000000}',
-          ),
-        );
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        final result = await auth.getUsers([
-          UidIdentifier(uid: user1.uid),
-          EmailIdentifier(email: user1.email!),
-          UidIdentifier(uid: user2.uid),
-        ]);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        expect(result.users.length, greaterThanOrEqualTo(2));
-        expect(result.users.map((u) => u.uid), contains(user1.uid));
-        expect(result.users.map((u) => u.uid), contains(user2.uid));
+          UserRecord? user1;
+          UserRecord? user2;
+          try {
+            user1 = await testAuth.createUser(
+              CreateRequest(
+                uid: _uid.v4(),
+                email: 'user1-${_uid.v4()}@example.com',
+              ),
+            );
+            user2 = await testAuth.createUser(
+              CreateRequest(
+                uid: _uid.v4(),
+                phoneNumber:
+                    '+1${DateTime.now().millisecondsSinceEpoch % 10000000000}',
+              ),
+            );
+
+            final result = await testAuth.getUsers([
+              UidIdentifier(uid: user1.uid),
+              EmailIdentifier(email: user1.email!),
+              UidIdentifier(uid: user2.uid),
+            ]);
+
+            expect(result.users.length, greaterThanOrEqualTo(2));
+            expect(result.users.map((u) => u.uid), contains(user1.uid));
+            expect(result.users.map((u) => u.uid), contains(user2.uid));
+          } finally {
+            await Future.wait([
+              if (user1 != null) testAuth.deleteUser(user1.uid),
+              if (user2 != null) testAuth.deleteUser(user2.uid),
+            ]);
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
@@ -271,18 +388,36 @@ void main() {
 
     test(
       'reports not found users',
-      () async {
-        final user1 = await auth.createUser(CreateRequest(uid: _uid.v4()));
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        final result = await auth.getUsers([
-          UidIdentifier(uid: user1.uid),
-          UidIdentifier(uid: 'non-existent-uid'),
-          EmailIdentifier(email: 'nonexistent@example.com'),
-        ]);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        expect(result.users, isNotEmpty);
-        expect(result.users.map((u) => u.uid), contains(user1.uid));
-        expect(result.notFound, isNotEmpty);
+          UserRecord? user1;
+          try {
+            user1 = await testAuth.createUser(CreateRequest(uid: _uid.v4()));
+
+            final result = await testAuth.getUsers([
+              UidIdentifier(uid: user1.uid),
+              UidIdentifier(uid: 'non-existent-uid'),
+              EmailIdentifier(email: 'nonexistent@example.com'),
+            ]);
+
+            expect(result.users, isNotEmpty);
+            expect(result.users.map((u) => u.uid), contains(user1.uid));
+            expect(result.notFound, isNotEmpty);
+          } finally {
+            if (user1 != null) {
+              await testAuth.deleteUser(user1.uid);
+            }
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
@@ -291,61 +426,95 @@ void main() {
   });
 
   group('createProviderConfig (Production)', () {
-    late Auth auth;
+    // Note: These tests create their own Auth instances inside runZoned
+    // to ensure the zone environment stays active during test execution.
 
-    setUp(() {
-      if (!hasGoogleEnv) return;
-      auth = createProductionAuth();
-    });
-
+    // Note: OIDC provider configs require GCIP (Google Cloud Identity Platform)
+    // and are not available in the Auth Emulator. This test wraps the test body
+    // in runZoned to ensure the zone environment (without emulator) stays active.
     test(
       'creates OIDC provider config successfully',
-      () async {
-        final oidcConfig = OIDCAuthProviderConfig(
-          providerId: 'oidc.test-provider',
-          displayName: 'Test OIDC Provider',
-          enabled: true,
-          clientId: 'TEST_CLIENT_ID',
-          issuer: 'https://oidc.example.com/issuer',
-          clientSecret: 'TEST_CLIENT_SECRET',
-        );
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        final createdConfig = await auth.createProviderConfig(oidcConfig);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        expect(createdConfig, isA<OIDCAuthProviderConfig>());
-        expect(createdConfig.providerId, equals('oidc.test-provider'));
-        expect(createdConfig.displayName, equals('Test OIDC Provider'));
-        expect(createdConfig.enabled, isTrue);
+          try {
+            final oidcConfig = OIDCAuthProviderConfig(
+              providerId: 'oidc.test-provider',
+              displayName: 'Test OIDC Provider',
+              enabled: true,
+              clientId: 'TEST_CLIENT_ID',
+              issuer: 'https://oidc.example.com/issuer',
+              clientSecret: 'TEST_CLIENT_SECRET',
+            );
 
-        await auth.deleteProviderConfig('oidc.test-provider');
+            final createdConfig = await testAuth.createProviderConfig(
+              oidcConfig,
+            );
+
+            expect(createdConfig, isA<OIDCAuthProviderConfig>());
+            expect(createdConfig.providerId, equals('oidc.test-provider'));
+            expect(createdConfig.displayName, equals('Test OIDC Provider'));
+            expect(createdConfig.enabled, isTrue);
+
+            await testAuth.deleteProviderConfig('oidc.test-provider');
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false
           : 'Provider configs require GCIP (not available in emulator)',
     );
 
+    // Note: SAML provider configs require GCIP (Google Cloud Identity Platform)
+    // and are not available in the Auth Emulator. This test wraps the test body
+    // in runZoned to ensure the zone environment (without emulator) stays active.
     test(
       'creates SAML provider config successfully',
-      () async {
-        final samlConfig = SAMLAuthProviderConfig(
-          providerId: 'saml.test-provider',
-          displayName: 'Test SAML Provider',
-          enabled: true,
-          idpEntityId: 'TEST_IDP_ENTITY_ID',
-          ssoURL: 'https://example.com/login',
-          x509Certificates: ['TEST_CERT'],
-          rpEntityId: 'TEST_RP_ENTITY_ID',
-          callbackURL: 'https://project-id.firebaseapp.com/__/auth/handler',
-        );
+      () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-        final createdConfig = await auth.createProviderConfig(samlConfig);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth(app);
 
-        expect(createdConfig, isA<SAMLAuthProviderConfig>());
-        expect(createdConfig.providerId, equals('saml.test-provider'));
-        expect(createdConfig.displayName, equals('Test SAML Provider'));
-        expect(createdConfig.enabled, isTrue);
+          try {
+            final samlConfig = SAMLAuthProviderConfig(
+              providerId: 'saml.test-provider',
+              displayName: 'Test SAML Provider',
+              enabled: true,
+              idpEntityId: 'TEST_IDP_ENTITY_ID',
+              ssoURL: 'https://example.com/login',
+              x509Certificates: ['TEST_CERT'],
+              rpEntityId: 'TEST_RP_ENTITY_ID',
+              callbackURL: 'https://project-id.firebaseapp.com/__/auth/handler',
+            );
 
-        await auth.deleteProviderConfig('saml.test-provider');
+            final createdConfig = await testAuth.createProviderConfig(
+              samlConfig,
+            );
+
+            expect(createdConfig, isA<SAMLAuthProviderConfig>());
+            expect(createdConfig.providerId, equals('saml.test-provider'));
+            expect(createdConfig.displayName, equals('Test SAML Provider'));
+            expect(createdConfig.enabled, isTrue);
+
+            await testAuth.deleteProviderConfig('saml.test-provider');
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
       },
       skip: hasGoogleEnv
           ? false

@@ -151,11 +151,13 @@ class AuthHttpClient {
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
   createOAuthIdpConfig(
     auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig request,
+    String providerId,
   ) {
     return v2((client, projectId) async {
       final response = await client.projects.oauthIdpConfigs.create(
         request,
         buildParent(projectId),
+        oauthIdpConfigId: providerId,
       );
 
       final name = response.name;
@@ -173,11 +175,13 @@ class AuthHttpClient {
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
   createInboundSamlConfig(
     auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig request,
+    String providerId,
   ) {
     return v2((client, projectId) async {
       final response = await client.projects.inboundSamlConfigs.create(
         request,
         buildParent(projectId),
+        inboundSamlConfigId: providerId,
       );
 
       final name = response.name;

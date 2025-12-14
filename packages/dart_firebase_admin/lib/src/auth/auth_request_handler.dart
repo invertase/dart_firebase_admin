@@ -118,7 +118,10 @@ abstract class _AbstractAuthRequestHandler {
         OIDCAuthProviderConfig._buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig();
 
-    final response = await _httpClient.createOAuthIdpConfig(request);
+    final response = await _httpClient.createOAuthIdpConfig(
+      request,
+      options.providerId,
+    );
 
     final name = response.name;
     if (name == null ||
@@ -139,7 +142,10 @@ abstract class _AbstractAuthRequestHandler {
         SAMLAuthProviderConfig._buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig();
 
-    final response = await _httpClient.createInboundSamlConfig(request);
+    final response = await _httpClient.createInboundSamlConfig(
+      request,
+      options.providerId,
+    );
 
     final name = response.name;
     if (name == null ||
@@ -603,17 +609,39 @@ abstract class _AbstractAuthRequestHandler {
     for (final id in identifiers) {
       switch (id) {
         case UidIdentifier():
-          final localIds = request.localId ?? <String>[];
-          localIds.add(id.uid);
+          if (request.localId != null) {
+            request.localId!.add(id.uid);
+          } else {
+            request.localId = [id.uid];
+          }
         case EmailIdentifier():
-          final emails = request.email ?? <String>[];
-          emails.add(id.email);
+          if (request.email != null) {
+            request.email!.add(id.email);
+          } else {
+            request.email = [id.email];
+          }
         case PhoneIdentifier():
-          final phoneNumbers = request.phoneNumber ?? <String>[];
-          phoneNumbers.add(id.phoneNumber);
+          if (request.phoneNumber != null) {
+            request.phoneNumber!.add(id.phoneNumber);
+          } else {
+            request.phoneNumber = [id.phoneNumber];
+          }
         case ProviderIdentifier():
-          final providerIds = request.federatedUserId ?? <String>[];
-          providerIds.add(id.providerId);
+          if (request.federatedUserId != null) {
+            request.federatedUserId!.add(
+              auth1.GoogleCloudIdentitytoolkitV1FederatedUserIdentifier(
+                providerId: id.providerId,
+                rawId: id.providerUid,
+              ),
+            );
+          } else {
+            request.federatedUserId = [
+              auth1.GoogleCloudIdentitytoolkitV1FederatedUserIdentifier(
+                providerId: id.providerId,
+                rawId: id.providerUid,
+              ),
+            ];
+          }
       }
     }
 
@@ -861,12 +889,37 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
   Map<String, dynamic> _mfaConfigToJson(
     auth2.GoogleCloudIdentitytoolkitAdminV2MultiFactorAuthConfig config,
   ) {
+    // Convert providerConfigs from Google API objects to JSON maps
+    List<Map<String, dynamic>>? providerConfigsJson;
+    if (config.providerConfigs != null) {
+      providerConfigsJson = <Map<String, dynamic>>[];
+      for (final providerConfig in config.providerConfigs!) {
+        final configMap = <String, dynamic>{};
+
+        // Extract state
+        if (providerConfig.state != null) {
+          configMap['state'] = providerConfig.state;
+        }
+
+        // Extract totpProviderConfig
+        if (providerConfig.totpProviderConfig != null) {
+          final totpConfig = <String, dynamic>{};
+          if (providerConfig.totpProviderConfig!.adjacentIntervals != null) {
+            totpConfig['adjacentIntervals'] =
+                providerConfig.totpProviderConfig!.adjacentIntervals;
+          }
+          configMap['totpProviderConfig'] = totpConfig;
+        }
+
+        providerConfigsJson.add(configMap);
+      }
+    }
+
     return {
       if (config.state != null) 'state': config.state,
       if (config.enabledProviders != null)
         'enabledProviders': config.enabledProviders,
-      if (config.providerConfigs != null)
-        'providerConfigs': config.providerConfigs,
+      if (providerConfigsJson != null) 'providerConfigs': providerConfigsJson,
     };
   }
 

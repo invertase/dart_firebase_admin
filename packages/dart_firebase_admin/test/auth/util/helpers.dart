@@ -73,33 +73,3 @@ Auth createAuthForTest({bool requireEmulator = true}) {
 
   return auth;
 }
-
-/// Creates an Auth instance for production tests.
-///
-/// Uses runZoned with zoneValues to temporarily disable emulator env vars.
-/// This allows production tests to run even when FIREBASE_AUTH_EMULATOR_HOST is set,
-/// which is necessary for the coverage script to run both emulator and production tests
-/// in a single execution.
-///
-/// **IMPORTANT:** Only use this for tests that REQUIRE production Firebase
-/// (e.g., GCIP features like MFA, TOTP, Session Cookies).
-Auth createProductionAuth() {
-  late Auth auth;
-  late FirebaseApp app;
-
-  // Remove emulator env var from the zone environment
-  final prodEnv = Map<String, String>.from(Platform.environment);
-  prodEnv.remove(Environment.firebaseAuthEmulatorHost);
-
-  runZoned(() {
-    final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-    app = FirebaseApp.initializeApp(name: appName);
-    auth = Auth(app);
-
-    addTearDown(() async {
-      await app.close();
-    });
-  }, zoneValues: {envSymbol: prodEnv});
-
-  return auth;
-}

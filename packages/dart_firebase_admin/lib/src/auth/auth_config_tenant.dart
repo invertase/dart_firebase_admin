@@ -252,7 +252,8 @@ class _MultiFactorAuthConfig implements MultiFactorConfig {
     return _MultiFactorAuthConfig(
       state: MultiFactorConfigState.fromString(stateValue as String),
       factorIds: factorIds.isEmpty ? null : factorIds,
-      providerConfigs: providerConfigs.isEmpty ? null : providerConfigs,
+      providerConfigs:
+          providerConfigs, // Always return list, never null (matches Node.js SDK)
     );
   }
 
