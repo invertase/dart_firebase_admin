@@ -115,14 +115,14 @@ abstract class _AbstractAuthRequestHandler {
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
   createOAuthIdpConfig(OIDCAuthProviderConfig options) async {
     final request =
-        _OIDCConfig.buildServerRequest(options) ??
+        OIDCAuthProviderConfig._buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig();
 
     final response = await _httpClient.createOAuthIdpConfig(request);
 
     final name = response.name;
     if (name == null ||
-        _OIDCConfig.getProviderIdFromResourceName(name) == null) {
+        OIDCAuthProviderConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to create OIDC configuration',
@@ -136,14 +136,14 @@ abstract class _AbstractAuthRequestHandler {
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
   createInboundSamlConfig(SAMLAuthProviderConfig options) async {
     final request =
-        _SAMLConfig.buildServerRequest(options) ??
+        SAMLAuthProviderConfig._buildServerRequest(options) ??
         auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig();
 
     final response = await _httpClient.createInboundSamlConfig(request);
 
     final name = response.name;
     if (name == null ||
-        _SAMLConfig.getProviderIdFromResourceName(name) == null) {
+        SAMLAuthProviderConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to create SAML configuration',
@@ -204,11 +204,11 @@ abstract class _AbstractAuthRequestHandler {
     String providerId,
     OIDCUpdateAuthProviderRequest options,
   ) async {
-    if (!_OIDCConfig.isProviderId(providerId)) {
+    if (!OIDCAuthProviderConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
-    final request = _OIDCConfig.buildServerRequest(
+    final request = OIDCAuthProviderConfig._buildServerRequest(
       options,
       ignoreMissingFields: true,
     );
@@ -222,7 +222,7 @@ abstract class _AbstractAuthRequestHandler {
 
     final name = response.name;
     if (name == null ||
-        _OIDCConfig.getProviderIdFromResourceName(name) == null) {
+        OIDCAuthProviderConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to update OIDC configuration',
@@ -238,11 +238,11 @@ abstract class _AbstractAuthRequestHandler {
     String providerId,
     SAMLUpdateAuthProviderRequest options,
   ) async {
-    if (!_SAMLConfig.isProviderId(providerId)) {
+    if (!SAMLAuthProviderConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
-    final request = _SAMLConfig.buildServerRequest(
+    final request = SAMLAuthProviderConfig._buildServerRequest(
       options,
       ignoreMissingFields: true,
     );
@@ -255,7 +255,7 @@ abstract class _AbstractAuthRequestHandler {
 
     final name = response.name;
     if (name == null ||
-        _SAMLConfig.getProviderIdFromResourceName(name) == null) {
+        SAMLAuthProviderConfig.getProviderIdFromResourceName(name) == null) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.internalError,
         'INTERNAL ASSERT FAILED: Unable to update SAML provider configuration',
@@ -267,7 +267,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Looks up an OIDC provider configuration by provider ID.
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig>
   getOAuthIdpConfig(String providerId) {
-    if (!_OIDCConfig.isProviderId(providerId)) {
+    if (!OIDCAuthProviderConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
@@ -276,7 +276,7 @@ abstract class _AbstractAuthRequestHandler {
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig>
   getInboundSamlConfig(String providerId) {
-    if (!_SAMLConfig.isProviderId(providerId)) {
+    if (!SAMLAuthProviderConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
@@ -285,7 +285,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Deletes an OIDC configuration identified by a providerId.
   Future<void> deleteOAuthIdpConfig(String providerId) {
-    if (!_OIDCConfig.isProviderId(providerId)) {
+    if (!OIDCAuthProviderConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
@@ -294,7 +294,7 @@ abstract class _AbstractAuthRequestHandler {
 
   /// Deletes a SAML configuration identified by a providerId.
   Future<void> deleteInboundSamlConfig(String providerId) {
-    if (!_SAMLConfig.isProviderId(providerId)) {
+    if (!SAMLAuthProviderConfig.isProviderId(providerId)) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
 
@@ -305,8 +305,8 @@ abstract class _AbstractAuthRequestHandler {
   /// session management (set as a server side session cookie with custom cookie policy).
   /// The session cookie JWT will have the same payload claims as the provided ID token.
   Future<String> createSessionCookie(String idToken, {required int expiresIn}) {
-    // Convert to seconds.
-    final validDuration = expiresIn / 1000;
+    // Convert to seconds (use integer division to avoid decimal).
+    final validDuration = expiresIn ~/ 1000;
     final request =
         auth1.GoogleCloudIdentitytoolkitV1CreateSessionCookieRequest(
           idToken: idToken,
