@@ -178,7 +178,9 @@ abstract class _BaseAuth {
       return ListProviderConfigResults(
         providerConfigs: [
           // Convert each provider config response to a OIDCConfig.
-          ...?response.oauthIdpConfigs?.map(_OIDCConfig.fromResponse),
+          ...?response.oauthIdpConfigs?.map(
+            OIDCAuthProviderConfig.fromResponse,
+          ),
         ],
         pageToken: response.nextPageToken,
       );
@@ -190,7 +192,9 @@ abstract class _BaseAuth {
       return ListProviderConfigResults(
         providerConfigs: [
           // Convert each provider config response to a SAMLConfig.
-          ...?response.inboundSamlConfigs?.map(_SAMLConfig.fromResponse),
+          ...?response.inboundSamlConfigs?.map(
+            SAMLAuthProviderConfig.fromResponse,
+          ),
         ],
         pageToken: response.nextPageToken,
       );
@@ -211,16 +215,16 @@ abstract class _BaseAuth {
   Future<AuthProviderConfig> createProviderConfig(
     AuthProviderConfig config,
   ) async {
-    if (_OIDCConfig.isProviderId(config.providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(config.providerId)) {
       final response = await _authRequestHandler.createOAuthIdpConfig(
-        config as _OIDCConfig,
+        config as OIDCAuthProviderConfig,
       );
-      return _OIDCConfig.fromResponse(response);
-    } else if (_SAMLConfig.isProviderId(config.providerId)) {
+      return OIDCAuthProviderConfig.fromResponse(response);
+    } else if (SAMLAuthProviderConfig.isProviderId(config.providerId)) {
       final response = await _authRequestHandler.createInboundSamlConfig(
-        config as _SAMLConfig,
+        config as SAMLAuthProviderConfig,
       );
-      return _SAMLConfig.fromResponse(response);
+      return SAMLAuthProviderConfig.fromResponse(response);
     }
 
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
@@ -238,18 +242,18 @@ abstract class _BaseAuth {
     String providerId,
     UpdateAuthProviderRequest updatedConfig,
   ) async {
-    if (_OIDCConfig.isProviderId(providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.updateOAuthIdpConfig(
         providerId,
         updatedConfig as OIDCUpdateAuthProviderRequest,
       );
-      return _OIDCConfig.fromResponse(response);
-    } else if (_SAMLConfig.isProviderId(providerId)) {
+      return OIDCAuthProviderConfig.fromResponse(response);
+    } else if (SAMLAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.updateInboundSamlConfig(
         providerId,
         updatedConfig as SAMLUpdateAuthProviderRequest,
       );
-      return _SAMLConfig.fromResponse(response);
+      return SAMLAuthProviderConfig.fromResponse(response);
     }
 
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
@@ -267,14 +271,14 @@ abstract class _BaseAuth {
   /// - [providerId] - The provider ID corresponding to the provider
   ///     config to return.
   Future<AuthProviderConfig> getProviderConfig(String providerId) async {
-    if (_OIDCConfig.isProviderId(providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.getOAuthIdpConfig(providerId);
-      return _OIDCConfig.fromResponse(response);
-    } else if (_SAMLConfig.isProviderId(providerId)) {
+      return OIDCAuthProviderConfig.fromResponse(response);
+    } else if (SAMLAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.getInboundSamlConfig(
         providerId,
       );
-      return _SAMLConfig.fromResponse(response);
+      return SAMLAuthProviderConfig.fromResponse(response);
     } else {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
@@ -288,9 +292,9 @@ abstract class _BaseAuth {
   /// (GCIP). To learn more about GCIP, including pricing and features,
   /// see the https://cloud.google.com/identity-platform.
   Future<void> deleteProviderConfig(String providerId) {
-    if (_OIDCConfig.isProviderId(providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(providerId)) {
       return _authRequestHandler.deleteOAuthIdpConfig(providerId);
-    } else if (_SAMLConfig.isProviderId(providerId)) {
+    } else if (SAMLAuthProviderConfig.isProviderId(providerId)) {
       return _authRequestHandler.deleteInboundSamlConfig(providerId);
     }
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
