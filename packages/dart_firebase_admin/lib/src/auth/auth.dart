@@ -4,15 +4,23 @@ part of '../auth.dart';
 /// An Auth instance can have multiple tenants.
 class Auth extends _BaseAuth implements FirebaseService {
   /// Creates or returns the cached Auth instance for the given app.
-  factory Auth(
+  factory Auth(FirebaseApp app) {
+    return app.getOrInitService(FirebaseServiceType.auth.name, Auth._);
+  }
+
+  Auth._(FirebaseApp app)
+    : super(app: app, authRequestHandler: AuthRequestHandler(app));
+
+  @internal
+  factory Auth.internal(
     FirebaseApp app, {
-    @internal AuthRequestHandler? requestHandler,
-    @internal FirebaseTokenVerifier? idTokenVerifier,
-    @internal FirebaseTokenVerifier? sessionCookieVerifier,
+    AuthRequestHandler? requestHandler,
+    FirebaseTokenVerifier? idTokenVerifier,
+    FirebaseTokenVerifier? sessionCookieVerifier,
   }) {
     return app.getOrInitService(
       FirebaseServiceType.auth.name,
-      (app) => Auth._(
+      (app) => Auth._internal(
         app,
         requestHandler: requestHandler,
         idTokenVerifier: idTokenVerifier,
@@ -21,11 +29,11 @@ class Auth extends _BaseAuth implements FirebaseService {
     );
   }
 
-  Auth._(
+  Auth._internal(
     FirebaseApp app, {
-    @internal AuthRequestHandler? requestHandler,
-    @internal super.idTokenVerifier,
-    @internal super.sessionCookieVerifier,
+    AuthRequestHandler? requestHandler,
+    super.idTokenVerifier,
+    super.sessionCookieVerifier,
   }) : super(
          app: app,
          authRequestHandler: requestHandler ?? AuthRequestHandler(app),

@@ -296,7 +296,7 @@ abstract class MultiFactorInfo {
   /// If no MultiFactorInfo is associated with the response, null is returned.
   ///
   /// @param response - The server side response.
-  /// @internal
+  @internal
   static MultiFactorInfo? initMultiFactorInfo(
     auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   ) {

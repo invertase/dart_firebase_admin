@@ -64,7 +64,7 @@ void main() {
       app,
       httpClient: httpClient,
     );
-    messaging = Messaging(app, requestHandler: requestHandler);
+    messaging = Messaging.internal(app, requestHandler: requestHandler);
   });
 
   tearDown(() {

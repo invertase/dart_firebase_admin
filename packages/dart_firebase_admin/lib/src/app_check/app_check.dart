@@ -29,7 +29,24 @@ class AppCheck implements FirebaseService {
       _appCheckTokenVerifier = AppCheckTokenVerifier(app);
 
   @internal
-  AppCheck.internal(
+  factory AppCheck.internal(
+    FirebaseApp app, {
+    AppCheckRequestHandler? requestHandler,
+    AppCheckTokenGenerator? tokenGenerator,
+    AppCheckTokenVerifier? tokenVerifier,
+  }) {
+    return app.getOrInitService(
+      FirebaseServiceType.appCheck.name,
+      (app) => AppCheck._internal(
+        app,
+        requestHandler: requestHandler,
+        tokenGenerator: tokenGenerator,
+        tokenVerifier: tokenVerifier,
+      ),
+    );
+  }
+
+  AppCheck._internal(
     this.app, {
     AppCheckRequestHandler? requestHandler,
     AppCheckTokenGenerator? tokenGenerator,

@@ -54,6 +54,24 @@ class TenantAwareAuth extends _BaseAuth {
         tokenGenerator: _createFirebaseTokenGenerator(app, tenantId: tenantId),
       );
 
+  /// Internal constructor for testing.
+  ///
+  /// [app] - The app that created this tenant.
+  /// [tenantId] - The corresponding tenant ID.
+  /// [idTokenVerifier] - Optional ID token verifier for testing.
+  /// [sessionCookieVerifier] - Optional session cookie verifier for testing.
+  @internal
+  TenantAwareAuth.internal(
+    FirebaseApp app,
+    this.tenantId, {
+    super.idTokenVerifier,
+    super.sessionCookieVerifier,
+  }) : super(
+         app: app,
+         authRequestHandler: _TenantAwareAuthRequestHandler(app, tenantId),
+         tokenGenerator: _createFirebaseTokenGenerator(app, tenantId: tenantId),
+       );
+
   /// The tenant identifier corresponding to this `TenantAwareAuth` instance.
   /// All calls to the user management APIs, OIDC/SAML provider management APIs, email link
   /// generation APIs, etc will only be applied within the scope of this tenant.
@@ -104,6 +122,11 @@ class TenantAwareAuth extends _BaseAuth {
     String idToken,
     SessionCookieOptions sessionCookieOptions,
   ) async {
+    // Validate idToken is not empty before verification.
+    if (idToken.isEmpty) {
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidIdToken);
+    }
+
     // Verify the ID token and check tenant ID before creating session cookie.
     await verifyIdToken(idToken);
 

@@ -503,7 +503,7 @@ void main() {
             );
 
             // Initialize auth service with our request handler
-            Auth(app, requestHandler: requestHandler);
+            Auth.internal(app, requestHandler: requestHandler);
 
             // Verify emulator is enabled
             expect(Environment.isAuthEmulatorEnabled(), isTrue);

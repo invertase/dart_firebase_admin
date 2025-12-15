@@ -26,9 +26,13 @@ import 'dart:io';
 
 import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/src/app.dart';
+import 'package:googleapis/identitytoolkit/v1.dart';
 import 'package:test/test.dart';
+import 'package:uuid/uuid.dart';
 
 import '../google_cloud_firestore/util/helpers.dart';
+
+const _uid = Uuid();
 
 void main() {
   group('TenantManager (Production)', () {
@@ -422,6 +426,352 @@ void main() {
           }, zoneValues: {envSymbol: prodEnv});
         },
         skip: hasGoogleEnv ? false : 'Requires production Firebase',
+      );
+    });
+
+    group('authForTenant - Session Cookies', () {
+      test(
+        'tenant auth creates and verifies a valid session cookie',
+        () {
+          // Remove emulator env var from the zone environment
+          final prodEnv = Map<String, String>.from(Platform.environment);
+          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+          return runZoned(() async {
+            final appName =
+                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+            final app = FirebaseApp.initializeApp(name: appName);
+            final testAuth = Auth(app);
+            final tenantManager = testAuth.tenantManager;
+
+            Tenant? tenant;
+            UserRecord? user;
+            try {
+              tenant = await tenantManager.createTenant(
+                CreateTenantRequest(
+                  displayName: 'Session-Cookie-Test',
+                  emailSignInConfig: EmailSignInProviderConfig(
+                    enabled: true,
+                    passwordRequired: false,
+                  ),
+                ),
+              );
+
+              final tenantAuth = tenantManager.authForTenant(tenant.tenantId);
+
+              // Helper function to exchange custom token for ID token (tenant-scoped)
+              Future<String> getIdTokenFromCustomToken(
+                String customToken,
+                String tenantId,
+              ) async {
+                final client = await testAuth.app.client;
+                final api = IdentityToolkitApi(client);
+
+                final request =
+                    GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                      token: customToken,
+                      returnSecureToken: true,
+                      tenantId: tenantId,
+                    );
+
+                final response = await api.accounts.signInWithCustomToken(
+                  request,
+                );
+
+                if (response.idToken == null || response.idToken!.isEmpty) {
+                  throw Exception(
+                    'Failed to exchange custom token for ID token: No idToken in response',
+                  );
+                }
+
+                return response.idToken!;
+              }
+
+              user = await tenantAuth.createUser(CreateRequest(uid: _uid.v4()));
+
+              final customToken = await tenantAuth.createCustomToken(user.uid);
+              final idToken = await getIdTokenFromCustomToken(
+                customToken,
+                tenant.tenantId,
+              );
+
+              const expiresIn = 24 * 60 * 60 * 1000; // 24 hours
+              final sessionCookie = await tenantAuth.createSessionCookie(
+                idToken,
+                const SessionCookieOptions(expiresIn: expiresIn),
+              );
+
+              expect(sessionCookie, isNotEmpty);
+
+              final decodedToken = await tenantAuth.verifySessionCookie(
+                sessionCookie,
+              );
+              expect(decodedToken.uid, equals(user.uid));
+              expect(decodedToken.iss, contains('session.firebase.google.com'));
+              expect(decodedToken.firebase.tenant, equals(tenant.tenantId));
+            } finally {
+              if (tenant != null) {
+                final tenantAuth = tenantManager.authForTenant(tenant.tenantId);
+                if (user != null) {
+                  await tenantAuth.deleteUser(user.uid);
+                }
+                await tenantManager.deleteTenant(tenant.tenantId);
+              }
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv});
+        },
+        skip: hasGoogleEnv
+            ? false
+            : 'Session cookies require GCIP (not available in emulator)',
+      );
+
+      test(
+        'tenant auth creates a revocable session cookie',
+        () {
+          // Remove emulator env var from the zone environment
+          final prodEnv = Map<String, String>.from(Platform.environment);
+          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+          return runZoned(() async {
+            final appName =
+                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+            final app = FirebaseApp.initializeApp(name: appName);
+            final testAuth = Auth(app);
+            final tenantManager = testAuth.tenantManager;
+
+            Tenant? tenant;
+            UserRecord? user;
+            try {
+              tenant = await tenantManager.createTenant(
+                CreateTenantRequest(
+                  displayName: 'RevocableSession',
+                  emailSignInConfig: EmailSignInProviderConfig(
+                    enabled: true,
+                    passwordRequired: false,
+                  ),
+                ),
+              );
+
+              final tenantAuth = tenantManager.authForTenant(tenant.tenantId);
+
+              // Helper function to exchange custom token for ID token (tenant-scoped)
+              Future<String> getIdTokenFromCustomToken(
+                String customToken,
+                String tenantId,
+              ) async {
+                final client = await testAuth.app.client;
+                final api = IdentityToolkitApi(client);
+
+                final request =
+                    GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                      token: customToken,
+                      returnSecureToken: true,
+                      tenantId: tenantId,
+                    );
+
+                final response = await api.accounts.signInWithCustomToken(
+                  request,
+                );
+
+                if (response.idToken == null || response.idToken!.isEmpty) {
+                  throw Exception(
+                    'Failed to exchange custom token for ID token: No idToken in response',
+                  );
+                }
+
+                return response.idToken!;
+              }
+
+              user = await tenantAuth.createUser(CreateRequest(uid: _uid.v4()));
+
+              final customToken = await tenantAuth.createCustomToken(user.uid);
+              final idToken = await getIdTokenFromCustomToken(
+                customToken,
+                tenant.tenantId,
+              );
+
+              const expiresIn = 24 * 60 * 60 * 1000;
+              final sessionCookie = await tenantAuth.createSessionCookie(
+                idToken,
+                const SessionCookieOptions(expiresIn: expiresIn),
+              );
+
+              final decodedToken = await tenantAuth.verifySessionCookie(
+                sessionCookie,
+              );
+              expect(decodedToken.uid, equals(user.uid));
+              expect(decodedToken.firebase.tenant, equals(tenant.tenantId));
+
+              await Future<void>.delayed(const Duration(seconds: 2));
+              await tenantAuth.revokeRefreshTokens(user.uid);
+
+              // Without checkRevoked, should not throw
+              await tenantAuth.verifySessionCookie(sessionCookie);
+
+              // With checkRevoked: true, should throw
+              await expectLater(
+                () => tenantAuth.verifySessionCookie(
+                  sessionCookie,
+                  checkRevoked: true,
+                ),
+                throwsA(
+                  isA<FirebaseAuthAdminException>().having(
+                    (e) => e.code,
+                    'code',
+                    'auth/session-cookie-revoked',
+                  ),
+                ),
+              );
+            } finally {
+              if (tenant != null) {
+                final tenantAuth = tenantManager.authForTenant(tenant.tenantId);
+                if (user != null) {
+                  await tenantAuth.deleteUser(user.uid);
+                }
+                await tenantManager.deleteTenant(tenant.tenantId);
+              }
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv});
+        },
+        skip: hasGoogleEnv
+            ? false
+            : 'Session cookies require GCIP (not available in emulator)',
+      );
+
+      test(
+        'tenant auth verifySessionCookie rejects session cookie from different tenant',
+        () {
+          // Remove emulator env var from the zone environment
+          final prodEnv = Map<String, String>.from(Platform.environment);
+          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+          return runZoned(() async {
+            final appName =
+                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+            final app = FirebaseApp.initializeApp(name: appName);
+            final testAuth = Auth(app);
+            final tenantManager = testAuth.tenantManager;
+
+            Tenant? tenant1;
+            Tenant? tenant2;
+            UserRecord? user1;
+            UserRecord? user2;
+            try {
+              // Create two tenants
+              tenant1 = await tenantManager.createTenant(
+                CreateTenantRequest(
+                  displayName: 'Tenant1SessionCookie',
+                  emailSignInConfig: EmailSignInProviderConfig(
+                    enabled: true,
+                    passwordRequired: false,
+                  ),
+                ),
+              );
+
+              tenant2 = await tenantManager.createTenant(
+                CreateTenantRequest(
+                  displayName: 'Tenant2SessionCookie',
+                  emailSignInConfig: EmailSignInProviderConfig(
+                    enabled: true,
+                    passwordRequired: false,
+                  ),
+                ),
+              );
+
+              final tenantAuth1 = tenantManager.authForTenant(tenant1.tenantId);
+              final tenantAuth2 = tenantManager.authForTenant(tenant2.tenantId);
+
+              // Helper function to exchange custom token for ID token (tenant-scoped)
+              Future<String> getIdTokenFromCustomToken(
+                String customToken,
+                String tenantId,
+              ) async {
+                final client = await testAuth.app.client;
+                final api = IdentityToolkitApi(client);
+
+                final request =
+                    GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                      token: customToken,
+                      returnSecureToken: true,
+                      tenantId: tenantId,
+                    );
+
+                final response = await api.accounts.signInWithCustomToken(
+                  request,
+                );
+
+                if (response.idToken == null || response.idToken!.isEmpty) {
+                  throw Exception(
+                    'Failed to exchange custom token for ID token: No idToken in response',
+                  );
+                }
+
+                return response.idToken!;
+              }
+
+              // Create users in both tenants
+              user1 = await tenantAuth1.createUser(
+                CreateRequest(uid: _uid.v4()),
+              );
+              user2 = await tenantAuth2.createUser(
+                CreateRequest(uid: _uid.v4()),
+              );
+
+              // Create session cookie for tenant1 user
+              final customToken1 = await tenantAuth1.createCustomToken(
+                user1.uid,
+              );
+              final idToken1 = await getIdTokenFromCustomToken(
+                customToken1,
+                tenant1.tenantId,
+              );
+
+              const expiresIn = 24 * 60 * 60 * 1000;
+              final sessionCookie1 = await tenantAuth1.createSessionCookie(
+                idToken1,
+                const SessionCookieOptions(expiresIn: expiresIn),
+              );
+
+              // Try to verify tenant1's session cookie with tenant2's auth
+              // This should fail because the tenant IDs don't match
+              await expectLater(
+                () => tenantAuth2.verifySessionCookie(sessionCookie1),
+                throwsA(
+                  isA<FirebaseAuthAdminException>().having(
+                    (e) => e.code,
+                    'code',
+                    'auth/mismatching-tenant-id',
+                  ),
+                ),
+              );
+            } finally {
+              if (tenant1 != null) {
+                final tenantAuth1 = tenantManager.authForTenant(
+                  tenant1.tenantId,
+                );
+                if (user1 != null) {
+                  await tenantAuth1.deleteUser(user1.uid);
+                }
+                await tenantManager.deleteTenant(tenant1.tenantId);
+              }
+              if (tenant2 != null) {
+                final tenantAuth2 = tenantManager.authForTenant(
+                  tenant2.tenantId,
+                );
+                if (user2 != null) {
+                  await tenantAuth2.deleteUser(user2.uid);
+                }
+                await tenantManager.deleteTenant(tenant2.tenantId);
+              }
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv});
+        },
+        skip: hasGoogleEnv
+            ? false
+            : 'Session cookies require GCIP (not available in emulator)',
       );
     });
   });

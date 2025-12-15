@@ -2733,7 +2733,7 @@ void main() {
         );
 
         final app = createApp(name: 'test-verify-id-token', client: clientMock);
-        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+        final testAuth = Auth.internal(app, idTokenVerifier: mockTokenVerifier);
 
         final result = await testAuth.verifyIdToken('mock-token');
 
@@ -2762,7 +2762,7 @@ void main() {
         );
 
         final app = createApp(name: 'test-verify-id-token-empty');
-        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+        final testAuth = Auth.internal(app, idTokenVerifier: mockTokenVerifier);
 
         await expectLater(
           () => testAuth.verifyIdToken(''),
@@ -2791,7 +2791,7 @@ void main() {
         );
 
         final app = createApp(name: 'test-verify-id-token-invalid');
-        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+        final testAuth = Auth.internal(app, idTokenVerifier: mockTokenVerifier);
 
         await expectLater(
           () => testAuth.verifyIdToken('invalid-token'),
@@ -2860,7 +2860,7 @@ void main() {
           client: clientMock,
           name: 'test-verify-id-token-disabled',
         );
-        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+        final testAuth = Auth.internal(app, idTokenVerifier: mockTokenVerifier);
 
         await expectLater(
           () => testAuth.verifyIdToken('mock-token', checkRevoked: true),
@@ -2936,7 +2936,7 @@ void main() {
           client: clientMock,
           name: 'test-verify-id-token-revoked',
         );
-        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+        final testAuth = Auth.internal(app, idTokenVerifier: mockTokenVerifier);
 
         await expectLater(
           () => testAuth.verifyIdToken('mock-token', checkRevoked: true),
@@ -3014,7 +3014,10 @@ void main() {
             client: clientMock,
             name: 'test-verify-id-token-not-revoked',
           );
-          final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+          final testAuth = Auth.internal(
+            app,
+            idTokenVerifier: mockTokenVerifier,
+          );
 
           final result = await testAuth.verifyIdToken(
             'mock-token',
@@ -3842,7 +3845,7 @@ void main() {
           name: 'test-verify-session-cookie',
           client: clientMock,
         );
-        final testAuth = Auth(
+        final testAuth = Auth.internal(
           app,
           sessionCookieVerifier: mockSessionCookieVerifier,
         );
@@ -3876,7 +3879,7 @@ void main() {
         );
 
         final app = createApp(name: 'test-verify-session-cookie-empty');
-        final testAuth = Auth(
+        final testAuth = Auth.internal(
           app,
           sessionCookieVerifier: mockSessionCookieVerifier,
         );
@@ -3908,7 +3911,7 @@ void main() {
         );
 
         final app = createApp(name: 'test-verify-session-cookie-invalid');
-        final testAuth = Auth(
+        final testAuth = Auth.internal(
           app,
           sessionCookieVerifier: mockSessionCookieVerifier,
         );
@@ -3980,7 +3983,7 @@ void main() {
           client: clientMock,
           name: 'test-verify-session-cookie-disabled',
         );
-        final testAuth = Auth(
+        final testAuth = Auth.internal(
           app,
           sessionCookieVerifier: mockSessionCookieVerifier,
         );
@@ -4059,7 +4062,7 @@ void main() {
           client: clientMock,
           name: 'test-verify-session-cookie-revoked',
         );
-        final testAuth = Auth(
+        final testAuth = Auth.internal(
           app,
           sessionCookieVerifier: mockSessionCookieVerifier,
         );
@@ -4140,7 +4143,7 @@ void main() {
             client: clientMock,
             name: 'test-verify-session-cookie-not-revoked',
           );
-          final testAuth = Auth(
+          final testAuth = Auth.internal(
             app,
             sessionCookieVerifier: mockSessionCookieVerifier,
           );

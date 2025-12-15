@@ -1,7 +1,13 @@
+import 'dart:convert';
+
 import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:http/http.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
+import '../google_cloud_firestore/util/helpers.dart';
+import '../mock.dart';
 import '../mock_service_account.dart';
 
 void main() {
@@ -94,6 +100,8 @@ void main() {
   });
 
   group('TenantAwareAuth', () {
+    setUpAll(registerFallbacks);
+
     test('has correct tenant ID', () {
       final app = _createMockApp();
       final auth = Auth(app);
@@ -113,6 +121,974 @@ void main() {
 
       // TenantAwareAuth extends _BaseAuth which provides all auth methods
       expect(tenantAuth, isA<TenantAwareAuth>());
+    });
+
+    group('verifyIdToken', () {
+      test('verifies ID token successfully with matching tenant ID', () async {
+        const tenantId = 'test-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': tenantId,
+          },
+        });
+
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        // Always mock HTTP client for getUser calls
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-verify-id-token');
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        final result = await tenantAuth.verifyIdToken('mock-token');
+
+        expect(result.uid, equals('test-uid-123'));
+        expect(result.sub, equals('test-uid-123'));
+        expect(result.firebase.tenant, equals(tenantId));
+        verify(
+          () => mockIdTokenVerifier.verifyJWT(
+            'mock-token',
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).called(1);
+      });
+
+      test('throws when idToken has mismatching tenant ID', () async {
+        const tenantId = 'test-tenant-id';
+        const wrongTenantId = 'wrong-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': wrongTenantId,
+          },
+        });
+
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        // Mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-mismatching-tenant-id',
+        );
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifyIdToken('mock-token'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/mismatching-tenant-id',
+            ),
+          ),
+        );
+      });
+
+      test('throws when idToken is empty', () async {
+        const tenantId = 'test-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Firebase ID token has invalid format.',
+          ),
+        );
+
+        final app = createApp(name: 'test-verify-id-token-empty');
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifyIdToken(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when idToken is invalid', () async {
+        const tenantId = 'test-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Decoding Firebase ID token failed.',
+          ),
+        );
+
+        final app = createApp(name: 'test-verify-id-token-invalid');
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifyIdToken('invalid-token'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when checkRevoked is true and user is disabled', () async {
+        const tenantId = 'test-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': tenantId,
+          },
+        });
+
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': true,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-verify-id-token-disabled',
+        );
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifyIdToken('mock-token', checkRevoked: true),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-disabled',
+            ),
+          ),
+        );
+      });
+
+      test('throws when checkRevoked is true and token is revoked', () async {
+        const tenantId = 'test-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        // Token with auth_time before validSince
+        final authTime = DateTime.now().subtract(const Duration(hours: 2));
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': authTime.millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': tenantId,
+          },
+        });
+
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        final clientMock = ClientMock();
+        // validSince is after auth_time, so token is revoked
+        final validSince = DateTime.now().subtract(const Duration(hours: 1));
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'validSince':
+                            (validSince.millisecondsSinceEpoch ~/ 1000)
+                                .toString(),
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-verify-id-token-revoked',
+        );
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifyIdToken('mock-token', checkRevoked: true),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/id-token-revoked',
+            ),
+          ),
+        );
+      });
+
+      test(
+        'succeeds when checkRevoked is true and token is not revoked',
+        () async {
+          const tenantId = 'test-tenant-id';
+          final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+          // Token with auth_time after validSince
+          final authTime = DateTime.now().subtract(const Duration(minutes: 30));
+          final decodedToken = DecodedIdToken.fromMap({
+            'sub': 'test-uid-123',
+            'uid': 'test-uid-123',
+            'aud': 'test-project',
+            'iss': 'https://securetoken.google.com/test-project',
+            'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            'exp':
+                DateTime.now()
+                    .add(const Duration(hours: 1))
+                    .millisecondsSinceEpoch ~/
+                1000,
+            'auth_time': authTime.millisecondsSinceEpoch ~/ 1000,
+            'firebase': <String, dynamic>{
+              'identities': <String, dynamic>{},
+              'sign_in_provider': 'custom',
+              'tenant': tenantId,
+            },
+          });
+
+          when(
+            () => mockIdTokenVerifier.verifyJWT(
+              any(),
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).thenAnswer((_) async => decodedToken);
+
+          final clientMock = ClientMock();
+          // validSince is before auth_time, so token is not revoked
+          final validSince = DateTime.now().subtract(const Duration(hours: 1));
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'users': [
+                        {
+                          'localId': 'test-uid-123',
+                          'email': 'test@example.com',
+                          'disabled': false,
+                          'validSince':
+                              (validSince.millisecondsSinceEpoch ~/ 1000)
+                                  .toString(),
+                          'createdAt': '1234567890000',
+                        },
+                      ],
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-verify-id-token-not-revoked',
+          );
+          final tenantAuth = TenantAwareAuth.internal(
+            app,
+            tenantId,
+            idTokenVerifier: mockIdTokenVerifier,
+          );
+
+          final result = await tenantAuth.verifyIdToken(
+            'mock-token',
+            checkRevoked: true,
+          );
+
+          expect(result.uid, equals('test-uid-123'));
+          expect(result.firebase.tenant, equals(tenantId));
+        },
+      );
+    });
+
+    group('createSessionCookie', () {
+      test('throws when idToken is empty', () async {
+        const tenantId = 'test-tenant-id';
+        final app = _createMockApp();
+        final auth = Auth(app);
+        final tenantManager = auth.tenantManager;
+        final tenantAuth = tenantManager.authForTenant(tenantId);
+
+        expect(
+          () => tenantAuth.createSessionCookie(
+            '',
+            const SessionCookieOptions(expiresIn: 3600000),
+          ),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+      });
+
+      test('validates expiresIn duration - too short', () async {
+        const tenantId = 'test-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        final decodedIdToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': tenantId,
+          },
+        });
+
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedIdToken);
+
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({'sessionCookie': 'session-cookie-string'}),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = _createMockApp();
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        expect(
+          () => tenantAuth.createSessionCookie(
+            'id-token',
+            const SessionCookieOptions(
+              expiresIn: 60000,
+            ), // 1 minute - too short
+          ),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+      });
+
+      test('validates expiresIn duration - too long', () async {
+        const tenantId = 'test-tenant-id';
+        final mockIdTokenVerifier = MockFirebaseTokenVerifier();
+        final decodedIdToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': tenantId,
+          },
+        });
+
+        when(
+          () => mockIdTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedIdToken);
+
+        final app = _createMockApp();
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          idTokenVerifier: mockIdTokenVerifier,
+        );
+
+        expect(
+          () => tenantAuth.createSessionCookie(
+            'id-token',
+            const SessionCookieOptions(
+              expiresIn: 15 * 24 * 60 * 60 * 1000, // 15 days - too long
+            ),
+          ),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+      });
+    });
+
+    group('verifySessionCookie', () {
+      test(
+        'verifies session cookie successfully with matching tenant ID',
+        () async {
+          const tenantId = 'test-tenant-id';
+          final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+          final decodedToken = DecodedIdToken.fromMap({
+            'sub': 'test-uid-123',
+            'uid': 'test-uid-123',
+            'aud': 'test-project',
+            'iss': 'https://session.firebase.google.com/test-project',
+            'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            'exp':
+                DateTime.now()
+                    .add(const Duration(hours: 1))
+                    .millisecondsSinceEpoch ~/
+                1000,
+            'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            'firebase': <String, dynamic>{
+              'identities': <String, dynamic>{},
+              'sign_in_provider': 'custom',
+              'tenant': tenantId,
+            },
+          });
+
+          when(
+            () => mockSessionCookieVerifier.verifyJWT(
+              any(),
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).thenAnswer((_) async => decodedToken);
+
+          // Always mock HTTP client for getUser calls
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'users': [
+                        {
+                          'localId': 'test-uid-123',
+                          'email': 'test@example.com',
+                          'disabled': false,
+                          'createdAt': '1234567890000',
+                        },
+                      ],
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-verify-session-cookie',
+          );
+          final tenantAuth = TenantAwareAuth.internal(
+            app,
+            tenantId,
+            sessionCookieVerifier: mockSessionCookieVerifier,
+          );
+
+          final result = await tenantAuth.verifySessionCookie(
+            'mock-session-cookie',
+          );
+
+          expect(result.uid, equals('test-uid-123'));
+          expect(result.sub, equals('test-uid-123'));
+          verify(
+            () => mockSessionCookieVerifier.verifyJWT(
+              'mock-session-cookie',
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).called(1);
+        },
+      );
+
+      test('throws when session cookie has mismatching tenant ID', () async {
+        const tenantId = 'test-tenant-id';
+        const wrongTenantId = 'wrong-tenant-id';
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://session.firebase.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': wrongTenantId,
+          },
+        });
+
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        // Mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-mismatching-tenant',
+        );
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifySessionCookie('mock-session-cookie'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/mismatching-tenant-id',
+            ),
+          ),
+        );
+      });
+
+      test('throws when sessionCookie is empty', () async {
+        const tenantId = 'test-tenant-id';
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Firebase session cookie has invalid format.',
+          ),
+        );
+
+        final app = createApp(name: 'test-empty-session-cookie');
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifySessionCookie(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when sessionCookie is invalid', () async {
+        const tenantId = 'test-tenant-id';
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Decoding Firebase session cookie failed.',
+          ),
+        );
+
+        final app = createApp(name: 'test-invalid-session-cookie');
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () => tenantAuth.verifySessionCookie('invalid-cookie'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when checkRevoked is true and user is disabled', () async {
+        const tenantId = 'test-tenant-id';
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://session.firebase.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+            'tenant': tenantId,
+          },
+        });
+
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': true,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-user-disabled');
+        final tenantAuth = TenantAwareAuth.internal(
+          app,
+          tenantId,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () =>
+              tenantAuth.verifySessionCookie('mock-cookie', checkRevoked: true),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-disabled',
+            ),
+          ),
+        );
+      });
+
+      test(
+        'succeeds when checkRevoked is true and cookie is not revoked',
+        () async {
+          const tenantId = 'test-tenant-id';
+          final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+          final authTime = DateTime.now().subtract(const Duration(minutes: 30));
+          final decodedToken = DecodedIdToken.fromMap({
+            'sub': 'test-uid-123',
+            'uid': 'test-uid-123',
+            'aud': 'test-project',
+            'iss': 'https://session.firebase.google.com/test-project',
+            'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            'exp':
+                DateTime.now()
+                    .add(const Duration(hours: 1))
+                    .millisecondsSinceEpoch ~/
+                1000,
+            'auth_time': authTime.millisecondsSinceEpoch ~/ 1000,
+            'firebase': <String, dynamic>{
+              'identities': <String, dynamic>{},
+              'sign_in_provider': 'custom',
+              'tenant': tenantId,
+            },
+          });
+
+          when(
+            () => mockSessionCookieVerifier.verifyJWT(
+              any(),
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).thenAnswer((_) async => decodedToken);
+
+          final clientMock = ClientMock();
+          // validSince is before auth_time, so cookie is not revoked
+          final validSince = DateTime.now().subtract(const Duration(hours: 2));
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'users': [
+                        {
+                          'localId': 'test-uid-123',
+                          'email': 'test@example.com',
+                          'disabled': false,
+                          'validSince':
+                              (validSince.millisecondsSinceEpoch ~/ 1000)
+                                  .toString(),
+                          'createdAt': '1234567890000',
+                        },
+                      ],
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-cookie-not-revoked',
+          );
+          final tenantAuth = TenantAwareAuth.internal(
+            app,
+            tenantId,
+            sessionCookieVerifier: mockSessionCookieVerifier,
+          );
+
+          final result = await tenantAuth.verifySessionCookie(
+            'mock-cookie',
+            checkRevoked: true,
+          );
+
+          expect(result.uid, equals('test-uid-123'));
+        },
+      );
     });
   });
 
