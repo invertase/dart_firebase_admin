@@ -180,6 +180,15 @@ class TenantManager {
     : _authRequestHandler = AuthRequestHandler(_app),
       _tenantsMap = {};
 
+  /// Internal constructor for testing.
+  ///
+  /// [app] - The app for this TenantManager instance.
+  /// [authRequestHandler] - Optional request handler for testing.
+  @internal
+  TenantManager.internal(this._app, {AuthRequestHandler? authRequestHandler})
+    : _authRequestHandler = authRequestHandler ?? AuthRequestHandler(_app),
+      _tenantsMap = {};
+
   final FirebaseApp _app;
   final AuthRequestHandler _authRequestHandler;
   final Map<String, TenantAwareAuth> _tenantsMap;
@@ -209,7 +218,7 @@ class TenantManager {
   ///
   /// Returns a [Future] fulfilled with the tenant configuration for the provided [tenantId].
   Future<Tenant> getTenant(String tenantId) async {
-    final response = await _authRequestHandler._getTenant(tenantId);
+    final response = await _authRequestHandler.getTenant(tenantId);
     return Tenant._fromResponse(response);
   }
 
@@ -227,7 +236,7 @@ class TenantManager {
     int maxResults = 1000,
     String? pageToken,
   }) async {
-    final response = await _authRequestHandler._listTenants(
+    final response = await _authRequestHandler.listTenants(
       maxResults: maxResults,
       pageToken: pageToken,
     );
@@ -254,7 +263,7 @@ class TenantManager {
   ///
   /// Returns a [Future] that completes once the tenant has been deleted.
   Future<void> deleteTenant(String tenantId) async {
-    await _authRequestHandler._deleteTenant(tenantId);
+    await _authRequestHandler.deleteTenant(tenantId);
   }
 
   /// Creates a new tenant.
@@ -266,7 +275,7 @@ class TenantManager {
   /// Returns a [Future] fulfilled with the tenant configuration corresponding to the newly
   /// created tenant.
   Future<Tenant> createTenant(CreateTenantRequest tenantOptions) async {
-    final response = await _authRequestHandler._createTenant(tenantOptions);
+    final response = await _authRequestHandler.createTenant(tenantOptions);
     return Tenant._fromResponse(response);
   }
 
@@ -280,7 +289,7 @@ class TenantManager {
     String tenantId,
     UpdateTenantRequest tenantOptions,
   ) async {
-    final response = await _authRequestHandler._updateTenant(
+    final response = await _authRequestHandler.updateTenant(
       tenantId,
       tenantOptions,
     );

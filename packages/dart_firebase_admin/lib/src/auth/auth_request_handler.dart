@@ -780,7 +780,7 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
   }
 
   /// Looks up a tenant by tenant ID.
-  Future<Map<String, dynamic>> _getTenant(String tenantId) async {
+  Future<Map<String, dynamic>> getTenant(String tenantId) async {
     if (tenantId.isEmpty) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.invalidTenantId,
@@ -794,10 +794,17 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
 
   /// Lists tenants (single batch only) with a size of maxResults and starting from
   /// the offset as specified by pageToken.
-  Future<Map<String, dynamic>> _listTenants({
+  Future<Map<String, dynamic>> listTenants({
     int maxResults = 1000,
     String? pageToken,
   }) async {
+    if (maxResults > 1000) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidArgument,
+        'maxResults must not exceed 1000.',
+      );
+    }
+
     final response = await _httpClient.listTenants(
       maxResults: maxResults,
       pageToken: pageToken,
@@ -818,7 +825,7 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
   }
 
   /// Deletes a tenant identified by a tenantId.
-  Future<void> _deleteTenant(String tenantId) async {
+  Future<void> deleteTenant(String tenantId) async {
     if (tenantId.isEmpty) {
       throw FirebaseAuthAdminException(
         AuthClientErrorCode.invalidTenantId,
@@ -830,7 +837,7 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
   }
 
   /// Creates a new tenant with the properties provided.
-  Future<Map<String, dynamic>> _createTenant(
+  Future<Map<String, dynamic>> createTenant(
     CreateTenantRequest tenantOptions,
   ) async {
     final requestMap = Tenant._buildServerRequest(tenantOptions, true);
@@ -842,7 +849,7 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
   }
 
   /// Updates an existing tenant with the properties provided.
-  Future<Map<String, dynamic>> _updateTenant(
+  Future<Map<String, dynamic>> updateTenant(
     String tenantId,
     UpdateTenantRequest tenantOptions,
   ) async {

@@ -11,6 +11,11 @@ import '../mock.dart';
 import '../mock_service_account.dart';
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(CreateTenantRequest());
+    registerFallbackValue(UpdateTenantRequest());
+  });
+
   group('TenantManager', () {
     group('authForTenant', () {
       test('returns TenantAwareAuth instance for valid tenant ID', () {
@@ -68,6 +73,377 @@ void main() {
       final tenantManager2 = auth.tenantManager;
 
       expect(identical(tenantManager1, tenantManager2), isTrue);
+    });
+
+    group('getTenant', () {
+      test('throws when tenantId is empty', () async {
+        final app = _createMockApp();
+        final tenantManager = TenantManager.internal(app);
+
+        await expectLater(
+          () => tenantManager.getTenant(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-tenant-id',
+            ),
+          ),
+        );
+      });
+
+      test('returns tenant successfully', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final tenantResponse = <String, dynamic>{
+          'name': 'projects/test-project/tenants/test-tenant-id',
+          'displayName': 'Test Tenant',
+          'allowPasswordSignup': true,
+          'enableEmailLinkSignin': false,
+          'enableAnonymousUser': true,
+        };
+
+        when(
+          () => mockRequestHandler.getTenant(any()),
+        ).thenAnswer((_) async => tenantResponse);
+
+        final tenant = await tenantManager.getTenant('test-tenant-id');
+
+        expect(tenant.tenantId, equals('test-tenant-id'));
+        expect(tenant.displayName, equals('Test Tenant'));
+        expect(tenant.anonymousSignInEnabled, isTrue);
+        verify(() => mockRequestHandler.getTenant('test-tenant-id')).called(1);
+      });
+
+      test('throws when backend returns error', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final error = FirebaseAuthAdminException(
+          AuthClientErrorCode.tenantNotFound,
+          'TENANT_NOT_FOUND',
+        );
+
+        when(() => mockRequestHandler.getTenant(any())).thenThrow(error);
+
+        await expectLater(
+          () => tenantManager.getTenant('test-tenant-id'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/tenant-not-found',
+            ),
+          ),
+        );
+      });
+    });
+
+    group('listTenants', () {
+      test('throws when maxResults is too large', () async {
+        final app = _createMockApp();
+        final tenantManager = TenantManager.internal(app);
+
+        await expectLater(
+          () => tenantManager.listTenants(maxResults: 1001),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('returns tenants successfully', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final listResponse = <String, dynamic>{
+          'tenants': [
+            {
+              'name': 'projects/test-project/tenants/tenant-1',
+              'displayName': 'Tenant 1',
+            },
+            {
+              'name': 'projects/test-project/tenants/tenant-2',
+              'displayName': 'Tenant 2',
+            },
+          ],
+          'nextPageToken': 'next-page-token',
+        };
+
+        when(
+          () => mockRequestHandler.listTenants(
+            maxResults: any(named: 'maxResults'),
+            pageToken: any(named: 'pageToken'),
+          ),
+        ).thenAnswer((_) async => listResponse);
+
+        final result = await tenantManager.listTenants(
+          maxResults: 10,
+          pageToken: 'page-token',
+        );
+
+        expect(result.tenants.length, equals(2));
+        expect(result.tenants[0].tenantId, equals('tenant-1'));
+        expect(result.tenants[1].tenantId, equals('tenant-2'));
+        expect(result.pageToken, equals('next-page-token'));
+        verify(
+          () => mockRequestHandler.listTenants(
+            maxResults: 10,
+            pageToken: 'page-token',
+          ),
+        ).called(1);
+      });
+
+      test('returns empty list when no tenants', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final listResponse = <String, dynamic>{
+          'tenants': <Map<String, dynamic>>[],
+        };
+
+        when(
+          () => mockRequestHandler.listTenants(
+            maxResults: any(named: 'maxResults'),
+            pageToken: any(named: 'pageToken'),
+          ),
+        ).thenAnswer((_) async => listResponse);
+
+        final result = await tenantManager.listTenants();
+
+        expect(result.tenants, isEmpty);
+        expect(result.pageToken, isNull);
+      });
+    });
+
+    group('createTenant', () {
+      test('creates tenant successfully', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final tenantResponse = <String, dynamic>{
+          'name': 'projects/test-project/tenants/new-tenant-id',
+          'displayName': 'New Tenant',
+          'allowPasswordSignup': true,
+          'enableEmailLinkSignin': false,
+          'enableAnonymousUser': false,
+        };
+
+        when(
+          () => mockRequestHandler.createTenant(any()),
+        ).thenAnswer((_) async => tenantResponse);
+
+        final tenant = await tenantManager.createTenant(
+          CreateTenantRequest(displayName: 'New Tenant'),
+        );
+
+        expect(tenant.tenantId, equals('new-tenant-id'));
+        expect(tenant.displayName, equals('New Tenant'));
+        verify(() => mockRequestHandler.createTenant(any())).called(1);
+      });
+
+      test('throws when backend returns error', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final error = FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL_ERROR',
+        );
+
+        when(() => mockRequestHandler.createTenant(any())).thenThrow(error);
+
+        await expectLater(
+          () => tenantManager.createTenant(
+            CreateTenantRequest(displayName: 'New Tenant'),
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/internal-error',
+            ),
+          ),
+        );
+      });
+    });
+
+    group('updateTenant', () {
+      test('throws when tenantId is empty', () async {
+        final app = _createMockApp();
+        final tenantManager = TenantManager.internal(app);
+
+        await expectLater(
+          () => tenantManager.updateTenant(
+            '',
+            UpdateTenantRequest(displayName: 'Updated Name'),
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-tenant-id',
+            ),
+          ),
+        );
+      });
+
+      test('updates tenant successfully', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final tenantResponse = <String, dynamic>{
+          'name': 'projects/test-project/tenants/test-tenant-id',
+          'displayName': 'Updated Tenant',
+          'allowPasswordSignup': true,
+          'enableEmailLinkSignin': false,
+          'enableAnonymousUser': true,
+        };
+
+        when(
+          () => mockRequestHandler.updateTenant(any(), any()),
+        ).thenAnswer((_) async => tenantResponse);
+
+        final tenant = await tenantManager.updateTenant(
+          'test-tenant-id',
+          UpdateTenantRequest(displayName: 'Updated Tenant'),
+        );
+
+        expect(tenant.tenantId, equals('test-tenant-id'));
+        expect(tenant.displayName, equals('Updated Tenant'));
+        verify(
+          () => mockRequestHandler.updateTenant('test-tenant-id', any()),
+        ).called(1);
+      });
+
+      test('throws when backend returns error', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final error = FirebaseAuthAdminException(
+          AuthClientErrorCode.tenantNotFound,
+          'TENANT_NOT_FOUND',
+        );
+
+        when(
+          () => mockRequestHandler.updateTenant(any(), any()),
+        ).thenThrow(error);
+
+        await expectLater(
+          () => tenantManager.updateTenant(
+            'test-tenant-id',
+            UpdateTenantRequest(displayName: 'Updated Name'),
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/tenant-not-found',
+            ),
+          ),
+        );
+      });
+    });
+
+    group('deleteTenant', () {
+      test('throws when tenantId is empty', () async {
+        final app = _createMockApp();
+        final tenantManager = TenantManager.internal(app);
+
+        await expectLater(
+          () => tenantManager.deleteTenant(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-tenant-id',
+            ),
+          ),
+        );
+      });
+
+      test('deletes tenant successfully', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        when(
+          () => mockRequestHandler.deleteTenant(any()),
+        ).thenAnswer((_) async => Future<void>.value());
+
+        await tenantManager.deleteTenant('test-tenant-id');
+
+        verify(
+          () => mockRequestHandler.deleteTenant('test-tenant-id'),
+        ).called(1);
+      });
+
+      test('throws when backend returns error', () async {
+        final app = _createMockApp();
+        final mockRequestHandler = AuthRequestHandlerMock();
+        final tenantManager = TenantManager.internal(
+          app,
+          authRequestHandler: mockRequestHandler,
+        );
+
+        final error = FirebaseAuthAdminException(
+          AuthClientErrorCode.tenantNotFound,
+          'TENANT_NOT_FOUND',
+        );
+
+        when(() => mockRequestHandler.deleteTenant(any())).thenThrow(error);
+
+        await expectLater(
+          () => tenantManager.deleteTenant('test-tenant-id'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/tenant-not-found',
+            ),
+          ),
+        );
+      });
     });
   });
 
