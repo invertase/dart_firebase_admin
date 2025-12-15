@@ -140,6 +140,43 @@ void main() {
           );
         });
 
+        test('generates link with ActionCodeSettings', () async {
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'oobLink': 'https://example.com/reset?oobCode=ABC123',
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-reset-link-settings',
+          );
+          final testAuth = Auth(app);
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://myapp.example.com/finishReset',
+          );
+
+          final link = await testAuth.generatePasswordResetLink(
+            'test@example.com',
+            actionCodeSettings: actionCodeSettings,
+          );
+
+          expect(link, equals('https://example.com/reset?oobCode=ABC123'));
+          verify(() => clientMock.send(any())).called(1);
+        });
+
         test('validates ActionCodeSettings.url is a valid URI', () async {
           final actionCodeSettings = ActionCodeSettings(url: 'not a valid url');
 
@@ -222,6 +259,72 @@ void main() {
       });
 
       group('generateEmailVerificationLink', () {
+        test('generates link without ActionCodeSettings', () async {
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'oobLink': 'https://example.com/verify?oobCode=XYZ789',
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(client: clientMock, name: 'test-verify-link');
+          final testAuth = Auth(app);
+
+          final link = await testAuth.generateEmailVerificationLink(
+            'test@example.com',
+          );
+
+          expect(link, equals('https://example.com/verify?oobCode=XYZ789'));
+          verify(() => clientMock.send(any())).called(1);
+        });
+
+        test('generates link with ActionCodeSettings', () async {
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'oobLink': 'https://example.com/verify?oobCode=XYZ789',
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-verify-link-settings',
+          );
+          final testAuth = Auth(app);
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://myapp.example.com/finishVerification',
+          );
+
+          final link = await testAuth.generateEmailVerificationLink(
+            'test@example.com',
+            actionCodeSettings: actionCodeSettings,
+          );
+
+          expect(link, equals('https://example.com/verify?oobCode=XYZ789'));
+          verify(() => clientMock.send(any())).called(1);
+        });
+
         test('generates link with linkDomain (new property)', () async {
           final clientMock = ClientMock();
 
@@ -385,6 +488,44 @@ void main() {
           verify(() => clientMock.send(any())).called(1);
         });
 
+        test('generates link with ActionCodeSettings', () async {
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'oobLink': 'https://example.com/signin?oobCode=DEF456',
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-signin-link-settings',
+          );
+          final testAuth = Auth(app);
+
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://myapp.example.com/finishSignIn',
+            handleCodeInApp: true,
+          );
+
+          final link = await testAuth.generateSignInWithEmailLink(
+            'test@example.com',
+            actionCodeSettings,
+          );
+
+          expect(link, equals('https://example.com/signin?oobCode=DEF456'));
+          verify(() => clientMock.send(any())).called(1);
+        });
+
         test('validates email is required', () async {
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://example.com',
@@ -396,9 +537,68 @@ void main() {
             throwsA(isA<FirebaseAuthAdminException>()),
           );
         });
+
+        test('validates ActionCodeSettings.linkDomain is not empty', () {
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com',
+            handleCodeInApp: true,
+            linkDomain: '',
+          );
+
+          expect(
+            () => auth.generateSignInWithEmailLink(
+              'test@example.com',
+              actionCodeSettings,
+            ),
+            throwsA(
+              isA<FirebaseAuthAdminException>().having(
+                (e) => e.errorCode,
+                'errorCode',
+                AuthClientErrorCode.invalidHostingLinkDomain,
+              ),
+            ),
+          );
+        });
       });
 
       group('generateVerifyAndChangeEmailLink', () {
+        test('generates link without ActionCodeSettings', () async {
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'oobLink':
+                          'https://example.com/changeEmail?oobCode=GHI789',
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-change-email-link-basic',
+          );
+          final testAuth = Auth(app);
+
+          final link = await testAuth.generateVerifyAndChangeEmailLink(
+            'old@example.com',
+            'new@example.com',
+          );
+
+          expect(
+            link,
+            equals('https://example.com/changeEmail?oobCode=GHI789'),
+          );
+          verify(() => clientMock.send(any())).called(1);
+        });
+
         test('generates link with ActionCodeSettings', () async {
           final clientMock = ClientMock();
 
@@ -515,6 +715,28 @@ void main() {
             throwsA(isA<FirebaseAuthAdminException>()),
           );
         });
+
+        test('validates ActionCodeSettings.linkDomain is not empty', () {
+          final actionCodeSettings = ActionCodeSettings(
+            url: 'https://example.com',
+            linkDomain: '',
+          );
+
+          expect(
+            () => auth.generateVerifyAndChangeEmailLink(
+              'old@example.com',
+              'new@example.com',
+              actionCodeSettings: actionCodeSettings,
+            ),
+            throwsA(
+              isA<FirebaseAuthAdminException>().having(
+                (e) => e.errorCode,
+                'errorCode',
+                AuthClientErrorCode.invalidHostingLinkDomain,
+              ),
+            ),
+          );
+        });
       });
     });
 
@@ -583,9 +805,32 @@ void main() {
       });
 
       test('throws when uid is empty', () async {
-        expect(
-          () => auth.setCustomUserClaims(''),
-          throwsA(isA<FirebaseAuthAdminException>()),
+        await expectLater(
+          () => auth.setCustomUserClaims('', customUserClaims: {'admin': true}),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws when uid is invalid (too long)', () async {
+        final invalidUid = 'a' * 129; // UID must be <= 128 characters
+        await expectLater(
+          () => auth.setCustomUserClaims(
+            invalidUid,
+            customUserClaims: {'admin': true},
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
         );
       });
 
@@ -605,6 +850,41 @@ void main() {
         final testAuth = Auth(app);
 
         await testAuth.setCustomUserClaims('test-uid');
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-set-claims-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.setCustomUserClaims(
+            'test-uid',
+            customUserClaims: {'admin': true},
+          ),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
 
         verify(() => clientMock.send(any())).called(1);
       });
@@ -640,10 +920,62 @@ void main() {
       });
 
       test('throws when uid is empty', () async {
-        expect(
+        await expectLater(
           () => auth.revokeRefreshTokens(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws when uid is invalid (too long)', () async {
+        final invalidUid = 'a' * 129; // UID must be <= 128 characters
+        await expectLater(
+          () => auth.revokeRefreshTokens(invalidUid),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws error when backend returns error', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-revoke-tokens-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.revokeRefreshTokens('test-uid'),
           throwsA(isA<FirebaseAuthAdminException>()),
         );
+
+        verify(() => clientMock.send(any())).called(1);
       });
     });
 
@@ -677,6 +1009,53 @@ void main() {
           () => auth.deleteUser(''),
           throwsA(isA<FirebaseAuthAdminException>()),
         );
+      });
+
+      test('throws when uid is invalid (too long)', () async {
+        // UID must be 128 characters or less
+        final invalidUid = 'a' * 129;
+        await expectLater(
+          () => auth.deleteUser(invalidUid),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws error when backend returns error', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-delete-user-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.deleteUser('non-existent-uid'),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
       });
     });
 
@@ -744,6 +1123,64 @@ void main() {
         expect(result.successCount, equals(0));
         expect(result.failureCount, equals(0));
         expect(result.errors, isEmpty);
+      });
+
+      test('throws when uids list exceeds maximum limit', () async {
+        // Maximum is 1000 uids
+        final tooManyUids = List.generate(1001, (i) => 'uid$i');
+
+        await expectLater(
+          () => auth.deleteUsers(tooManyUids),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/maximum-user-count-exceeded',
+            ),
+          ),
+        );
+      });
+
+      test('handles multiple errors with correct indexing', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'errors': [
+                      {'index': 0, 'message': 'USER_NOT_FOUND'},
+                      {'index': 2, 'message': 'INTERNAL_ERROR'},
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-delete-users-multiple-errors',
+        );
+        final testAuth = Auth(app);
+
+        final result = await testAuth.deleteUsers([
+          'uid1',
+          'uid2',
+          'uid3',
+          'uid4',
+        ]);
+
+        expect(result.successCount, equals(2));
+        expect(result.failureCount, equals(2));
+        expect(result.errors, hasLength(2));
+        expect(result.errors[0].index, equals(0));
+        expect(result.errors[1].index, equals(2));
+        verify(() => clientMock.send(any())).called(1);
       });
     });
 
@@ -816,6 +1253,102 @@ void main() {
 
         verify(() => clientMock.send(any())).called(1);
       });
+
+      test('lists users with default options', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'uid1',
+                        'email': 'user1@example.com',
+                        'emailVerified': false,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-list-users-default',
+        );
+        final testAuth = Auth(app);
+
+        final result = await testAuth.listUsers();
+
+        expect(result.users, hasLength(1));
+        expect(result.users[0].uid, equals('uid1'));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('returns empty list when no users exist', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(utf8.encode(jsonEncode({'users': <dynamic>[]}))),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-list-users-empty',
+        );
+        final testAuth = Auth(app);
+
+        final result = await testAuth.listUsers(maxResults: 500);
+
+        expect(result.users, isEmpty);
+        expect(result.pageToken, isNull);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 500, 'message': 'INTERNAL_ERROR'},
+                  }),
+                ),
+              ),
+              500,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-list-users-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.listUsers(maxResults: 500),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
     });
 
     group('getUsers', () {
@@ -873,6 +1406,1630 @@ void main() {
         expect(result.users, isEmpty);
         expect(result.notFound, isEmpty);
       });
+
+      test(
+        'returns no users when given identifiers that do not exist',
+        () async {
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(utf8.encode(jsonEncode({}))),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-get-users-not-found',
+          );
+          final testAuth = Auth(app);
+
+          final notFoundIds = [UidIdentifier(uid: 'id-that-doesnt-exist')];
+          final result = await testAuth.getUsers(notFoundIds);
+
+          expect(result.users, isEmpty);
+          expect(result.notFound, equals(notFoundIds));
+          verify(() => clientMock.send(any())).called(1);
+        },
+      );
+
+      test('throws when identifiers list exceeds maximum limit', () {
+        // Maximum is 100 identifiers
+        final tooManyIdentifiers = List.generate(
+          101,
+          (i) => UidIdentifier(uid: 'uid$i'),
+        );
+
+        expect(
+          () => auth.getUsers(tooManyIdentifiers),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/maximum-user-count-exceeded',
+            ),
+          ),
+        );
+      });
+
+      test(
+        'returns users by various identifier types including provider',
+        () async {
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'users': [
+                        {
+                          'localId': 'uid1',
+                          'email': 'user1@example.com',
+                          'phoneNumber': '+15555550001',
+                          'emailVerified': false,
+                          'disabled': false,
+                          'createdAt': '1234567890000',
+                        },
+                        {
+                          'localId': 'uid2',
+                          'email': 'user2@example.com',
+                          'phoneNumber': '+15555550002',
+                          'emailVerified': false,
+                          'disabled': false,
+                          'createdAt': '1234567890000',
+                        },
+                        {
+                          'localId': 'uid3',
+                          'email': 'user3@example.com',
+                          'phoneNumber': '+15555550003',
+                          'emailVerified': false,
+                          'disabled': false,
+                          'createdAt': '1234567890000',
+                        },
+                        {
+                          'localId': 'uid4',
+                          'email': 'user4@example.com',
+                          'phoneNumber': '+15555550004',
+                          'emailVerified': false,
+                          'disabled': false,
+                          'createdAt': '1234567890000',
+                          'providerUserInfo': [
+                            {
+                              'providerId': 'google.com',
+                              'rawId': 'google_uid4',
+                            },
+                          ],
+                        },
+                      ],
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-get-users-various-types',
+          );
+          final testAuth = Auth(app);
+
+          final identifiers = [
+            UidIdentifier(uid: 'uid1'),
+            EmailIdentifier(email: 'user2@example.com'),
+            PhoneIdentifier(phoneNumber: '+15555550003'),
+            ProviderIdentifier(
+              providerId: 'google.com',
+              providerUid: 'google_uid4',
+            ),
+            UidIdentifier(uid: 'this-user-doesnt-exist'),
+          ];
+
+          final result = await testAuth.getUsers(identifiers);
+
+          expect(result.users, hasLength(4));
+          // Check that the non-existent uid is in notFound
+          expect(result.notFound, isNotEmpty);
+          final notFoundUid = result.notFound
+              .whereType<UidIdentifier>()
+              .where((id) => id.uid == 'this-user-doesnt-exist')
+              .firstOrNull;
+          expect(notFoundUid, isNotNull);
+          expect(notFoundUid!.uid, equals('this-user-doesnt-exist'));
+          verify(() => clientMock.send(any())).called(1);
+        },
+      );
+    });
+
+    group('getUser', () {
+      test('gets user successfully', () async {
+        const testUid = 'test-uid-123';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': testUid,
+                        'email': 'test@example.com',
+                        'displayName': 'Test User',
+                        'emailVerified': false,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-get-user');
+        final testAuth = Auth(app);
+
+        final user = await testAuth.getUser(testUid);
+
+        expect(user.uid, equals(testUid));
+        expect(user.email, equals('test@example.com'));
+        expect(user.displayName, equals('Test User'));
+        expect(user.emailVerified, isFalse);
+        expect(user.disabled, isFalse);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws when uid is empty', () async {
+        await expectLater(
+          () => auth.getUser(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws when uid is invalid (too long)', () async {
+        final invalidUid = 'a' * 129; // UID must be <= 128 characters
+        await expectLater(
+          () => auth.getUser(invalidUid),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws error when backend returns error', () async {
+        const testUid = 'test-uid-123';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-get-user-error');
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.getUser(testUid),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-not-found',
+            ),
+          ),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('getUserByEmail', () {
+      test('gets user by email successfully', () async {
+        const testEmail = 'user@example.com';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': testEmail,
+                        'displayName': 'Test User',
+                        'emailVerified': false,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-get-user-by-email',
+        );
+        final testAuth = Auth(app);
+
+        final user = await testAuth.getUserByEmail(testEmail);
+
+        expect(user.uid, equals('test-uid-123'));
+        expect(user.email, equals(testEmail));
+        expect(user.displayName, equals('Test User'));
+        expect(user.emailVerified, isFalse);
+        expect(user.disabled, isFalse);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws when email is empty', () async {
+        await expectLater(
+          () => auth.getUserByEmail(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-email',
+            ),
+          ),
+        );
+      });
+
+      test('throws when email is invalid', () async {
+        const invalidEmail = 'name-example-com';
+        await expectLater(
+          () => auth.getUserByEmail(invalidEmail),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-email',
+            ),
+          ),
+        );
+      });
+
+      test('throws error when backend returns error', () async {
+        const testEmail = 'user@example.com';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-get-user-by-email-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.getUserByEmail(testEmail),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-not-found',
+            ),
+          ),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('getUserByPhoneNumber', () {
+      test('gets user by phone number successfully', () async {
+        const testPhoneNumber = '+11234567890';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'phoneNumber': testPhoneNumber,
+                        'emailVerified': false,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-get-user-by-phone',
+        );
+        final testAuth = Auth(app);
+
+        final user = await testAuth.getUserByPhoneNumber(testPhoneNumber);
+
+        expect(user.uid, equals('test-uid-123'));
+        expect(user.phoneNumber, equals(testPhoneNumber));
+        expect(user.emailVerified, isFalse);
+        expect(user.disabled, isFalse);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws when phone number is empty', () async {
+        await expectLater(
+          () => auth.getUserByPhoneNumber(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-phone-number',
+            ),
+          ),
+        );
+      });
+
+      test('throws when phone number is invalid', () async {
+        const invalidPhoneNumber = 'invalid';
+        await expectLater(
+          () => auth.getUserByPhoneNumber(invalidPhoneNumber),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-phone-number',
+            ),
+          ),
+        );
+      });
+
+      test('throws error when backend returns error', () async {
+        const testPhoneNumber = '+11234567890';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-get-user-by-phone-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.getUserByPhoneNumber(testPhoneNumber),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-not-found',
+            ),
+          ),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('getUserByProviderUid', () {
+      test('gets user by provider uid successfully', () async {
+        const providerId = 'google.com';
+        const providerUid = 'google_uid';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'user@example.com',
+                        'emailVerified': false,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-get-user-by-provider-uid',
+        );
+        final testAuth = Auth(app);
+
+        final user = await testAuth.getUserByProviderUid(
+          providerId: providerId,
+          uid: providerUid,
+        );
+
+        expect(user.uid, equals('test-uid-123'));
+        expect(user.email, equals('user@example.com'));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws when provider ID is empty', () {
+        expect(
+          () => auth.getUserByProviderUid(providerId: '', uid: 'uid'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-provider-id',
+            ),
+          ),
+        );
+      });
+
+      test('throws invalid-uid when uid is empty', () {
+        expect(
+          () => auth.getUserByProviderUid(providerId: 'google.com', uid: ''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test(
+        'redirects to getUserByPhoneNumber when providerId is phone',
+        () async {
+          const phoneNumber = '+11234567890';
+          final clientMock = ClientMock();
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'users': [
+                        {
+                          'localId': 'test-uid-123',
+                          'phoneNumber': phoneNumber,
+                          'emailVerified': false,
+                          'disabled': false,
+                          'createdAt': '1234567890000',
+                        },
+                      ],
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-get-user-by-phone-provider',
+          );
+          final testAuth = Auth(app);
+
+          final user = await testAuth.getUserByProviderUid(
+            providerId: 'phone',
+            uid: phoneNumber,
+          );
+
+          expect(user.uid, equals('test-uid-123'));
+          expect(user.phoneNumber, equals(phoneNumber));
+          verify(() => clientMock.send(any())).called(1);
+        },
+      );
+
+      test('redirects to getUserByEmail when providerId is email', () async {
+        const email = 'user@example.com';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': email,
+                        'emailVerified': false,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-get-user-by-email-provider',
+        );
+        final testAuth = Auth(app);
+
+        final user = await testAuth.getUserByProviderUid(
+          providerId: 'email',
+          uid: email,
+        );
+
+        expect(user.uid, equals('test-uid-123'));
+        expect(user.email, equals(email));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error', () async {
+        const providerId = 'google.com';
+        const providerUid = 'google_uid';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-get-user-by-provider-uid-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.getUserByProviderUid(
+            providerId: providerId,
+            uid: providerUid,
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-not-found',
+            ),
+          ),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('importUsers', () {
+      test('imports users successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(utf8.encode(jsonEncode({'error': <dynamic>[]}))),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-import-users');
+        final testAuth = Auth(app);
+
+        final users = [
+          UserImportRecord(uid: 'uid1', email: 'user1@example.com'),
+          UserImportRecord(uid: 'uid2', email: 'user2@example.com'),
+        ];
+
+        final result = await testAuth.importUsers(users);
+
+        expect(result.successCount, equals(2));
+        expect(result.failureCount, equals(0));
+        expect(result.errors, isEmpty);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('handles partial failures', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': [
+                      {'index': 1, 'message': 'INVALID_PHONE_NUMBER'},
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-import-users-partial',
+        );
+        final testAuth = Auth(app);
+
+        final users = [
+          UserImportRecord(uid: 'uid1', email: 'user1@example.com'),
+          UserImportRecord(uid: 'uid2', phoneNumber: 'invalid'),
+        ];
+
+        final result = await testAuth.importUsers(users);
+
+        expect(result.successCount, equals(1));
+        expect(result.failureCount, equals(1));
+        expect(result.errors, hasLength(1));
+        expect(result.errors[0].index, equals(1));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 500, 'message': 'INTERNAL_ERROR'},
+                  }),
+                ),
+              ),
+              500,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-import-users-error',
+        );
+        final testAuth = Auth(app);
+
+        final users = [
+          UserImportRecord(uid: 'uid1', email: 'user1@example.com'),
+        ];
+
+        await expectLater(
+          testAuth.importUsers(users),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('listProviderConfigs', () {
+      test('lists OIDC provider configs successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'oauthIdpConfigs': [
+                      {
+                        'name':
+                            'projects/project_id/oauthIdpConfigs/oidc.provider1',
+                        'displayName': 'OIDC Provider 1',
+                        'enabled': true,
+                        'clientId': 'CLIENT_ID_1',
+                        'issuer': 'https://oidc1.com/issuer',
+                      },
+                      {
+                        'name':
+                            'projects/project_id/oauthIdpConfigs/oidc.provider2',
+                        'displayName': 'OIDC Provider 2',
+                        'enabled': true,
+                        'clientId': 'CLIENT_ID_2',
+                        'issuer': 'https://oidc2.com/issuer',
+                      },
+                    ],
+                    'nextPageToken': 'NEXT_PAGE_TOKEN',
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-list-oidc-configs',
+        );
+        final testAuth = Auth(app);
+
+        final result = await testAuth.listProviderConfigs(
+          AuthProviderConfigFilter.oidc(
+            maxResults: 50,
+            pageToken: 'PAGE_TOKEN',
+          ),
+        );
+
+        expect(result.providerConfigs, hasLength(2));
+        expect(result.providerConfigs[0], isA<OIDCAuthProviderConfig>());
+        expect(result.providerConfigs[0].providerId, equals('oidc.provider1'));
+        expect(result.providerConfigs[1].providerId, equals('oidc.provider2'));
+        expect(result.pageToken, equals('NEXT_PAGE_TOKEN'));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('lists SAML provider configs successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'inboundSamlConfigs': [
+                      {
+                        'name':
+                            'projects/project_id/inboundSamlConfigs/saml.provider1',
+                        'idpConfig': {
+                          'idpEntityId': 'IDP_ENTITY_ID_1',
+                          'ssoUrl': 'https://saml1.com/login',
+                          'idpCertificates': [
+                            {'x509Certificate': 'CERT1'},
+                          ],
+                        },
+                        'spConfig': {
+                          'spEntityId': 'RP_ENTITY_ID_1',
+                          'callbackUri':
+                              'https://project-id.firebaseapp.com/__/auth/handler',
+                        },
+                        'displayName': 'SAML Provider 1',
+                        'enabled': true,
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-list-saml-configs',
+        );
+        final testAuth = Auth(app);
+
+        final result = await testAuth.listProviderConfigs(
+          AuthProviderConfigFilter.saml(),
+        );
+
+        expect(result.providerConfigs, hasLength(1));
+        expect(result.providerConfigs[0], isA<SAMLAuthProviderConfig>());
+        expect(result.providerConfigs[0].providerId, equals('saml.provider1'));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('returns empty list when no configs exist', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(jsonEncode({'oauthIdpConfigs': <dynamic>[]})),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-list-configs-empty',
+        );
+        final testAuth = Auth(app);
+
+        final result = await testAuth.listProviderConfigs(
+          AuthProviderConfigFilter.oidc(),
+        );
+
+        expect(result.providerConfigs, isEmpty);
+        expect(result.pageToken, isNull);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 500, 'message': 'INTERNAL_ERROR'},
+                  }),
+                ),
+              ),
+              500,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-list-configs-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.listProviderConfigs(AuthProviderConfigFilter.oidc()),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('updateProviderConfig', () {
+      test('throws when provider ID is invalid', () async {
+        // Provider ID must start with "oidc." or "saml."
+        await expectLater(
+          () => auth.updateProviderConfig(
+            'unsupported',
+            OIDCUpdateAuthProviderRequest(displayName: 'Test'),
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-provider-id',
+            ),
+          ),
+        );
+      });
+
+      test('updates OIDC provider config successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'name': 'projects/project_id/oauthIdpConfigs/oidc.provider',
+                    'displayName': 'Updated OIDC Display Name',
+                    'enabled': true,
+                    'clientId': 'UPDATED_CLIENT_ID',
+                    'issuer': 'https://updated-oidc.com/issuer',
+                    'clientSecret': 'CLIENT_SECRET',
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-update-oidc-config',
+        );
+        final testAuth = Auth(app);
+
+        final config = await testAuth.updateProviderConfig(
+          'oidc.provider',
+          OIDCUpdateAuthProviderRequest(
+            displayName: 'Updated OIDC Display Name',
+            clientId: 'UPDATED_CLIENT_ID',
+            issuer: 'https://updated-oidc.com/issuer',
+          ),
+        );
+
+        expect(config, isA<OIDCAuthProviderConfig>());
+        expect(config.providerId, equals('oidc.provider'));
+        expect(config.displayName, equals('Updated OIDC Display Name'));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('updates SAML provider config successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'name':
+                        'projects/project_id/inboundSamlConfigs/saml.provider',
+                    'idpConfig': {
+                      'idpEntityId': 'UPDATED_IDP_ENTITY_ID',
+                      'ssoUrl': 'https://updated-saml.com/login',
+                      'idpCertificates': [
+                        {'x509Certificate': 'UPDATED_CERT'},
+                      ],
+                    },
+                    'spConfig': {
+                      'spEntityId': 'UPDATED_RP_ENTITY_ID',
+                      'callbackUri':
+                          'https://project-id.firebaseapp.com/__/auth/handler',
+                    },
+                    'displayName': 'Updated SAML Display Name',
+                    'enabled': true,
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-update-saml-config',
+        );
+        final testAuth = Auth(app);
+
+        final config = await testAuth.updateProviderConfig(
+          'saml.provider',
+          SAMLUpdateAuthProviderRequest(
+            displayName: 'Updated SAML Display Name',
+            idpEntityId: 'UPDATED_IDP_ENTITY_ID',
+            ssoURL: 'https://updated-saml.com/login',
+          ),
+        );
+
+        expect(config, isA<SAMLAuthProviderConfig>());
+        expect(config.providerId, equals('saml.provider'));
+        expect(config.displayName, equals('Updated SAML Display Name'));
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error for OIDC', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {
+                      'code': 404,
+                      'message': 'CONFIGURATION_NOT_FOUND',
+                    },
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-update-oidc-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.updateProviderConfig(
+            'oidc.provider',
+            OIDCUpdateAuthProviderRequest(displayName: 'Test'),
+          ),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error for SAML', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {
+                      'code': 404,
+                      'message': 'CONFIGURATION_NOT_FOUND',
+                    },
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-update-saml-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.updateProviderConfig(
+            'saml.provider',
+            SAMLUpdateAuthProviderRequest(displayName: 'Test'),
+          ),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('updateUser', () {
+      test('updates user successfully', () async {
+        const testUid = 'test-uid-123';
+        final clientMock = ClientMock();
+        var callCount = 0;
+        when(() => clientMock.send(any())).thenAnswer((_) {
+          callCount++;
+          // First call: setAccountInfo (updateExistingAccount) - returns localId
+          if (callCount == 1) {
+            return Future.value(
+              StreamedResponse(
+                Stream.value(utf8.encode(jsonEncode({'localId': testUid}))),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            );
+          }
+          // Second call: lookup (getAccountInfoByUid) - returns updated user info
+          return Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': testUid,
+                        'email': 'updated@example.com',
+                        'displayName': 'Updated Name',
+                        'emailVerified': true,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          );
+        });
+
+        final app = createApp(client: clientMock, name: 'test-update-user');
+        final testAuth = Auth(app);
+
+        final user = await testAuth.updateUser(
+          testUid,
+          UpdateRequest(
+            email: 'updated@example.com',
+            displayName: 'Updated Name',
+            emailVerified: true,
+          ),
+        );
+
+        expect(user.uid, equals(testUid));
+        expect(user.email, equals('updated@example.com'));
+        expect(user.displayName, equals('Updated Name'));
+        expect(user.emailVerified, isTrue);
+        verify(() => clientMock.send(any())).called(2);
+      });
+
+      test('throws when uid is empty', () async {
+        await expectLater(
+          () => auth.updateUser('', UpdateRequest(email: 'test@example.com')),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws when uid is invalid (too long)', () async {
+        final invalidUid = 'a' * 129; // UID must be <= 128 characters
+        await expectLater(
+          () => auth.updateUser(
+            invalidUid,
+            UpdateRequest(email: 'test@example.com'),
+          ),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-uid',
+            ),
+          ),
+        );
+      });
+
+      test('throws error when backend returns error', () async {
+        const testUid = 'test-uid-123';
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 404, 'message': 'USER_NOT_FOUND'},
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-update-user-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.updateUser(
+            testUid,
+            UpdateRequest(email: 'test@example.com'),
+          ),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('verifyIdToken', () {
+      test('verifies ID token successfully', () async {
+        final mockTokenVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+          },
+        });
+
+        when(
+          () => mockTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        // Always mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(name: 'test-verify-id-token', client: clientMock);
+        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+
+        final result = await testAuth.verifyIdToken('mock-token');
+
+        expect(result.uid, equals('test-uid-123'));
+        expect(result.sub, equals('test-uid-123'));
+        verify(
+          () => mockTokenVerifier.verifyJWT(
+            'mock-token',
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).called(1);
+      });
+
+      test('throws when idToken is empty', () async {
+        final mockTokenVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Firebase ID token has invalid format.',
+          ),
+        );
+
+        final app = createApp(name: 'test-verify-id-token-empty');
+        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+
+        await expectLater(
+          () => testAuth.verifyIdToken(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when idToken is invalid', () async {
+        final mockTokenVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Decoding Firebase ID token failed.',
+          ),
+        );
+
+        final app = createApp(name: 'test-verify-id-token-invalid');
+        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+
+        await expectLater(
+          () => testAuth.verifyIdToken('invalid-token'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when checkRevoked is true and user is disabled', () async {
+        final mockTokenVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+          },
+        });
+
+        when(
+          () => mockTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': true,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-verify-id-token-disabled',
+        );
+        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+
+        await expectLater(
+          () => testAuth.verifyIdToken('mock-token', checkRevoked: true),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-disabled',
+            ),
+          ),
+        );
+      });
+
+      test('throws when checkRevoked is true and token is revoked', () async {
+        final mockTokenVerifier = MockFirebaseTokenVerifier();
+        // Token with auth_time before validSince
+        final authTime = DateTime.now().subtract(const Duration(hours: 2));
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://securetoken.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': authTime.millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+          },
+        });
+
+        when(
+          () => mockTokenVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        final clientMock = ClientMock();
+        // validSince is after auth_time, so token is revoked
+        final validSince = DateTime.now().subtract(const Duration(hours: 1));
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'validSince':
+                            (validSince.millisecondsSinceEpoch ~/ 1000)
+                                .toString(),
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-verify-id-token-revoked',
+        );
+        final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+
+        await expectLater(
+          () => testAuth.verifyIdToken('mock-token', checkRevoked: true),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/id-token-revoked',
+            ),
+          ),
+        );
+      });
+
+      test(
+        'succeeds when checkRevoked is true and token is not revoked',
+        () async {
+          final mockTokenVerifier = MockFirebaseTokenVerifier();
+          // Token with auth_time after validSince
+          final authTime = DateTime.now().subtract(const Duration(minutes: 30));
+          final decodedToken = DecodedIdToken.fromMap({
+            'sub': 'test-uid-123',
+            'uid': 'test-uid-123',
+            'aud': 'test-project',
+            'iss': 'https://securetoken.google.com/test-project',
+            'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            'exp':
+                DateTime.now()
+                    .add(const Duration(hours: 1))
+                    .millisecondsSinceEpoch ~/
+                1000,
+            'auth_time': authTime.millisecondsSinceEpoch ~/ 1000,
+            'firebase': <String, dynamic>{
+              'identities': <String, dynamic>{},
+              'sign_in_provider': 'custom',
+            },
+          });
+
+          when(
+            () => mockTokenVerifier.verifyJWT(
+              any(),
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).thenAnswer((_) async => decodedToken);
+
+          final clientMock = ClientMock();
+          // validSince is before auth_time, so token is not revoked
+          final validSince = DateTime.now().subtract(const Duration(hours: 1));
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'users': [
+                        {
+                          'localId': 'test-uid-123',
+                          'email': 'test@example.com',
+                          'disabled': false,
+                          'validSince':
+                              (validSince.millisecondsSinceEpoch ~/ 1000)
+                                  .toString(),
+                          'createdAt': '1234567890000',
+                        },
+                      ],
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-verify-id-token-not-revoked',
+          );
+          final testAuth = Auth(app, idTokenVerifier: mockTokenVerifier);
+
+          final result = await testAuth.verifyIdToken(
+            'mock-token',
+            checkRevoked: true,
+          );
+
+          expect(result.uid, equals('test-uid-123'));
+          verify(
+            () => mockTokenVerifier.verifyJWT(
+              'mock-token',
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).called(1);
+        },
+      );
     });
 
     group('createSessionCookie', () {
@@ -1031,6 +3188,478 @@ void main() {
       });
     });
 
+    group('createUser', () {
+      test('creates user successfully', () async {
+        const testUid = 'test-uid-123';
+        final clientMock = ClientMock();
+        var callCount = 0;
+        when(() => clientMock.send(any())).thenAnswer((_) {
+          callCount++;
+          // First call: signUp (createNewAccount) - returns localId
+          if (callCount == 1) {
+            return Future.value(
+              StreamedResponse(
+                Stream.value(utf8.encode(jsonEncode({'localId': testUid}))),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            );
+          }
+          // Second call: lookup (getAccountInfoByUid) - returns user info
+          return Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': testUid,
+                        'email': 'test@example.com',
+                        'displayName': 'Test User',
+                        'emailVerified': false,
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          );
+        });
+
+        final app = createApp(client: clientMock, name: 'test-create-user');
+        final testAuth = Auth(app);
+
+        final user = await testAuth.createUser(
+          CreateRequest(email: 'test@example.com', displayName: 'Test User'),
+        );
+
+        expect(user.uid, equals(testUid));
+        expect(user.email, equals('test@example.com'));
+        expect(user.displayName, equals('Test User'));
+        expect(user.emailVerified, isFalse);
+        expect(user.disabled, isFalse);
+        verify(() => clientMock.send(any())).called(2);
+      });
+
+      test('throws error when createNewAccount fails', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {'code': 400, 'message': 'EMAIL_ALREADY_EXISTS'},
+                  }),
+                ),
+              ),
+              400,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-create-user-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.createUser(CreateRequest(email: 'existing@example.com')),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws internal error when getUser returns user not found', () async {
+        const testUid = 'test-uid-123';
+        final clientMock = ClientMock();
+        var callCount = 0;
+        when(() => clientMock.send(any())).thenAnswer((_) {
+          callCount++;
+          // First call: signUp (createNewAccount) - returns localId
+          if (callCount == 1) {
+            return Future.value(
+              StreamedResponse(
+                Stream.value(utf8.encode(jsonEncode({'localId': testUid}))),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            );
+          }
+          // Second call: lookup (getAccountInfoByUid) - returns empty users (user not found)
+          return Future.value(
+            StreamedResponse(
+              Stream.value(utf8.encode(jsonEncode({'users': <dynamic>[]}))),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          );
+        });
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-create-user-not-found',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.createUser(CreateRequest(email: 'test@example.com')),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/internal-error',
+            ),
+          ),
+        );
+
+        verify(() => clientMock.send(any())).called(2);
+      });
+
+      test(
+        'propagates error when getUser fails with non-user-not-found error',
+        () async {
+          const testUid = 'test-uid-123';
+          final clientMock = ClientMock();
+          var callCount = 0;
+          when(() => clientMock.send(any())).thenAnswer((_) {
+            callCount++;
+            // First call: signUp (createNewAccount) - returns localId
+            if (callCount == 1) {
+              return Future.value(
+                StreamedResponse(
+                  Stream.value(utf8.encode(jsonEncode({'localId': testUid}))),
+                  200,
+                  headers: {'content-type': 'application/json'},
+                ),
+              );
+            }
+            // Second call: lookup (getAccountInfoByUid) - returns error
+            return Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'error': {'code': 500, 'message': 'INTERNAL_ERROR'},
+                    }),
+                  ),
+                ),
+                500,
+                headers: {'content-type': 'application/json'},
+              ),
+            );
+          });
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-create-user-get-error',
+          );
+          final testAuth = Auth(app);
+
+          await expectLater(
+            testAuth.createUser(CreateRequest(email: 'test@example.com')),
+            throwsA(isA<FirebaseAuthAdminException>()),
+          );
+
+          verify(() => clientMock.send(any())).called(2);
+        },
+      );
+    });
+
+    group('deleteProviderConfig', () {
+      test('throws when provider ID is invalid', () async {
+        // Provider ID must start with "oidc." or "saml."
+        await expectLater(
+          () => auth.deleteProviderConfig('unsupported'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-provider-id',
+            ),
+          ),
+        );
+      });
+
+      test('deletes OIDC provider config successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(utf8.encode(jsonEncode({}))),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-delete-oidc');
+        final testAuth = Auth(app);
+
+        await testAuth.deleteProviderConfig('oidc.provider');
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('deletes SAML provider config successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(utf8.encode(jsonEncode({}))),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-delete-saml');
+        final testAuth = Auth(app);
+
+        await testAuth.deleteProviderConfig('saml.provider');
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error for OIDC', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {
+                      'code': 404,
+                      'message': 'CONFIGURATION_NOT_FOUND',
+                    },
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-delete-oidc-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.deleteProviderConfig('oidc.provider'),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error for SAML', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {
+                      'code': 404,
+                      'message': 'CONFIGURATION_NOT_FOUND',
+                    },
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-delete-saml-error',
+        );
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.deleteProviderConfig('saml.provider'),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
+    group('getProviderConfig', () {
+      test('throws when provider ID is invalid', () async {
+        // Provider ID must start with "oidc." or "saml."
+        await expectLater(
+          () => auth.getProviderConfig('unsupported'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/invalid-provider-id',
+            ),
+          ),
+        );
+      });
+
+      test('gets OIDC provider config successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'name': 'projects/project_id/oauthIdpConfigs/oidc.provider',
+                    'displayName': 'OIDC_DISPLAY_NAME',
+                    'enabled': true,
+                    'clientId': 'CLIENT_ID',
+                    'issuer': 'https://oidc.com/issuer',
+                    'clientSecret': 'CLIENT_SECRET',
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-get-oidc');
+        final testAuth = Auth(app);
+
+        final config = await testAuth.getProviderConfig('oidc.provider');
+
+        expect(config, isA<OIDCAuthProviderConfig>());
+        expect(config.providerId, equals('oidc.provider'));
+        expect(config.displayName, equals('OIDC_DISPLAY_NAME'));
+        expect(config.enabled, isTrue);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('gets SAML provider config successfully', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'name':
+                        'projects/project_id/inboundSamlConfigs/saml.provider',
+                    'idpConfig': {
+                      'idpEntityId': 'IDP_ENTITY_ID',
+                      'ssoUrl': 'https://example.com/login',
+                      'idpCertificates': [
+                        {'x509Certificate': 'CERT1'},
+                        {'x509Certificate': 'CERT2'},
+                      ],
+                    },
+                    'spConfig': {
+                      'spEntityId': 'RP_ENTITY_ID',
+                      'callbackUri':
+                          'https://project-id.firebaseapp.com/__/auth/handler',
+                    },
+                    'displayName': 'SAML_DISPLAY_NAME',
+                    'enabled': true,
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-get-saml');
+        final testAuth = Auth(app);
+
+        final config = await testAuth.getProviderConfig('saml.provider');
+
+        expect(config, isA<SAMLAuthProviderConfig>());
+        expect(config.providerId, equals('saml.provider'));
+        expect(config.displayName, equals('SAML_DISPLAY_NAME'));
+        expect(config.enabled, isTrue);
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error for OIDC', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {
+                      'code': 404,
+                      'message': 'CONFIGURATION_NOT_FOUND',
+                    },
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-get-oidc-error');
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.getProviderConfig('oidc.provider'),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+
+      test('throws error when backend returns error for SAML', () async {
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'error': {
+                      'code': 404,
+                      'message': 'CONFIGURATION_NOT_FOUND',
+                    },
+                  }),
+                ),
+              ),
+              404,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(client: clientMock, name: 'test-get-saml-error');
+        final testAuth = Auth(app);
+
+        await expectLater(
+          testAuth.getProviderConfig('saml.provider'),
+          throwsA(isA<FirebaseAuthAdminException>()),
+        );
+
+        verify(() => clientMock.send(any())).called(1);
+      });
+    });
+
     group('createProviderConfig', () {
       test('throws when provider ID is invalid', () async {
         // Provider ID must start with "oidc." or "saml."
@@ -1157,16 +3786,378 @@ void main() {
     });
 
     group('verifySessionCookie', () {
-      // TODO(demolaf): implement this we can pick some ideas from 'Session Cookies (Production)'
-      //  in auth_integration_prod_test.dart
+      test('verifies session cookie successfully', () async {
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://session.firebase.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+          },
+        });
+
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        // Always mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          name: 'test-verify-session-cookie',
+          client: clientMock,
+        );
+        final testAuth = Auth(
+          app,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        final result = await testAuth.verifySessionCookie(
+          'mock-session-cookie',
+        );
+
+        expect(result.uid, equals('test-uid-123'));
+        expect(result.sub, equals('test-uid-123'));
+        verify(
+          () => mockSessionCookieVerifier.verifyJWT(
+            'mock-session-cookie',
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).called(1);
+      });
+
+      test('throws when sessionCookie is empty', () async {
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Firebase session cookie has invalid format.',
+          ),
+        );
+
+        final app = createApp(name: 'test-verify-session-cookie-empty');
+        final testAuth = Auth(
+          app,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () => testAuth.verifySessionCookie(''),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when sessionCookie is invalid', () async {
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenThrow(
+          FirebaseAuthAdminException(
+            AuthClientErrorCode.invalidArgument,
+            'Decoding Firebase session cookie failed.',
+          ),
+        );
+
+        final app = createApp(name: 'test-verify-session-cookie-invalid');
+        final testAuth = Auth(
+          app,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () => testAuth.verifySessionCookie('invalid-cookie'),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/argument-error',
+            ),
+          ),
+        );
+      });
+
+      test('throws when checkRevoked is true and user is disabled', () async {
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://session.firebase.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+          },
+        });
+
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        final clientMock = ClientMock();
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': true,
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-verify-session-cookie-disabled',
+        );
+        final testAuth = Auth(
+          app,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () => testAuth.verifySessionCookie('mock-cookie', checkRevoked: true),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/user-disabled',
+            ),
+          ),
+        );
+      });
+
+      test('throws when checkRevoked is true and cookie is revoked', () async {
+        final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+        // Cookie with auth_time before validSince
+        final authTime = DateTime.now().subtract(const Duration(hours: 2));
+        final decodedToken = DecodedIdToken.fromMap({
+          'sub': 'test-uid-123',
+          'uid': 'test-uid-123',
+          'aud': 'test-project',
+          'iss': 'https://session.firebase.google.com/test-project',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp':
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'auth_time': authTime.millisecondsSinceEpoch ~/ 1000,
+          'firebase': <String, dynamic>{
+            'identities': <String, dynamic>{},
+            'sign_in_provider': 'custom',
+          },
+        });
+
+        when(
+          () => mockSessionCookieVerifier.verifyJWT(
+            any(),
+            isEmulator: any(named: 'isEmulator'),
+          ),
+        ).thenAnswer((_) async => decodedToken);
+
+        final clientMock = ClientMock();
+        // validSince is after auth_time, so cookie is revoked
+        final validSince = DateTime.now().subtract(const Duration(hours: 1));
+        when(() => clientMock.send(any())).thenAnswer(
+          (_) => Future.value(
+            StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'users': [
+                      {
+                        'localId': 'test-uid-123',
+                        'email': 'test@example.com',
+                        'disabled': false,
+                        'validSince':
+                            (validSince.millisecondsSinceEpoch ~/ 1000)
+                                .toString(),
+                        'createdAt': '1234567890000',
+                      },
+                    ],
+                  }),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        );
+
+        final app = createApp(
+          client: clientMock,
+          name: 'test-verify-session-cookie-revoked',
+        );
+        final testAuth = Auth(
+          app,
+          sessionCookieVerifier: mockSessionCookieVerifier,
+        );
+
+        await expectLater(
+          () => testAuth.verifySessionCookie('mock-cookie', checkRevoked: true),
+          throwsA(
+            isA<FirebaseAuthAdminException>().having(
+              (e) => e.code,
+              'code',
+              'auth/session-cookie-revoked',
+            ),
+          ),
+        );
+      });
+
       test(
-        'verifies valid session cookie',
+        'succeeds when checkRevoked is true and cookie is not revoked',
         () async {
-          // Note: This requires a real session cookie which requires client SDK
-          // We would need to mock the token verification process
-          // Skipping detailed implementation for now
+          final mockSessionCookieVerifier = MockFirebaseTokenVerifier();
+          // Cookie with auth_time after validSince
+          final authTime = DateTime.now().subtract(const Duration(minutes: 30));
+          final decodedToken = DecodedIdToken.fromMap({
+            'sub': 'test-uid-123',
+            'uid': 'test-uid-123',
+            'aud': 'test-project',
+            'iss': 'https://session.firebase.google.com/test-project',
+            'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            'exp':
+                DateTime.now()
+                    .add(const Duration(hours: 1))
+                    .millisecondsSinceEpoch ~/
+                1000,
+            'auth_time': authTime.millisecondsSinceEpoch ~/ 1000,
+            'firebase': <String, dynamic>{
+              'identities': <String, dynamic>{},
+              'sign_in_provider': 'custom',
+            },
+          });
+
+          when(
+            () => mockSessionCookieVerifier.verifyJWT(
+              any(),
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).thenAnswer((_) async => decodedToken);
+
+          final clientMock = ClientMock();
+          // validSince is before auth_time, so cookie is not revoked
+          final validSince = DateTime.now().subtract(const Duration(hours: 1));
+          when(() => clientMock.send(any())).thenAnswer(
+            (_) => Future.value(
+              StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({
+                      'users': [
+                        {
+                          'localId': 'test-uid-123',
+                          'email': 'test@example.com',
+                          'disabled': false,
+                          'validSince':
+                              (validSince.millisecondsSinceEpoch ~/ 1000)
+                                  .toString(),
+                          'createdAt': '1234567890000',
+                        },
+                      ],
+                    }),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              ),
+            ),
+          );
+
+          final app = createApp(
+            client: clientMock,
+            name: 'test-verify-session-cookie-not-revoked',
+          );
+          final testAuth = Auth(
+            app,
+            sessionCookieVerifier: mockSessionCookieVerifier,
+          );
+
+          final result = await testAuth.verifySessionCookie(
+            'mock-cookie',
+            checkRevoked: true,
+          );
+
+          expect(result.uid, equals('test-uid-123'));
+          verify(
+            () => mockSessionCookieVerifier.verifyJWT(
+              'mock-cookie',
+              isEmulator: any(named: 'isEmulator'),
+            ),
+          ).called(1);
         },
-        skip: 'Requires complex token verification mocking',
       );
     });
   });

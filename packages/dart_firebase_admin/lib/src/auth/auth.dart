@@ -7,18 +7,29 @@ class Auth extends _BaseAuth implements FirebaseService {
   factory Auth(
     FirebaseApp app, {
     @internal AuthRequestHandler? requestHandler,
+    @internal FirebaseTokenVerifier? idTokenVerifier,
+    @internal FirebaseTokenVerifier? sessionCookieVerifier,
   }) {
     return app.getOrInitService(
       FirebaseServiceType.auth.name,
-      (app) => Auth._(app, requestHandler: requestHandler),
+      (app) => Auth._(
+        app,
+        requestHandler: requestHandler,
+        idTokenVerifier: idTokenVerifier,
+        sessionCookieVerifier: sessionCookieVerifier,
+      ),
     );
   }
 
-  Auth._(FirebaseApp app, {@internal AuthRequestHandler? requestHandler})
-    : super(
-        app: app,
-        authRequestHandler: requestHandler ?? AuthRequestHandler(app),
-      );
+  Auth._(
+    FirebaseApp app, {
+    @internal AuthRequestHandler? requestHandler,
+    @internal super.idTokenVerifier,
+    @internal super.sessionCookieVerifier,
+  }) : super(
+         app: app,
+         authRequestHandler: requestHandler ?? AuthRequestHandler(app),
+       );
 
   @override
   Future<void> delete() async {

@@ -19,4 +19,6 @@ class AuthRequestHandlerMock extends Mock implements AuthRequestHandler {}
 
 class AuthHttpClientMock extends Mock implements AuthHttpClient {}
 
+class MockFirebaseTokenVerifier extends Mock implements FirebaseTokenVerifier {}
+
 class _SendMessageRequestFake extends Fake implements SendMessageRequest {}

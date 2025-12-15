@@ -533,6 +533,10 @@ abstract class _AbstractAuthRequestHandler {
   Future<auth1.GoogleCloudIdentitytoolkitV1UserInfo> getAccountInfoByUid(
     String uid,
   ) async {
+    if (!isUid(uid)) {
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidUid);
+    }
+
     final response = await _accountsLookup(
       auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest(localId: [uid]),
     );
@@ -572,8 +576,11 @@ abstract class _AbstractAuthRequestHandler {
     required String providerId,
     required String rawId,
   }) async {
-    if (providerId.isEmpty || rawId.isEmpty) {
+    if (providerId.isEmpty) {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
+    }
+    if (rawId.isEmpty) {
+      throw FirebaseAuthAdminException(AuthClientErrorCode.invalidUid);
     }
 
     final response = await _accountsLookup(

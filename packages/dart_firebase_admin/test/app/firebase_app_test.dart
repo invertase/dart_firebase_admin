@@ -12,6 +12,8 @@ import 'package:test/test.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
 
+// TODO(demolaf): check if we have sufficient tests for firebase app initialization
+//  logic
 void main() {
   group('FirebaseApp', () {
     group('initializeApp', () {

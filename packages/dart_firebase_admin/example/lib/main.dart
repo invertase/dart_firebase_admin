@@ -28,7 +28,7 @@ Future<void> authExample(FirebaseApp admin) async {
     if (e.errorCode == AuthClientErrorCode.userNotFound) {
       print('> User not found, creating new user\n');
       user = await auth.createUser(
-        CreateRequest(email: 'test@example.com', password: 'Test@123'),
+        CreateRequest(email: 'test@example.com', password: 'Test@12345'),
       );
     } else {
       print('> Auth error: ${e.errorCode} - ${e.message}');
