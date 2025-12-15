@@ -155,13 +155,168 @@ void main() {
     });
   });
 
+  group('RecaptchaAction', () {
+    test('has correct value', () {
+      expect(RecaptchaAction.block.value, equals('BLOCK'));
+    });
+
+    test('fromString returns correct enum', () {
+      expect(
+        RecaptchaAction.fromString('BLOCK'),
+        equals(RecaptchaAction.block),
+      );
+      expect(
+        RecaptchaAction.fromString('INVALID'),
+        equals(RecaptchaAction.block),
+      ); // Default fallback
+    });
+  });
+
+  group('RecaptchaKeyClientType', () {
+    test('has correct values', () {
+      expect(RecaptchaKeyClientType.web.value, equals('WEB'));
+      expect(RecaptchaKeyClientType.ios.value, equals('IOS'));
+      expect(RecaptchaKeyClientType.android.value, equals('ANDROID'));
+    });
+
+    test('fromString returns correct enum', () {
+      expect(
+        RecaptchaKeyClientType.fromString('WEB'),
+        equals(RecaptchaKeyClientType.web),
+      );
+      expect(
+        RecaptchaKeyClientType.fromString('IOS'),
+        equals(RecaptchaKeyClientType.ios),
+      );
+      expect(
+        RecaptchaKeyClientType.fromString('ANDROID'),
+        equals(RecaptchaKeyClientType.android),
+      );
+      expect(
+        RecaptchaKeyClientType.fromString('INVALID'),
+        equals(RecaptchaKeyClientType.web),
+      ); // Default fallback
+    });
+  });
+
+  group('RecaptchaManagedRule', () {
+    test('creates rule with required fields', () {
+      const rule = RecaptchaManagedRule(endScore: 0.5);
+
+      expect(rule.endScore, equals(0.5));
+      expect(rule.action, isNull);
+    });
+
+    test('creates rule with action', () {
+      const rule = RecaptchaManagedRule(
+        endScore: 0.5,
+        action: RecaptchaAction.block,
+      );
+
+      expect(rule.endScore, equals(0.5));
+      expect(rule.action, equals(RecaptchaAction.block));
+    });
+
+    test('serializes to JSON', () {
+      const rule = RecaptchaManagedRule(
+        endScore: 0.5,
+        action: RecaptchaAction.block,
+      );
+
+      final json = rule.toJson();
+
+      expect(json['endScore'], equals(0.5));
+      expect(json['action'], equals('BLOCK'));
+    });
+
+    test('serializes to JSON without action', () {
+      const rule = RecaptchaManagedRule(endScore: 0.5);
+
+      final json = rule.toJson();
+
+      expect(json['endScore'], equals(0.5));
+      expect(json.containsKey('action'), isFalse);
+    });
+  });
+
+  group('RecaptchaTollFraudManagedRule', () {
+    test('creates rule with required fields', () {
+      const rule = RecaptchaTollFraudManagedRule(startScore: 0.3);
+
+      expect(rule.startScore, equals(0.3));
+      expect(rule.action, isNull);
+    });
+
+    test('creates rule with action', () {
+      const rule = RecaptchaTollFraudManagedRule(
+        startScore: 0.3,
+        action: RecaptchaAction.block,
+      );
+
+      expect(rule.startScore, equals(0.3));
+      expect(rule.action, equals(RecaptchaAction.block));
+    });
+
+    test('serializes to JSON', () {
+      const rule = RecaptchaTollFraudManagedRule(
+        startScore: 0.3,
+        action: RecaptchaAction.block,
+      );
+
+      final json = rule.toJson();
+
+      expect(json['startScore'], equals(0.3));
+      expect(json['action'], equals('BLOCK'));
+    });
+  });
+
+  group('RecaptchaKey', () {
+    test('creates key with required fields', () {
+      const key = RecaptchaKey(key: 'test-key');
+
+      expect(key.key, equals('test-key'));
+      expect(key.type, isNull);
+    });
+
+    test('creates key with type', () {
+      const key = RecaptchaKey(
+        key: 'test-key',
+        type: RecaptchaKeyClientType.web,
+      );
+
+      expect(key.key, equals('test-key'));
+      expect(key.type, equals(RecaptchaKeyClientType.web));
+    });
+
+    test('serializes to JSON', () {
+      const key = RecaptchaKey(
+        key: 'test-key',
+        type: RecaptchaKeyClientType.ios,
+      );
+
+      final json = key.toJson();
+
+      expect(json['key'], equals('test-key'));
+      expect(json['type'], equals('IOS'));
+    });
+  });
+
   group('RecaptchaConfig', () {
     test('creates config with all fields', () {
       final config = RecaptchaConfig(
         emailPasswordEnforcementState:
             RecaptchaProviderEnforcementState.enforce,
         phoneEnforcementState: RecaptchaProviderEnforcementState.audit,
+        managedRules: [const RecaptchaManagedRule(endScore: 0.5)],
+        recaptchaKeys: [
+          const RecaptchaKey(key: 'test-key', type: RecaptchaKeyClientType.web),
+        ],
         useAccountDefender: true,
+        useSmsBotScore: true,
+        useSmsTollFraudProtection: false,
+        smsTollFraudManagedRules: [
+          const RecaptchaTollFraudManagedRule(startScore: 0.3),
+        ],
       );
 
       expect(
@@ -172,7 +327,15 @@ void main() {
         config.phoneEnforcementState,
         equals(RecaptchaProviderEnforcementState.audit),
       );
+      expect(config.managedRules, isNotNull);
+      expect(config.managedRules!.length, equals(1));
+      expect(config.recaptchaKeys, isNotNull);
+      expect(config.recaptchaKeys!.length, equals(1));
       expect(config.useAccountDefender, isTrue);
+      expect(config.useSmsBotScore, isTrue);
+      expect(config.useSmsTollFraudProtection, isFalse);
+      expect(config.smsTollFraudManagedRules, isNotNull);
+      expect(config.smsTollFraudManagedRules!.length, equals(1));
     });
 
     test('creates config with no fields', () {
@@ -180,7 +343,12 @@ void main() {
 
       expect(config.emailPasswordEnforcementState, isNull);
       expect(config.phoneEnforcementState, isNull);
+      expect(config.managedRules, isNull);
+      expect(config.recaptchaKeys, isNull);
       expect(config.useAccountDefender, isNull);
+      expect(config.useSmsBotScore, isNull);
+      expect(config.useSmsTollFraudProtection, isNull);
+      expect(config.smsTollFraudManagedRules, isNull);
     });
 
     test('serializes to JSON', () {
@@ -188,7 +356,24 @@ void main() {
         emailPasswordEnforcementState:
             RecaptchaProviderEnforcementState.enforce,
         phoneEnforcementState: RecaptchaProviderEnforcementState.audit,
+        managedRules: [
+          const RecaptchaManagedRule(
+            endScore: 0.5,
+            action: RecaptchaAction.block,
+          ),
+        ],
+        recaptchaKeys: [
+          const RecaptchaKey(key: 'test-key', type: RecaptchaKeyClientType.web),
+        ],
         useAccountDefender: true,
+        useSmsBotScore: true,
+        useSmsTollFraudProtection: false,
+        smsTollFraudManagedRules: [
+          const RecaptchaTollFraudManagedRule(
+            startScore: 0.3,
+            action: RecaptchaAction.block,
+          ),
+        ],
       );
 
       final json = config.toJson();
@@ -196,6 +381,24 @@ void main() {
       expect(json['emailPasswordEnforcementState'], equals('ENFORCE'));
       expect(json['phoneEnforcementState'], equals('AUDIT'));
       expect(json['useAccountDefender'], isTrue);
+      expect(json['useSmsBotScore'], isTrue);
+      expect(json['useSmsTollFraudProtection'], isFalse);
+      expect(json['managedRules'], isA<List<dynamic>>());
+      final managedRulesList = json['managedRules'] as List<dynamic>;
+      final managedRule = managedRulesList[0] as Map<String, dynamic>;
+      expect(managedRule['endScore'], equals(0.5));
+      expect(managedRule['action'], equals('BLOCK'));
+      expect(json['recaptchaKeys'], isA<List<dynamic>>());
+      final recaptchaKeysList = json['recaptchaKeys'] as List<dynamic>;
+      final recaptchaKey = recaptchaKeysList[0] as Map<String, dynamic>;
+      expect(recaptchaKey['key'], equals('test-key'));
+      expect(recaptchaKey['type'], equals('WEB'));
+      expect(json['smsTollFraudManagedRules'], isA<List<dynamic>>());
+      final smsTollFraudRulesList =
+          json['smsTollFraudManagedRules'] as List<dynamic>;
+      final smsTollFraudRule = smsTollFraudRulesList[0] as Map<String, dynamic>;
+      expect(smsTollFraudRule['startScore'], equals(0.3));
+      expect(smsTollFraudRule['action'], equals('BLOCK'));
     });
   });
 

@@ -948,14 +948,83 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
   Map<String, dynamic> _recaptchaConfigToJson(
     auth2.GoogleCloudIdentitytoolkitAdminV2RecaptchaConfig config,
   ) {
-    return {
+    final result = <String, dynamic>{
       if (config.emailPasswordEnforcementState != null)
         'emailPasswordEnforcementState': config.emailPasswordEnforcementState,
-      if (config.phoneEnforcementState != null)
-        'phoneEnforcementState': config.phoneEnforcementState,
-      if (config.useAccountDefender != null)
-        'useAccountDefender': config.useAccountDefender,
     };
+
+    // phoneEnforcementState may not be in the Google API types yet, check if it exists
+    try {
+      final phoneState = (config as dynamic).phoneEnforcementState;
+      if (phoneState != null) {
+        result['phoneEnforcementState'] = phoneState;
+      }
+    } catch (_) {
+      // Field doesn't exist in API types yet
+    }
+
+    if (config.useAccountDefender != null) {
+      result['useAccountDefender'] = config.useAccountDefender;
+    }
+
+    // Add managedRules if present
+    if (config.managedRules != null) {
+      result['managedRules'] = config.managedRules!.map((rule) {
+        return {
+          'endScore': rule.endScore,
+          if (rule.action != null) 'action': rule.action,
+        };
+      }).toList();
+    }
+
+    // Add recaptchaKeys if present
+    if (config.recaptchaKeys != null) {
+      result['recaptchaKeys'] = config.recaptchaKeys!.map((key) {
+        return {'key': key.key, if (key.type != null) 'type': key.type};
+      }).toList();
+    }
+
+    // useSmsBotScore may not be in the Google API types yet, check if it exists
+    try {
+      final useSmsBotScore = (config as dynamic).useSmsBotScore;
+      if (useSmsBotScore != null) {
+        result['useSmsBotScore'] = useSmsBotScore;
+      }
+    } catch (_) {
+      // Field doesn't exist in API types yet
+    }
+
+    // useSmsTollFraudProtection may not be in the Google API types yet, check if it exists
+    try {
+      final useSmsTollFraudProtection =
+          (config as dynamic).useSmsTollFraudProtection;
+      if (useSmsTollFraudProtection != null) {
+        result['useSmsTollFraudProtection'] = useSmsTollFraudProtection;
+      }
+    } catch (_) {
+      // Field doesn't exist in API types yet
+    }
+
+    // tollFraudManagedRules may not be in the Google API types yet, check if it exists
+    try {
+      final tollFraudManagedRules = (config as dynamic).tollFraudManagedRules;
+      if (tollFraudManagedRules != null) {
+        result['tollFraudManagedRules'] =
+            (tollFraudManagedRules as List<dynamic>).map((rule) {
+              final ruleMap = rule as Map<String, dynamic>;
+              return {
+                'startScore': ruleMap['startScore'] is int
+                    ? (ruleMap['startScore'] as int).toDouble()
+                    : ruleMap['startScore'] as double,
+                if (ruleMap['action'] != null) 'action': ruleMap['action'],
+              };
+            }).toList();
+      }
+    } catch (_) {
+      // Field doesn't exist in API types yet
+    }
+
+    return result;
   }
 
   Map<String, dynamic> _passwordPolicyConfigToJson(

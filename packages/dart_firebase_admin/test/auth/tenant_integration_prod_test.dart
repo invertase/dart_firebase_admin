@@ -383,6 +383,13 @@ void main() {
 
               final tenantAuth = tenantManager.authForTenant(tenant.tenantId);
 
+              // Clean up any existing users in the tenant from previous test runs
+              final existingUsers = await tenantAuth.listUsers();
+              await Future.wait([
+                for (final existingUser in existingUsers.users)
+                  tenantAuth.deleteUser(existingUser.uid),
+              ]);
+
               // Use unique emails to avoid conflicts with previous test runs
               final timestamp = DateTime.now().millisecondsSinceEpoch;
 
