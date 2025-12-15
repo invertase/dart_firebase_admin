@@ -1531,6 +1531,172 @@ void main() {
       expect(request.displayName, equals('New Tenant'));
     });
   });
+
+  group('Tenant.toJson', () {
+    test('toJson serialization with minimal fields', () async {
+      final app = _createMockApp();
+      final mockRequestHandler = AuthRequestHandlerMock();
+      final tenantManager = TenantManager.internal(
+        app,
+        authRequestHandler: mockRequestHandler,
+      );
+
+      final tenantResponse = <String, dynamic>{
+        'name': 'projects/test-project/tenants/minimal-tenant',
+        'allowPasswordSignup': false,
+        'enableEmailLinkSignin': false,
+        'enableAnonymousUser': false,
+      };
+
+      when(
+        () => mockRequestHandler.getTenant(any()),
+      ).thenAnswer((_) async => tenantResponse);
+
+      final tenant = await tenantManager.getTenant('minimal-tenant');
+      final json = tenant.toJson();
+
+      expect(json['tenantId'], equals('minimal-tenant'));
+      expect(json['anonymousSignInEnabled'], equals(false));
+      expect(json.containsKey('displayName'), isFalse);
+      expect(json.containsKey('emailSignInConfig'), isTrue);
+      expect(json.containsKey('multiFactorConfig'), isFalse);
+      expect(json.containsKey('testPhoneNumbers'), isFalse);
+      expect(json.containsKey('smsRegionConfig'), isFalse);
+      expect(json.containsKey('recaptchaConfig'), isFalse);
+      expect(json.containsKey('passwordPolicyConfig'), isFalse);
+      expect(json.containsKey('emailPrivacyConfig'), isFalse);
+    });
+
+    test('toJson serialization with all fields', () async {
+      final app = _createMockApp();
+      final mockRequestHandler = AuthRequestHandlerMock();
+      final tenantManager = TenantManager.internal(
+        app,
+        authRequestHandler: mockRequestHandler,
+      );
+
+      final tenantResponse = <String, dynamic>{
+        'name': 'projects/test-project/tenants/full-tenant',
+        'displayName': 'Full Config Tenant',
+        'allowPasswordSignup': true,
+        'enableEmailLinkSignin': true,
+        'enableAnonymousUser': true,
+        'testPhoneNumbers': {
+          '+11234567890': '123456',
+          '+19876543210': '654321',
+        },
+        'smsRegionConfig': {
+          'allowByDefault': {
+            'disallowedRegions': ['US', 'CA'],
+          },
+        },
+        'mfaConfig': {
+          'state': 'ENABLED',
+          'enabledProviders': [
+            {'state': 'ENABLED', 'totpProviderConfig': <String, dynamic>{}},
+          ],
+        },
+        'recaptchaConfig': {
+          'emailPasswordEnforcementState': 'ENFORCE',
+          'phoneEnforcementState': 'AUDIT',
+        },
+        'passwordPolicyConfig': {'passwordPolicyEnforcementState': 'ENFORCE'},
+        'emailPrivacyConfig': {'enableImprovedEmailPrivacy': true},
+      };
+
+      when(
+        () => mockRequestHandler.getTenant(any()),
+      ).thenAnswer((_) async => tenantResponse);
+
+      final tenant = await tenantManager.getTenant('full-tenant');
+      final json = tenant.toJson();
+
+      expect(json['tenantId'], equals('full-tenant'));
+      expect(json['displayName'], equals('Full Config Tenant'));
+      expect(json['anonymousSignInEnabled'], equals(true));
+      expect(json.containsKey('testPhoneNumbers'), isTrue);
+      expect(json['testPhoneNumbers'], isA<Map<Object?, Object?>>());
+      expect(json.containsKey('emailSignInConfig'), isTrue);
+      expect(json.containsKey('multiFactorConfig'), isTrue);
+      expect(json.containsKey('smsRegionConfig'), isTrue);
+      expect(json.containsKey('recaptchaConfig'), isTrue);
+      expect(json.containsKey('passwordPolicyConfig'), isTrue);
+      expect(json.containsKey('emailPrivacyConfig'), isTrue);
+    });
+
+    test('toJson excludes null optional properties', () async {
+      final app = _createMockApp();
+      final mockRequestHandler = AuthRequestHandlerMock();
+      final tenantManager = TenantManager.internal(
+        app,
+        authRequestHandler: mockRequestHandler,
+      );
+
+      final tenantResponse = <String, dynamic>{
+        'name': 'projects/test-project/tenants/partial-tenant',
+        'displayName': 'Partial Tenant',
+        'allowPasswordSignup': true,
+        'enableEmailLinkSignin': false,
+        'enableAnonymousUser': false,
+        'smsRegionConfig': {
+          'allowByDefault': {
+            'disallowedRegions': ['US'],
+          },
+        },
+      };
+
+      when(
+        () => mockRequestHandler.getTenant(any()),
+      ).thenAnswer((_) async => tenantResponse);
+
+      final tenant = await tenantManager.getTenant('partial-tenant');
+      final json = tenant.toJson();
+
+      expect(json['tenantId'], equals('partial-tenant'));
+      expect(json['displayName'], equals('Partial Tenant'));
+      expect(json['anonymousSignInEnabled'], equals(false));
+      expect(json.containsKey('testPhoneNumbers'), isFalse);
+      expect(json.containsKey('emailSignInConfig'), isTrue);
+      expect(json.containsKey('multiFactorConfig'), isFalse);
+      expect(json.containsKey('smsRegionConfig'), isTrue);
+      expect(json.containsKey('recaptchaConfig'), isFalse);
+      expect(json.containsKey('passwordPolicyConfig'), isFalse);
+      expect(json.containsKey('emailPrivacyConfig'), isFalse);
+    });
+
+    test('toJson handles allowlistOnly SMS region config', () async {
+      final app = _createMockApp();
+      final mockRequestHandler = AuthRequestHandlerMock();
+      final tenantManager = TenantManager.internal(
+        app,
+        authRequestHandler: mockRequestHandler,
+      );
+
+      final tenantResponse = <String, dynamic>{
+        'name': 'projects/test-project/tenants/allowlist-tenant',
+        'allowPasswordSignup': false,
+        'enableEmailLinkSignin': false,
+        'enableAnonymousUser': false,
+        'smsRegionConfig': {
+          'allowlistOnly': {
+            'allowedRegions': ['GB', 'FR', 'DE'],
+          },
+        },
+      };
+
+      when(
+        () => mockRequestHandler.getTenant(any()),
+      ).thenAnswer((_) async => tenantResponse);
+
+      final tenant = await tenantManager.getTenant('allowlist-tenant');
+      final json = tenant.toJson();
+
+      expect(json['tenantId'], equals('allowlist-tenant'));
+      expect(json.containsKey('smsRegionConfig'), isTrue);
+      final smsConfig = json['smsRegionConfig'] as Map<String, dynamic>;
+      expect(smsConfig.containsKey('allowlistOnly'), isTrue);
+    });
+  });
 }
 
 // Mock app for testing
