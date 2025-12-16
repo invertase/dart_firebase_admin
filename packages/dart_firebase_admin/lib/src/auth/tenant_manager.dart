@@ -182,7 +182,7 @@ class TenantManager {
 
   /// Internal constructor for testing.
   ///
-  /// [app] - The app for this TenantManager instance.
+  /// [FirebaseApp] - The app for this TenantManager instance.
   /// [authRequestHandler] - Optional request handler for testing.
   @internal
   TenantManager.internal(this._app, {AuthRequestHandler? authRequestHandler})
