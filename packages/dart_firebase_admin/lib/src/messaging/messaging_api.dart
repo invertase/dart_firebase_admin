@@ -36,7 +36,7 @@ sealed class Message extends _BaseMessage {
     super.fcmOptions,
   }) : super._();
 
-  fmc1.Message _toProto();
+  fmc1.Message _toRequest();
 }
 
 /// A message targeting a specific registration token.
@@ -56,14 +56,14 @@ class TokenMessage extends Message {
   final String token;
 
   @override
-  fmc1.Message _toProto() {
+  fmc1.Message _toRequest() {
     return fmc1.Message(
       data: data,
-      notification: notification?._toProto(),
-      android: android?._toProto(),
-      webpush: webpush?._toProto(),
-      apns: apns?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      android: android?._toRequest(),
+      webpush: webpush?._toRequest(),
+      apns: apns?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
       token: token,
     );
   }
@@ -86,14 +86,14 @@ class TopicMessage extends Message {
   final String topic;
 
   @override
-  fmc1.Message _toProto() {
+  fmc1.Message _toRequest() {
     return fmc1.Message(
       data: data,
-      notification: notification?._toProto(),
-      android: android?._toProto(),
-      webpush: webpush?._toProto(),
-      apns: apns?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      android: android?._toRequest(),
+      webpush: webpush?._toRequest(),
+      apns: apns?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
       topic: topic,
     );
   }
@@ -116,14 +116,14 @@ class ConditionMessage extends Message {
   final String condition;
 
   @override
-  fmc1.Message _toProto() {
+  fmc1.Message _toRequest() {
     return fmc1.Message(
       data: data,
-      notification: notification?._toProto(),
-      android: android?._toProto(),
-      webpush: webpush?._toProto(),
-      apns: apns?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      android: android?._toRequest(),
+      webpush: webpush?._toRequest(),
+      apns: apns?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
       condition: condition,
     );
   }
@@ -159,7 +159,7 @@ class Notification {
   /// URL of an image to be displayed in the notification.
   final String? imageUrl;
 
-  fmc1.Notification _toProto() {
+  fmc1.Notification _toRequest() {
     return fmc1.Notification(title: title, body: body, image: imageUrl);
   }
 }
@@ -172,7 +172,7 @@ class FcmOptions {
   /// The label associated with the message's analytics data.
   final String? analyticsLabel;
 
-  fmc1.FcmOptions _toProto() {
+  fmc1.FcmOptions _toRequest() {
     return fmc1.FcmOptions(analyticsLabel: analyticsLabel);
   }
 }
@@ -197,12 +197,12 @@ class WebpushConfig {
   /// Options for features provided by the FCM SDK for Web.
   final WebpushFcmOptions? fcmOptions;
 
-  fmc1.WebpushConfig _toProto() {
+  fmc1.WebpushConfig _toRequest() {
     return fmc1.WebpushConfig(
       headers: headers,
       data: data,
-      notification: notification?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
     );
   }
 }
@@ -218,7 +218,7 @@ class WebpushFcmOptions {
   /// For all URL values, HTTPS is required.
   final String? link;
 
-  fmc1.WebpushFcmOptions _toProto() {
+  fmc1.WebpushFcmOptions _toRequest() {
     return fmc1.WebpushFcmOptions(link: link);
   }
 }
@@ -239,13 +239,13 @@ class WebpushNotificationAction {
   /// Title of the notification action.
   final String title;
 
-  Map<String, Object?> _toProto() {
-    return {'action': action, 'icon': icon, 'title': title}._cleanProto();
+  Map<String, Object?> _toRequest() {
+    return {'action': action, 'icon': icon, 'title': title}.toCleanRequest();
   }
 }
 
 extension on Map<String, Object?> {
-  Map<String, Object?> _cleanProto() {
+  Map<String, Object?> toCleanRequest() {
     for (final entry in entries) {
       switch (entry.value) {
         case true:
@@ -344,10 +344,10 @@ class WebpushNotification {
   /// Arbitrary key/value payload.
   final Map<String, Object?>? customData;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
       'title': title,
-      'actions': actions?.map((a) => a._toProto()).toList(),
+      'actions': actions?.map((a) => a._toRequest()).toList(),
       'badge': badge,
       'body': body,
       'data': data,
@@ -362,7 +362,7 @@ class WebpushNotification {
       'timestamp': timestamp,
       'vibrate': vibrate,
       if (customData case final customData?) ...customData,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -386,11 +386,11 @@ class ApnsConfig {
   /// Options for features provided by the FCM SDK for iOS.
   final ApnsFcmOptions? fcmOptions;
 
-  fmc1.ApnsConfig _toProto() {
+  fmc1.ApnsConfig _toRequest() {
     return fmc1.ApnsConfig(
       headers: headers,
-      payload: payload?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      payload: payload?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
     );
   }
 }
@@ -408,11 +408,11 @@ class ApnsPayload {
   /// Arbitrary custom data.
   final Map<String, String>? customData;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
-      'aps': aps._toProto(),
+      'aps': aps._toRequest(),
       if (customData case final customData?) ...customData,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -453,16 +453,16 @@ class Aps {
   /// An app-specific identifier for grouping notifications.
   final String? threadId;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
-      if (alert != null) 'alert': alert?._toProto(),
+      if (alert != null) 'alert': alert?._toRequest(),
       if (badge != null) 'badge': badge,
-      if (sound != null) 'sound': sound?._toProto(),
+      if (sound != null) 'sound': sound?._toRequest(),
       if (contentAvailable != null) 'content-available': contentAvailable,
       if (mutableContent != null) 'mutable-content': mutableContent,
       if (category != null) 'category': category,
       if (threadId != null) 'thread-id': threadId,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -493,7 +493,7 @@ class ApsAlert {
   final String? actionLocKey;
   final String? launchImage;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
       'title': title,
       'subtitle': subtitle,
@@ -506,7 +506,7 @@ class ApsAlert {
       'subtitle-loc-args': subtitleLocArgs,
       'action-loc-key': actionLocKey,
       'launch-image': launchImage,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -527,8 +527,12 @@ class CriticalSound {
   /// (silent) and 1.0 (full volume).
   final double? volume;
 
-  Map<String, Object?> _toProto() {
-    return {'critical': critical, 'name': name, 'volume': volume}._cleanProto();
+  Map<String, Object?> _toRequest() {
+    return {
+      'critical': critical,
+      'name': name,
+      'volume': volume,
+    }.toCleanRequest();
   }
 }
 
@@ -543,7 +547,7 @@ class ApnsFcmOptions {
   /// URL of an image to be displayed in the notification.
   final String? imageUrl;
 
-  fmc1.ApnsFcmOptions _toProto() {
+  fmc1.ApnsFcmOptions _toRequest() {
     return fmc1.ApnsFcmOptions(analyticsLabel: analyticsLabel, image: imageUrl);
   }
 }
@@ -601,15 +605,15 @@ class AndroidConfig {
   /// Options for features provided by the FCM SDK for Android.
   final AndroidFcmOptions? fcmOptions;
 
-  fmc1.AndroidConfig _toProto() {
+  fmc1.AndroidConfig _toRequest() {
     return fmc1.AndroidConfig(
       collapseKey: collapseKey,
       priority: priority?.toString().split('.').last,
       ttl: ttl,
       restrictedPackageName: restrictedPackageName,
       data: data,
-      notification: notification?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
     );
   }
 }
@@ -785,7 +789,7 @@ class AndroidNotification {
   /// displayed on the long-press menu each time a new notification arrives.
   final int? notificationCount;
 
-  fmc1.AndroidNotification _toProto() {
+  fmc1.AndroidNotification _toRequest() {
     return fmc1.AndroidNotification(
       title: title,
       body: body,
@@ -808,7 +812,7 @@ class AndroidNotification {
       vibrateTimings: vibrateTimingsMillis,
       defaultVibrateTimings: defaultVibrateTimings,
       defaultSound: defaultSound,
-      lightSettings: lightSettings?._toProto(),
+      lightSettings: lightSettings?._toRequest(),
       defaultLightSettings: defaultLightSettings,
       visibility: visibility?.toString().split('.').last,
       notificationCount: notificationCount,
@@ -834,7 +838,7 @@ class LightSettings {
   /// Required. Along with `light_on_duration`, defines the blink rate of LED flashes.
   final String lightOffDurationMillis;
 
-  fmc1.LightSettings _toProto() {
+  fmc1.LightSettings _toRequest() {
     return fmc1.LightSettings(
       color: fmc1.Color(
         red: color.red,
@@ -856,7 +860,7 @@ class AndroidFcmOptions {
   /// The label associated with the message's analytics data.
   final String? analyticsLabel;
 
-  fmc1.AndroidFcmOptions _toProto() {
+  fmc1.AndroidFcmOptions _toRequest() {
     return fmc1.AndroidFcmOptions(analyticsLabel: analyticsLabel);
   }
 }

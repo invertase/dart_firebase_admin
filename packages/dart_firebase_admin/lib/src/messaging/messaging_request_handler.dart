@@ -25,7 +25,7 @@ class FirebaseMessagingRequestHandler {
       final parent = _httpClient.buildParent(projectId);
       final response = await client.projects.messages.send(
         fmc1.SendMessageRequest(
-          message: message._toProto(),
+          message: message._toRequest(),
           validateOnly: dryRun,
         ),
         parent,
@@ -77,7 +77,7 @@ class FirebaseMessagingRequestHandler {
         messages.map((message) async {
           final response = client.projects.messages.send(
             fmc1.SendMessageRequest(
-              message: message._toProto(),
+              message: message._toRequest(),
               validateOnly: dryRun,
             ),
             parent,
