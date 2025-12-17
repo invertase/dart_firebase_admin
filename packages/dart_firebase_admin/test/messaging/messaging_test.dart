@@ -57,6 +57,9 @@ void main() {
       (invocation) => 'projects/${invocation.positionalArguments[0]}',
     );
 
+    // Mock iidApiHost for topic management
+    when(() => httpClient.iidApiHost).thenReturn('iid.googleapis.com');
+
     // Use unique app name for each test to avoid interference
     final appName = 'messaging-test-${DateTime.now().microsecondsSinceEpoch}';
     final app = createApp(name: appName);
@@ -371,6 +374,351 @@ void main() {
       request = capture.captured[1] as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
+    });
+  });
+
+  group('Topic Management', () {
+    group('subscribeToTopic', () {
+      test('should validate empty registration tokens list', () async {
+        expect(
+          () => messaging.subscribeToTopic([], 'test-topic'),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must be a non-empty list'),
+                ),
+          ),
+        );
+      });
+
+      test('should validate empty token strings', () async {
+        expect(
+          () => messaging.subscribeToTopic([
+            'token1',
+            '',
+            'token3',
+          ], 'test-topic'),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must all be non-empty strings'),
+                ),
+          ),
+        );
+      });
+
+      test('should validate empty topic', () async {
+        expect(
+          () => messaging.subscribeToTopic(['token1'], ''),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must be a non-empty string'),
+                ),
+          ),
+        );
+      });
+
+      test('should validate topic format', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer((_) async => <String, dynamic>{});
+
+        // Valid topics should not throw
+        for (final topic in [
+          'test-topic',
+          '/topics/test-topic',
+          'test_topic',
+          'test.topic',
+          'test~topic',
+          'test%20topic',
+        ]) {
+          await messaging.subscribeToTopic(['token1'], topic);
+        }
+
+        // Invalid topics should throw
+        for (final topic in [
+          'test topic', // space not allowed
+          'test@topic', // @ not allowed
+          'test#topic', // # not allowed
+          '/topics/', // empty after /topics/
+        ]) {
+          expect(
+            () => messaging.subscribeToTopic(['token1'], topic),
+            throwsA(
+              isA<FirebaseMessagingAdminException>()
+                  .having(
+                    (e) => e.errorCode,
+                    'errorCode',
+                    MessagingClientErrorCode.invalidArgument,
+                  )
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    contains('must be a string which matches the format'),
+                  ),
+            ),
+          );
+        }
+      });
+
+      test('should normalize topic by prepending /topics/', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}],
+          },
+        );
+
+        await messaging.subscribeToTopic(['token1'], 'test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        final requestData = capture.captured.last as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+      });
+
+      test('should not modify topic already starting with /topics/', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}],
+          },
+        );
+
+        await messaging.subscribeToTopic(['token1'], '/topics/test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        final requestData = capture.captured.last as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+      });
+
+      test('should make request to IID API with correct parameters', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}, <String, dynamic>{}],
+          },
+        );
+
+        await messaging.subscribeToTopic(['token1', 'token2'], 'test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        expect(capture.captured[0], 'iid.googleapis.com');
+        expect(capture.captured[1], '/iid/v1:batchAdd');
+        final requestData = capture.captured[2] as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+        expect(requestData['registration_tokens'], ['token1', 'token2']);
+      });
+
+      test('should return success response with all successes', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}, <String, dynamic>{}, <String, dynamic>{}],
+          },
+        );
+
+        final response = await messaging.subscribeToTopic([
+          'token1',
+          'token2',
+          'token3',
+        ], 'test-topic');
+
+        expect(response.successCount, 3);
+        expect(response.failureCount, 0);
+        expect(response.errors, isEmpty);
+      });
+
+      test('should return response with partial failures', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [
+              <String, dynamic>{},
+              <String, dynamic>{'error': 'INVALID_ARGUMENT'},
+              <String, dynamic>{},
+              <String, dynamic>{'error': 'NOT_FOUND'},
+            ],
+          },
+        );
+
+        final response = await messaging.subscribeToTopic([
+          'token1',
+          'token2',
+          'token3',
+          'token4',
+        ], 'test-topic');
+
+        expect(response.successCount, 2);
+        expect(response.failureCount, 2);
+        expect(response.errors.length, 2);
+        expect(response.errors[0].index, 1);
+        expect(
+          response.errors[0].error,
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'INVALID_ARGUMENT',
+          ),
+        );
+        expect(response.errors[1].index, 3);
+        expect(
+          response.errors[1].error,
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'NOT_FOUND',
+          ),
+        );
+      });
+    });
+
+    group('unsubscribeFromTopic', () {
+      test('should validate empty registration tokens list', () async {
+        expect(
+          () => messaging.unsubscribeFromTopic([], 'test-topic'),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must be a non-empty list'),
+                ),
+          ),
+        );
+      });
+
+      test('should make request to IID API with correct parameters', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}, <String, dynamic>{}],
+          },
+        );
+
+        await messaging.unsubscribeFromTopic([
+          'token1',
+          'token2',
+        ], 'test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        expect(capture.captured[0], 'iid.googleapis.com');
+        expect(capture.captured[1], '/iid/v1:batchRemove');
+        final requestData = capture.captured[2] as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+        expect(requestData['registration_tokens'], ['token1', 'token2']);
+      });
+
+      test('should return success response', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}, <String, dynamic>{}],
+          },
+        );
+
+        final response = await messaging.unsubscribeFromTopic([
+          'token1',
+          'token2',
+        ], 'test-topic');
+
+        expect(response.successCount, 2);
+        expect(response.failureCount, 0);
+        expect(response.errors, isEmpty);
+      });
     });
   });
 }

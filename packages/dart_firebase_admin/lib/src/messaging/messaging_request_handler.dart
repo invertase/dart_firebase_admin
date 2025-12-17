@@ -147,4 +147,150 @@ class FirebaseMessagingRequestHandler {
       dryRun: dryRun,
     );
   }
+
+  /// Subscribes a list of registration tokens to an FCM topic.
+  Future<MessagingTopicManagementResponse> subscribeToTopic(
+    List<String> registrationTokens,
+    String topic,
+  ) {
+    return _sendTopicManagementRequest(
+      registrationTokens,
+      topic,
+      'subscribeToTopic',
+      '/iid/v1:batchAdd',
+    );
+  }
+
+  /// Unsubscribes a list of registration tokens from an FCM topic.
+  Future<MessagingTopicManagementResponse> unsubscribeFromTopic(
+    List<String> registrationTokens,
+    String topic,
+  ) {
+    return _sendTopicManagementRequest(
+      registrationTokens,
+      topic,
+      'unsubscribeFromTopic',
+      '/iid/v1:batchRemove',
+    );
+  }
+
+  /// Sends a topic management request to the IID API.
+  Future<MessagingTopicManagementResponse> _sendTopicManagementRequest(
+    List<String> registrationTokens,
+    String topic,
+    String methodName,
+    String path,
+  ) async {
+    // Validate inputs
+    _validateRegistrationTokens(registrationTokens, methodName);
+    _validateTopic(topic, methodName);
+
+    // Normalize topic (prepend /topics/ if needed)
+    final normalizedTopic = _normalizeTopic(topic);
+
+    // Make the request
+    final response = await _httpClient.invokeRequestHandler(
+      host: _httpClient.iidApiHost,
+      path: path,
+      requestData: {
+        'to': normalizedTopic,
+        'registration_tokens': registrationTokens,
+      },
+    );
+
+    // Map the response
+    return _mapRawResponseToTopicManagementResponse(response);
+  }
+
+  /// Validates registration tokens list.
+  void _validateRegistrationTokens(
+    List<String> registrationTokens,
+    String methodName,
+  ) {
+    if (registrationTokens.isEmpty) {
+      throw FirebaseMessagingAdminException(
+        MessagingClientErrorCode.invalidArgument,
+        'Registration tokens provided to $methodName() must be a non-empty list.',
+      );
+    }
+
+    for (final token in registrationTokens) {
+      if (token.isEmpty) {
+        throw FirebaseMessagingAdminException(
+          MessagingClientErrorCode.invalidArgument,
+          'Registration tokens provided to $methodName() must all be non-empty strings.',
+        );
+      }
+    }
+  }
+
+  /// Validates the topic format.
+  void _validateTopic(String topic, String methodName) {
+    if (topic.isEmpty) {
+      throw FirebaseMessagingAdminException(
+        MessagingClientErrorCode.invalidArgument,
+        'Topic provided to $methodName() must be a non-empty string.',
+      );
+    }
+
+    // Topic should match pattern: /topics/[a-zA-Z0-9-_.~%]+
+    final normalizedTopic = _normalizeTopic(topic);
+    final topicRegex = RegExp(r'^/topics/[a-zA-Z0-9\-_.~%]+$');
+
+    if (!topicRegex.hasMatch(normalizedTopic)) {
+      throw FirebaseMessagingAdminException(
+        MessagingClientErrorCode.invalidArgument,
+        'Topic provided to $methodName() must be a string which matches the format '
+        '"/topics/[a-zA-Z0-9-_.~%]+".',
+      );
+    }
+  }
+
+  /// Normalizes a topic by prepending '/topics/' if necessary.
+  String _normalizeTopic(String topic) {
+    if (!topic.startsWith('/topics/')) {
+      return '/topics/$topic';
+    }
+    return topic;
+  }
+
+  /// Maps the raw IID API response to MessagingTopicManagementResponse.
+  MessagingTopicManagementResponse _mapRawResponseToTopicManagementResponse(
+    Object? response,
+  ) {
+    var successCount = 0;
+    var failureCount = 0;
+    final errors = <FirebaseArrayIndexError>[];
+
+    if (response is Map && response.containsKey('results')) {
+      final results = response['results'] as List<dynamic>;
+
+      for (var index = 0; index < results.length; index++) {
+        final result = results[index] as Map;
+
+        if (result.containsKey('error')) {
+          failureCount++;
+          final errorMessage = result['error'] as String;
+
+          errors.add(
+            FirebaseArrayIndexError(
+              index: index,
+              error: FirebaseMessagingAdminException(
+                MessagingClientErrorCode.unknownError,
+                errorMessage,
+              ),
+            ),
+          );
+        } else {
+          successCount++;
+        }
+      }
+    }
+
+    return MessagingTopicManagementResponse._(
+      failureCount: failureCount,
+      successCount: successCount,
+      errors: errors,
+    );
+  }
 }

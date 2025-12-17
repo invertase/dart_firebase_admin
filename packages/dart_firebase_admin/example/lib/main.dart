@@ -1,6 +1,7 @@
 import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
+import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
@@ -10,6 +11,7 @@ Future<void> main() async {
 
   // Uncomment to run tenant example (requires Identity Platform upgrade)
   await tenantExample(admin);
+  await messagingExample(admin);
 
   await admin.close();
 }
@@ -222,4 +224,10 @@ Future<void> tenantExample(FirebaseApp admin) async {
       }
     }
   }
+}
+
+Future<void> messagingExample(FirebaseApp admin) async {
+  await admin.messaging.subscribeToTopic([''], 'topic');
+
+  await admin.messaging.send(TopicMessage(topic: 'topic'));
 }

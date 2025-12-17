@@ -1285,3 +1285,27 @@ class SendResponse {
   /// An error, if the message was not handed off to FCM successfully.
   final FirebaseAdminException? error;
 }
+
+/// Interface representing the server response from the
+/// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic] methods.
+class MessagingTopicManagementResponse {
+  /// Interface representing the server response from the
+  /// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic] methods.
+  MessagingTopicManagementResponse._({
+    required this.failureCount,
+    required this.successCount,
+    required this.errors,
+  });
+
+  /// The number of registration tokens that could not be subscribed to the topic
+  /// and resulted in an error.
+  final int failureCount;
+
+  /// The number of registration tokens that were successfully subscribed to the
+  /// topic.
+  final int successCount;
+
+  /// An array of errors corresponding to the provided registration token(s). The
+  /// length of this array will be equal to [failureCount].
+  final List<FirebaseArrayIndexError> errors;
+}
