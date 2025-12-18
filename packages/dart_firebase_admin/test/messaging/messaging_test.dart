@@ -377,6 +377,152 @@ void main() {
     });
   });
 
+  group('sendEachForMulticast', () {
+    setUp(() => mockV1<BatchResponse>());
+
+    test('should convert multicast message to token messages', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        final request = i.positionalArguments.first as fmc1.SendMessageRequest;
+        return Future.value(
+          fmc1.Message(name: 'message-${request.message?.token}'),
+        );
+      });
+
+      final result = await messaging.sendEachForMulticast(
+        MulticastMessage(
+          tokens: ['token1', 'token2', 'token3'],
+          notification: Notification(title: 'Test', body: 'Body'),
+          data: {'key': 'value'},
+        ),
+      );
+
+      expect(result.successCount, 3);
+      expect(result.failureCount, 0);
+      expect(result.responses.length, 3);
+
+      // Verify that send was called 3 times with the correct token messages
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(3);
+
+      for (var i = 0; i < 3; i++) {
+        final request = capture.captured[i] as fmc1.SendMessageRequest;
+        expect(request.message?.token, 'token${i + 1}');
+        expect(request.message?.notification?.title, 'Test');
+        expect(request.message?.notification?.body, 'Body');
+        expect(request.message?.data, {'key': 'value'});
+      }
+    });
+
+    test('should validate empty tokens list', () {
+      expect(
+        () => messaging.sendEachForMulticast(MulticastMessage(tokens: [])),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'messages must be a non-empty array',
+          ),
+        ),
+      );
+    });
+
+    test('should validate tokens list does not exceed 500', () {
+      expect(
+        () => messaging.sendEachForMulticast(
+          MulticastMessage(
+            tokens: List.generate(501, (index) => 'token$index'),
+          ),
+        ),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'messages list must not contain more than 500 items',
+          ),
+        ),
+      );
+    });
+
+    test('should support dryRun mode', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        return Future.value(fmc1.Message(name: 'test'));
+      });
+
+      await messaging.sendEachForMulticast(
+        MulticastMessage(tokens: ['token1', 'token2']),
+        dryRun: true,
+      );
+
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(2);
+
+      for (var i = 0; i < 2; i++) {
+        final request = capture.captured[i] as fmc1.SendMessageRequest;
+        expect(request.validateOnly, true);
+      }
+    });
+
+    test('should propagate all BaseMessage fields', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        return Future.value(fmc1.Message(name: 'test'));
+      });
+
+      await messaging.sendEachForMulticast(
+        MulticastMessage(
+          tokens: ['token1'],
+          data: {'key': 'value'},
+          notification: Notification(title: 'Title', body: 'Body'),
+          android: AndroidConfig(
+            collapseKey: 'collapse',
+            priority: AndroidConfigPriority.high,
+          ),
+          apns: ApnsConfig(headers: {'apns-priority': '10'}),
+          webpush: WebpushConfig(headers: {'TTL': '300'}),
+          fcmOptions: FcmOptions(analyticsLabel: 'label'),
+        ),
+      );
+
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(1);
+
+      final request = capture.captured.first as fmc1.SendMessageRequest;
+      expect(request.message?.token, 'token1');
+      expect(request.message?.data, {'key': 'value'});
+      expect(request.message?.notification?.title, 'Title');
+      expect(request.message?.notification?.body, 'Body');
+      expect(request.message?.android?.collapseKey, 'collapse');
+      expect(request.message?.android?.priority, 'high');
+      expect(request.message?.apns?.headers, {'apns-priority': '10'});
+      expect(request.message?.webpush?.headers, {'TTL': '300'});
+      expect(request.message?.fcmOptions?.analyticsLabel, 'label');
+    });
+
+    test('should handle mixed success and failure responses', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        final request = i.positionalArguments.first as fmc1.SendMessageRequest;
+        if (request.message?.token == 'token2') {
+          return Future.error('error');
+        }
+        return Future.value(fmc1.Message(name: 'success'));
+      });
+
+      final result = await messaging.sendEachForMulticast(
+        MulticastMessage(tokens: ['token1', 'token2', 'token3']),
+      );
+
+      expect(result.successCount, 2);
+      expect(result.failureCount, 1);
+      expect(result.responses.length, 3);
+
+      expect(result.responses[0].success, true);
+      expect(result.responses[0].messageId, 'success');
+      expect(result.responses[1].success, false);
+      expect(result.responses[1].error, isA<FirebaseMessagingAdminException>());
+      expect(result.responses[2].success, true);
+      expect(result.responses[2].messageId, 'success');
+    });
+  });
+
   group('Topic Management', () {
     group('subscribeToTopic', () {
       test('should validate empty registration tokens list', () async {
@@ -580,7 +726,11 @@ void main() {
           ),
         ).thenAnswer(
           (_) async => <String, dynamic>{
-            'results': [<String, dynamic>{}, <String, dynamic>{}, <String, dynamic>{}],
+            'results': [
+              <String, dynamic>{},
+              <String, dynamic>{},
+              <String, dynamic>{},
+            ],
           },
         );
 

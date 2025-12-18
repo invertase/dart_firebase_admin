@@ -89,15 +89,24 @@ class FirebaseMessagingRequestHandler {
             },
             // ignore: avoid_types_on_closure_parameters
             onError: (Object? error) {
-              return SendResponse._(
-                success: false,
-                error: error is FirebaseMessagingAdminException
-                    ? error
-                    : FirebaseMessagingAdminException(
-                        MessagingClientErrorCode.internalError,
-                        error.toString(),
-                      ),
-              );
+              // Convert DetailedApiRequestError to FirebaseMessagingAdminException
+              final messagingError = error is FirebaseMessagingAdminException
+                  ? error
+                  : error is fmc1.DetailedApiRequestError
+                  ? _createFirebaseError(
+                      statusCode: error.status,
+                      body: switch (error.jsonResponse) {
+                        null => '',
+                        final json => jsonEncode(json),
+                      },
+                      isJson: error.jsonResponse != null,
+                    )
+                  : FirebaseMessagingAdminException(
+                      MessagingClientErrorCode.internalError,
+                      error.toString(),
+                    );
+
+              return SendResponse._(success: false, error: messagingError);
             },
           );
         }),
