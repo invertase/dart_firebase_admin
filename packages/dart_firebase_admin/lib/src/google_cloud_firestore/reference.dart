@@ -42,13 +42,13 @@ final class CollectionReference<T> extends Query<T> {
   ///
   /// If using [withConverter], the [path] must not contain any slash.
   DocumentReference<T> doc([String? documentPath]) {
+    final effectivePath = documentPath ?? autoId();
+
     if (documentPath != null) {
       _validateResourcePath('documentPath', documentPath);
-    } else {
-      documentPath = autoId();
     }
 
-    final path = _resourcePath._append(documentPath);
+    final path = _resourcePath._append(effectivePath);
     if (!path.isDocument) {
       throw ArgumentError.value(
         documentPath,
@@ -764,15 +764,15 @@ base class Query<T> {
       );
     }
 
-    if (snapshot != null) {
-      fieldValues = Query._extractFieldValues(snapshot, fieldOrders);
-    }
+    final effectiveFieldValues = snapshot != null
+        ? Query._extractFieldValues(snapshot, fieldOrders)
+        : fieldValues;
 
-    if (fieldValues == null) {
+    if (effectiveFieldValues == null) {
       throw ArgumentError('You must specify "fieldValues" or "snapshot".');
     }
 
-    if (fieldValues.length > fieldOrders.length) {
+    if (effectiveFieldValues.length > fieldOrders.length) {
       throw ArgumentError(
         'Too many cursor values specified. The specified '
         'values must match the orderBy() constraints of the query.',
@@ -782,8 +782,8 @@ base class Query<T> {
     final cursorValues = <firestore1.Value>[];
     final cursor = _QueryCursor(before: before, values: cursorValues);
 
-    for (var i = 0; i < fieldValues.length; ++i) {
-      final fieldValue = fieldValues[i];
+    for (var i = 0; i < effectiveFieldValues.length; ++i) {
+      final fieldValue = effectiveFieldValues[i];
 
       if (fieldOrders[i].fieldPath == FieldPath.documentId &&
           fieldValue is! DocumentReference) {

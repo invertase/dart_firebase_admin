@@ -44,16 +44,16 @@ class AppRegistry {
     _validateAppName(name);
 
     var wasInitializedFromEnv = false;
+    final effectiveOptions = options ?? fetchOptionsFromEnvironment();
 
     if (options == null) {
       wasInitializedFromEnv = true;
-      options = fetchOptionsFromEnvironment();
     }
 
     // App doesn't exist - create it
     if (!_apps.containsKey(name)) {
       final app = FirebaseApp(
-        options: options,
+        options: effectiveOptions,
         name: name,
         wasInitializedFromEnv: wasInitializedFromEnv,
       );

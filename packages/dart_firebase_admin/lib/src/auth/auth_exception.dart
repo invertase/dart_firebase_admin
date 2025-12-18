@@ -17,15 +17,16 @@ class FirebaseAuthAdminException extends FirebaseAdminException
     // ERROR_CODE : Detailed message which can also contain colons
     final colonSeparator = serverErrorCode.indexOf(':');
     String? customMessage;
+    var effectiveErrorCode = serverErrorCode;
     if (colonSeparator != -1) {
       customMessage = serverErrorCode.substring(colonSeparator + 1).trim();
       // Treat empty string as null (matches Node.js behavior with || operator)
       if (customMessage.isEmpty) customMessage = null;
-      serverErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
+      effectiveErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
     }
     // If not found, default to internal error.
     final error =
-        authServerToClientCode[serverErrorCode] ??
+        authServerToClientCode[effectiveErrorCode] ??
         AuthClientErrorCode.internalError;
     // Server detailed message should have highest priority.
     customMessage = customMessage ?? error.message;
