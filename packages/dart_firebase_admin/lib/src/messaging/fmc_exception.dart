@@ -72,18 +72,19 @@ class FirebaseMessagingAdminException extends FirebaseAdminException
     final error =
         messagingServerToClientCode[serverErrorCode] ??
         MessagingClientErrorCode.unknownError;
-    message ??= error.message;
+    var effectiveMessage = message ?? error.message;
 
     if (error == MessagingClientErrorCode.unknownError &&
         rawServerResponse != null) {
       try {
-        message += ' Raw server response: "${jsonEncode(rawServerResponse)}"';
+        effectiveMessage +=
+            ' Raw server response: "${jsonEncode(rawServerResponse)}"';
       } catch (e) {
         // Ignore JSON parsing error.
       }
     }
 
-    return FirebaseMessagingAdminException(error, message);
+    return FirebaseMessagingAdminException(error, effectiveMessage);
   }
 
   final MessagingClientErrorCode errorCode;

@@ -135,18 +135,19 @@ class FirebaseFirestoreAdminException extends FirebaseAdminException
     final error =
         firestoreServerToClientCode[serverErrorCode] ??
         FirestoreClientErrorCode.unknown;
-    message ??= error.message;
+    var effectiveMessage = message ?? error.message;
 
     if (error == FirestoreClientErrorCode.unknown &&
         rawServerResponse != null) {
       try {
-        message += ' Raw server response: "${jsonEncode(rawServerResponse)}"';
+        effectiveMessage +=
+            ' Raw server response: "${jsonEncode(rawServerResponse)}"';
       } catch (e) {
         // Ignore JSON parsing error.
       }
     }
 
-    return FirebaseFirestoreAdminException(error, message);
+    return FirebaseFirestoreAdminException(error, effectiveMessage);
   }
 
   final FirestoreClientErrorCode errorCode;
