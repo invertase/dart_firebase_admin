@@ -69,10 +69,7 @@ class SecurityRulesHttpClient {
 
   /// Executes a Security Rules v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
-    Future<R> Function(
-      firebase_rules_v1.FirebaseRulesApi client,
-      String projectId,
-    )
+    Future<R> Function(firebase_rules_v1.FirebaseRulesApi api, String projectId)
     fn,
   ) => _run(
     (client, projectId) =>

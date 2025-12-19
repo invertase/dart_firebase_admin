@@ -105,13 +105,13 @@ class WriteBatch {
   }) async {
     _commited = true;
 
-    return firestore._client.v1((client, projectId) async {
+    return firestore._client.v1((api, projectId) async {
       final request = firestore1.CommitRequest(
         transaction: transactionId,
         writes: _operations.map((op) => op.op()).toList(),
       );
 
-      return client.projects.databases.documents.commit(
+      return api.projects.databases.documents.commit(
         request,
         firestore._formattedDatabaseName,
       );

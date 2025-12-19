@@ -83,13 +83,13 @@ final class CollectionReference<T> extends Query<T> {
   /// document reference (e.g. via [DocumentReference.get]) will return a
   /// [DocumentSnapshot] whose [DocumentSnapshot.exists] property is `false`.
   Future<List<DocumentReference<T>>> listDocuments() async {
-    final response = await firestore._client.v1((client, projectId) {
+    final response = await firestore._client.v1((api, projectId) {
       final parentPath = _queryOptions.parentPath._toQualifiedResourcePath(
         projectId,
         firestore._databaseId,
       );
 
-      return client.projects.databases.documents.list(
+      return api.projects.databases.documents.list(
         parentPath._formattedName,
         id,
         showMissing: true,
@@ -1071,8 +1071,8 @@ base class Query<T> {
   Future<QuerySnapshot<T>> get() => _get(transactionId: null);
 
   Future<QuerySnapshot<T>> _get({required String? transactionId}) async {
-    final response = await firestore._client.v1((client, projectId) async {
-      return client.projects.databases.documents.runQuery(
+    final response = await firestore._client.v1((api, projectId) async {
+      return api.projects.databases.documents.runQuery(
         _toProto(transactionId: transactionId, readTime: null),
         _buildProtoParentPath(),
       );
@@ -1888,8 +1888,8 @@ class AggregateQuery {
       ),
     );
 
-    final response = await firestore._client.v1((client, projectId) async {
-      return client.projects.databases.documents.runAggregationQuery(
+    final response = await firestore._client.v1((api, projectId) async {
+      return api.projects.databases.documents.runAggregationQuery(
         aggregationQuery,
         query._buildProtoParentPath(),
       );

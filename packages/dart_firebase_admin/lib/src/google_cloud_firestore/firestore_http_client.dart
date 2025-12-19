@@ -67,7 +67,7 @@ class FirestoreHttpClient {
   /// Discovers and caches the projectId on first call, then provides it to
   /// all subsequent operations. This matches the Auth service pattern.
   Future<R> v1<R>(
-    Future<R> Function(firestore1.FirestoreApi client, String projectId) fn,
+    Future<R> Function(firestore1.FirestoreApi api, String projectId) fn,
   ) => _run(
     (client, projectId) => fn(
       firestore1.FirestoreApi(client, rootUrl: _firestoreApiHost.toString()),

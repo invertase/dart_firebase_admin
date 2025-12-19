@@ -21,9 +21,9 @@ class FirebaseMessagingRequestHandler {
   /// Returns a unique message ID string after the message has been successfully
   /// handed off to the FCM service for delivery.
   Future<String> send(Message message, {bool? dryRun}) {
-    return _httpClient.v1((client, projectId) async {
+    return _httpClient.v1((api, projectId) async {
       final parent = _httpClient.buildParent(projectId);
-      final response = await client.projects.messages.send(
+      final response = await api.projects.messages.send(
         fmc1.SendMessageRequest(
           message: message._toRequest(),
           validateOnly: dryRun,
@@ -58,7 +58,7 @@ class FirebaseMessagingRequestHandler {
   /// - [dryRun]: Whether to send the messages in the dry-run
   ///   (validation only) mode.
   Future<BatchResponse> sendEach(List<Message> messages, {bool? dryRun}) {
-    return _httpClient.v1((client, projectId) async {
+    return _httpClient.v1((api, projectId) async {
       if (messages.isEmpty) {
         throw FirebaseMessagingAdminException(
           MessagingClientErrorCode.invalidArgument,
@@ -75,7 +75,7 @@ class FirebaseMessagingRequestHandler {
       final parent = _httpClient.buildParent(projectId);
       final responses = await Future.wait<SendResponse>(
         messages.map((message) async {
-          final response = client.projects.messages.send(
+          final response = api.projects.messages.send(
             fmc1.SendMessageRequest(
               message: message._toRequest(),
               validateOnly: dryRun,

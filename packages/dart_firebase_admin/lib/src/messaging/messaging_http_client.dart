@@ -40,8 +40,7 @@ class FirebaseMessagingHttpClient {
 
   /// Executes a Messaging v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
-    Future<R> Function(fmc1.FirebaseCloudMessagingApi client, String projectId)
-    fn,
+    Future<R> Function(fmc1.FirebaseCloudMessagingApi api, String projectId) fn,
   ) => _run(
     (client, projectId) =>
         fn(fmc1.FirebaseCloudMessagingApi(client), projectId),

@@ -319,7 +319,7 @@ abstract class _AbstractAuthRequestHandler {
           validDuration: validDuration.toString(),
         );
 
-    return _httpClient.v1((client, projectId) async {
+    return _httpClient.v1((api, projectId) async {
       // Validate the ID token is a non-empty string.
       if (idToken.isEmpty) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.invalidIdToken);
@@ -333,7 +333,7 @@ abstract class _AbstractAuthRequestHandler {
         );
       }
 
-      final response = await client.projects.createSessionCookie(
+      final response = await api.projects.createSessionCookie(
         request,
         projectId,
       );
@@ -392,8 +392,8 @@ abstract class _AbstractAuthRequestHandler {
       return userImportBuilder.buildResponse([]);
     }
 
-    return _httpClient.v1((client, projectId) async {
-      final response = await client.projects.accounts_1.batchCreate(
+    return _httpClient.v1((api, projectId) async {
+      final response = await api.projects.accounts_1.batchCreate(
         request,
         projectId,
       );
@@ -430,8 +430,8 @@ abstract class _AbstractAuthRequestHandler {
       );
     }
 
-    return _httpClient.v1((client, projectId) async {
-      return client.projects.accounts_1.batchGet(
+    return _httpClient.v1((api, projectId) async {
+      return api.projects.accounts_1.batchGet(
         projectId,
         maxResults: maxResults,
         nextPageToken: pageToken,
@@ -445,8 +445,8 @@ abstract class _AbstractAuthRequestHandler {
   ) async {
     assertIsUid(uid);
 
-    return _httpClient.v1((client, projectId) async {
-      return client.projects.accounts_1.delete(
+    return _httpClient.v1((api, projectId) async {
+      return api.projects.accounts_1.delete(
         auth1.GoogleCloudIdentitytoolkitV1DeleteAccountRequest(localId: uid),
         projectId,
       );
@@ -464,8 +464,8 @@ abstract class _AbstractAuthRequestHandler {
       );
     }
 
-    return _httpClient.v1((client, projectId) async {
-      return client.projects.accounts_1.batchDelete(
+    return _httpClient.v1((api, projectId) async {
+      return api.projects.accounts_1.batchDelete(
         auth1.GoogleCloudIdentitytoolkitV1BatchDeleteAccountsRequest(
           localIds: uids,
           force: force,
@@ -480,13 +480,13 @@ abstract class _AbstractAuthRequestHandler {
   /// A [Future] that resolves when the operation completes
   /// with the user id that was created.
   Future<String> createNewAccount(CreateRequest properties) async {
-    return _httpClient.v1((client, projectId) async {
+    return _httpClient.v1((api, projectId) async {
       var mfaInfo = properties.multiFactor?.enrolledFactors
           .map((info) => info.toGoogleCloudIdentitytoolkitV1MfaFactor())
           .toList();
       if (mfaInfo != null && mfaInfo.isEmpty) mfaInfo = null;
 
-      final response = await client.projects.accounts(
+      final response = await api.projects.accounts(
         auth1.GoogleCloudIdentitytoolkitV1SignUpRequest(
           disabled: properties.disabled,
           displayName: properties.displayName?.value,
@@ -517,8 +517,8 @@ abstract class _AbstractAuthRequestHandler {
   _accountsLookup(
     auth1.GoogleCloudIdentitytoolkitV1GetAccountInfoRequest request,
   ) async {
-    return _httpClient.v1((client, projectId) async {
-      final response = await client.accounts.lookup(request);
+    return _httpClient.v1((api, projectId) async {
+      final response = await api.accounts.lookup(request);
       final users = response.users;
       if (users == null || users.isEmpty) {
         throw FirebaseAuthAdminException(AuthClientErrorCode.userNotFound);
@@ -652,9 +652,7 @@ abstract class _AbstractAuthRequestHandler {
       }
     }
 
-    return _httpClient.v1(
-      (client, projectId) => client.accounts.lookup(request),
-    );
+    return _httpClient.v1((api, projectId) => api.accounts.lookup(request));
   }
 
   /// Edits an existing user.

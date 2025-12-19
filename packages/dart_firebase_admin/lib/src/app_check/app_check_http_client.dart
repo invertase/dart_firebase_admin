@@ -34,18 +34,14 @@ class AppCheckHttpClient {
 
   /// Executes an App Check v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
-    Future<R> Function(appcheck1.FirebaseappcheckApi client, String projectId)
-    fn,
+    Future<R> Function(appcheck1.FirebaseappcheckApi api, String projectId) fn,
   ) => _run(
     (client, projectId) => fn(appcheck1.FirebaseappcheckApi(client), projectId),
   );
 
   /// Executes an App Check v1Beta API operation with automatic projectId injection.
   Future<R> v1Beta<R>(
-    Future<R> Function(
-      appcheck1_beta.FirebaseappcheckApi client,
-      String projectId,
-    )
+    Future<R> Function(appcheck1_beta.FirebaseappcheckApi api, String projectId)
     fn,
   ) => _run(
     (client, projectId) =>
@@ -59,8 +55,8 @@ class AppCheckHttpClient {
     String customToken,
     String appId,
   ) {
-    return v1((client, projectId) async {
-      return client.projects.apps.exchangeCustomToken(
+    return v1((api, projectId) async {
+      return api.projects.apps.exchangeCustomToken(
         appcheck1.GoogleFirebaseAppcheckV1ExchangeCustomTokenRequest(
           customToken: customToken,
         ),
@@ -74,8 +70,8 @@ class AppCheckHttpClient {
   /// Returns the raw googleapis response without transformation.
   Future<appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenResponse>
   verifyAppCheckToken(String token) {
-    return v1Beta((client, projectId) async {
-      return client.projects.verifyAppCheckToken(
+    return v1Beta((api, projectId) async {
+      return api.projects.verifyAppCheckToken(
         appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(
           appCheckToken: token,
         ),
