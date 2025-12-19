@@ -77,7 +77,11 @@ class FirebaseApp {
 
   @override
   String toString() =>
-      'FirebaseApp(name: $name, projectId: $projectId, wasInitializedFromEnv: $wasInitializedFromEnv, isDeleted: $_isDeleted)';
+      'FirebaseApp('
+      'name: $name, '
+      'projectId: $projectId, '
+      'wasInitializedFromEnv: $wasInitializedFromEnv, '
+      'isDeleted: $_isDeleted)';
 
   /// Map of service name to service instance for caching.
   final Map<String, FirebaseService> _services = {};
@@ -177,6 +181,12 @@ class FirebaseApp {
     FirebaseServiceType.securityRules.name,
     SecurityRules.new,
   );
+
+  /// Gets the Functions service instance for this app.
+  ///
+  /// Returns a cached instance if one exists, otherwise creates a new one.
+  Functions get functions =>
+      getOrInitService(FirebaseServiceType.functions.name, Functions.new);
 
   /// Closes this app and cleans up all associated resources.
   ///

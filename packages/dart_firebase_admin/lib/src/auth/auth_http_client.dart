@@ -345,6 +345,7 @@ class AuthHttpClient {
 
   Future<auth2.GoogleCloudIdentitytoolkitAdminV2ListTenantsResponse>
   listTenants({required int maxResults, String? pageToken}) {
+    // TODO(demalaf): rename client below to identityApi or api
     return v2((client, projectId) async {
       final response = await client.projects.tenants.list(
         buildParent(projectId),
