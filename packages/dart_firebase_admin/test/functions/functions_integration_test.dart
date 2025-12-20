@@ -27,7 +27,7 @@ void main() {
 
           await queue.enqueue({
             'message': 'Delayed task',
-          }, TaskOptions(schedule: const DelayDelivery(30)));
+          }, TaskOptions(schedule: DelayDelivery(30)));
         });
 
         test('enqueues a task with absolute schedule time', () async {

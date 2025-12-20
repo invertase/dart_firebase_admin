@@ -412,7 +412,7 @@ Future<void> functionsExample(FirebaseApp admin) async {
     print('> Enqueuing a delayed task...\n');
     await taskQueue.enqueue(
       {'action': 'cleanupTempFiles'},
-      TaskOptions(schedule: const DelayDelivery(3600)), // 1 hour delay
+      TaskOptions(schedule: DelayDelivery(3600)), // 1 hour delay
     );
     print('Delayed task enqueued successfully!\n');
   } on FirebaseFunctionsAdminException catch (e) {

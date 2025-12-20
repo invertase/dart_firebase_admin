@@ -1,5 +1,6 @@
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 
 import 'credential.dart';
 
@@ -11,6 +12,7 @@ import 'credential.dart';
 ///
 /// The association is maintained via [Expando], which doesn't prevent garbage
 /// collection of the auth client.
+@internal
 final authClientCredentials = Expando<GoogleCredential>(
   'AuthClient credentials',
 );

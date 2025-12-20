@@ -31,8 +31,17 @@ class DelayDelivery extends DeliverySchedule {
   /// Creates a delayed delivery schedule.
   ///
   /// The [scheduleDelaySeconds] specifies how many seconds from now
-  /// the task should be attempted.
-  const DelayDelivery(this.scheduleDelaySeconds);
+  /// the task should be attempted. Must be non-negative.
+  ///
+  /// Throws [FirebaseFunctionsAdminException] if [scheduleDelaySeconds] is negative.
+  DelayDelivery(this.scheduleDelaySeconds) {
+    if (scheduleDelaySeconds < 0) {
+      throw FirebaseFunctionsAdminException(
+        FunctionsClientErrorCode.invalidArgument,
+        'scheduleDelaySeconds must be a non-negative duration in seconds.',
+      );
+    }
+  }
 
   /// The duration of delay (in seconds) before the task is scheduled
   /// to be attempted.

@@ -1,25 +1,155 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:dart_firebase_admin/functions.dart';
+import 'package:dart_firebase_admin/src/app.dart';
+import 'package:googleapis_auth/auth_io.dart' as auth;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:http/http.dart';
+import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
+import '../google_cloud_firestore/util/helpers.dart';
 import 'util/helpers.dart';
+
+// =============================================================================
+// Mocks and Test Utilities
+// =============================================================================
 
 class MockRequestHandler extends Mock implements FunctionsRequestHandler {}
 
-void main() {
-  late MockRequestHandler mockHandler;
-  late Functions functions;
+class MockAuthClient extends Mock implements auth.AuthClient {}
 
-  setUp(() {
-    mockHandler = MockRequestHandler();
-    functions = createFunctionsWithMockHandler(mockHandler);
+class FakeBaseRequest extends Fake implements BaseRequest {}
+
+/// Test RSA private key (from googleapis_auth tests).
+/// This is a test key and should never be used in production.
+const testPrivateKeyString = '''
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEAuDOwXO14ltE1j2O0iDSuqtbw/1kMKjeiki3oehk2zNoUte42
+/s2rX15nYCkKtYG/r8WYvKzb31P4Uow1S4fFydKNWxgX4VtEjHgeqfPxeCL9wiJc
+9KkEt4fyhj1Jo7193gCLtovLAFwPzAMbFLiXWkfqalJ5Z77fOE4Mo7u4pEgxNPgL
+VFGe0cEOAsHsKlsze+m1pmPHwWNVTcoKe5o0hOzy6hCPgVc6me6Y7aO8Fb4OVg0l
+XQdQpWn2ikVBpzBcZ6InnYyJ/CJNa3WL1LJ65mmYnfHtKGoMqhLK48OReguwRwwF
+e9/2+8UcdZcN5rsvt7yg3ZrKNH8rx+wZ36sRewIDAQABAoIBAQCn1HCcOsHkqDlk
+rDOQ5m8+uRhbj4bF8GrvRWTL2q1TeF/mY2U4Q6wg+KK3uq1HMzCzthWz0suCb7+R
+dq4YY1ySxoSEuy8G5WFPmyJVNy6Lh1Yty6FmSZlCn1sZdD3kMoK8A0NIz5Xmffrm
+pu3Fs2ozl9K9jOeQ3xgC9RoPFLrm8lHJ45Vn+SnTxZnsXT6pwpg3TnFIx5ZinU8k
+l0Um1n80qD2QQDakQ5jyr2odAELLBDlyCkxAglBXAVt4nk9Kl6nxb4snd9dnrL70
+WjLynWQsDczaV9TZIl2hYkMud+9OLVlUUtB+0c5b0p2t2P0sLltDaq3H6pT6yu2G
+8E86J9IBAoGBAPJaTNV5ysVOFn+YwWwRztzrvNArUJkVq8abN0gGp3gUvDEZnvzK
+weF7+lfZzcwVRmQkL3mWLzzZvCx77RfulAzLi5iFuRBPhhhxAPDiDuyL9B7O81G/
+M/W5DPctGOyD/9cnLuh72oij0unc5MLSfzJf8wblpcjJnPBDqIVh6Qt9AoGBAMKT
+Gacf4iSj1xW+0wrnbZlDuyCl6Msptj8ePcvLQrFqQmBwsXmWgVR+gFc/1G3lRft0
+QC6chsmafQHIIPpaDjq3sQ01/tUu7LXL+g/Hw9XtUHbkg3sZIQBtC26rKdStfHNS
+KTvuCgn/dAJNjiohfhWMt9R4Q6E5FV6PqQHJzPJXAoGAC41qZDKuC8GxKNvrPG+M
+4NML6RBngySZT5pOhExs5zh10BFclshDfbAfOtjTCotpE5T1/mG+VrQ6WBSANMfW
+ntWFDfwx2ikwRzH7zX+5HmV9eYp75sWqgGgVyiKIMZ4JMARaJBLjU+gbQbKZ5P+L
+uKcCOq3vvSZ/KKTQ/6qvJTECgYBiWgbCgoxF5wdmd4Gn5llw+lqRYyur3hbACuJD
+rCe3FDYfF3euNRSEiDkJYTtYnWbldtqmdPpw14VOrEF3KqQ8q/Nz8RIx4jlGn6dz
+6I8mCIH+xv1q8MXMuFHqC9zmIxdgF2y+XVF3wkd6jodI5oscC3g0juHokbkqhkVw
+oPfWmwKBgBfR6jv0gWWeWTfkNwj+cMLHQV1uvz6JyLH5K4iISEDFxYkd37jrHB8A
+9hz9UDfmCbSs2j8CXDg7zCayM6tfu4Vtx+8S5g3oN6sa1JXFY1Os7SoXhTfX9M+7
+QpYYDJZwkgZrVQoKMIdCs9xfyVhZERq945NYLekwE1t2W+tOVBgR
+-----END RSA PRIVATE KEY-----''';
+
+const testServiceAccountEmail = 'test-sa@test-project.iam.gserviceaccount.com';
+
+/// Creates a mock HTTP client that handles OAuth token requests and
+/// optionally Cloud Tasks API requests.
+MockClient createMockHttpClient({
+  String? idToken,
+  Response Function(Request)? apiHandler,
+}) {
+  return MockClient((request) async {
+    // Handle OAuth token endpoint (JWT flow)
+    if (request.url.toString().contains('oauth2') ||
+        request.url.toString().contains('token')) {
+      return Response(
+        jsonEncode({
+          'access_token': 'mock-access-token',
+          'expires_in': 3600,
+          'token_type': 'Bearer',
+          if (idToken != null) 'id_token': idToken,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
+    // Handle Cloud Tasks API requests
+    if (request.url.toString().contains('cloudtasks')) {
+      if (apiHandler != null) {
+        return apiHandler(request);
+      }
+      // Default: successful task creation
+      return Response(
+        jsonEncode({
+          'name': 'projects/test/locations/us-central1/queues/q/tasks/123',
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
+    // Default response
+    return Response('{}', 200);
+  });
+}
+
+/// Creates an AuthClient with service account credentials for testing.
+///
+/// This creates a real AuthClient properly associated with a GoogleCredential,
+/// so extension methods like `credential` and `getServiceAccountEmail()` work.
+Future<auth.AuthClient> createTestAuthClient({
+  required String email,
+  String? idToken,
+  Response Function(Request)? apiHandler,
+}) async {
+  final baseClient = createMockHttpClient(
+    idToken: idToken,
+    apiHandler: apiHandler,
+  );
+
+  // Create real credential from service account parameters
+  final credential = GoogleCredential.fromServiceAccountParams(
+    privateKey: testPrivateKeyString,
+    email: email,
+    clientId: 'test-client-id',
+    projectId: projectId,
+  );
+
+  // Create real auth client (properly associated with credential via Expando)
+  return createAuthClient(credential, [
+    'https://www.googleapis.com/auth/cloud-platform',
+  ], baseClient: baseClient);
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+void main() {
+  setUpAll(() {
+    registerFallbackValue(FakeBaseRequest());
   });
 
+  // ===========================================================================
+  // Functions and TaskQueue Tests (with mocked handler)
+  // ===========================================================================
   group('Functions', () {
+    late MockRequestHandler mockHandler;
+    late Functions functions;
+
+    setUp(() {
+      mockHandler = MockRequestHandler();
+      functions = createFunctionsWithMockHandler(mockHandler);
+    });
+
     group('taskQueue', () {
       test('creates TaskQueue with function name', () {
         final queue = functions.taskQueue('helloWorld');
-
         expect(queue, isNotNull);
       });
 
@@ -27,7 +157,6 @@ void main() {
         final queue = functions.taskQueue(
           'projects/my-project/locations/us-central1/functions/helloWorld',
         );
-
         expect(queue, isNotNull);
       });
 
@@ -35,13 +164,11 @@ void main() {
         final queue = functions.taskQueue(
           'locations/us-east1/functions/helloWorld',
         );
-
         expect(queue, isNotNull);
       });
 
       test('creates TaskQueue with extension ID', () {
         final queue = functions.taskQueue('helloWorld', 'my-extension');
-
         expect(queue, isNotNull);
       });
 
@@ -57,7 +184,6 @@ void main() {
         ).thenAnswer((_) async {});
 
         final queue = functions.taskQueue('helloWorld');
-
         await queue.enqueue({'message': 'Hello, World!'});
 
         verify(
@@ -76,7 +202,7 @@ void main() {
         ).thenAnswer((_) async {});
 
         final queue = functions.taskQueue('helloWorld');
-        final options = TaskOptions(schedule: const DelayDelivery(60));
+        final options = TaskOptions(schedule: DelayDelivery(60));
 
         await queue.enqueue({'message': 'Delayed task'}, options);
 
@@ -137,7 +263,6 @@ void main() {
         ).thenAnswer((_) async {});
 
         final queue = functions.taskQueue('helloWorld', 'my-extension');
-
         await queue.enqueue({'data': 'test'});
 
         verify(
@@ -175,7 +300,6 @@ void main() {
         ).thenAnswer((_) async {});
 
         final queue = functions.taskQueue('helloWorld');
-
         await queue.delete('task-to-delete');
 
         verify(
@@ -189,7 +313,6 @@ void main() {
         ).thenAnswer((_) async {});
 
         final queue = functions.taskQueue('helloWorld', 'my-extension');
-
         await queue.delete('task-id');
 
         verify(
@@ -203,8 +326,6 @@ void main() {
         ).thenAnswer((_) async {});
 
         final queue = functions.taskQueue('helloWorld');
-
-        // Should not throw
         await queue.delete('non-existent-task');
 
         verify(
@@ -237,6 +358,880 @@ void main() {
           throwsA(isA<FirebaseFunctionsAdminException>()),
         );
       });
+    });
+  });
+
+  // ===========================================================================
+  // FunctionsRequestHandler Validation Tests
+  // ===========================================================================
+  group('FunctionsRequestHandler', () {
+    late MockAuthClient mockClient;
+    late FunctionsRequestHandler handler;
+    late FunctionsHttpClient httpClient;
+
+    setUp(() {
+      mockClient = MockAuthClient();
+
+      final app = FirebaseApp.initializeApp(
+        name: 'handler-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: mockClient),
+      );
+
+      httpClient = FunctionsHttpClient(app);
+      handler = FunctionsRequestHandler(app, httpClient: httpClient);
+
+      addTearDown(() async {
+        await app.close();
+      });
+    });
+
+    group('enqueue validation', () {
+      test('throws on empty function name', () {
+        expect(
+          () => handler.enqueue({}, '', null, null),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('throws on invalid function name format', () {
+        expect(
+          () => handler.enqueue(
+            {},
+            'project/abc/locations/east/fname',
+            null,
+            null,
+          ),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on invalid function name with double slashes', () {
+        expect(
+          () => handler.enqueue({}, '//', null, null),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on function name with trailing slash', () {
+        expect(
+          () => handler.enqueue({}, 'location/west/', null, null),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+    });
+
+    group('delete validation', () {
+      test('throws on empty task ID', () {
+        expect(
+          () => handler.delete('', 'helloWorld', null),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('throws on empty function name', () {
+        expect(
+          () => handler.delete('task-id', '', null),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('throws on invalid task ID with special characters', () {
+        expect(
+          () => handler.delete('task!', 'helloWorld', null),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on invalid task ID with colons', () {
+        expect(
+          () => handler.delete('id:0', 'helloWorld', null),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on invalid task ID with brackets', () {
+        expect(
+          () => handler.delete('[1234]', 'helloWorld', null),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on invalid task ID with parentheses', () {
+        expect(
+          () => handler.delete('(1234)', 'helloWorld', null),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on invalid task ID with slashes', () {
+        expect(
+          () => handler.delete('invalid/task/id', 'helloWorld', null),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+    });
+  });
+
+  // ===========================================================================
+  // TaskOptions Validation Tests
+  // ===========================================================================
+  group('TaskOptions validation', () {
+    group('dispatchDeadlineSeconds', () {
+      test('throws on dispatch deadline too low (14)', () {
+        expect(
+          () => TaskOptions(dispatchDeadlineSeconds: 14),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on dispatch deadline too high (1801)', () {
+        expect(
+          () => TaskOptions(dispatchDeadlineSeconds: 1801),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on dispatch deadline exactly at boundary (10)', () {
+        expect(
+          () => TaskOptions(dispatchDeadlineSeconds: 10),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on dispatch deadline exactly at boundary (2000)', () {
+        expect(
+          () => TaskOptions(dispatchDeadlineSeconds: 2000),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on negative dispatch deadline', () {
+        expect(
+          () => TaskOptions(dispatchDeadlineSeconds: -1),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('accepts dispatch deadline at minimum (15)', () {
+        expect(() => TaskOptions(dispatchDeadlineSeconds: 15), returnsNormally);
+      });
+
+      test('accepts dispatch deadline at maximum (1800)', () {
+        expect(
+          () => TaskOptions(dispatchDeadlineSeconds: 1800),
+          returnsNormally,
+        );
+      });
+
+      test('accepts valid dispatch deadline (300)', () {
+        expect(
+          () => TaskOptions(dispatchDeadlineSeconds: 300),
+          returnsNormally,
+        );
+      });
+    });
+
+    group('id', () {
+      test('throws on invalid task ID format', () {
+        expect(
+          () => TaskOptions(id: 'task!invalid'),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on empty task ID', () {
+        expect(
+          () => TaskOptions(id: ''),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on task ID with colons', () {
+        expect(
+          () => TaskOptions(id: 'id:0'),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on task ID with brackets', () {
+        expect(
+          () => TaskOptions(id: '[1234]'),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on task ID with parentheses', () {
+        expect(
+          () => TaskOptions(id: '(1234)'),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('throws on task ID exceeding 500 characters', () {
+        final longId = 'a' * 501;
+        expect(
+          () => TaskOptions(id: longId),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test(
+        'accepts valid task ID with letters, numbers, hyphens, underscores',
+        () {
+          expect(() => TaskOptions(id: 'valid-task-id_123'), returnsNormally);
+        },
+      );
+
+      test('accepts task ID at maximum length (500)', () {
+        final maxId = 'a' * 500;
+        expect(() => TaskOptions(id: maxId), returnsNormally);
+      });
+    });
+
+    group('scheduleDelaySeconds', () {
+      test('throws on negative scheduleDelaySeconds', () {
+        expect(
+          () => TaskOptions(schedule: DelayDelivery(-1)),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('accepts scheduleDelaySeconds of 0', () {
+        expect(() => TaskOptions(schedule: DelayDelivery(0)), returnsNormally);
+      });
+
+      test('accepts positive scheduleDelaySeconds', () {
+        expect(
+          () => TaskOptions(schedule: DelayDelivery(3600)),
+          returnsNormally,
+        );
+      });
+    });
+  });
+
+  // ===========================================================================
+  // Task Authentication Tests (_updateTaskAuth)
+  // ===========================================================================
+  group('Task Authentication', () {
+    group('emulator mode', () {
+      test('uses emulated service account when emulator is enabled', () async {
+        Map<String, dynamic>? capturedTaskBody;
+
+        // Create an auth client that captures requests
+        final authClient = await createTestAuthClient(
+          email: testServiceAccountEmail,
+          apiHandler: (request) {
+            capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return Response(
+              jsonEncode({'name': 'task/123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          },
+        );
+
+        await runZoned(
+          () async {
+            final app = FirebaseApp.initializeApp(
+              name: 'emulator-test-${DateTime.now().microsecondsSinceEpoch}',
+              options: AppOptions(projectId: projectId, httpClient: authClient),
+            );
+
+            try {
+              final functions = Functions(app);
+              final queue = functions.taskQueue('helloWorld');
+              await queue.enqueue({'data': 'test'});
+
+              expect(capturedTaskBody, isNotNull);
+              final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+              final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+              final oidcToken =
+                  httpRequest['oidcToken'] as Map<String, dynamic>?;
+
+              expect(oidcToken, isNotNull);
+              // When emulator is enabled, uses the default emulated service account
+              expect(
+                oidcToken!['serviceAccountEmail'],
+                equals('emulated-service-acct@email.com'),
+              );
+            } finally {
+              await app.close();
+            }
+          },
+          zoneValues: {
+            envSymbol: {'CLOUD_TASKS_EMULATOR_HOST': 'localhost:9499'},
+          },
+        );
+      });
+    });
+
+    group('production mode with service account credentials', () {
+      test('uses service account email from credential for OIDC token', () async {
+        Map<String, dynamic>? capturedTaskBody;
+
+        final authClient = await createTestAuthClient(
+          email: testServiceAccountEmail,
+          apiHandler: (request) {
+            capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return Response(
+              jsonEncode({'name': 'task/123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          },
+        );
+
+        // Use runZoned to disable emulator env var (set by firebase emulators:exec)
+        await runZoned(() async {
+          final app = FirebaseApp.initializeApp(
+            name: 'sa-test-${DateTime.now().microsecondsSinceEpoch}',
+            options: AppOptions(projectId: projectId, httpClient: authClient),
+          );
+
+          try {
+            final functions = Functions(app);
+            final queue = functions.taskQueue('helloWorld');
+            await queue.enqueue({'data': 'test'});
+
+            expect(capturedTaskBody, isNotNull);
+            final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+            final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+            final oidcToken = httpRequest['oidcToken'] as Map<String, dynamic>?;
+
+            expect(oidcToken, isNotNull);
+            expect(
+              oidcToken!['serviceAccountEmail'],
+              equals(testServiceAccountEmail),
+            );
+
+            // Should NOT have Authorization header (that's for extensions)
+            expect(
+              (httpRequest['headers']
+                  as Map<String, dynamic>?)?['Authorization'],
+              isNull,
+            );
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: <String, String>{}});
+      });
+
+      test('sets correct function URL in task', () async {
+        Map<String, dynamic>? capturedTaskBody;
+
+        final authClient = await createTestAuthClient(
+          email: testServiceAccountEmail,
+          apiHandler: (request) {
+            capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return Response(
+              jsonEncode({'name': 'task/123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          },
+        );
+
+        final app = FirebaseApp.initializeApp(
+          name: 'url-test-${DateTime.now().microsecondsSinceEpoch}',
+          options: AppOptions(projectId: projectId, httpClient: authClient),
+        );
+
+        try {
+          final functions = Functions(app);
+          final queue = functions.taskQueue('helloWorld');
+          await queue.enqueue({'data': 'test'});
+
+          expect(capturedTaskBody, isNotNull);
+          final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+          final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+
+          expect(
+            httpRequest['url'],
+            equals(
+              'https://us-central1-$projectId.cloudfunctions.net/helloWorld',
+            ),
+          );
+        } finally {
+          await app.close();
+        }
+      });
+
+      test('uses custom location from partial resource name', () async {
+        Map<String, dynamic>? capturedTaskBody;
+        String? capturedUrl;
+
+        final authClient = await createTestAuthClient(
+          email: testServiceAccountEmail,
+          apiHandler: (request) {
+            capturedUrl = request.url.toString();
+            capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return Response(
+              jsonEncode({'name': 'task/123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          },
+        );
+
+        final app = FirebaseApp.initializeApp(
+          name: 'partial-test-${DateTime.now().microsecondsSinceEpoch}',
+          options: AppOptions(projectId: projectId, httpClient: authClient),
+        );
+
+        try {
+          final functions = Functions(app);
+          final queue = functions.taskQueue(
+            'locations/us-west1/functions/myFunc',
+          );
+          await queue.enqueue({'data': 'test'});
+
+          expect(capturedUrl, contains('us-west1'));
+          expect(capturedUrl, contains('myFunc'));
+
+          final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+          final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+          expect(
+            httpRequest['url'],
+            equals('https://us-west1-$projectId.cloudfunctions.net/myFunc'),
+          );
+        } finally {
+          await app.close();
+        }
+      });
+
+      test('uses project and location from full resource name', () async {
+        Map<String, dynamic>? capturedTaskBody;
+        String? capturedUrl;
+
+        final authClient = await createTestAuthClient(
+          email: testServiceAccountEmail,
+          apiHandler: (request) {
+            capturedUrl = request.url.toString();
+            capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return Response(
+              jsonEncode({'name': 'task/123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          },
+        );
+
+        final app = FirebaseApp.initializeApp(
+          name: 'full-test-${DateTime.now().microsecondsSinceEpoch}',
+          options: AppOptions(projectId: projectId, httpClient: authClient),
+        );
+
+        try {
+          final functions = Functions(app);
+          final queue = functions.taskQueue(
+            'projects/custom-project/locations/europe-west1/functions/euroFunc',
+          );
+          await queue.enqueue({'data': 'test'});
+
+          expect(capturedUrl, contains('custom-project'));
+          expect(capturedUrl, contains('europe-west1'));
+          expect(capturedUrl, contains('euroFunc'));
+
+          final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+          final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+          expect(
+            httpRequest['url'],
+            equals(
+              'https://europe-west1-custom-project.cloudfunctions.net/euroFunc',
+            ),
+          );
+        } finally {
+          await app.close();
+        }
+      });
+    });
+
+    group('extension support', () {
+      test('prefixes queue name with extension ID', () async {
+        String? capturedUrl;
+
+        final authClient = await createTestAuthClient(
+          email: testServiceAccountEmail,
+          idToken: 'mock-id-token',
+          apiHandler: (request) {
+            capturedUrl = request.url.toString();
+            return Response(
+              jsonEncode({'name': 'task/123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          },
+        );
+
+        final app = FirebaseApp.initializeApp(
+          name: 'ext-test-${DateTime.now().microsecondsSinceEpoch}',
+          options: AppOptions(projectId: projectId, httpClient: authClient),
+        );
+
+        try {
+          final functions = Functions(app);
+          final queue = functions.taskQueue('helloWorld', 'my-extension');
+          await queue.enqueue({'data': 'test'});
+
+          expect(capturedUrl, contains('ext-my-extension-helloWorld'));
+        } finally {
+          await app.close();
+        }
+      });
+
+      test('prefixes function URL with extension ID', () async {
+        Map<String, dynamic>? capturedTaskBody;
+
+        final authClient = await createTestAuthClient(
+          email: testServiceAccountEmail,
+          apiHandler: (request) {
+            capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return Response(
+              jsonEncode({'name': 'task/123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          },
+        );
+
+        final app = FirebaseApp.initializeApp(
+          name: 'ext-url-test-${DateTime.now().microsecondsSinceEpoch}',
+          options: AppOptions(projectId: projectId, httpClient: authClient),
+        );
+
+        try {
+          final functions = Functions(app);
+          final queue = functions.taskQueue('helloWorld', 'image-resize');
+          await queue.enqueue({'data': 'test'});
+
+          final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+          final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+
+          expect(
+            httpRequest['url'],
+            equals(
+              'https://us-central1-$projectId.cloudfunctions.net/ext-image-resize-helloWorld',
+            ),
+          );
+        } finally {
+          await app.close();
+        }
+      });
+    });
+  });
+
+  // ===========================================================================
+  // Task Options Serialization Tests
+  // ===========================================================================
+  group('Task Options Serialization', () {
+    test('converts scheduleTime to ISO string', () async {
+      Map<String, dynamic>? capturedTaskBody;
+      final scheduleTime = DateTime.now().add(const Duration(hours: 1));
+
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return Response(
+            jsonEncode({'name': 'task/123'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'schedule-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions(app);
+        final queue = functions.taskQueue('helloWorld');
+        final options = TaskOptions(schedule: AbsoluteDelivery(scheduleTime));
+        await queue.enqueue({'data': 'test'}, options);
+
+        final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+        expect(
+          task['scheduleTime'],
+          equals(scheduleTime.toUtc().toIso8601String()),
+        );
+      } finally {
+        await app.close();
+      }
+    });
+
+    test('sets scheduleTime based on scheduleDelaySeconds', () async {
+      Map<String, dynamic>? capturedTaskBody;
+      const delaySeconds = 1800;
+
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return Response(
+            jsonEncode({'name': 'task/123'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'delay-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final now = DateTime.now().toUtc();
+        final functions = Functions(app);
+        final queue = functions.taskQueue('helloWorld');
+        final options = TaskOptions(schedule: DelayDelivery(delaySeconds));
+        await queue.enqueue({'data': 'test'}, options);
+
+        final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+        final scheduleTimeStr = task['scheduleTime'] as String;
+        final scheduleTime = DateTime.parse(scheduleTimeStr);
+
+        // Should be approximately now + delaySeconds (allow 5 second tolerance)
+        final expectedTime = now.add(const Duration(seconds: delaySeconds));
+        expect(
+          scheduleTime.difference(expectedTime).inSeconds.abs(),
+          lessThan(5),
+        );
+      } finally {
+        await app.close();
+      }
+    });
+
+    test('converts dispatchDeadline to duration with s suffix', () async {
+      Map<String, dynamic>? capturedTaskBody;
+      const dispatchDeadlineSeconds = 300;
+
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return Response(
+            jsonEncode({'name': 'task/123'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'deadline-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions(app);
+        final queue = functions.taskQueue('helloWorld');
+        final options = TaskOptions(
+          dispatchDeadlineSeconds: dispatchDeadlineSeconds,
+        );
+        await queue.enqueue({'data': 'test'}, options);
+
+        final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+        expect(task['dispatchDeadline'], equals('${dispatchDeadlineSeconds}s'));
+      } finally {
+        await app.close();
+      }
+    });
+
+    test('encodes data in base64 payload', () async {
+      Map<String, dynamic>? capturedTaskBody;
+      final testData = {'privateKey': '~/.ssh/id_rsa.pub', 'count': 42};
+
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return Response(
+            jsonEncode({'name': 'task/123'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'encode-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions(app);
+        final queue = functions.taskQueue('helloWorld');
+        await queue.enqueue(testData);
+
+        final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+        final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+        final bodyBase64 = httpRequest['body'] as String;
+
+        final decodedBytes = base64Decode(bodyBase64);
+        final decodedJson = jsonDecode(utf8.decode(decodedBytes));
+        expect((decodedJson as Map<String, dynamic>)['data'], equals(testData));
+      } finally {
+        await app.close();
+      }
+    });
+
+    test('sets task name when ID is provided', () async {
+      Map<String, dynamic>? capturedTaskBody;
+      const taskId = 'my-custom-task-id';
+
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return Response(
+            jsonEncode({'name': 'task/123'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'id-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions(app);
+        final queue = functions.taskQueue('helloWorld');
+        final options = TaskOptions(id: taskId);
+        await queue.enqueue({'data': 'test'}, options);
+
+        final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+        expect(task['name'], contains(taskId));
+        expect(task['name'], contains('helloWorld'));
+      } finally {
+        await app.close();
+      }
+    });
+  });
+
+  // ===========================================================================
+  // Error Handling Tests
+  // ===========================================================================
+  group('Error Handling', () {
+    test('throws task-already-exists on 409 conflict', () async {
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          return Response(
+            jsonEncode({
+              'error': {
+                'code': 409,
+                'message': 'Task already exists',
+                'status': 'ALREADY_EXISTS',
+              },
+            }),
+            409,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'conflict-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions(app);
+        final queue = functions.taskQueue('helloWorld');
+
+        expect(
+          () =>
+              queue.enqueue({'data': 'test'}, TaskOptions(id: 'duplicate-id')),
+          throwsA(
+            isA<FirebaseFunctionsAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              FunctionsClientErrorCode.taskAlreadyExists,
+            ),
+          ),
+        );
+      } finally {
+        await app.close();
+      }
+    });
+
+    test('throws not-found on 404 error for enqueue', () async {
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          return Response(
+            jsonEncode({
+              'error': {
+                'code': 404,
+                'message': 'Queue not found',
+                'status': 'NOT_FOUND',
+              },
+            }),
+            404,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'notfound-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions(app);
+        final queue = functions.taskQueue('nonExistentQueue');
+
+        expect(
+          () => queue.enqueue({'data': 'test'}),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      } finally {
+        await app.close();
+      }
+    });
+
+    test('silently succeeds on 404 for delete (task not found)', () async {
+      final authClient = await createTestAuthClient(
+        email: testServiceAccountEmail,
+        apiHandler: (request) {
+          if (request.method == 'DELETE') {
+            return Response(
+              jsonEncode({
+                'error': {
+                  'code': 404,
+                  'message': 'Task not found',
+                  'status': 'NOT_FOUND',
+                },
+              }),
+              404,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return Response('{}', 200);
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'delete-notfound-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions(app);
+        final queue = functions.taskQueue('helloWorld');
+
+        // Should NOT throw - 404 on delete is expected for non-existent tasks
+        await queue.delete('non-existent-task');
+      } finally {
+        await app.close();
+      }
     });
   });
 }
