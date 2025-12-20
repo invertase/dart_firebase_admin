@@ -45,7 +45,7 @@ class TaskQueue {
   /// ```
   ///
   /// Throws [FirebaseFunctionsAdminException] if the request fails.
-  Future<void> enqueue(Object data, [TaskOptions? options]) {
+  Future<void> enqueue(Map<String, dynamic> data, [TaskOptions? options]) {
     return _requestHandler.enqueue(data, _functionName, _extensionId, options);
   }
 

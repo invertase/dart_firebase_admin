@@ -34,6 +34,12 @@ abstract class Environment {
   /// Format: `host:port` (e.g., `localhost:8080`)
   static const firestoreEmulatorHost = 'FIRESTORE_EMULATOR_HOST';
 
+  /// Cloud Tasks Emulator host address.
+  ///
+  /// When set, Functions (Cloud Tasks) service automatically connects to the emulator instead of production.
+  /// Format: `host:port` (e.g., `127.0.0.1:9499`)
+  static const cloudTasksEmulatorHost = 'CLOUD_TASKS_EMULATOR_HOST';
+
   /// Checks if the Firestore emulator is enabled via environment variable.
   ///
   /// Returns `true` if [firestoreEmulatorHost] is set in the environment.
@@ -64,5 +70,21 @@ abstract class Environment {
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
     return env[firebaseAuthEmulatorHost] != null;
+  }
+
+  /// Checks if the Cloud Tasks emulator is enabled via environment variable.
+  ///
+  /// Returns `true` if [cloudTasksEmulatorHost] is set in the environment.
+  ///
+  /// Example:
+  /// ```dart
+  /// if (Environment.isCloudTasksEmulatorEnabled()) {
+  ///   print('Using Cloud Tasks emulator');
+  /// }
+  /// ```
+  static bool isCloudTasksEmulatorEnabled() {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    return env[cloudTasksEmulatorHost] != null;
   }
 }

@@ -101,3 +101,126 @@ class EmulatorClient implements googleapis_auth.AuthClient {
   Future<Uint8List> readBytes(Uri url, {Map<String, String>? headers}) =>
       client.readBytes(url, headers: headers);
 }
+
+/// HTTP client for Cloud Tasks emulator that rewrites URLs.
+///
+/// The googleapis CloudTasksApi uses `/v2/` prefix in its API paths, but the
+/// Firebase Cloud Tasks emulator expects paths without this prefix:
+/// - googleapis sends: `http://host:port/v2/projects/{projectId}/...`
+/// - emulator expects: `http://host:port/projects/{projectId}/...`
+///
+/// This client intercepts requests and removes the `/v2/` prefix from the path.
+@internal
+class CloudTasksEmulatorClient implements googleapis_auth.AuthClient {
+  CloudTasksEmulatorClient(this._emulatorHost)
+    : _innerClient = EmulatorClient(Client());
+
+  final String _emulatorHost;
+  final EmulatorClient _innerClient;
+
+  @override
+  googleapis_auth.AccessCredentials get credentials =>
+      throw UnimplementedError();
+
+  /// Rewrites the URL to remove `/v2/` prefix and route to emulator host.
+  Uri _rewriteUrl(Uri url) {
+    // Replace the path: remove /v2/ prefix if present
+    var path = url.path;
+    if (path.startsWith('/v2/')) {
+      path = path.substring(3); // Remove '/v2' (keep the trailing /)
+    }
+
+    // Route to emulator host
+    return Uri.parse(
+      'http://$_emulatorHost$path${url.hasQuery ? '?${url.query}' : ''}',
+    );
+  }
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) async {
+    final rewrittenUrl = _rewriteUrl(request.url);
+
+    final modifiedRequest = _RequestImpl(
+      request.method,
+      rewrittenUrl,
+      request.finalize(),
+    );
+    modifiedRequest.headers.addAll(request.headers);
+    modifiedRequest.headers['Authorization'] = 'Bearer owner';
+
+    return _innerClient.client.send(modifiedRequest);
+  }
+
+  @override
+  void close() {
+    _innerClient.close();
+  }
+
+  @override
+  Future<Response> head(Uri url, {Map<String, String>? headers}) =>
+      _innerClient.head(_rewriteUrl(url), headers: headers);
+
+  @override
+  Future<Response> get(Uri url, {Map<String, String>? headers}) =>
+      _innerClient.get(_rewriteUrl(url), headers: headers);
+
+  @override
+  Future<Response> post(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) => _innerClient.post(
+    _rewriteUrl(url),
+    headers: headers,
+    body: body,
+    encoding: encoding,
+  );
+
+  @override
+  Future<Response> put(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) => _innerClient.put(
+    _rewriteUrl(url),
+    headers: headers,
+    body: body,
+    encoding: encoding,
+  );
+
+  @override
+  Future<Response> patch(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) => _innerClient.patch(
+    _rewriteUrl(url),
+    headers: headers,
+    body: body,
+    encoding: encoding,
+  );
+
+  @override
+  Future<Response> delete(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) => _innerClient.delete(
+    _rewriteUrl(url),
+    headers: headers,
+    body: body,
+    encoding: encoding,
+  );
+
+  @override
+  Future<String> read(Uri url, {Map<String, String>? headers}) =>
+      _innerClient.read(_rewriteUrl(url), headers: headers);
+
+  @override
+  Future<Uint8List> readBytes(Uri url, {Map<String, String>? headers}) =>
+      _innerClient.readBytes(_rewriteUrl(url), headers: headers);
+}

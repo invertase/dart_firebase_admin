@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:googleapis/cloudtasks/v2.dart' as tasks2;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
-import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
 import '../app.dart';
@@ -18,6 +17,9 @@ part 'functions_request_handler.dart';
 part 'task_queue.dart';
 
 const _defaultLocation = 'us-central1';
+
+/// Default service account email used when running with the Cloud Tasks emulator.
+const _emulatedServiceAccountDefault = 'emulated-service-acct@email.com';
 
 /// An interface for interacting with Cloud Functions Task Queues.
 ///
@@ -83,6 +85,15 @@ class Functions implements FirebaseService {
 
   @override
   Future<void> delete() async {
-    // Functions service cleanup if needed
+    // Close HTTP client if we created it (emulator mode)
+    // In production mode, we use app.client which is closed by the app
+    if (Environment.isCloudTasksEmulatorEnabled()) {
+      try {
+        final client = await _requestHandler.httpClient.client;
+        client.close();
+      } catch (_) {
+        // Ignore errors if client wasn't initialized
+      }
+    }
   }
 }

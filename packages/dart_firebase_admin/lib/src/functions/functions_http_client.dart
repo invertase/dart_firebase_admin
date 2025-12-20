@@ -9,24 +9,19 @@ class FunctionsHttpClient {
 
   final FirebaseApp app;
 
-  /// Gets the Cloud Tasks API host URL based on emulator configuration.
+  /// Gets the Cloud Tasks emulator host if enabled.
   ///
-  /// When CLOUD_TASKS_EMULATOR_HOST is set, routes requests to
-  /// the local Cloud Tasks emulator. Otherwise, uses production Cloud Tasks API.
-  Uri get _cloudTasksApiHost {
+  /// Returns the host:port string (e.g., "localhost:9499") if the
+  /// CLOUD_TASKS_EMULATOR_HOST environment variable is set.
+  String? get _emulatorHost {
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final emulatorHost = env['CLOUD_TASKS_EMULATOR_HOST'];
-
-    if (emulatorHost != null && emulatorHost.isNotEmpty) {
-      return Uri.http(emulatorHost, '/');
-    }
-
-    return Uri.https('cloudtasks.googleapis.com', '/');
+    final host = env[Environment.cloudTasksEmulatorHost];
+    return (host != null && host.isNotEmpty) ? host : null;
   }
 
   /// Lazy-initialized HTTP client that's cached for reuse.
-  /// Uses EmulatorClient for emulator, authenticated client for production.
+  /// Uses CloudTasksEmulatorClient for emulator, authenticated client for production.
   late final Future<googleapis_auth.AuthClient> _client = _createClient();
 
   Future<googleapis_auth.AuthClient> get client => _client;
@@ -39,15 +34,12 @@ class FunctionsHttpClient {
     }
 
     // Check if Cloud Tasks emulator is enabled
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final emulatorHost = env['CLOUD_TASKS_EMULATOR_HOST'];
-
-    if (emulatorHost != null && emulatorHost.isNotEmpty) {
-      // Emulator: Create unauthenticated client to avoid loading ADC credentials
-      // which would cause emulator warnings. Wrap with EmulatorClient to add
-      // "Authorization: Bearer owner" header that the emulator requires.
-      return EmulatorClient(http.Client());
+    final emulatorHost = _emulatorHost;
+    if (emulatorHost != null) {
+      // Emulator: Use CloudTasksEmulatorClient which:
+      // 1. Adds "Authorization: Bearer owner" header
+      // 2. Rewrites URLs to remove /v2/ prefix (Firebase emulator doesn't use it)
+      return CloudTasksEmulatorClient(emulatorHost);
     }
 
     // Production: Use authenticated client from app
@@ -100,14 +92,16 @@ class FunctionsHttpClient {
   }
 
   /// Executes a Cloud Tasks API operation with automatic projectId injection.
+  ///
+  /// Works for both production and emulator:
+  /// - Production: Uses the googleapis CloudTasksApi client directly
+  /// - Emulator: CloudTasksEmulatorClient intercepts requests and removes /v2/ prefix
+  ///
+  /// The callback receives the CloudTasksApi, the projectId, and the authClient
+  /// (for authentication setup like OIDC tokens).
   Future<R> cloudTasks<R>(
     Future<R> Function(tasks2.CloudTasksApi api, String projectId) fn,
-  ) => _run(
-    (client, projectId) => fn(
-      tasks2.CloudTasksApi(client, rootUrl: _cloudTasksApiHost.toString()),
-      projectId,
-    ),
-  );
+  ) => _run((client, projectId) => fn(tasks2.CloudTasksApi(client), projectId));
 }
 
 /// Guards a Functions operation and converts errors to FirebaseFunctionsAdminException.

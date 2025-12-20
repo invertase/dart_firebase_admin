@@ -19,9 +19,11 @@ class FunctionsRequestHandler {
 
   final FunctionsHttpClient _httpClient;
 
+  FunctionsHttpClient get httpClient => _httpClient;
+
   /// Enqueues a task to the specified function's queue.
   Future<void> enqueue(
-    Object data,
+    Map<String, dynamic> data,
     String functionName,
     String? extensionId,
     TaskOptions? options,
@@ -46,6 +48,9 @@ class FunctionsRequestHandler {
 
       // Build the task
       final task = _buildTask(data, resources, queueId, options);
+
+      // Update task with proper authentication (OIDC token or Authorization header)
+      await _updateTaskAuth(task, await _httpClient.client, extensionId);
 
       final parent = _httpClient.buildTasksParent(
         projectId: resources.projectId!,
@@ -161,7 +166,7 @@ class FunctionsRequestHandler {
 
   /// Builds a Cloud Tasks Task from the given data and options.
   tasks2.Task _buildTask(
-    Object data,
+    Map<String, dynamic> data,
     _ParsedResource resources,
     String queueId,
     TaskOptions? options,
@@ -220,13 +225,76 @@ class FunctionsRequestHandler {
       );
     }
 
-    // Set OIDC token for authentication
-    // TODO: Check for ComputeEngine credentials and use ID token instead
-    // For now, always use OIDC token with service account
-    httpRequest.oidcToken = tasks2.OidcToken(
-      serviceAccountEmail: '', // Will be filled by service account discovery
-    );
+    // Note: Authentication (OIDC token or Authorization header) is set
+    // separately via _updateTaskAuth after the task is built.
 
     return task;
+  }
+
+  /// Updates the task with proper authentication.
+  ///
+  /// This method handles the authentication strategy based on the credential type:
+  /// - When running with emulator: Uses a default emulated service account email
+  /// - When running as an extension with ComputeEngine credentials: Uses ID token
+  ///   with Authorization header (Cloud Tasks will not override this)
+  /// - Otherwise: Uses OIDC token with the service account email
+  Future<void> _updateTaskAuth(
+    tasks2.Task task,
+    googleapis_auth.AuthClient authClient,
+    String? extensionId,
+  ) async {
+    final httpRequest = task.httpRequest!;
+
+    // Check if running with emulator
+    if (Environment.isCloudTasksEmulatorEnabled()) {
+      httpRequest.oidcToken = tasks2.OidcToken(
+        serviceAccountEmail: _emulatedServiceAccountDefault,
+      );
+      return;
+    }
+
+    // Get the credential associated with the auth client
+    final credential = authClient.credential;
+
+    // Check if running as an extension with ComputeEngine credentials.
+    // ComputeEngine credentials are used when running on GCE/Cloud Run without
+    // a service account JSON file - indicated by credentials without local
+    // service account credentials (i.e., using metadata server).
+    final isComputeEngine =
+        credential != null && credential.serviceAccountCredentials == null;
+
+    if (extensionId != null && extensionId.isNotEmpty && isComputeEngine) {
+      // Running as extension with ComputeEngine - use ID token with Authorization header.
+      // This is the same approach as Node.js SDK for Firebase Extensions.
+      final idToken = authClient.credentials.idToken;
+      if (idToken != null && idToken.isNotEmpty) {
+        httpRequest.headers = {
+          ...?httpRequest.headers,
+          'Authorization': 'Bearer $idToken',
+        };
+        // Don't set oidcToken when using Authorization header,
+        // as Cloud Tasks would overwrite our Authorization header.
+        httpRequest.oidcToken = null;
+        return;
+      }
+    }
+
+    // Default: Use OIDC token with service account email.
+    // Try to get service account email from credential first, then from metadata service.
+    var serviceAccountEmail = credential?.serviceAccountId;
+    serviceAccountEmail ??= await authClient.getServiceAccountEmail();
+
+    if (serviceAccountEmail == null || serviceAccountEmail.isEmpty) {
+      throw FirebaseFunctionsAdminException(
+        FunctionsClientErrorCode.invalidCredential,
+        'Failed to determine service account email. Initialize the SDK with '
+        'service account credentials or ensure you are running on Google Cloud '
+        'infrastructure with a default service account.',
+      );
+    }
+
+    httpRequest.oidcToken = tasks2.OidcToken(
+      serviceAccountEmail: serviceAccountEmail,
+    );
   }
 }
