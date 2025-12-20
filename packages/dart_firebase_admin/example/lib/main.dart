@@ -6,8 +6,14 @@ import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
+
+  // Uncomment to run auth example
   // await authExample(admin);
+
+  // Uncomment to run firestore example
   // await firestoreExample(admin);
+
+  // Uncomment to run project config example
   // await projectConfigExample(admin);
 
   // Uncomment to run tenant example (requires Identity Platform upgrade)
@@ -16,11 +22,13 @@ Future<void> main() async {
   // Uncomment to run messaging example (requires valid fcm token)
   // await messagingExample(admin);
 
-  await functionsExample(admin);
+  // Uncomment to run functions example
+  // await functionsExample(admin);
 
   await admin.close();
 }
 
+// ignore: unreachable_from_main
 Future<void> authExample(FirebaseApp admin) async {
   print('\n### Auth Example ###\n');
 
@@ -50,6 +58,7 @@ Future<void> authExample(FirebaseApp admin) async {
   }
 }
 
+// ignore: unreachable_from_main
 Future<void> firestoreExample(FirebaseApp admin) async {
   print('\n### Firestore Example ###\n');
 
@@ -67,6 +76,7 @@ Future<void> firestoreExample(FirebaseApp admin) async {
   }
 }
 
+// ignore: unreachable_from_main
 Future<void> projectConfigExample(FirebaseApp admin) async {
   print('\n### Project Config Example ###\n');
 
@@ -383,6 +393,12 @@ Future<void> messagingExample(FirebaseApp admin) async {
   }
 }
 
+/// Functions example prerequisites:
+/// 1) Run `npm run build` in `example_functions_ts` to generate `index.js`.
+/// 2) From the example directory root (with `firebase.json` and `.firebaserc`),
+///    start emulators with `firebase emulators:start`.
+/// 3) Run `dart_firebase_admin/packages/dart_firebase_admin/example/run_with_emulator.sh`.
+// ignore: unreachable_from_main
 Future<void> functionsExample(FirebaseApp admin) async {
   print('\n### Functions Example ###\n');
 
