@@ -13,7 +13,7 @@ class FunctionsHttpClient {
   ///
   /// Returns the host:port string (e.g., "localhost:9499") if the
   /// CLOUD_TASKS_EMULATOR_HOST environment variable is set.
-  String? get _emulatorHost {
+  String? get _cloudTasksEmulatorHost {
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
     final host = env[Environment.cloudTasksEmulatorHost];
@@ -34,7 +34,7 @@ class FunctionsHttpClient {
     }
 
     // Check if Cloud Tasks emulator is enabled
-    final emulatorHost = _emulatorHost;
+    final emulatorHost = _cloudTasksEmulatorHost;
     if (emulatorHost != null) {
       // Emulator: Use CloudTasksEmulatorClient which:
       // 1. Adds "Authorization: Bearer owner" header

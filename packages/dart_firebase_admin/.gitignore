@@ -1,1 +1,6 @@
 service-account-key.json
+
+# Test functions artifacts
+test/functions/node_modules/
+test/functions/lib/
+test/functions/package-lock.json
