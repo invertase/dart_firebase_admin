@@ -75,7 +75,7 @@ class Functions implements FirebaseService {
   /// final queue = functions.taskQueue('myFunction');
   /// await queue.enqueue({'data': 'value'});
   /// ```
-  TaskQueue taskQueue(String functionName, [String? extensionId]) {
+  TaskQueue taskQueue(String functionName, {String? extensionId}) {
     return TaskQueue._(
       functionName: functionName,
       requestHandler: _requestHandler,

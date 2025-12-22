@@ -136,7 +136,10 @@ void main() {
       });
 
       test('creates TaskQueue with extension ID', () {
-        final queue = functions.taskQueue('helloWorld', 'my-extension');
+        final queue = functions.taskQueue(
+          'helloWorld',
+          extensionId: 'my-extension',
+        );
         expect(queue, isNotNull);
       });
 
@@ -230,7 +233,10 @@ void main() {
           () => mockHandler.enqueue(any(), any(), any(), any()),
         ).thenAnswer((_) async {});
 
-        final queue = functions.taskQueue('helloWorld', 'my-extension');
+        final queue = functions.taskQueue(
+          'helloWorld',
+          extensionId: 'my-extension',
+        );
         await queue.enqueue({'data': 'test'});
 
         verify(
@@ -280,7 +286,10 @@ void main() {
           () => mockHandler.delete(any(), any(), any()),
         ).thenAnswer((_) async {});
 
-        final queue = functions.taskQueue('helloWorld', 'my-extension');
+        final queue = functions.taskQueue(
+          'helloWorld',
+          extensionId: 'my-extension',
+        );
         await queue.delete('task-id');
 
         verify(
@@ -835,7 +844,10 @@ void main() {
 
         try {
           final functions = Functions(app);
-          final queue = functions.taskQueue('helloWorld', 'my-extension');
+          final queue = functions.taskQueue(
+            'helloWorld',
+            extensionId: 'my-extension',
+          );
           await queue.enqueue({'data': 'test'});
 
           expect(capturedUrl, contains('ext-my-extension-helloWorld'));
@@ -866,7 +878,10 @@ void main() {
 
         try {
           final functions = Functions(app);
-          final queue = functions.taskQueue('helloWorld', 'image-resize');
+          final queue = functions.taskQueue(
+            'helloWorld',
+            extensionId: 'image-resize',
+          );
           await queue.enqueue({'data': 'test'});
 
           final task = capturedTaskBody!['task'] as Map<String, dynamic>;

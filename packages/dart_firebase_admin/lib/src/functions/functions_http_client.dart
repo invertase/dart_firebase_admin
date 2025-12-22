@@ -97,7 +97,7 @@ class FunctionsHttpClient {
   /// - Production: Uses the googleapis CloudTasksApi client directly
   /// - Emulator: CloudTasksEmulatorClient intercepts requests and removes /v2/ prefix
   ///
-  /// The callback receives the CloudTasksApi, the projectId, and the authClient
+  /// The callback receives the CloudTasksApi, and the projectId
   /// (for authentication setup like OIDC tokens).
   Future<R> cloudTasks<R>(
     Future<R> Function(tasks2.CloudTasksApi api, String projectId) fn,
