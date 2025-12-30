@@ -55,7 +55,8 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # TODO: Re-enable this condition after testing
+    # if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
