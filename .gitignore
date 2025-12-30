@@ -8,6 +8,7 @@ packages/dart_firebase_admin/test/client/package-lock.json
 
 build
 coverage
+doc/api
 
 .DS_Store
 .atom/

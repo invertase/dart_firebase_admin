@@ -15,6 +15,19 @@ workspace:
   - packages/googleapis_auth_utils
 
 melos:
+  scripts:
+    docs:
+      description: Generate documentation for all packages
+      run: ../../scripts/generate-docs.sh
+      exec:
+        concurrency: 1
+      select-package:
+        - '*'
+      packageFilters:
+        flutter: false
+        ignore:
+          - "*example*"
+
   command:
     bootstrap:
       hooks:
