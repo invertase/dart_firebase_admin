@@ -8,6 +8,22 @@ class Release {
     required this.updateTime,
   });
 
+  /// Factory constructor for testing purposes.
+  @visibleForTesting
+  factory Release.forTest({
+    required String name,
+    required String rulesetName,
+    String? createTime,
+    String? updateTime,
+  }) {
+    return Release._(
+      name: name,
+      rulesetName: rulesetName,
+      createTime: createTime,
+      updateTime: updateTime,
+    );
+  }
+
   final String name;
   final String rulesetName;
   final String? createTime;
@@ -45,11 +61,26 @@ class RulesetResponse extends RulesetContent {
       ),
     );
   }
+
   RulesetResponse._({
     required this.name,
     required this.createTime,
     required super.source,
   });
+
+  /// Factory constructor for testing purposes.
+  @visibleForTesting
+  factory RulesetResponse.forTest({
+    required String name,
+    required String createTime,
+    required RulesetSource source,
+  }) {
+    return RulesetResponse._(
+      name: name,
+      createTime: createTime,
+      source: source,
+    );
+  }
 
   final String name;
   final String createTime;
@@ -57,6 +88,18 @@ class RulesetResponse extends RulesetContent {
 
 class ListRulesetsResponse {
   ListRulesetsResponse._({required this.rulesets, this.nextPageToken});
+
+  /// Factory constructor for testing purposes.
+  @visibleForTesting
+  factory ListRulesetsResponse.forTest({
+    required List<RulesetResponse> rulesets,
+    String? nextPageToken,
+  }) {
+    return ListRulesetsResponse._(
+      rulesets: rulesets,
+      nextPageToken: nextPageToken,
+    );
+  }
 
   final List<RulesetResponse> rulesets;
   final String? nextPageToken;

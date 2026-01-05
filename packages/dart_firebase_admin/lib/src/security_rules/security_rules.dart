@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:googleapis/firebaserules/v1.dart' as firebase_rules_v1;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:meta/meta.dart';
 
 import '../app.dart';
 
@@ -63,14 +64,23 @@ class SecurityRules implements FirebaseService {
     );
   }
 
-  SecurityRules._(this.app);
+  SecurityRules._(this.app)
+    : _requestHandler = SecurityRulesRequestHandler(app);
+
+  /// Internal constructor for testing purposes.
+  /// Allows injection of a custom request handler.
+  @visibleForTesting
+  SecurityRules.internal(
+    this.app, {
+    required SecurityRulesRequestHandler requestHandler,
+  }) : _requestHandler = requestHandler;
 
   static const _cloudFirestore = 'cloud.firestore';
   static const _firebaseStorage = 'firebase.storage';
 
   @override
   final FirebaseApp app;
-  late final _requestHandler = SecurityRulesRequestHandler(app);
+  final SecurityRulesRequestHandler _requestHandler;
 
   /// Gets the [Ruleset] identified by the given
   /// name. The input name should be the short name string without the project ID
@@ -122,28 +132,33 @@ class SecurityRules implements FirebaseService {
   /// Cloud Storage bucket. Rejects with a `not-found` error if no ruleset is applied
   /// on the bucket.
   ///
+  /// [bucket] - Optional name of the Cloud Storage bucket to be retrieved. If not
+  ///   specified, retrieves the ruleset applied on the default bucket configured via
+  ///   [AppOptions.storageBucket].
   /// Returns a future that fulfills with the Cloud Storage ruleset.
-  Future<Ruleset> getStorageRuleset(String bucket) async {
-    final bucketName = bucket;
-    final ruleset = await _getRulesetForRelease(
-      '$_firebaseStorage/$bucketName',
-    );
-
-    return ruleset;
+  Future<Ruleset> getStorageRuleset([String? bucket]) async {
+    final bucketName = _getBucketName(bucket);
+    return _getRulesetForRelease('$_firebaseStorage/$bucketName');
   }
 
   /// Creates a new [Ruleset] from the given
   /// source, and applies it to a Cloud Storage bucket.
   ///
   /// [source] - Rules source to apply.
+  /// [bucket] - Optional name of the Cloud Storage bucket to apply the rules on. If
+  ///   not specified, applies the ruleset on the default bucket configured via
+  ///   [AppOptions.storageBucket].
   /// Returns a future that fulfills when the ruleset is created and released.
   Future<Ruleset> releaseStorageRulesetFromSource(
-    String source,
-    String bucket,
-  ) async {
+    String source, [
+    String? bucket,
+  ]) async {
+    // Bucket name is not required until the last step. But since there's a createRuleset step
+    // before then, make sure to run this check and fail early if the bucket name is invalid.
+    _getBucketName(bucket);
+
     final rulesFile = RulesFile(name: 'storage.rules', content: source);
     final ruleset = await createRuleset(rulesFile);
-
     await releaseStorageRuleset(ruleset.name, bucket);
 
     return ruleset;
@@ -152,12 +167,15 @@ class SecurityRules implements FirebaseService {
   /// Applies the specified [Ruleset] ruleset
   /// to a Cloud Storage bucket.
   ///
-  /// [ruleset] - Name of the ruleset to apply or a [RulesetMetadata] object
-  ///   containing the name.
+  /// [ruleset] - Name of the ruleset to apply.
+  /// [bucket] - Optional name of the Cloud Storage bucket to apply the rules on. If
+  ///   not specified, applies the ruleset on the default bucket configured via
+  ///   [AppOptions.storageBucket].
   /// Returns a future that fulfills when the ruleset is released.
-  Future<void> releaseStorageRuleset(String ruleset, String bucket) async {
+  Future<void> releaseStorageRuleset(String ruleset, [String? bucket]) async {
+    final bucketName = _getBucketName(bucket);
     await _requestHandler.updateOrCreateRelease(
-      '$_firebaseStorage/$bucket',
+      '$_firebaseStorage/$bucketName',
       ruleset,
     );
   }
@@ -208,6 +226,19 @@ class SecurityRules implements FirebaseService {
     final rulesetName = release.rulesetName;
 
     return getRuleset(_stripProjectIdPrefix(rulesetName));
+  }
+
+  String _getBucketName(String? bucket) {
+    final bucketName = bucket ?? app.options.storageBucket;
+    if (bucketName == null || bucketName.isEmpty) {
+      throw FirebaseSecurityRulesException(
+        FirebaseSecurityRulesErrorCode.invalidArgument,
+        'Bucket name not specified or invalid. Specify a default bucket name via the '
+        'storageBucket option when initializing the app, or specify the bucket name '
+        'explicitly when calling the rules API.',
+      );
+    }
+    return bucketName;
   }
 
   @override
