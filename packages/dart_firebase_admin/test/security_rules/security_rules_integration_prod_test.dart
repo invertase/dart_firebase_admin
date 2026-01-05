@@ -160,8 +160,7 @@ void main() {
             ),
           );
         },
-        skip:
-            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -178,8 +177,7 @@ void main() {
             ),
           );
         },
-        skip:
-            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -201,8 +199,7 @@ void main() {
             ),
           );
         },
-        skip:
-            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -220,8 +217,7 @@ void main() {
             ),
           );
         },
-        skip:
-            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -238,8 +234,7 @@ void main() {
             ),
           );
         },
-        skip:
-            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
     });
   });
