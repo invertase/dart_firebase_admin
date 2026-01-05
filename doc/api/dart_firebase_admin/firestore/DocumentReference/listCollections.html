@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the listCollections method from the DocumentReference class, for the Dart programming language.">
+  <title>listCollections method - DocumentReference class - firestore library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">dart_firebase_admin</a></li>
+    <li><a href="../../firestore/">firestore.dart</a></li>
+    <li><a href="../../firestore/DocumentReference-class.html">DocumentReference<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">listCollections method</li>
+  </ol>
+  <div class="self-name">listCollections</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="firestore&#47;DocumentReference-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">listCollections</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../firestore/CollectionReference-class.html">CollectionReference</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../firestore/DocumentData.html">DocumentData</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+<span class="name ">listCollections</span>(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Fetches the subcollections that are direct children of this document.</p>
+<pre class="language-dart"><code class="language-dart">final documentRef = firestore.doc('col/doc');
+
+documentRef.listCollections().then((collections) {
+  for (final collection in collections) {
+    print('Found subcollection with id: ${collection.id}');
+  }
+});
+</code></pre>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;CollectionReference&lt;DocumentData&gt;&gt;&gt; listCollections() {
+  return firestore._client.v1((a, projectId) async {
+    final request = firestore1.ListCollectionIdsRequest(
+      &#47;&#47; Setting `pageSize` to an arbitrarily large value lets the backend cap
+      &#47;&#47; the page size (currently to 300). Note that the backend rejects
+      &#47;&#47; MAX_INT32 (b&#47;146883794).
+      pageSize: (math.pow(2, 16) - 1).toInt(),
+    );
+
+    final result = await a.projects.databases.documents.listCollectionIds(
+      request,
+      _formattedName,
+    );
+
+    final ids = result.collectionIds ?? [];
+    ids.sort((a, b) =&gt; a.compareTo(b));
+
+    return [for (final id in ids) collection(id)];
+  });
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">dart_firebase_admin</a></li>
+    <li><a href="../../firestore/">firestore</a></li>
+    <li><a href="../../firestore/DocumentReference-class.html">DocumentReference<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">listCollections method</li>
+</ol>
+
+    <h5>DocumentReference class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    dart_firebase_admin
+      0.4.1
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

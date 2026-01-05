@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the createAuthClient function from the googleapis_auth_utils library, for the Dart programming language.">
+  <title>createAuthClient function - googleapis_auth_utils library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">googleapis_auth_utils</a></li>
+    <li><a href="../googleapis_auth_utils/">googleapis_auth_utils.dart</a></li>
+    <li class="self-crumb">createAuthClient function</li>
+  </ol>
+  <div class="self-name">createAuthClient</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="googleapis_auth_utils&#47;googleapis_auth_utils-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">createAuthClient</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/googleapis_auth/1.6.0/googleapis_auth/AuthClient-class.html">AuthClient</a></span>&gt;</span></span>
+<span class="name ">createAuthClient</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="createAuthClient-param-credential"><span class="type-annotation"><a href="../googleapis_auth_utils/GoogleCredential-class.html">GoogleCredential</a>?</span> <span class="parameter-name">credential</span>, </span></li>
+<li><span class="parameter" id="createAuthClient-param-scopes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">scopes</span>, {</span></li>
+<li><span class="parameter" id="createAuthClient-param-baseClient"><span class="type-annotation"><a href="https://pub.dev/documentation/http/1.6.0/http/Client-class.html">Client</a>?</span> <span class="parameter-name">baseClient</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Creates an authenticated HTTP client from a <a href="../googleapis_auth_utils/GoogleCredential-class.html">GoogleCredential</a>.</p>
+<p>This function:</p>
+<ol>
+<li>Creates an AuthClient using googleapis_auth</li>
+<li>Associates it with the credential via <code>authClientCredentials</code> Expando</li>
+</ol>
+<p>The returned client will automatically refresh access tokens as needed.
+Extension methods like <code>sign()</code> can access the credential through the Expando.</p>
+<p>Example:</p>
+<pre class="language-dart"><code class="language-dart">final credential = GoogleCredential.fromServiceAccount(
+  File('service-account.json'),
+);
+final client = await createAuthClient(credential, [
+  'https://www.googleapis.com/auth/cloud-platform',
+]);
+
+// Use client for API calls
+final response = await client.get(Uri.parse('https://...'));
+
+// Sign data (extension method uses the associated credential)
+final signature = await client.sign('data to sign');
+
+// Don't forget to close when done
+client.close();
+</code></pre>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;AuthClient&gt; createAuthClient(
+  GoogleCredential? credential,
+  List&lt;String&gt; scopes, {
+  http.Client? baseClient,
+}) async {
+  &#47;&#47; If no credential provided, use ADC
+  final _credential =
+      credential ?? GoogleCredential.fromApplicationDefaultCredentials();
+
+  AuthClient client;
+
+  if (_credential is GoogleServiceAccountCredential) {
+    &#47;&#47; Use service account credentials
+    client = await clientViaServiceAccount(
+      _credential.serviceAccountCredentials,
+      scopes,
+      baseClient: baseClient,
+    );
+  } else if (_credential is GoogleApplicationDefaultCredential) {
+    &#47;&#47; For ADC, check if we have service account credentials
+    final serviceAccountCreds = _credential.serviceAccountCredentials;
+    if (serviceAccountCreds != null) {
+      client = await clientViaServiceAccount(
+        serviceAccountCreds,
+        scopes,
+        baseClient: baseClient,
+      );
+    } else {
+      &#47;&#47; Fall back to regular ADC (will use metadata service on GCE&#47;Cloud Run)
+      client = await clientViaApplicationDefaultCredentials(
+        scopes: scopes,
+        baseClient: baseClient,
+      );
+    }
+  } else {
+    throw UnsupportedError(
+      &#39;Unknown credential type: ${_credential.runtimeType}&#39;,
+    );
+  }
+
+  &#47;&#47; Associate the credential with the auth client
+  authClientCredentials[client] = _credential;
+
+  return client;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">googleapis_auth_utils</a></li>
+    <li><a href="../googleapis_auth_utils/">googleapis_auth_utils</a></li>
+    <li class="self-crumb">createAuthClient function</li>
+</ol>
+
+    <h5>googleapis_auth_utils library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    googleapis_auth_utils
+      0.1.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

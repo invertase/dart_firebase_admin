@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="dart_firebase_admin API docs, for the Dart programming language.">
+  <title>dart_firebase_admin - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/invertase/dart_firebase_admin">dart_firebase_admin package</a></li>
+  </ol>
+  <div class="self-name">dart_firebase_admin</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h2 id="dart-firebase-admin">Dart Firebase Admin</h2>
+<p>Welcome! This project is a port of <a href="https://github.com/firebase/firebase-admin-node">Node's Firebase Admin SDK</a> to Dart.</p>
+<p>⚠️ This project is still in its early stages, and some features may be missing or bugged.
+Currently, only Firestore is available, with more to come (auth next).</p>
+<ul>
+<li><a href="#dart-firebase-admin">Dart Firebase Admin</a></li>
+<li><a href="#getting-started">Getting started</a>
+<ul>
+<li><a href="#connecting-to-the-sdk">Connecting to the SDK</a>
+<ul>
+<li><a href="#connecting-using-the-environment">Connecting using the environment</a></li>
+<li><a href="#connecting-using-a-service-accountjson-file">Connecting using a <code>service-account.json</code> file</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#firestore">Firestore</a>
+<ul>
+<li><a href="#usage">Usage</a></li>
+<li><a href="#supported-features">Supported features</a></li>
+</ul>
+</li>
+<li><a href="#auth">Auth</a>
+<ul>
+<li><a href="#usage-1">Usage</a></li>
+<li><a href="#supported-features-1">Supported features</a></li>
+</ul>
+</li>
+<li><a href="#available-features">Available features</a></li>
+<li><a href="#appcheck">AppCheck</a>
+<ul>
+<li><a href="#usage-2">Usage</a></li>
+<li><a href="#supported-features-2">Supported features</a></li>
+</ul>
+</li>
+<li><a href="#security-rules">Security rules</a>
+<ul>
+<li><a href="#usage-3">Usage</a></li>
+<li><a href="#supported-features-3">Supported features</a></li>
+</ul>
+</li>
+<li><a href="#messaging">Messaging</a>
+<ul>
+<li><a href="#usage-4">Usage</a></li>
+<li><a href="#supported-features-4">Supported features</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="getting-started">Getting started</h2>
+<h3 id="connecting-to-the-sdk">Connecting to the SDK</h3>
+<p>Before using Firebase, we must first authenticate.</p>
+<p>There are currently two options:</p>
+<ul>
+<li>You can connect using environment variables</li>
+<li>Alternatively, you can specify a <code>service-account.json</code> file</li>
+</ul>
+<h4 id="connecting-using-the-environment">Connecting using the environment</h4>
+<p>To connect using environment variables, you will need to have
+the <a href="https://firebaseopensource.com/projects/firebase/firebase-tools/">Firebase CLI</a> installed.</p>
+<p>Once done, you can run:</p>
+<pre class="language-sh"><code class="language-sh">firebase login
+</code></pre>
+<p>And log-in to the project of your choice.</p>
+<p>From there, you can have your Dart program authenticate
+using the environment with:</p>
+<pre class="language-dart"><code class="language-dart">import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+
+void main() {
+  final admin = FirebaseAdminApp.initializeApp(
+    '&lt;your project name&gt;',
+    // This will obtain authentication information from the environment
+    Credential.fromApplicationDefaultCredentials(),
+  );
+
+  // TODO use the Admin SDK
+  final firestore = Firestore(admin);
+  firestore.doc('hello/world').get();
+}
+</code></pre>
+<h4 id="connecting-using-a-service-accountjson-file">Connecting using a <code>service-account.json</code> file</h4>
+<p>Alternatively, you can choose to use a <code>service-account.json</code> file.<br>
+This file can be obtained in your firebase console by going to:</p>
+<pre class="language-dart"><code>https://console.firebase.google.com/u/0/project/&lt;your-project-name&gt;/settings/serviceaccounts/adminsdk
+</code></pre>
+<p>Make sure to replace <code>&lt;your-project-name&gt;</code> with the name of your project.
+One there, follow the steps and download the file. Place it anywhere you want in your project.</p>
+<p><strong>⚠️ Note</strong>:
+This file should be kept private. Do not commit it on public repositories.</p>
+<p>After all of that is done, you can now authenticate in your Dart program using:</p>
+<pre class="language-dart"><code class="language-dart">import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+
+Future&lt;void&gt; main() async {
+  final admin = FirebaseAdminApp.initializeApp(
+    '&lt;your project name&gt;',
+    // Log-in using the newly downloaded file.
+    Credential.fromServiceAccount(
+      File('&lt;path to your service-account.json file&gt;'),
+    ),
+  );
+
+  // TODO use the Admin SDK
+  final firestore = Firestore(admin);
+  firestore.doc('hello/world').get();
+
+  // Don't forget to close the Admin SDK at the end of your "main"!
+  await admin.close();
+}
+</code></pre>
+<h2 id="firestore">Firestore</h2>
+<h3 id="usage">Usage</h3>
+<p>First, make sure to follow the steps on <a href="#connecting-to-the-sdk">how to authenticate</a>.
+You should now have an instance of a <code>FirebaseAdminApp</code> object.</p>
+<p>You can now use this object to create a <code>Firestore</code> object as followed:</p>
+<pre class="language-dart"><code class="language-dart">// Obtained in the previous steps
+FirebaseAdminApp admin;
+final firestore = Firestore(admin);
+</code></pre>
+<p>From this point onwards, using Firestore with the admin ADK
+is roughly equivalent to using <a href="https://github.com/firebase/flutterfire">FlutterFire</a>.</p>
+<p>Using this <code>Firestore</code> object, you'll find your usual collection/query/document
+objects.</p>
+<p>For example you can perform a <code>where</code> query:</p>
+<pre class="language-dart"><code class="language-dart">// The following lists all users above 18 years old
+final collection = firestore.collection('users');
+final adults = collection.where('age', WhereFilter.greaterThan, 18);
+
+final adultsSnapshot = await adults.get();
+
+for (final adult in adultsSnapshot.docs) {
+  print(adult.data()['age']);
+}
+</code></pre>
+<p>Composite queries are also supported:</p>
+<pre class="language-dart"><code class="language-dart">// List users with either John or Jack as first name.
+firestore
+  .collection('users')
+  .whereFilter(
+    Filter.or([
+      Filter.where('firstName', WhereFilter.equal, 'John'),
+      Filter.where('firstName', WhereFilter.equal, 'Jack'),
+    ]),
+  );
+</code></pre>
+<p>Alternatively, you can fetch a specific document too:</p>
+<pre class="language-dart"><code class="language-dart">// Print the age of the user with ID "123"
+final user = await firestore.doc('users/123').get();
+print(user.data()?['age']);
+</code></pre>
+<h3 id="supported-features">Supported features</h3>
+<table>
+<thead>
+<tr>
+<th>Firestore</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>firestore.listCollections()</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>reference.id</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>reference.listCollections()</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>reference.parent</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>reference.path</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>reference.==</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>reference.withConverter</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.listDocuments</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.add</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.get</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.create</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.delete</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.set</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.update</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collection.collection</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.where('field', operator, value)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.where('field.path', operator, value)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.where(FieldPath('...'), operator, value)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.whereFilter(Filter.and(a, b))</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.whereFilter(Filter.or(a, b))</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.startAt</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.startAtDocument</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.startAfter</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.startAfterDocument</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.endAt</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.endAtDocument</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.endAfter</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.endAfterDocument</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.select</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.orderBy</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.limit</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.limitToLast</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.offset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.count()</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.sum()</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>query.average()</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>querySnapshot.docs</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>querySnapshot.readTime</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>documentSnapshots.data</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>documentSnapshots.readTime/createTime/updateTime</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>documentSnapshots.id</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>documentSnapshots.exists</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>documentSnapshots.data</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>documentSnapshots.get(fieldPath)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>FieldValue.documentId</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>FieldValue.increment</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>FieldValue.arrayUnion</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>FieldValue.arrayRemove</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>FieldValue.delete</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>FieldValue.serverTimestamp</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>collectionGroup</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>GeoPoint</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Timestamp</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>querySnapshot.docsChange</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>query.onSnapshot</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>runTransaction</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>BundleBuilder</td>
+<td>❌</td>
+</tr>
+</tbody>
+</table>
+<h2 id="auth">Auth</h2>
+<h3 id="usage-2">Usage</h3>
+<p>First, make sure to follow the steps on <a href="#connecting-to-the-sdk">how to authenticate</a>.
+You should now have an instance of a <code>FirebaseAdminApp</code> object.</p>
+<p>You can now use this object to create a <code>Auth</code> object as followed:</p>
+<pre class="language-dart"><code class="language-dart">// Obtained in the previous steps
+FirebaseAdminApp admin;
+final auth = Auth(admin);
+</code></pre>
+<p>You can then use this <code>Auth</code> object to perform various
+auth operations. For example, you can generate a password reset link:</p>
+<pre class="language-dart"><code class="language-dart">final link = await auth.generatePasswordResetLink(
+  'hello@example.com',
+);
+</code></pre>
+<h3 id="supported-features-2">Supported features</h3>
+<h2 id="available-features">Available features</h2>
+<table>
+<thead>
+<tr>
+<th>Auth</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>auth.tenantManager</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>auth.projectConfigManager</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>auth.generatePasswordResetLink</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.generateEmailVerificationLink</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.generateVerifyAndChangeEmailLink</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.generateSignInWithEmailLink</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.listProviderConfigs</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.createProviderConfig</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.updateProviderConfig</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.getProviderConfig</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.deleteProviderConfig</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.createCustomToken</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.setCustomUserClaims</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.verifyIdToken</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.revokeRefreshTokens</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.createSessionCookie</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.verifySessionCookie</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.importUsers</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.listUsers</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.deleteUser</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.deleteUsers</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.getUser</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.getUserByPhoneNumber</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.getUserByEmail</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.getUserByProviderUid</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.getUsers</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.createUser</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>auth.updateUser</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appcheck">AppCheck</h2>
+<h3 id="usage-3">Usage</h3>
+<p>First, make sure to follow the steps on <a href="#connecting-to-the-sdk">how to authenticate</a>.
+You should now have an instance of a <code>FirebaseAdminApp</code> object.</p>
+<p>Then, you can create an instance of <code>AppCheck</code> as followed:</p>
+<pre class="language-dart"><code class="language-dart">final appCheck = AppCheck();
+</code></pre>
+<p>You can then use <code>ApPCheck</code> to interact with Firebase AppCheck. For example,
+this creates/verifies a token:</p>
+<pre class="language-dart"><code class="language-dart">final token = await appCheck
+    .createToken('&lt;my app id&gt;');
+
+await appCheck.verifyToken(token.token);
+</code></pre>
+<h3 id="supported-features-3">Supported features</h3>
+<table>
+<thead>
+<tr>
+<th>AppCheck</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AppCheck.createToken</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>AppCheck.verifyToken</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<h2 id="security-rules">Security rules</h2>
+<h3 id="usage-4">Usage</h3>
+<p>First, make sure to follow the steps on <a href="#connecting-to-the-sdk">how to authenticate</a>.
+You should now have an instance of a <code>FirebaseAdminApp</code> object.</p>
+<p>Then, you can create an instance of <code>SecurityRules</code> as followed:</p>
+<pre class="language-dart"><code class="language-dart">final securityRules = SecurityRules();
+</code></pre>
+<p>You can then use <code>SecurityRules</code> to interact with Firebase SecurityRules. For example,
+this creates/verifies a token:</p>
+<pre class="language-dart"><code class="language-dart">final ruleset = await securityRules.createRuleset(
+  RulesFile(
+    name: 'firestore.rules',
+    content: '&lt;your security rules&gt;',
+  ),
+);
+
+await securityRules.releaseFirestoreRuleset(ruleset.name);
+</code></pre>
+<h3 id="supported-features-4">Supported features</h3>
+<table>
+<thead>
+<tr>
+<th>SecurityRules</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SecurityRules.createRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.getRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.getFirestoreRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.getStorageRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.releaseFirestoreRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.releaseFirestoreRulesetFromSource</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.releaseStorageRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.releaseStorageRulesetFromSource</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.releaseStorageRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.deleteRuleset</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SecurityRules.listRulesetMetadata</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<h2 id="messaging">Messaging</h2>
+<h3 id="usage-5">Usage</h3>
+<p>First, make sure to follow the steps on <a href="#connecting-to-the-sdk">how to authenticate</a>.
+You should now have an instance of a <code>FirebaseAdminApp</code> object.</p>
+<p>Then, you can create an instance of <code>Messaging</code> as followed:</p>
+<pre class="language-dart"><code class="language-dart">// Obtained in the previous steps
+FirebaseAdminApp admin;
+final messaging = Messaging(messaging);
+</code></pre>
+<p>You can then use that <code>Messaging</code> object to interact with Firebase Messaging.
+For example, if you want to send a notification to a specific device, you can do:</p>
+<pre class="language-dart"><code class="language-dart">await messaging.send(
+  TokenMessage(
+    // The token of the targeted device.
+    // This token can be obtain by using FlutterFire's firebase_messaging:
+    // https://pub.dev/documentation/firebase_messaging/latest/firebase_messaging/FirebaseMessaging/getToken.html
+    token: "&lt;targeted device's token&gt;",
+    notification: Notification(
+      // The content of the notification
+      title: 'Hello',
+      body: 'World',
+    ),
+  ),
+);
+</code></pre>
+<h3 id="supported-features-5">Supported features</h3>
+<table>
+<thead>
+<tr>
+<th>Messaging</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Messaging.send</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Messaging.sendEach</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Messaging.sendEachForMulticast</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Messaging.subscribeToTopic</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Messaging.unsubscribeFromTopic</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>TokenMessage</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TopicMessage</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>ConditionMessage</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p align="center">
+  <a href="https://invertase.io/?utm_source=readme&amp;utm_medium=footer&amp;utm_campaign=dart_custom_lint">
+    <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
+  </a>
+  </p><p align="center">
+    Built and maintained by <a href="https://invertase.io/?utm_source=readme&amp;utm_medium=footer&amp;utm_campaign=dart_custom_lint">Invertase</a>.
+  </p>
+<p></p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="app_check">
+  <span class="name"><a href="app_check/">app_check</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="auth">
+  <span class="name"><a href="auth/">auth</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="dart_firebase_admin">
+  <span class="name"><a href="dart_firebase_admin/">dart_firebase_admin</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="firestore">
+  <span class="name"><a href="firestore/">firestore</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="functions">
+  <span class="name"><a href="functions/">functions</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="messaging">
+  <span class="name"><a href="messaging/">messaging</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="security_rules">
+  <span class="name"><a href="security_rules/">security_rules</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="version.g">
+  <span class="name"><a href="version.g/">version.g</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/invertase/dart_firebase_admin">dart_firebase_admin package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">dart_firebase_admin</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="app_check/">app_check</a></li>
+      <li><a href="auth/">auth</a></li>
+      <li><a href="dart_firebase_admin/">dart_firebase_admin</a></li>
+      <li><a href="firestore/">firestore</a></li>
+      <li><a href="functions/">functions</a></li>
+      <li><a href="messaging/">messaging</a></li>
+      <li><a href="security_rules/">security_rules</a></li>
+      <li><a href="version.g/">version.g</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    dart_firebase_admin
+      0.4.1
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

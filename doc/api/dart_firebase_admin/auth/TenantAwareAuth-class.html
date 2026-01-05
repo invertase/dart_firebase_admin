@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the TenantAwareAuth class from the auth library, for the Dart programming language.">
+  <title>TenantAwareAuth class - auth library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">dart_firebase_admin</a></li>
+    <li><a href="../auth/">auth.dart</a></li>
+    <li class="self-crumb">TenantAwareAuth class</li>
+  </ol>
+  <div class="self-name">TenantAwareAuth</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="auth&#47;auth-library-sidebar.html"
+    data-below-sidebar="auth&#47;TenantAwareAuth-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">TenantAwareAuth</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Tenant-aware <code>Auth</code> interface used for managing users, configuring SAML/OIDC providers,
+generating email links for password reset, email verification, etc for specific tenants.</p>
+<p>Multi-tenancy support requires Google Cloud's Identity Platform
+(GCIP). To learn more about GCIP, including pricing and features,
+see the <a href="https://cloud.google.com/identity-platform">GCIP documentation</a>.</p>
+<p>Each tenant contains its own identity providers, settings and sets of users.
+Using <code>TenantAwareAuth</code>, users for a specific tenant and corresponding OIDC/SAML
+configurations can also be managed, ID tokens for users signed in to a specific tenant
+can be verified, and email action links can also be generated for users belonging to the
+tenant.</p>
+<p><code>TenantAwareAuth</code> instances for a specific <code>tenantId</code> can be instantiated by calling
+<a href="../auth/TenantManager/authForTenant.html">TenantManager.authForTenant</a>.</p>
+</section>
+
+
+
+    
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="app" class="property inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/app.html">app</a></span>
+  <span class="signature">&#8594; <a href="../dart_firebase_admin/FirebaseApp-class.html">FirebaseApp</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="tenantId" class="property">
+  <span class="name"><a href="../auth/TenantAwareAuth/tenantId.html">tenantId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The tenant identifier corresponding to this <code>TenantAwareAuth</code> instance.
+All calls to the user management APIs, OIDC/SAML provider management APIs, email link
+generation APIs, etc will only be applied within the scope of this tenant.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="createCustomToken" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/createCustomToken.html">createCustomToken</a></span><span class="signature">(<wbr><span class="parameter" id="createCustomToken-param-uid"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uid</span>, {</span><span class="parameter" id="createCustomToken-param-developerClaims"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span> <span class="parameter-name">developerClaims</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a new Firebase custom token (JWT) that can be sent back to a client
+device to use to sign in with the client SDKs' <code>signInWithCustomToken()</code>
+methods. (Tenant-aware instances will also embed the tenant ID in the
+token.)
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="createProviderConfig" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/createProviderConfig.html">createProviderConfig</a></span><span class="signature">(<wbr><span class="parameter" id="createProviderConfig-param-config"><span class="type-annotation"><a href="../auth/AuthProviderConfig-class.html">AuthProviderConfig</a></span> <span class="parameter-name">config</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/AuthProviderConfig-class.html">AuthProviderConfig</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a promise that resolves with the newly created <code>AuthProviderConfig</code>
+when the new provider configuration is created.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="createSessionCookie" class="callable">
+  <span class="name"><a href="../auth/TenantAwareAuth/createSessionCookie.html">createSessionCookie</a></span><span class="signature">(<wbr><span class="parameter" id="createSessionCookie-param-idToken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">idToken</span>, </span><span class="parameter" id="createSessionCookie-param-sessionCookieOptions"><span class="type-annotation"><a href="../auth/SessionCookieOptions-class.html">SessionCookieOptions</a></span> <span class="parameter-name">sessionCookieOptions</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates a new Firebase session cookie with the specified options that can be used for
+session management (set as a server side session cookie with custom cookie policy).
+The session cookie JWT will have the same payload claims as the provided ID token.
+  
+
+</dd>
+
+        <dt id="createUser" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/createUser.html">createUser</a></span><span class="signature">(<wbr><span class="parameter" id="createUser-param-properties"><span class="type-annotation"><a href="../auth/CreateRequest-class.html">CreateRequest</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserRecord-class.html">UserRecord</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Creates a new user.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="deleteProviderConfig" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/deleteProviderConfig.html">deleteProviderConfig</a></span><span class="signature">(<wbr><span class="parameter" id="deleteProviderConfig-param-providerId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">providerId</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Deletes the provider configuration corresponding to the provider ID passed.
+If the specified ID does not exist, an <code>auth/configuration-not-found</code> error
+is thrown.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="deleteUser" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/deleteUser.html">deleteUser</a></span><span class="signature">(<wbr><span class="parameter" id="deleteUser-param-uid"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uid</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Deletes an existing user.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="deleteUsers" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/deleteUsers.html">deleteUsers</a></span><span class="signature">(<wbr><span class="parameter" id="deleteUsers-param-uids"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">uids</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/DeleteUsersResult-class.html">DeleteUsersResult</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Deletes the users specified by the given uids.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="generateEmailVerificationLink" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/generateEmailVerificationLink.html">generateEmailVerificationLink</a></span><span class="signature">(<wbr><span class="parameter" id="generateEmailVerificationLink-param-email"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">email</span>, {</span><span class="parameter" id="generateEmailVerificationLink-param-actionCodeSettings"><span class="type-annotation"><a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a>?</span> <span class="parameter-name">actionCodeSettings</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Generates the out of band email action link to verify the user's ownership
+of the specified email. The <a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a> object provided
+as an argument to this method defines whether the link is to be handled by a
+mobile app or browser along with additional state information to be passed in
+the deep link, etc.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="generatePasswordResetLink" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/generatePasswordResetLink.html">generatePasswordResetLink</a></span><span class="signature">(<wbr><span class="parameter" id="generatePasswordResetLink-param-email"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">email</span>, {</span><span class="parameter" id="generatePasswordResetLink-param-actionCodeSettings"><span class="type-annotation"><a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a>?</span> <span class="parameter-name">actionCodeSettings</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Generates the out of band email action link to reset a user's password.
+The link is generated for the user with the specified email address. The
+optional <a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a> object
+defines whether the link is to be handled by a mobile app or browser and the
+additional state information to be passed in the deep link, etc.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="generateSignInWithEmailLink" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/generateSignInWithEmailLink.html">generateSignInWithEmailLink</a></span><span class="signature">(<wbr><span class="parameter" id="generateSignInWithEmailLink-param-email"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">email</span>, </span><span class="parameter" id="generateSignInWithEmailLink-param-actionCodeSettings"><span class="type-annotation"><a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a></span> <span class="parameter-name">actionCodeSettings</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Generates the out of band email action link to verify the user's ownership
+of the specified email. The <a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a> object provided
+as an argument to this method defines whether the link is to be handled by a
+mobile app or browser along with additional state information to be passed in
+the deep link, etc.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="generateVerifyAndChangeEmailLink" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/generateVerifyAndChangeEmailLink.html">generateVerifyAndChangeEmailLink</a></span><span class="signature">(<wbr><span class="parameter" id="generateVerifyAndChangeEmailLink-param-email"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">email</span>, </span><span class="parameter" id="generateVerifyAndChangeEmailLink-param-newEmail"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">newEmail</span>, {</span><span class="parameter" id="generateVerifyAndChangeEmailLink-param-actionCodeSettings"><span class="type-annotation"><a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a>?</span> <span class="parameter-name">actionCodeSettings</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Generates an out-of-band email action link to verify the user's ownership
+of the specified email. The <a href="../auth/ActionCodeSettings-class.html">ActionCodeSettings</a> object provided
+as an argument to this method defines whether the link is to be handled by a
+mobile app or browser along with additional state information to be passed in
+the deep link, etc.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="getProviderConfig" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/getProviderConfig.html">getProviderConfig</a></span><span class="signature">(<wbr><span class="parameter" id="getProviderConfig-param-providerId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">providerId</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/AuthProviderConfig-class.html">AuthProviderConfig</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Looks up an Auth provider configuration by the provided ID.
+Returns a promise that resolves with the provider configuration
+corresponding to the provider ID specified. If the specified ID does not
+exist, an <code>auth/configuration-not-found</code> error is thrown.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="getUser" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/getUser.html">getUser</a></span><span class="signature">(<wbr><span class="parameter" id="getUser-param-uid"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uid</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserRecord-class.html">UserRecord</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Gets the user data for the user corresponding to a given <code>uid</code>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="getUserByEmail" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/getUserByEmail.html">getUserByEmail</a></span><span class="signature">(<wbr><span class="parameter" id="getUserByEmail-param-email"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">email</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserRecord-class.html">UserRecord</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Gets the user data for the user corresponding to a given email.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="getUserByPhoneNumber" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/getUserByPhoneNumber.html">getUserByPhoneNumber</a></span><span class="signature">(<wbr><span class="parameter" id="getUserByPhoneNumber-param-phoneNumber"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">phoneNumber</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserRecord-class.html">UserRecord</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Gets the user data for the user corresponding to a given phone number. The
+phone number has to conform to the E.164 specification.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="getUserByProviderUid" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/getUserByProviderUid.html">getUserByProviderUid</a></span><span class="signature">(<wbr>{<span class="parameter" id="getUserByProviderUid-param-providerId"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">providerId</span>, </span><span class="parameter" id="getUserByProviderUid-param-uid"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uid</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserRecord-class.html">UserRecord</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Gets the user data for the user corresponding to a given provider id.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="getUsers" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/getUsers.html">getUsers</a></span><span class="signature">(<wbr><span class="parameter" id="getUsers-param-identifiers"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserIdentifier-class.html">UserIdentifier</a></span>&gt;</span></span> <span class="parameter-name">identifiers</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/GetUsersResult-class.html">GetUsersResult</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Gets the user data corresponding to the specified identifiers.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="importUsers" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/importUsers.html">importUsers</a></span><span class="signature">(<wbr><span class="parameter" id="importUsers-param-users"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserImportRecord-class.html">UserImportRecord</a></span>&gt;</span></span> <span class="parameter-name">users</span>, [</span><span class="parameter" id="importUsers-param-options"><span class="type-annotation"><a href="../auth/UserImportOptions-class.html">UserImportOptions</a>?</span> <span class="parameter-name">options</span></span>])
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserImportResult-class.html">UserImportResult</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Imports the provided list of users into Firebase Auth.
+A maximum of 1000 users are allowed to be imported one at a time.
+When importing users with passwords,
+<a href="../auth/UserImportOptions-class.html">UserImportOptions</a> are required to be
+specified.
+This operation is optimized for bulk imports and will ignore checks on <code>uid</code>,
+<code>email</code> and other identifier uniqueness which could result in duplications.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="listProviderConfigs" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/listProviderConfigs.html">listProviderConfigs</a></span><span class="signature">(<wbr><span class="parameter" id="listProviderConfigs-param-options"><span class="type-annotation"><a href="../auth/AuthProviderConfigFilter-class.html">AuthProviderConfigFilter</a></span> <span class="parameter-name">options</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/ListProviderConfigResults-class.html">ListProviderConfigResults</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns the list of existing provider configurations matching the filter
+provided. At most, 100 provider configs can be listed at a time.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="listUsers" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/listUsers.html">listUsers</a></span><span class="signature">(<wbr>{<span class="parameter" id="listUsers-param-maxResults"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">maxResults</span>, </span><span class="parameter" id="listUsers-param-pageToken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">pageToken</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/ListUsersResult-class.html">ListUsersResult</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Retrieves a list of users (single batch only) with a size of <code>maxResults</code>
+starting from the offset as specified by <code>pageToken</code>. This is used to
+retrieve all the users of a specified project in batches.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="revokeRefreshTokens" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/revokeRefreshTokens.html">revokeRefreshTokens</a></span><span class="signature">(<wbr><span class="parameter" id="revokeRefreshTokens-param-uid"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uid</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Revokes all refresh tokens for an existing user.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="setCustomUserClaims" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/setCustomUserClaims.html">setCustomUserClaims</a></span><span class="signature">(<wbr><span class="parameter" id="setCustomUserClaims-param-uid"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uid</span>, {</span><span class="parameter" id="setCustomUserClaims-param-customUserClaims"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>&gt;</span>?</span> <span class="parameter-name">customUserClaims</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Sets additional developer claims on an existing user identified by the
+provided <code>uid</code>, typically used to define user roles and levels of
+access. These claims should propagate to all devices where the user is
+already signed in (after token expiration or when token refresh is forced)
+and the next time the user signs in. If a reserved OIDC claim name
+is used (sub, iat, iss, etc), an error is thrown. They are set on the
+authenticated user's ID token JWT.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="updateProviderConfig" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/updateProviderConfig.html">updateProviderConfig</a></span><span class="signature">(<wbr><span class="parameter" id="updateProviderConfig-param-providerId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">providerId</span>, </span><span class="parameter" id="updateProviderConfig-param-updatedConfig"><span class="type-annotation"><a href="../auth/UpdateAuthProviderRequest-class.html">UpdateAuthProviderRequest</a></span> <span class="parameter-name">updatedConfig</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/AuthProviderConfig-class.html">AuthProviderConfig</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a promise that resolves with the updated <code>AuthProviderConfig</code>
+corresponding to the provider ID specified.
+If the specified ID does not exist, an <code>auth/configuration-not-found</code> error
+is thrown.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="updateUser" class="callable inherited">
+  <span class="name"><a href="../auth/TenantAwareAuth/updateUser.html">updateUser</a></span><span class="signature">(<wbr><span class="parameter" id="updateUser-param-uid"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uid</span>, </span><span class="parameter" id="updateUser-param-properties"><span class="type-annotation"><a href="../auth/UpdateRequest-class.html">UpdateRequest</a></span> <span class="parameter-name">properties</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/UserRecord-class.html">UserRecord</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Updates an existing user.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="verifyIdToken" class="callable">
+  <span class="name"><a href="../auth/TenantAwareAuth/verifyIdToken.html">verifyIdToken</a></span><span class="signature">(<wbr><span class="parameter" id="verifyIdToken-param-idToken"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">idToken</span>, {</span><span class="parameter" id="verifyIdToken-param-checkRevoked"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">checkRevoked</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/DecodedIdToken-class.html">DecodedIdToken</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Verifies a Firebase ID token (JWT). If the token is valid and its <code>tenant_id</code> claim
+matches this tenant's ID, the returned <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a> is completed with the token's decoded claims;
+otherwise, the <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a> is rejected with an error.
+  
+
+</dd>
+
+        <dt id="verifySessionCookie" class="callable">
+  <span class="name"><a href="../auth/TenantAwareAuth/verifySessionCookie.html">verifySessionCookie</a></span><span class="signature">(<wbr><span class="parameter" id="verifySessionCookie-param-sessionCookie"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">sessionCookie</span>, {</span><span class="parameter" id="verifySessionCookie-param-checkRevoked"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">checkRevoked</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../auth/DecodedIdToken-class.html">DecodedIdToken</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Verifies a Firebase session cookie. Returns a <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a> with the session cookie's decoded claims
+if the session cookie is valid and its <code>tenant_id</code> claim matches this tenant's ID;
+otherwise, a rejected <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">dart_firebase_admin</a></li>
+    <li><a href="../auth/">auth</a></li>
+    <li class="self-crumb">TenantAwareAuth class</li>
+</ol>
+
+    <h5>auth library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    dart_firebase_admin
+      0.4.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

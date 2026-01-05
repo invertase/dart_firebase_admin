@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the AndroidNotification class from the messaging library, for the Dart programming language.">
+  <title>AndroidNotification class - messaging library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">dart_firebase_admin</a></li>
+    <li><a href="../messaging/">messaging.dart</a></li>
+    <li class="self-crumb">AndroidNotification class</li>
+  </ol>
+  <div class="self-name">AndroidNotification</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="messaging&#47;messaging-library-sidebar.html"
+    data-below-sidebar="messaging&#47;AndroidNotification-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">AndroidNotification</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Represents the Android-specific notification options that can be included in
+<a href="../messaging/AndroidConfig-class.html">AndroidConfig</a>.</p>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="AndroidNotification.new" class="callable">
+          <span class="name"><a href="../messaging/AndroidNotification/AndroidNotification.html">AndroidNotification</a></span><span class="signature">({<span class="parameter" id="-param-title"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">title</span>, </span><span class="parameter" id="-param-body"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">body</span>, </span><span class="parameter" id="-param-icon"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">icon</span>, </span><span class="parameter" id="-param-color"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">color</span>, </span><span class="parameter" id="-param-sound"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">sound</span>, </span><span class="parameter" id="-param-tag"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">tag</span>, </span><span class="parameter" id="-param-imageUrl"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">imageUrl</span>, </span><span class="parameter" id="-param-clickAction"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">clickAction</span>, </span><span class="parameter" id="-param-bodyLocKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">bodyLocKey</span>, </span><span class="parameter" id="-param-bodyLocArgs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">bodyLocArgs</span>, </span><span class="parameter" id="-param-titleLocKey"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">titleLocKey</span>, </span><span class="parameter" id="-param-titleLocArgs"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">titleLocArgs</span>, </span><span class="parameter" id="-param-channelId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">channelId</span>, </span><span class="parameter" id="-param-ticker"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">ticker</span>, </span><span class="parameter" id="-param-sticky"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">sticky</span>, </span><span class="parameter" id="-param-eventTimestamp"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span> <span class="parameter-name">eventTimestamp</span>, </span><span class="parameter" id="-param-localOnly"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">localOnly</span>, </span><span class="parameter" id="-param-priority"><span class="type-annotation"><a href="../messaging/AndroidNotificationPriority.html">AndroidNotificationPriority</a>?</span> <span class="parameter-name">priority</span>, </span><span class="parameter" id="-param-vibrateTimingsMillis"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">vibrateTimingsMillis</span>, </span><span class="parameter" id="-param-defaultVibrateTimings"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">defaultVibrateTimings</span>, </span><span class="parameter" id="-param-defaultSound"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">defaultSound</span>, </span><span class="parameter" id="-param-lightSettings"><span class="type-annotation"><a href="../messaging/LightSettings-class.html">LightSettings</a>?</span> <span class="parameter-name">lightSettings</span>, </span><span class="parameter" id="-param-defaultLightSettings"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">defaultLightSettings</span>, </span><span class="parameter" id="-param-visibility"><span class="type-annotation"><a href="../messaging/AndroidNotificationVisibility.html">AndroidNotificationVisibility</a>?</span> <span class="parameter-name">visibility</span>, </span><span class="parameter" id="-param-notificationCount"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">notificationCount</span>, </span><span class="parameter" id="-param-proxy"><span class="type-annotation"><a href="../messaging/AndroidNotificationProxy.html">AndroidNotificationProxy</a>?</span> <span class="parameter-name">proxy</span></span>})</span>
+        </dt>
+        <dd>
+          Represents the Android-specific notification options that can be included in
+<a href="../messaging/AndroidConfig-class.html">AndroidConfig</a>.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="body" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/body.html">body</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Body of the Android notification. When provided, overrides the body set via
+<code>admin.messaging.Notification</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="bodyLocArgs" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/bodyLocArgs.html">bodyLocArgs</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  An array of resource keys that will be used in place of the format
+specifiers in <code>bodyLocKey</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="bodyLocKey" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/bodyLocKey.html">bodyLocKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Key of the body string in the app's string resource to use to localize the
+body text.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="channelId" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/channelId.html">channelId</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  The Android notification channel ID (new in Android O). The app must create
+a channel with this channel ID before any notification with this channel ID
+can be received. If you don't send this channel ID in the request, or if the
+channel ID provided has not yet been created by the app, FCM uses the channel
+ID specified in the app manifest.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="clickAction" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/clickAction.html">clickAction</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Action associated with a user click on the notification. If specified, an
+activity with a matching Intent Filter is launched when a user clicks on the
+notification.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="color" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/color.html">color</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Notification icon color in <code>#rrggbb</code> format.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultLightSettings" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/defaultLightSettings.html">defaultLightSettings</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  If set to <code>true</code>, use the Android framework's default LED light settings
+for the notification. Default values are specified in <a href="https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/values/config.xml"><code>config.xml</code></a>.
+If <code>default_light_settings</code> is set to <code>true</code> and <code>light_settings</code> is also set,
+the user-specified <code>light_settings</code> is used instead of the default value.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultSound" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/defaultSound.html">defaultSound</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  If set to <code>true</code>, use the Android framework's default sound for the notification.
+Default values are specified in <a href="https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/values/config.xml"><code>config.xml</code></a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultVibrateTimings" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/defaultVibrateTimings.html">defaultVibrateTimings</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  If set to <code>true</code>, use the Android framework's default vibrate pattern for the
+notification. Default values are specified in <a href="https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/values/config.xml"><code>config.xml</code></a>.
+If <code>default_vibrate_timings</code> is set to <code>true</code> and <code>vibrate_timings</code> is also set,
+the default value is used instead of the user-specified <code>vibrate_timings</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="eventTimestamp" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/eventTimestamp.html">eventTimestamp</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/DateTime-class.html">DateTime</a>?</span>
+  
+
+</dt>
+<dd>
+  For notifications that inform users about events with an absolute time reference, sets
+the time that the event in the notification occurred. Notifications
+in the panel are sorted by this time.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="icon" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/icon.html">icon</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Icon resource for the Android notification.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="imageUrl" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/imageUrl.html">imageUrl</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  URL of an image to be displayed in the notification.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="lightSettings" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/lightSettings.html">lightSettings</a></span>
+  <span class="signature">&#8594; <a href="../messaging/LightSettings-class.html">LightSettings</a>?</span>
+  
+
+</dt>
+<dd>
+  Settings to control the notification's LED blinking rate and color if LED is
+available on the device. The total blinking time is controlled by the OS.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="localOnly" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/localOnly.html">localOnly</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  Sets whether or not this notification is relevant only to the current device.
+Some notifications can be bridged to other devices for remote display, such as
+a Wear OS watch. This hint can be set to recommend this notification not be bridged.
+See <a href="https://developer.android.com/training/wearables/notifications/bridger#existing-method-of-preventing-bridging">Wear OS guides</a>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="notificationCount" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/notificationCount.html">notificationCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  Sets the number of items this notification represents. May be displayed as a
+badge count for Launchers that support badging. See <a href="https://developer.android.com/training/notify-user/badges">NotificationBadge</a>.
+For example, this might be useful if you're using just one notification to
+represent multiple new messages but you want the count here to represent
+the number of total new messages. If zero or unspecified, systems
+that support badging use the default, which is to increment a number
+displayed on the long-press menu each time a new notification arrives.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="priority" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/priority.html">priority</a></span>
+  <span class="signature">&#8594; <a href="../messaging/AndroidNotificationPriority.html">AndroidNotificationPriority</a>?</span>
+  
+
+</dt>
+<dd>
+  Sets the relative priority for this notification. Low-priority notifications
+may be hidden from the user in certain situations. Note this priority differs
+from <code>AndroidMessagePriority</code>. This priority is processed by the client after
+the message has been delivered. Whereas <code>AndroidMessagePriority</code> is an FCM concept
+that controls when the message is delivered.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="proxy" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/proxy.html">proxy</a></span>
+  <span class="signature">&#8594; <a href="../messaging/AndroidNotificationProxy.html">AndroidNotificationProxy</a>?</span>
+  
+
+</dt>
+<dd>
+  Sets proxy option for the notification. Proxy can be <code>allow</code>, <code>deny</code>, or
+<code>ifPriorityLowered</code>. This controls whether the notification can be proxied
+to other devices.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sound" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/sound.html">sound</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  File name of the sound to be played when the device receives the
+notification.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="sticky" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/sticky.html">sticky</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span>
+  
+
+</dt>
+<dd>
+  When set to <code>false</code> or unset, the notification is automatically dismissed when
+the user clicks it in the panel. When set to <code>true</code>, the notification persists
+even when the user clicks it.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="tag" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/tag.html">tag</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Notification tag. This is an identifier used to replace existing
+notifications in the notification drawer. If not specified, each request
+creates a new notification.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="ticker" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/ticker.html">ticker</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Sets the "ticker" text, which is sent to accessibility services. Prior to
+API level 21 (Lollipop), sets the text that is displayed in the status bar
+when the notification first arrives.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="title" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/title.html">title</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Title of the Android notification. When provided, overrides the title set via
+<code>admin.messaging.Notification</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="titleLocArgs" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/titleLocArgs.html">titleLocArgs</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  An array of resource keys that will be used in place of the format
+specifiers in <code>titleLocKey</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="titleLocKey" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/titleLocKey.html">titleLocKey</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Key of the title string in the app's string resource to use to localize the
+title text.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="vibrateTimingsMillis" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/vibrateTimingsMillis.html">vibrateTimingsMillis</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Sets the vibration pattern to use. Pass in an array of milliseconds to
+turn the vibrator on or off. The first value indicates the duration to wait before
+turning the vibrator on. The next value indicates the duration to keep the
+vibrator on. Subsequent values alternate between duration to turn the vibrator
+off and to turn the vibrator on. If <code>vibrate_timings</code> is set and <code>default_vibrate_timings</code>
+is set to <code>true</code>, the default value is used instead of the user-specified <code>vibrate_timings</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="visibility" class="property">
+  <span class="name"><a href="../messaging/AndroidNotification/visibility.html">visibility</a></span>
+  <span class="signature">&#8594; <a href="../messaging/AndroidNotificationVisibility.html">AndroidNotificationVisibility</a>?</span>
+  
+
+</dt>
+<dd>
+  Sets the visibility of the notification. Must be either <code>private</code>, <code>public</code>,
+or <code>secret</code>. If unspecified, defaults to <code>private</code>.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">dart_firebase_admin</a></li>
+    <li><a href="../messaging/">messaging</a></li>
+    <li class="self-crumb">AndroidNotification class</li>
+</ol>
+
+    <h5>messaging library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    dart_firebase_admin
+      0.4.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
