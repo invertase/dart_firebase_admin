@@ -24,6 +24,7 @@ class FirebaseSecurityRulesException extends FirebaseAdminException {
 
 const _errorMapping = {
   'ALREADY_EXISTS': FirebaseSecurityRulesErrorCode.alreadyExists,
+  'INVALID_ARGUMENT': FirebaseSecurityRulesErrorCode.invalidArgument,
   'NOT_FOUND': FirebaseSecurityRulesErrorCode.notFound,
   'RESOURCE_EXHAUSTED': FirebaseSecurityRulesErrorCode.resourceExhausted,
   'UNAUTHENTICATED': FirebaseSecurityRulesErrorCode.authenticationError,
