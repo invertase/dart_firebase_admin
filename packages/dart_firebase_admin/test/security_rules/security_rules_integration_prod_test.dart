@@ -6,12 +6,25 @@ import '../mock.dart';
 
 void main() {
   late SecurityRules securityRules;
+  final createdRulesets = <String>[];
 
   setUpAll(registerFallbacks);
 
   setUp(() async {
     final sdk = createApp();
     securityRules = SecurityRules(sdk);
+    createdRulesets.clear();
+  });
+
+  tearDown(() async {
+    // Clean up any rulesets created during tests
+    for (final rulesetName in createdRulesets) {
+      try {
+        await securityRules.deleteRuleset(rulesetName);
+      } catch (_) {
+        // Ignore errors during cleanup
+      }
+    }
   });
 
   const simpleFirestoreContent =
@@ -21,72 +34,89 @@ void main() {
       'service firebase.storage { match /b/{bucket}/o { match /{allPaths=**} { allow read, write: if request.auth != null; } } }';
 
   group('SecurityRules', () {
-    test('ruleset e2e', () async {
-      final ruleset = await securityRules.createRuleset(
-        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
-      );
+    test(
+      'ruleset e2e',
+      () async {
+        final ruleset = await securityRules.createRuleset(
+          RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
+        );
+        createdRulesets.add(ruleset.name);
 
-      final ruleset2 = await securityRules.getRuleset(ruleset.name);
-      expect(ruleset2.name, ruleset.name);
-      expect(ruleset2.createTime, isNotEmpty);
-      expect(ruleset2.source.single.name, 'firestore.rules');
-      expect(ruleset2.source.single.content, simpleFirestoreContent);
+        final ruleset2 = await securityRules.getRuleset(ruleset.name);
+        expect(ruleset2.name, ruleset.name);
+        expect(ruleset2.createTime, isNotEmpty);
+        expect(ruleset2.source.single.name, 'firestore.rules');
+        expect(ruleset2.source.single.content, simpleFirestoreContent);
 
-      await securityRules.deleteRuleset(ruleset.name);
+        await securityRules.deleteRuleset(ruleset.name);
 
-      expect(
-        securityRules.getRuleset(ruleset.name),
-        throwsA(
-          isA<FirebaseSecurityRulesException>().having(
-            (e) => e.code,
-            'code',
-            'security-rules/not-found',
+        expect(
+          securityRules.getRuleset(ruleset.name),
+          throwsA(
+            isA<FirebaseSecurityRulesException>().having(
+              (e) => e.code,
+              'code',
+              'security-rules/not-found',
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+      skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+    );
 
-    test('listRulesetMetadata', () async {
-      final ruleset = await securityRules.createRuleset(
-        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
-      );
-      final ruleset2 = await securityRules.createRuleset(
-        RulesFile(
-          name: 'firestore.rules',
-          content: '/* hello */ $simpleFirestoreContent',
-        ),
-      );
+    test(
+      'listRulesetMetadata',
+      () async {
+        final ruleset = await securityRules.createRuleset(
+          RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
+        );
+        createdRulesets.add(ruleset.name);
 
-      final metadata = await securityRules.listRulesetMetadata(pageSize: 1);
+        final ruleset2 = await securityRules.createRuleset(
+          RulesFile(
+            name: 'firestore.rules',
+            content: '/* hello */ $simpleFirestoreContent',
+          ),
+        );
+        createdRulesets.add(ruleset2.name);
 
-      expect(metadata.rulesets.length, 1);
-      expect(metadata.nextPageToken, isNotNull);
-      expect(metadata.rulesets.single.name, ruleset2.name);
+        final metadata = await securityRules.listRulesetMetadata(pageSize: 1);
 
-      final metadata2 = await securityRules.listRulesetMetadata(
-        pageSize: 1,
-        nextPageToken: metadata.nextPageToken,
-      );
+        expect(metadata.rulesets.length, 1);
+        expect(metadata.nextPageToken, isNotNull);
+        expect(metadata.rulesets.single.name, ruleset2.name);
 
-      expect(metadata2.rulesets.length, 1);
-      expect(metadata2.rulesets.single.name, isNot(ruleset2.name));
-      expect(metadata2.rulesets.single.name, ruleset.name);
-    });
+        final metadata2 = await securityRules.listRulesetMetadata(
+          pageSize: 1,
+          nextPageToken: metadata.nextPageToken,
+        );
 
-    test('firestore release flow', () async {
-      final ruleset = await securityRules.createRuleset(
-        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
-      );
+        expect(metadata2.rulesets.length, 1);
+        expect(metadata2.rulesets.single.name, isNot(ruleset2.name));
+        expect(metadata2.rulesets.single.name, ruleset.name);
+      },
+      skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+    );
 
-      final before = await securityRules.getFirestoreRuleset();
+    test(
+      'firestore release flow',
+      () async {
+        final ruleset = await securityRules.createRuleset(
+          RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
+        );
+        createdRulesets.add(ruleset.name);
 
-      expect(before.name, isNot(ruleset.name));
+        final before = await securityRules.getFirestoreRuleset();
 
-      await securityRules.releaseFirestoreRuleset(ruleset.name);
+        expect(before.name, isNot(ruleset.name));
 
-      final after = await securityRules.getFirestoreRuleset();
-      expect(after.name, ruleset.name);
-    });
+        await securityRules.releaseFirestoreRuleset(ruleset.name);
+
+        final after = await securityRules.getFirestoreRuleset();
+        expect(after.name, ruleset.name);
+      },
+      skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+    );
 
     test(
       'storage release flow',
@@ -98,6 +128,7 @@ void main() {
           simpleStorageContent,
           bucket,
         );
+        createdRulesets.add(newRuleset.name);
 
         expect(newRuleset.name, isNotEmpty);
         expect(newRuleset.source.length, 1);
@@ -129,6 +160,8 @@ void main() {
             ),
           );
         },
+        skip:
+            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -145,6 +178,8 @@ void main() {
             ),
           );
         },
+        skip:
+            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -166,6 +201,8 @@ void main() {
             ),
           );
         },
+        skip:
+            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -183,6 +220,8 @@ void main() {
             ),
           );
         },
+        skip:
+            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -199,6 +238,8 @@ void main() {
             ),
           );
         },
+        skip:
+            hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
     });
   });
