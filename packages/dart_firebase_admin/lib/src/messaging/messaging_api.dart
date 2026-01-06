@@ -101,7 +101,7 @@ class TopicMessage extends Message {
 
 /// A message targeting a condition.
 ///
-/// See [Send messages to topics](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-topics).
+/// See [Send to topic conditions](https://firebase.google.com/docs/cloud-messaging/send-topic-messages).
 class ConditionMessage extends Message {
   ConditionMessage({
     required this.condition,
