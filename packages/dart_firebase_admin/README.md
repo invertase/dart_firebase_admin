@@ -53,7 +53,7 @@ class:
 final app = FirebaseApp.initializeApp();
 ```
 
-This will automatically initalize the SDK with [Google Application Default Credentials](https://cloud.google.com/docs/authentication/production#providing_credentials_to_your_application). Because default credentials lookup is fully automated in Google environments, with no need to supply environment variables or other configuration, this way of initializing the SDK is strongly recommended for applications running in Google environments such as Firebase App Hosting, Cloud Run, App Engine, and Cloud Functions for Firebase.
+This will automatically initialize the SDK with [Google Application Default Credentials](https://cloud.google.com/docs/authentication/production#providing_credentials_to_your_application). Because default credentials lookup is fully automated in Google environments, with no need to supply environment variables or other configuration, this way of initializing the SDK is strongly recommended for applications running in Google environments such as Firebase App Hosting, Cloud Run, App Engine, and Cloud Functions for Firebase.
 
 ### Initialize the SDK in non-Google environments
 
@@ -81,19 +81,19 @@ Once you have initialized an app instance with a credential, you can use any of 
 final app = FirebaseApp.initializeApp();
 
 // Getting a user by id
-final user = await app.auth.getUser("<user-id>");
+final user = await app.auth().getUser("<user-id>");
 
 // Deleting a user by id
-await app.auth.deleteUser("<user-id>");
+await app.auth().deleteUser("<user-id>");
 
 // Listing users
-final result = await app.auth.listUsers(maxResults: 10, pageToken: null);
+final result = await app.auth().listUsers(maxResults: 10, pageToken: null);
 final users = result.users;
 final nextPageToken = result.pageToken;
 
 // Verifying an ID token (e.g. from request headers) from a client application
 final idToken = req.headers['Authorization'].split(' ')[1];
-final decodedToken = await app.auth.verifyIdToken(idToken, checkRevoked: true);
+final decodedToken = await app.auth().verifyIdToken(idToken, checkRevoked: true);
 final userId = decodedToken.uid;
 ```
 
@@ -103,11 +103,11 @@ final userId = decodedToken.uid;
 final app = FirebaseApp.initializeApp();
 
 // Verifying an app check token
-final response = await app.appCheck.verifyToken("<appCheckToken>");
+final response = await app.appCheck().verifyToken("<appCheckToken>");
 print("App ID: ${response.appId}");
 
 // Creating a new app check token
-final result = await app.appCheck.createToken("<app-id>");
+final result = await app.appCheck().createToken("<app-id>");
 print("Token: ${result.token}");
 ```
 
@@ -117,20 +117,20 @@ print("Token: ${result.token}");
 final app = FirebaseApp.initializeApp();
 
 // Getting a document
-final snapshot = await app.firestore.collection("users").doc("<user-id>").get();
+final snapshot = await app.firestore().collection("users").doc("<user-id>").get();
 print(snapshot.data());
 
 // Querying a collection
-final snapshot = await app.firestore.collection("users")
+final snapshot = await app.firestore().collection("users")
   .where('age', .greaterThan, 18)
   .orderBy('age', descending: true)
   .get();
 print(snapshot.docs())
 
 // Running a transaction (e.g. adding credits to a balance)
-final balance = await app.firestore.runTransaction((tsx) async {
+final balance = await app.firestore().runTransaction((tsx) async {
   // Get a reference to a user document
-  final ref = app.firestore.collection("users").doc("<user-id>");
+  final ref = app.firestore().collection("users").doc("<user-id>");
 
   // Get the document data
   final snapshot = await tsx.get(ref);
@@ -156,7 +156,7 @@ final balance = await app.firestore.runTransaction((tsx) async {
 final app = FirebaseApp.initializeApp();
 
 // Get a task queue by name
-final queue = app.functions.taskQueue("<task-name>");
+final queue = app.functions().taskQueue("<task-name>");
 
 // Add data to the queue
 await queue.enqueue({ "hello": "world" });
@@ -168,7 +168,7 @@ await queue.enqueue({ "hello": "world" });
 final app = FirebaseApp.initializeApp();
 
 // Send a message to a specific device
-await app.messaging.send(
+await app.messaging().send(
   TokenMessage(
     token: "<device-token>",
     data: { "hello": "world" },
@@ -177,7 +177,7 @@ await app.messaging.send(
 );
 
 // Send a message to a topic
-await app.messaging.send(
+await app.messaging().send(
   TopicMessage(
     topic: "<topic-name>",
     data: { "hello": "world" },
@@ -186,7 +186,7 @@ await app.messaging.send(
 );
 
 // Send a message to a conditional statement
-await app.messaging.send(
+await app.messaging().send(
   ConditionMessage(
     condition: "\'stock-GOOG\' in topics || \'industry-tech\' in topics",
     data: { "hello": "world" },
