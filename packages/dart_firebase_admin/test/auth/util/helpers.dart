@@ -64,7 +64,7 @@ Auth createAuthForTest({bool requireEmulator = true}) {
       },
     );
 
-    auth = Auth(app);
+    auth = Auth.internal(app);
 
     addTearDown(() async {
       await cleanup(auth);

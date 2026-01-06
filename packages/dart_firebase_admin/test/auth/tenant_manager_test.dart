@@ -20,7 +20,7 @@ void main() {
     group('authForTenant', () {
       test('returns TenantAwareAuth instance for valid tenant ID', () {
         final app = _createMockApp();
-        final auth = Auth(app);
+        final auth = Auth.internal(app);
         final tenantManager = auth.tenantManager;
 
         final tenantAuth = tenantManager.authForTenant('test-tenant-id');
@@ -31,7 +31,7 @@ void main() {
 
       test('returns cached instance for same tenant ID', () {
         final app = _createMockApp();
-        final auth = Auth(app);
+        final auth = Auth.internal(app);
         final tenantManager = auth.tenantManager;
 
         final tenantAuth1 = tenantManager.authForTenant('test-tenant-id');
@@ -42,7 +42,7 @@ void main() {
 
       test('returns different instances for different tenant IDs', () {
         final app = _createMockApp();
-        final auth = Auth(app);
+        final auth = Auth.internal(app);
         final tenantManager = auth.tenantManager;
 
         final tenantAuth1 = tenantManager.authForTenant('tenant-1');
@@ -55,7 +55,7 @@ void main() {
 
       test('throws on empty tenant ID', () {
         final app = _createMockApp();
-        final auth = Auth(app);
+        final auth = Auth.internal(app);
         final tenantManager = auth.tenantManager;
 
         expect(
@@ -67,7 +67,7 @@ void main() {
 
     test('tenantManager getter returns same instance', () {
       final app = _createMockApp();
-      final auth = Auth(app);
+      final auth = Auth.internal(app);
 
       final tenantManager1 = auth.tenantManager;
       final tenantManager2 = auth.tenantManager;
@@ -480,7 +480,7 @@ void main() {
 
     test('has correct tenant ID', () {
       final app = _createMockApp();
-      final auth = Auth(app);
+      final auth = Auth.internal(app);
       final tenantManager = auth.tenantManager;
 
       final tenantAuth = tenantManager.authForTenant('test-tenant-id');
@@ -490,7 +490,7 @@ void main() {
 
     test('is instance of BaseAuth', () {
       final app = _createMockApp();
-      final auth = Auth(app);
+      final auth = Auth.internal(app);
       final tenantManager = auth.tenantManager;
 
       final tenantAuth = tenantManager.authForTenant('test-tenant-id');
@@ -963,7 +963,7 @@ void main() {
       test('throws when idToken is empty', () async {
         const tenantId = 'test-tenant-id';
         final app = _createMockApp();
-        final auth = Auth(app);
+        final auth = Auth.internal(app);
         final tenantManager = auth.tenantManager;
         final tenantAuth = tenantManager.authForTenant(tenantId);
 

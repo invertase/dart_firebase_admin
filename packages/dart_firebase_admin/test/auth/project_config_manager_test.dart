@@ -8,7 +8,7 @@ void main() {
   group('ProjectConfigManager', () {
     test('projectConfigManager getter returns same instance', () {
       final app = _createMockApp();
-      final auth = Auth(app);
+      final auth = Auth.internal(app);
 
       final projectConfigManager1 = auth.projectConfigManager;
       final projectConfigManager2 = auth.projectConfigManager;
@@ -18,7 +18,7 @@ void main() {
 
     test('projectConfigManager is instance of ProjectConfigManager', () {
       final app = _createMockApp();
-      final auth = Auth(app);
+      final auth = Auth.internal(app);
 
       final projectConfigManager = auth.projectConfigManager;
 
@@ -27,7 +27,7 @@ void main() {
 
     test('can access getProjectConfig method', () {
       final app = _createMockApp();
-      final auth = Auth(app);
+      final auth = Auth.internal(app);
       final projectConfigManager = auth.projectConfigManager;
 
       // Method should exist and be callable (will fail at runtime without server)
@@ -36,7 +36,7 @@ void main() {
 
     test('can access updateProjectConfig method', () {
       final app = _createMockApp();
-      final auth = Auth(app);
+      final auth = Auth.internal(app);
       final projectConfigManager = auth.projectConfigManager;
 
       // Method should exist and be callable (will fail at runtime without server)
@@ -72,8 +72,8 @@ void main() {
           ),
         );
 
-        final auth1 = Auth(app1);
-        final auth2 = Auth(app2);
+        final auth1 = Auth.internal(app1);
+        final auth2 = Auth.internal(app2);
 
         final projectConfigManager1 = auth1.projectConfigManager;
         final projectConfigManager2 = auth2.projectConfigManager;

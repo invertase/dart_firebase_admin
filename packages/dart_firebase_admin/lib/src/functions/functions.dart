@@ -27,16 +27,6 @@ const _emulatedServiceAccountDefault = 'emulated-service-acct@email.com';
 /// those tasks before they execute.
 class Functions implements FirebaseService {
   /// Creates or returns the cached Functions instance for the given app.
-  factory Functions(FirebaseApp app) {
-    return app.getOrInitService(
-      FirebaseServiceType.functions.name,
-      Functions._,
-    );
-  }
-
-  /// An interface for interacting with Cloud Functions Task Queues.
-  Functions._(this.app) : _requestHandler = FunctionsRequestHandler(app);
-
   @internal
   factory Functions.internal(
     FirebaseApp app, {
@@ -44,11 +34,12 @@ class Functions implements FirebaseService {
   }) {
     return app.getOrInitService(
       FirebaseServiceType.functions.name,
-      (app) => Functions._internal(app, requestHandler: requestHandler),
+      (app) => Functions._(app, requestHandler: requestHandler),
     );
   }
 
-  Functions._internal(this.app, {FunctionsRequestHandler? requestHandler})
+  /// An interface for interacting with Cloud Functions Task Queues.
+  Functions._(this.app, {FunctionsRequestHandler? requestHandler})
     : _requestHandler = requestHandler ?? FunctionsRequestHandler(app);
 
   /// The app associated with this Functions instance.

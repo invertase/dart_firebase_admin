@@ -61,7 +61,7 @@ void main() {
 
         // Use unique app name so we get a new app with the mock client
         final app = createApp(client: clientMock, name: 'test-$messagingError');
-        final handler = Auth(app);
+        final handler = Auth.internal(app);
 
         await expectLater(
           () => handler.getUser('123'),

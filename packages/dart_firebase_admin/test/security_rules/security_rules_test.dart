@@ -72,12 +72,12 @@ void main() {
   group('SecurityRules', () {
     group('Constructor', () {
       test('should not throw given a valid app', () {
-        expect(() => SecurityRules(app), returnsNormally);
+        expect(() => SecurityRules.internal(app), returnsNormally);
       });
 
       test('should return the same instance for the same app', () {
-        final instance1 = SecurityRules(app);
-        final instance2 = SecurityRules(app);
+        final instance1 = SecurityRules.internal(app);
+        final instance2 = SecurityRules.internal(app);
 
         expect(identical(instance1, instance2), isTrue);
       });

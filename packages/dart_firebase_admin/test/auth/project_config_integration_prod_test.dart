@@ -37,7 +37,7 @@ void main() {
     await runZoned(() async {
       final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
       final app = FirebaseApp.initializeApp(name: appName);
-      final testAuth = Auth(app);
+      final testAuth = Auth.internal(app);
 
       try {
         originalConfig = await testAuth.projectConfigManager.getProjectConfig();
@@ -63,7 +63,7 @@ void main() {
     await runZoned(() async {
       final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
       final app = FirebaseApp.initializeApp(name: appName);
-      final testAuth = Auth(app);
+      final testAuth = Auth.internal(app);
 
       try {
         await testAuth.projectConfigManager.updateProjectConfig(
@@ -100,7 +100,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final projectConfigManager = testAuth.projectConfigManager;
 
             try {
@@ -143,7 +143,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final projectConfigManager = testAuth.projectConfigManager;
 
             try {
@@ -205,7 +205,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final projectConfigManager = testAuth.projectConfigManager;
 
             try {
@@ -259,7 +259,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final projectConfigManager = testAuth.projectConfigManager;
 
             try {
@@ -322,7 +322,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final projectConfigManager = testAuth.projectConfigManager;
 
             try {
@@ -376,7 +376,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final projectConfigManager = testAuth.projectConfigManager;
 
             try {
@@ -425,7 +425,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final projectConfigManager = testAuth.projectConfigManager;
 
             try {

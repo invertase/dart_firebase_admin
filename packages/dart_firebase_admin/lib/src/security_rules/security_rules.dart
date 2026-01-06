@@ -57,23 +57,19 @@ class Ruleset extends RulesetMetadata {
 /// The Firebase `SecurityRules` service interface.
 class SecurityRules implements FirebaseService {
   /// Creates or returns the cached SecurityRules instance for the given app.
-  factory SecurityRules(FirebaseApp app) {
+  @internal
+  factory SecurityRules.internal(
+    FirebaseApp app, {
+    SecurityRulesRequestHandler? requestHandler,
+  }) {
     return app.getOrInitService(
       FirebaseServiceType.securityRules.name,
-      SecurityRules._,
+      (app) => SecurityRules._(app, requestHandler: requestHandler),
     );
   }
 
-  SecurityRules._(this.app)
-    : _requestHandler = SecurityRulesRequestHandler(app);
-
-  /// Internal constructor for testing purposes.
-  /// Allows injection of a custom request handler.
-  @visibleForTesting
-  SecurityRules.internal(
-    this.app, {
-    required SecurityRulesRequestHandler requestHandler,
-  }) : _requestHandler = requestHandler;
+  SecurityRules._(this.app, {SecurityRulesRequestHandler? requestHandler})
+    : _requestHandler = requestHandler ?? SecurityRulesRequestHandler(app);
 
   static const _cloudFirestore = 'cloud.firestore';
   static const _firebaseStorage = 'firebase.storage';

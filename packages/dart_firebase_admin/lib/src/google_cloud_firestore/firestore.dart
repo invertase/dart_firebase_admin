@@ -41,7 +41,8 @@ class Firestore implements FirebaseService {
   ///
   /// Note: Settings can only be specified on the first call. Subsequent calls
   /// will return the cached instance and ignore any new settings.
-  factory Firestore(FirebaseApp app, {Settings? settings}) {
+  @internal
+  factory Firestore.internal(FirebaseApp app, {Settings? settings}) {
     return app.getOrInitService(
       FirebaseServiceType.firestore.name,
       (app) => Firestore._(app, settings: settings),

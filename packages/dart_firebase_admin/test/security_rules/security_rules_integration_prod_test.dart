@@ -12,7 +12,7 @@ void main() {
 
   setUp(() async {
     final sdk = createApp();
-    securityRules = SecurityRules(sdk);
+    securityRules = SecurityRules.internal(sdk);
     createdRulesets.clear();
   });
 

@@ -43,7 +43,7 @@ Functions createFunctionsForTest() {
 
   final app = createApp(name: appName);
 
-  return Functions(app);
+  return Functions.internal(app);
 }
 
 /// Creates a Functions instance for unit testing with a mock HTTP client.
@@ -63,7 +63,7 @@ Functions createFunctionsWithMockClient(AuthClient mockClient) {
     await app.close();
   });
 
-  return Functions(app);
+  return Functions.internal(app);
 }
 
 /// Creates a Functions instance for unit testing with a mock request handler.

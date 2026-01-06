@@ -57,12 +57,12 @@ void main() {
   group('AppCheck', () {
     group('Constructor', () {
       test('should not throw given a valid app', () {
-        expect(() => AppCheck(app), returnsNormally);
+        expect(() => AppCheck.internal(app), returnsNormally);
       });
 
       test('should return the same instance for the same app', () {
-        final instance1 = AppCheck(app);
-        final instance2 = AppCheck(app);
+        final instance1 = AppCheck.internal(app);
+        final instance2 = AppCheck.internal(app);
 
         expect(identical(instance1, instance2), isTrue);
       });
@@ -70,7 +70,7 @@ void main() {
 
     group('app property', () {
       test('returns the app from the constructor', () {
-        final appCheck = AppCheck(app);
+        final appCheck = AppCheck.internal(app);
 
         expect(appCheck.app, equals(app));
         expect(appCheck.app.name, equals('app-check-test'));
@@ -339,7 +339,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final appCheck = AppCheck(app);
+            final appCheck = AppCheck.internal(app);
 
             try {
               final token = await appCheck.createToken(
@@ -374,7 +374,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final appCheck = AppCheck(app);
+            final appCheck = AppCheck.internal(app);
 
             try {
               final token = await appCheck.createToken(
@@ -405,7 +405,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final appCheck = AppCheck(app);
+            final appCheck = AppCheck.internal(app);
 
             try {
               final token = await appCheck.createToken(

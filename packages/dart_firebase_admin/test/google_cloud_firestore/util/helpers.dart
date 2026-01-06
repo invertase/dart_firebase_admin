@@ -142,7 +142,10 @@ Future<Firestore> createFirestore({Settings? settings}) async {
   // Use unique app name for each test to avoid interference
   final appName = 'firestore-test-${DateTime.now().microsecondsSinceEpoch}';
 
-  final firestore = Firestore(createApp(name: appName), settings: settings);
+  final firestore = Firestore.internal(
+    createApp(name: appName),
+    settings: settings,
+  );
 
   addTearDown(() async {
     try {

@@ -19,15 +19,6 @@ part 'app_check_request_handler.dart';
 
 class AppCheck implements FirebaseService {
   /// Creates or returns the cached AppCheck instance for the given app.
-  factory AppCheck(FirebaseApp app) {
-    return app.getOrInitService(FirebaseServiceType.appCheck.name, AppCheck._);
-  }
-
-  AppCheck._(this.app)
-    : _requestHandler = AppCheckRequestHandler(app),
-      _tokenGenerator = AppCheckTokenGenerator(app.createCryptoSigner()),
-      _appCheckTokenVerifier = AppCheckTokenVerifier(app);
-
   @internal
   factory AppCheck.internal(
     FirebaseApp app, {
@@ -37,7 +28,7 @@ class AppCheck implements FirebaseService {
   }) {
     return app.getOrInitService(
       FirebaseServiceType.appCheck.name,
-      (app) => AppCheck._internal(
+      (app) => AppCheck._(
         app,
         requestHandler: requestHandler,
         tokenGenerator: tokenGenerator,
@@ -46,7 +37,7 @@ class AppCheck implements FirebaseService {
     );
   }
 
-  AppCheck._internal(
+  AppCheck._(
     this.app, {
     AppCheckRequestHandler? requestHandler,
     AppCheckTokenGenerator? tokenGenerator,

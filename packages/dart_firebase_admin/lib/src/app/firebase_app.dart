@@ -151,13 +151,13 @@ class FirebaseApp {
   /// Gets the App Check service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  AppCheck get appCheck =>
-      getOrInitService(FirebaseServiceType.appCheck.name, AppCheck.new);
+  AppCheck appCheck() =>
+      getOrInitService(FirebaseServiceType.appCheck.name, AppCheck.internal);
 
   /// Gets the Auth service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  Auth get auth => getOrInitService(FirebaseServiceType.auth.name, Auth.new);
+  Auth auth() => getOrInitService(FirebaseServiceType.auth.name, Auth.internal);
 
   /// Gets the Firestore service instance for this app.
   ///
@@ -165,28 +165,28 @@ class FirebaseApp {
   /// Optional [settings] are only applied when creating a new instance.
   Firestore firestore({Settings? settings}) => getOrInitService(
     FirebaseServiceType.firestore.name,
-    (app) => Firestore(app, settings: settings),
+    (app) => Firestore.internal(app, settings: settings),
   );
 
   /// Gets the Messaging service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  Messaging get messaging =>
-      getOrInitService(FirebaseServiceType.messaging.name, Messaging.new);
+  Messaging messaging() =>
+      getOrInitService(FirebaseServiceType.messaging.name, Messaging.internal);
 
   /// Gets the Security Rules service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  SecurityRules get securityRules => getOrInitService(
+  SecurityRules securityRules() => getOrInitService(
     FirebaseServiceType.securityRules.name,
-    SecurityRules.new,
+    SecurityRules.internal,
   );
 
   /// Gets the Functions service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  Functions get functions =>
-      getOrInitService(FirebaseServiceType.functions.name, Functions.new);
+  Functions functions() =>
+      getOrInitService(FirebaseServiceType.functions.name, Functions.internal);
 
   /// Closes this app and cleans up all associated resources.
   ///

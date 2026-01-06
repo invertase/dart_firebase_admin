@@ -48,7 +48,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -115,7 +115,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -181,7 +181,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -243,7 +243,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -316,7 +316,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -368,7 +368,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -441,7 +441,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -537,7 +537,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant;
@@ -651,7 +651,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth(app);
+            final testAuth = Auth.internal(app);
             final tenantManager = testAuth.tenantManager;
 
             Tenant? tenant1;

@@ -95,7 +95,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock);
-        final handler = Messaging(app);
+        final handler = Messaging.internal(app);
 
         await expectLater(
           () => handler.send(TokenMessage(token: '123')),
@@ -131,7 +131,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock);
-        final handler = Messaging(app);
+        final handler = Messaging.internal(app);
 
         await expectLater(
           () => handler.send(TokenMessage(token: '123')),

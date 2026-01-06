@@ -19,17 +19,6 @@ const _fmcMaxBatchSize = 500;
 /// An interface for interacting with the Firebase Cloud Messaging service.
 class Messaging implements FirebaseService {
   /// Creates or returns the cached Messaging instance for the given app.
-  factory Messaging(FirebaseApp app) {
-    return app.getOrInitService(
-      FirebaseServiceType.messaging.name,
-      Messaging._,
-    );
-  }
-
-  /// An interface for interacting with the Firebase Cloud Messaging service.
-  Messaging._(this.app)
-    : _requestHandler = FirebaseMessagingRequestHandler(app);
-
   @internal
   factory Messaging.internal(
     FirebaseApp app, {
@@ -37,14 +26,13 @@ class Messaging implements FirebaseService {
   }) {
     return app.getOrInitService(
       FirebaseServiceType.messaging.name,
-      (app) => Messaging._internal(app, requestHandler: requestHandler),
+      (app) => Messaging._(app, requestHandler: requestHandler),
     );
   }
 
-  Messaging._internal(
-    this.app, {
-    FirebaseMessagingRequestHandler? requestHandler,
-  }) : _requestHandler = requestHandler ?? FirebaseMessagingRequestHandler(app);
+  /// An interface for interacting with the Firebase Cloud Messaging service.
+  Messaging._(this.app, {FirebaseMessagingRequestHandler? requestHandler})
+    : _requestHandler = requestHandler ?? FirebaseMessagingRequestHandler(app);
 
   /// The app associated with this Messaging instance.
   @override

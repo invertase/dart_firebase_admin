@@ -31,7 +31,7 @@ void main() {
     final app = createApp(
       name: 'messaging-integration-${DateTime.now().microsecondsSinceEpoch}',
     );
-    messaging = Messaging(app);
+    messaging = Messaging.internal(app);
   });
 
   group(

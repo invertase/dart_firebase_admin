@@ -294,29 +294,29 @@ void main() {
       });
 
       test('appCheck returns AppCheck instance', () {
-        final appCheck = app.appCheck;
+        final appCheck = app.appCheck();
         expect(appCheck, isA<AppCheck>());
         expect(identical(appCheck.app, app), isTrue);
       });
 
       test('appCheck returns cached instance', () {
-        final appCheck1 = app.appCheck;
-        final appCheck2 = app.appCheck;
+        final appCheck1 = app.appCheck();
+        final appCheck2 = app.appCheck();
         expect(identical(appCheck1, appCheck2), isTrue);
-        expect(identical(appCheck2, AppCheck(app)), isTrue);
+        expect(identical(appCheck2, AppCheck.internal(app)), isTrue);
       });
 
       test('auth returns Auth instance', () {
-        final auth = app.auth;
+        final auth = app.auth();
         expect(auth, isA<Auth>());
         expect(identical(auth.app, app), isTrue);
       });
 
       test('auth returns cached instance', () {
-        final auth1 = app.auth;
-        final auth2 = app.auth;
+        final auth1 = app.auth();
+        final auth2 = app.auth();
         expect(identical(auth1, auth2), isTrue);
-        expect(identical(auth2, Auth(app)), isTrue);
+        expect(identical(auth2, Auth.internal(app)), isTrue);
       });
 
       test('firestore returns Firestore instance', () {
@@ -329,7 +329,7 @@ void main() {
         final firestore1 = app.firestore();
         final firestore2 = app.firestore();
         expect(identical(firestore1, firestore2), isTrue);
-        expect(identical(firestore2, Firestore(app)), isTrue);
+        expect(identical(firestore2, Firestore.internal(app)), isTrue);
       });
 
       test('firestore returns cached instance even if different '
@@ -344,27 +344,27 @@ void main() {
       });
 
       test('messaging returns Messaging instance', () {
-        final messaging = app.messaging;
+        final messaging = app.messaging();
         expect(messaging, isA<Messaging>());
         expect(identical(messaging.app, app), isTrue);
       });
 
       test('messaging returns cached instance', () {
-        final messaging1 = app.messaging;
-        final messaging2 = app.messaging;
+        final messaging1 = app.messaging();
+        final messaging2 = app.messaging();
         expect(identical(messaging1, messaging2), isTrue);
-        expect(identical(messaging1, Messaging(app)), isTrue);
+        expect(identical(messaging1, Messaging.internal(app)), isTrue);
       });
 
       test('securityRules returns SecurityRules instance', () {
-        final securityRules = app.securityRules;
+        final securityRules = app.securityRules();
         expect(securityRules, isA<SecurityRules>());
         expect(identical(securityRules.app, app), isTrue);
       });
 
       test('securityRules returns cached instance', () {
-        final securityRules1 = app.securityRules;
-        final securityRules2 = app.securityRules;
+        final securityRules1 = app.securityRules();
+        final securityRules2 = app.securityRules();
         expect(identical(securityRules1, securityRules2), isTrue);
       });
 
@@ -372,7 +372,7 @@ void main() {
         await app.close();
 
         expect(
-          () => app.auth,
+          () => app.auth(),
           throwsA(
             isA<FirebaseAppException>().having(
               (e) => e.code,
@@ -421,7 +421,7 @@ void main() {
         );
 
         // Initialize a service
-        app.auth;
+        app.auth();
 
         await app.close();
 

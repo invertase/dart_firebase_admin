@@ -15,7 +15,7 @@ void main() {
 
   setUp(() {
     final sdk = createApp();
-    auth = Auth(sdk);
+    auth = Auth.internal(sdk);
   });
 
   setUpAll(registerFallbacks);
@@ -33,7 +33,7 @@ void main() {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
             final app = FirebaseApp.initializeApp(name: appName);
-            final authProd = Auth(app);
+            final authProd = Auth.internal(app);
 
             try {
               // Helper function to exchange custom token for ID token
@@ -124,7 +124,7 @@ void main() {
           );
 
           final app = createApp(client: clientMock, name: 'test-reset-link');
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final link = await testAuth.generatePasswordResetLink(
             'test@example.com',
@@ -162,7 +162,7 @@ void main() {
             client: clientMock,
             name: 'test-reset-link-settings',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishReset',
@@ -239,7 +239,7 @@ void main() {
             client: clientMock,
             name: 'test-reset-link-with-linkdomain',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishReset',
@@ -278,7 +278,7 @@ void main() {
           );
 
           final app = createApp(client: clientMock, name: 'test-verify-link');
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final link = await testAuth.generateEmailVerificationLink(
             'test@example.com',
@@ -310,7 +310,7 @@ void main() {
             client: clientMock,
             name: 'test-verify-link-settings',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishVerification',
@@ -348,7 +348,7 @@ void main() {
             client: clientMock,
             name: 'test-verify-link-with-linkdomain',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishVerification',
@@ -432,7 +432,7 @@ void main() {
           });
 
           final app = createApp(client: clientMock, name: 'test-signin-link');
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishSignIn',
@@ -471,7 +471,7 @@ void main() {
             client: clientMock,
             name: 'test-signin-link-with-linkdomain',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishSignIn',
@@ -510,7 +510,7 @@ void main() {
             client: clientMock,
             name: 'test-signin-link-settings',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishSignIn',
@@ -585,7 +585,7 @@ void main() {
             client: clientMock,
             name: 'test-change-email-link-basic',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final link = await testAuth.generateVerifyAndChangeEmailLink(
             'old@example.com',
@@ -623,7 +623,7 @@ void main() {
             client: clientMock,
             name: 'test-change-email-link',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishChangeEmail',
@@ -666,7 +666,7 @@ void main() {
             client: clientMock,
             name: 'test-change-email-link-with-linkdomain',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final actionCodeSettings = ActionCodeSettings(
             url: 'https://myapp.example.com/finishChangeEmail',
@@ -794,7 +794,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-set-claims');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await testAuth.setCustomUserClaims(
           'test-uid',
@@ -847,7 +847,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-clear-claims');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await testAuth.setCustomUserClaims('test-uid');
 
@@ -876,7 +876,7 @@ void main() {
           client: clientMock,
           name: 'test-set-claims-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.setCustomUserClaims(
@@ -912,7 +912,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-revoke-tokens');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await testAuth.revokeRefreshTokens('test-uid');
 
@@ -968,7 +968,7 @@ void main() {
           client: clientMock,
           name: 'test-revoke-tokens-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.revokeRefreshTokens('test-uid'),
@@ -997,7 +997,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-delete-user');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await testAuth.deleteUser('test-uid');
 
@@ -1048,7 +1048,7 @@ void main() {
           client: clientMock,
           name: 'test-delete-user-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.deleteUser('non-existent-uid'),
@@ -1073,7 +1073,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-delete-users');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.deleteUsers(['uid1', 'uid2', 'uid3']);
 
@@ -1107,7 +1107,7 @@ void main() {
           client: clientMock,
           name: 'test-delete-users-errors',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.deleteUsers(['uid1', 'uid2', 'uid3']);
 
@@ -1166,7 +1166,7 @@ void main() {
           client: clientMock,
           name: 'test-delete-users-multiple-errors',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.deleteUsers([
           'uid1',
@@ -1220,7 +1220,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-list-users');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.listUsers();
 
@@ -1247,7 +1247,7 @@ void main() {
           client: clientMock,
           name: 'test-list-users-pagination',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await testAuth.listUsers(maxResults: 10, pageToken: 'page-token');
 
@@ -1284,7 +1284,7 @@ void main() {
           client: clientMock,
           name: 'test-list-users-default',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.listUsers();
 
@@ -1309,7 +1309,7 @@ void main() {
           client: clientMock,
           name: 'test-list-users-empty',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.listUsers(maxResults: 500);
 
@@ -1340,7 +1340,7 @@ void main() {
           client: clientMock,
           name: 'test-list-users-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.listUsers(maxResults: 500),
@@ -1386,7 +1386,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-get-users');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.getUsers([
           UidIdentifier(uid: 'uid1'),
@@ -1425,7 +1425,7 @@ void main() {
             client: clientMock,
             name: 'test-get-users-not-found',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final notFoundIds = [UidIdentifier(uid: 'id-that-doesnt-exist')];
           final result = await testAuth.getUsers(notFoundIds);
@@ -1518,7 +1518,7 @@ void main() {
             client: clientMock,
             name: 'test-get-users-various-types',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final identifiers = [
             UidIdentifier(uid: 'uid1'),
@@ -1577,7 +1577,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-get-user');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final user = await testAuth.getUser(testUid);
 
@@ -1636,7 +1636,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-get-user-error');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.getUser(testUid),
@@ -1686,7 +1686,7 @@ void main() {
           client: clientMock,
           name: 'test-get-user-by-email',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final user = await testAuth.getUserByEmail(testEmail);
 
@@ -1748,7 +1748,7 @@ void main() {
           client: clientMock,
           name: 'test-get-user-by-email-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.getUserByEmail(testEmail),
@@ -1797,7 +1797,7 @@ void main() {
           client: clientMock,
           name: 'test-get-user-by-phone',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final user = await testAuth.getUserByPhoneNumber(testPhoneNumber);
 
@@ -1858,7 +1858,7 @@ void main() {
           client: clientMock,
           name: 'test-get-user-by-phone-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.getUserByPhoneNumber(testPhoneNumber),
@@ -1908,7 +1908,7 @@ void main() {
           client: clientMock,
           name: 'test-get-user-by-provider-uid',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final user = await testAuth.getUserByProviderUid(
           providerId: providerId,
@@ -1979,7 +1979,7 @@ void main() {
             client: clientMock,
             name: 'test-get-user-by-phone-provider',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           final user = await testAuth.getUserByProviderUid(
             providerId: 'phone',
@@ -2023,7 +2023,7 @@ void main() {
           client: clientMock,
           name: 'test-get-user-by-email-provider',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final user = await testAuth.getUserByProviderUid(
           providerId: 'email',
@@ -2059,7 +2059,7 @@ void main() {
           client: clientMock,
           name: 'test-get-user-by-provider-uid-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.getUserByProviderUid(
@@ -2093,7 +2093,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-import-users');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final users = [
           UserImportRecord(uid: 'uid1', email: 'user1@example.com'),
@@ -2132,7 +2132,7 @@ void main() {
           client: clientMock,
           name: 'test-import-users-partial',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final users = [
           UserImportRecord(uid: 'uid1', email: 'user1@example.com'),
@@ -2170,7 +2170,7 @@ void main() {
           client: clientMock,
           name: 'test-import-users-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final users = [
           UserImportRecord(uid: 'uid1', email: 'user1@example.com'),
@@ -2226,7 +2226,7 @@ void main() {
           client: clientMock,
           name: 'test-list-oidc-configs',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.listProviderConfigs(
           AuthProviderConfigFilter.oidc(
@@ -2284,7 +2284,7 @@ void main() {
           client: clientMock,
           name: 'test-list-saml-configs',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.listProviderConfigs(
           AuthProviderConfigFilter.saml(),
@@ -2314,7 +2314,7 @@ void main() {
           client: clientMock,
           name: 'test-list-configs-empty',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final result = await testAuth.listProviderConfigs(
           AuthProviderConfigFilter.oidc(),
@@ -2347,7 +2347,7 @@ void main() {
           client: clientMock,
           name: 'test-list-configs-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.listProviderConfigs(AuthProviderConfigFilter.oidc()),
@@ -2403,7 +2403,7 @@ void main() {
           client: clientMock,
           name: 'test-update-oidc-config',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final config = await testAuth.updateProviderConfig(
           'oidc.provider',
@@ -2457,7 +2457,7 @@ void main() {
           client: clientMock,
           name: 'test-update-saml-config',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final config = await testAuth.updateProviderConfig(
           'saml.provider',
@@ -2499,7 +2499,7 @@ void main() {
           client: clientMock,
           name: 'test-update-oidc-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.updateProviderConfig(
@@ -2537,7 +2537,7 @@ void main() {
           client: clientMock,
           name: 'test-update-saml-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.updateProviderConfig(
@@ -2594,7 +2594,7 @@ void main() {
         });
 
         final app = createApp(client: clientMock, name: 'test-update-user');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final user = await testAuth.updateUser(
           testUid,
@@ -2665,7 +2665,7 @@ void main() {
           client: clientMock,
           name: 'test-update-user-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.updateUser(
@@ -3053,7 +3053,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-session-cookie');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final sessionCookie = await testAuth.createSessionCookie(
           'id-token',
@@ -3119,7 +3119,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-min-duration');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         // 5 minutes (300000 ms) is the minimum allowed
         final sessionCookie = await testAuth.createSessionCookie(
@@ -3147,7 +3147,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-max-duration');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         // 2 weeks (1209600000 ms) is the maximum allowed
         final sessionCookie = await testAuth.createSessionCookie(
@@ -3179,7 +3179,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-backend-error');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           () => testAuth.createSessionCookie(
@@ -3234,7 +3234,7 @@ void main() {
         });
 
         final app = createApp(client: clientMock, name: 'test-create-user');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final user = await testAuth.createUser(
           CreateRequest(email: 'test@example.com', displayName: 'Test User'),
@@ -3270,7 +3270,7 @@ void main() {
           client: clientMock,
           name: 'test-create-user-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.createUser(CreateRequest(email: 'existing@example.com')),
@@ -3310,7 +3310,7 @@ void main() {
           client: clientMock,
           name: 'test-create-user-not-found',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.createUser(CreateRequest(email: 'test@example.com')),
@@ -3364,7 +3364,7 @@ void main() {
             client: clientMock,
             name: 'test-create-user-get-error',
           );
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           await expectLater(
             testAuth.createUser(CreateRequest(email: 'test@example.com')),
@@ -3404,7 +3404,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-delete-oidc');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await testAuth.deleteProviderConfig('oidc.provider');
 
@@ -3424,7 +3424,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-delete-saml');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await testAuth.deleteProviderConfig('saml.provider');
 
@@ -3456,7 +3456,7 @@ void main() {
           client: clientMock,
           name: 'test-delete-oidc-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.deleteProviderConfig('oidc.provider'),
@@ -3491,7 +3491,7 @@ void main() {
           client: clientMock,
           name: 'test-delete-saml-error',
         );
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.deleteProviderConfig('saml.provider'),
@@ -3541,7 +3541,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-get-oidc');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final config = await testAuth.getProviderConfig('oidc.provider');
 
@@ -3587,7 +3587,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-get-saml');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final config = await testAuth.getProviderConfig('saml.provider');
 
@@ -3620,7 +3620,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-get-oidc-error');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.getProviderConfig('oidc.provider'),
@@ -3652,7 +3652,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-get-saml-error');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         await expectLater(
           testAuth.getProviderConfig('saml.provider'),
@@ -3710,7 +3710,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-create-oidc');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final config = await testAuth.createProviderConfig(
           OIDCAuthProviderConfig(
@@ -3765,7 +3765,7 @@ void main() {
         );
 
         final app = createApp(client: clientMock, name: 'test-create-saml');
-        final testAuth = Auth(app);
+        final testAuth = Auth.internal(app);
 
         final config = await testAuth.createProviderConfig(
           SAMLAuthProviderConfig(

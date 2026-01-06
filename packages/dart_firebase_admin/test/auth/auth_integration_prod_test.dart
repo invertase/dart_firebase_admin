@@ -43,7 +43,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           UserRecord? user;
           try {
@@ -87,7 +87,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           // Helper function to exchange custom token for ID token
           Future<String> getIdTokenFromCustomToken(String customToken) async {
@@ -157,7 +157,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           // Helper function to exchange custom token for ID token
           Future<String> getIdTokenFromCustomToken(String customToken) async {
@@ -244,7 +244,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           // Helper function to exchange custom token for ID token
           Future<String> getIdTokenFromCustomToken(String customToken) async {
@@ -309,7 +309,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           try {
             await expectLater(
@@ -344,7 +344,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           UserRecord? user1;
           UserRecord? user2;
@@ -396,7 +396,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           UserRecord? user1;
           try {
@@ -442,7 +442,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           try {
             final oidcConfig = OIDCAuthProviderConfig(
@@ -487,7 +487,7 @@ void main() {
         return runZoned(() async {
           final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
           final app = FirebaseApp.initializeApp(name: appName);
-          final testAuth = Auth(app);
+          final testAuth = Auth.internal(app);
 
           try {
             final samlConfig = SAMLAuthProviderConfig(

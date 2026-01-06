@@ -9,7 +9,7 @@ dependencies:
     git:
       url: https://github.com/invertase/dart_firebase_admin.git
       path: packages/dart_firebase_admin
-      ref: messaging/apis
+      ref: next
   shelf: ^1.4.2
   shelf_router: ^1.1.2
 
@@ -18,7 +18,7 @@ dependency_overrides:
     git:
       url: https://github.com/invertase/dart_firebase_admin.git
       path: packages/googleapis_auth_utils
-      ref: messaging/apis
+      ref: next
 
 dev_dependencies:
   http: ^1.2.2

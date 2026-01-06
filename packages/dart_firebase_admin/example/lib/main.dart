@@ -1,6 +1,5 @@
 import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/functions.dart';
 import 'package:dart_firebase_admin/messaging.dart';
 
@@ -32,7 +31,7 @@ Future<void> main() async {
 Future<void> authExample(FirebaseApp admin) async {
   print('\n### Auth Example ###\n');
 
-  final auth = Auth(admin);
+  final auth = admin.auth();
 
   UserRecord? user;
   try {
@@ -62,7 +61,7 @@ Future<void> authExample(FirebaseApp admin) async {
 Future<void> firestoreExample(FirebaseApp admin) async {
   print('\n### Firestore Example ###\n');
 
-  final firestore = Firestore(admin);
+  final firestore = admin.firestore();
 
   try {
     final collection = firestore.collection('users');
@@ -80,8 +79,7 @@ Future<void> firestoreExample(FirebaseApp admin) async {
 Future<void> projectConfigExample(FirebaseApp admin) async {
   print('\n### Project Config Example ###\n');
 
-  final auth = Auth(admin);
-  final projectConfigManager = auth.projectConfigManager;
+  final projectConfigManager = admin.auth().projectConfigManager;
 
   try {
     // Get current project configuration
@@ -156,8 +154,7 @@ Future<void> projectConfigExample(FirebaseApp admin) async {
 Future<void> tenantExample(FirebaseApp admin) async {
   print('\n### Tenant Example ###\n');
 
-  final auth = Auth(admin);
-  final tenantManager = auth.tenantManager;
+  final tenantManager = admin.auth().tenantManager;
 
   String? createdTenantId;
 
@@ -246,7 +243,7 @@ Future<void> tenantExample(FirebaseApp admin) async {
 Future<void> messagingExample(FirebaseApp admin) async {
   print('\n### Messaging Example ###\n');
 
-  final messaging = Messaging(admin);
+  final messaging = admin.messaging();
 
   // Example 1: Send a message to a topic
   try {
@@ -402,7 +399,7 @@ Future<void> messagingExample(FirebaseApp admin) async {
 Future<void> functionsExample(FirebaseApp admin) async {
   print('\n### Functions Example ###\n');
 
-  final functions = Functions(admin);
+  final functions = admin.functions();
 
   // Get a task queue reference
   // The function name should match an existing Cloud Function or queue name

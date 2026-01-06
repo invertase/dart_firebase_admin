@@ -615,7 +615,7 @@ void main() {
             );
 
             try {
-              final functions = Functions(app);
+              final functions = Functions.internal(app);
               final queue = functions.taskQueue('helloWorld');
               await queue.enqueue({'data': 'test'});
 
@@ -666,7 +666,7 @@ void main() {
           );
 
           try {
-            final functions = Functions(app);
+            final functions = Functions.internal(app);
             final queue = functions.taskQueue('helloWorld');
             await queue.enqueue({'data': 'test'});
 
@@ -711,7 +711,7 @@ void main() {
         );
 
         try {
-          final functions = Functions(app);
+          final functions = Functions.internal(app);
           final queue = functions.taskQueue('helloWorld');
           await queue.enqueue({'data': 'test'});
 
@@ -753,7 +753,7 @@ void main() {
         );
 
         try {
-          final functions = Functions(app);
+          final functions = Functions.internal(app);
           final queue = functions.taskQueue(
             'locations/us-west1/functions/myFunc',
           );
@@ -796,7 +796,7 @@ void main() {
         );
 
         try {
-          final functions = Functions(app);
+          final functions = Functions.internal(app);
           final queue = functions.taskQueue(
             'projects/custom-project/locations/europe-west1/functions/euroFunc',
           );
@@ -843,7 +843,7 @@ void main() {
         );
 
         try {
-          final functions = Functions(app);
+          final functions = Functions.internal(app);
           final queue = functions.taskQueue(
             'helloWorld',
             extensionId: 'my-extension',
@@ -877,7 +877,7 @@ void main() {
         );
 
         try {
-          final functions = Functions(app);
+          final functions = Functions.internal(app);
           final queue = functions.taskQueue(
             'helloWorld',
             extensionId: 'image-resize',
@@ -926,7 +926,7 @@ void main() {
       );
 
       try {
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('helloWorld');
         final options = TaskOptions(schedule: AbsoluteDelivery(scheduleTime));
         await queue.enqueue({'data': 'test'}, options);
@@ -964,7 +964,7 @@ void main() {
 
       try {
         final now = DateTime.now().toUtc();
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('helloWorld');
         final options = TaskOptions(schedule: DelayDelivery(delaySeconds));
         await queue.enqueue({'data': 'test'}, options);
@@ -1006,7 +1006,7 @@ void main() {
       );
 
       try {
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('helloWorld');
         final options = TaskOptions(
           dispatchDeadlineSeconds: dispatchDeadlineSeconds,
@@ -1042,7 +1042,7 @@ void main() {
       );
 
       try {
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('helloWorld');
         await queue.enqueue(testData);
 
@@ -1080,7 +1080,7 @@ void main() {
       );
 
       try {
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('helloWorld');
         final options = TaskOptions(id: taskId);
         await queue.enqueue({'data': 'test'}, options);
@@ -1122,7 +1122,7 @@ void main() {
       );
 
       try {
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('helloWorld');
 
         expect(
@@ -1165,7 +1165,7 @@ void main() {
       );
 
       try {
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('nonExistentQueue');
 
         expect(
@@ -1204,7 +1204,7 @@ void main() {
       );
 
       try {
-        final functions = Functions(app);
+        final functions = Functions.internal(app);
         final queue = functions.taskQueue('helloWorld');
 
         // Should NOT throw - 404 on delete is expected for non-existent tasks
