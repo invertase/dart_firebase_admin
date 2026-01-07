@@ -17,6 +17,7 @@ import 'backoff.dart';
 import 'status_code.dart';
 import 'util.dart';
 
+part 'aggregate.dart';
 part 'collection_group.dart';
 part 'convert.dart';
 part 'document.dart';
@@ -29,7 +30,20 @@ part 'firestore_exception.dart';
 part 'firestore_http_client.dart';
 part 'geo_point.dart';
 part 'path.dart';
-part 'reference.dart';
+part 'reference/constants.dart';
+part 'reference/query_util.dart';
+part 'reference/filter_internal.dart';
+part 'reference/composite_filter_internal.dart';
+part 'reference/field_filter_internal.dart';
+part 'reference/field_order.dart';
+part 'reference/query_options.dart';
+part 'reference/query.dart';
+part 'reference/collection_reference.dart';
+part 'reference/document_reference.dart';
+part 'reference/query_snapshot.dart';
+part 'reference/types.dart';
+part 'reference/aggregate_query.dart';
+part 'reference/aggregate_query_snapshot.dart';
 part 'serializer.dart';
 part 'timestamp.dart';
 part 'transaction.dart';
@@ -53,7 +67,7 @@ class Firestore implements FirebaseService {
     : _settings = settings ?? Settings();
 
   /// Returns the Database ID for this Firestore instance.
-  String get _databaseId => _settings.databaseId ?? '(default)';
+  String get databaseId => _settings.databaseId ?? '(default)';
 
   /// Gets the project ID for synchronous operations.
   ///
@@ -84,7 +98,7 @@ class Firestore implements FirebaseService {
 
   /// The Database ID, using the format 'projects/${projectId}/databases/$_databaseId'
   String get _formattedDatabaseName {
-    return 'projects/$_projectId/databases/$_databaseId';
+    return 'projects/$_projectId/databases/$databaseId';
   }
 
   @override
@@ -97,7 +111,6 @@ class Firestore implements FirebaseService {
   // TODO batch
   // TODO bulkWriter
   // TODO bundle
-  // TODO getAll
   // TODO recursiveDelete
 
   /// Fetches the root collections that are associated with this Firestore
