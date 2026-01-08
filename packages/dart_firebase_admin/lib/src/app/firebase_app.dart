@@ -163,10 +163,11 @@ class FirebaseApp {
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
   /// Optional [settings] are only applied when creating a new instance.
-  Firestore firestore({Settings? settings}) => getOrInitService(
-    FirebaseServiceType.firestore.name,
-    (app) => Firestore.internal(app, settings: settings),
-  );
+  Firestore firestore({googleapis_firestore.Settings? settings}) =>
+      getOrInitService(
+        FirebaseServiceType.firestore.name,
+        (app) => Firestore.internal(app, settings: settings),
+      );
 
   /// Gets the Messaging service instance for this app.
   ///

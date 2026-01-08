@@ -6,9 +6,10 @@ import 'package:dart_firebase_admin/src/app_check/app_check.dart';
 import 'package:dart_firebase_admin/src/app_check/token_generator.dart';
 import 'package:dart_firebase_admin/src/app_check/token_verifier.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:test/test.dart';
+import 'package:test/expect.dart';
+import 'package:test/scaffolding.dart';
 
-import '../firestore/util/helpers.dart';
+import '../helpers.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
 

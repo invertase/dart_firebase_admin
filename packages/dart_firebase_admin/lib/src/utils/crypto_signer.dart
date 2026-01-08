@@ -1,5 +1,5 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:meta/meta.dart';
 
 import '../../dart_firebase_admin.dart';
 

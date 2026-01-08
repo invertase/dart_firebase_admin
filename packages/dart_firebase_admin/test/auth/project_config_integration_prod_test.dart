@@ -21,7 +21,7 @@ import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:test/test.dart';
 
-import '../firestore/util/helpers.dart';
+import '../helpers.dart';
 
 void main() {
   ProjectConfig? originalConfig;

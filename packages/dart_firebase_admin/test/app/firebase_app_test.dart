@@ -6,6 +6,8 @@ import 'package:dart_firebase_admin/security_rules.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
 import 'package:dart_firebase_admin/src/auth.dart';
+import 'package:googleapis_firestore/googleapis_firestore.dart'
+    as googleapis_firestore;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -335,10 +337,10 @@ void main() {
       test('firestore returns cached instance even if different '
           'settings specified', () {
         final firestore1 = app.firestore(
-          settings: Settings(databaseId: 'test-db1'),
+          settings: const googleapis_firestore.Settings(databaseId: 'test-db1'),
         );
         final firestore2 = app.firestore(
-          settings: Settings(databaseId: 'test-db2'),
+          settings: const googleapis_firestore.Settings(databaseId: 'test-db2'),
         );
         expect(identical(firestore1, firestore2), isTrue);
       });

@@ -10,7 +10,7 @@ import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../firestore/util/helpers.dart';
+import '../helpers.dart';
 import '../mock_service_account.dart';
 import 'util/helpers.dart';
 

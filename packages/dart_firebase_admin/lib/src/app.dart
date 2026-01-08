@@ -11,6 +11,8 @@ import 'package:googleapis/identitytoolkit/v3.dart' as auth3;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart'
     as googleapis_auth_utils;
+import 'package:googleapis_firestore/googleapis_firestore.dart'
+    as googleapis_firestore;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 

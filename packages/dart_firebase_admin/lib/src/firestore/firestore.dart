@@ -1,54 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math' as math;
 
-import 'package:collection/collection.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:googleapis/firestore/v1.dart' as firestore1;
-import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
-import 'package:http/http.dart';
-import 'package:intl/intl.dart';
+import 'package:googleapis_firestore/googleapis_firestore.dart'
+    as googleapis_firestore;
+import 'package:meta/meta.dart';
 
 import '../app.dart';
-import '../object_utils.dart';
-import 'backoff.dart';
-import 'status_code.dart';
-import 'util.dart';
 
-part 'aggregate.dart';
-part 'collection_group.dart';
-part 'convert.dart';
-part 'document.dart';
-part 'document_change.dart';
-part 'document_reader.dart';
-part 'field_value.dart';
-part 'filter.dart';
-part 'firestore.freezed.dart';
-part 'firestore_exception.dart';
-part 'firestore_http_client.dart';
-part 'geo_point.dart';
-part 'path.dart';
-part 'reference/constants.dart';
-part 'reference/query_util.dart';
-part 'reference/filter_internal.dart';
-part 'reference/composite_filter_internal.dart';
-part 'reference/field_filter_internal.dart';
-part 'reference/field_order.dart';
-part 'reference/query_options.dart';
-part 'reference/query.dart';
-part 'reference/collection_reference.dart';
-part 'reference/document_reference.dart';
-part 'reference/query_snapshot.dart';
-part 'reference/types.dart';
-part 'reference/aggregate_query.dart';
-part 'reference/aggregate_query_snapshot.dart';
-part 'serializer.dart';
-part 'timestamp.dart';
-part 'transaction.dart';
-part 'types.dart';
-part 'write_batch.dart';
+// part 'firestore_exception.dart';
 
 class Firestore implements FirebaseService {
   /// Creates or returns the cached Firestore instance for the given app.
@@ -56,57 +14,23 @@ class Firestore implements FirebaseService {
   /// Note: Settings can only be specified on the first call. Subsequent calls
   /// will return the cached instance and ignore any new settings.
   @internal
-  factory Firestore.internal(FirebaseApp app, {Settings? settings}) {
+  factory Firestore.internal(
+    FirebaseApp app, {
+    googleapis_firestore.Settings? settings,
+  }) {
     return app.getOrInitService(
       FirebaseServiceType.firestore.name,
       (app) => Firestore._(app, settings: settings),
     );
   }
 
-  Firestore._(this.app, {Settings? settings})
-    : _settings = settings ?? Settings();
-
-  /// Returns the Database ID for this Firestore instance.
-  String get databaseId => _settings.databaseId ?? '(default)';
-
-  /// Gets the project ID for synchronous operations.
-  ///
-  /// Returns the cached project ID from async discovery if available.
-  /// Otherwise, falls back to explicitly specified project ID from:
-  /// 1. app.options.projectId
-  /// 2. ServiceAccountCredential.projectId
-  /// 3. GOOGLE_CLOUD_PROJECT or GCLOUD_PROJECT environment variables
-  ///
-  /// This matches Node.js Firestore behavior where explicit project IDs
-  /// are immediately available for synchronous operations like serialization.
-  ///
-  /// Throws if project ID is not available from any source.
-  String get _projectId {
-    final cached = _client.cachedProjectId;
-    if (cached != null) return cached;
-
-    // Fall back to explicitly set project ID (from app options, env vars, or credentials)
-    final explicit = app.projectId;
-    if (explicit != null) return explicit;
-
-    throw StateError(
-      'Project ID has not been discovered yet. '
-      'Initialize the SDK with service account credentials, set project ID '
-      'as an app option, or set the GOOGLE_CLOUD_PROJECT environment variable.',
-    );
-  }
-
-  /// The Database ID, using the format 'projects/${projectId}/databases/$_databaseId'
-  String get _formattedDatabaseName {
-    return 'projects/$_projectId/databases/$databaseId';
+  Firestore._(this.app, {googleapis_firestore.Settings? settings}) {
+    _delegate = googleapis_firestore.Firestore(settings: settings);
   }
 
   @override
   final FirebaseApp app;
-  final Settings _settings;
-
-  late final _client = FirestoreHttpClient(app);
-  late final _serializer = _Serializer(this);
+  late final googleapis_firestore.Firestore _delegate;
 
   // TODO batch
   // TODO bulkWriter
@@ -125,72 +49,40 @@ class Firestore implements FirebaseService {
   ///   }
   /// });
   /// ```
-  Future<List<CollectionReference<DocumentData>>> listCollections() {
-    final rootDocument = DocumentReference._(
-      firestore: this,
-      path: _ResourcePath.empty,
-      converter: _jsonConverter,
-    );
+  Future<
+    List<
+      googleapis_firestore.CollectionReference<
+        googleapis_firestore.DocumentData
+      >
+    >
+  >
+  listCollections() => _delegate.listCollections();
 
-    return rootDocument.listCollections();
-  }
-
-  /// Gets a [DocumentReference] instance that
+  /// Gets a [googleapis_firestore.DocumentReference] instance that
   /// refers to the document at the specified path.
   ///
   /// - [documentPath]: A slash-separated path to a document.
   ///
-  /// Returns The [DocumentReference] instance.
+  /// Returns The [googleapis_firestore.DocumentReference] instance.
   ///
   /// ```dart
   /// final documentRef = firestore.doc('collection/document');
   /// print('Path of document is ${documentRef.path}');
   /// ```
-  DocumentReference<DocumentData> doc(String documentPath) {
-    _validateResourcePath('documentPath', documentPath);
+  googleapis_firestore.DocumentReference<googleapis_firestore.DocumentData> doc(
+    String documentPath,
+  ) => _delegate.doc(documentPath);
 
-    final path = _ResourcePath.empty._append(documentPath);
-    if (!path.isDocument) {
-      throw ArgumentError.value(
-        documentPath,
-        'documentPath',
-        'Value for argument "documentPath" must point to a document, but was "$documentPath". '
-            'Your path does not contain an even number of components.',
-      );
-    }
-
-    return DocumentReference._(
-      firestore: this,
-      path: path,
-      converter: _jsonConverter,
-    );
-  }
-
-  /// Gets a [CollectionReference] instance
+  /// Gets a [googleapis_firestore.CollectionReference] instance
   /// that refers to the collection at the specified path.
   ///
   /// - [collectionPath]: A slash-separated path to a collection.
   ///
-  /// Returns [CollectionReference] A reference to the new
+  /// Returns [googleapis_firestore.CollectionReference] A reference to the new
   /// sub-collection.
-  CollectionReference<DocumentData> collection(String collectionPath) {
-    _validateResourcePath('collectionPath', collectionPath);
-
-    final path = _ResourcePath.empty._append(collectionPath);
-    if (!path.isCollection) {
-      throw ArgumentError.value(
-        collectionPath,
-        'collectionPath',
-        'Value for argument "collectionPath" must point to a collection, but was '
-            '"$collectionPath". Your path does not contain an odd number of components.',
-      );
-    }
-
-    return CollectionReference._(
-      firestore: this,
-      path: path,
-      converter: _jsonConverter,
-    );
+  googleapis_firestore.CollectionReference<googleapis_firestore.DocumentData>
+  collection(String collectionPath) {
+    throw UnimplementedError();
   }
 
   /// Creates and returns a new Query that includes all documents in the
@@ -210,44 +102,17 @@ class Firestore implements FirebaseService {
   /// final snapshot = await query.get();
   /// print('Found ${snapshot.size} documents.');
   /// ```
-  CollectionGroup<DocumentData> collectionGroup(String collectionId) {
-    if (collectionId.contains('/')) {
-      throw ArgumentError.value(
-        collectionId,
-        'collectionId',
-        'Invalid collectionId "$collectionId". Collection IDs must not contain "/".',
-      );
-    }
-
-    return CollectionGroup._(
-      collectionId,
-      firestore: this,
-      converter: _jsonConverter,
-    );
+  googleapis_firestore.CollectionGroup<googleapis_firestore.DocumentData>
+  collectionGroup(String collectionId) {
+    throw UnimplementedError();
   }
 
   // Retrieves multiple documents from Firestore.
-  Future<List<DocumentSnapshot<T>>> getAll<T>(
-    List<DocumentReference<T>> documents, [
-    ReadOptions? readOptions,
+  Future<List<googleapis_firestore.DocumentSnapshot<T>>> getAll<T>(
+    List<googleapis_firestore.DocumentReference<T>> documents, [
+    googleapis_firestore.ReadOptions? readOptions,
   ]) async {
-    if (documents.isEmpty) {
-      throw ArgumentError.value(
-        documents,
-        'documents',
-        'must not be an empty array.',
-      );
-    }
-
-    final fieldMask = _parseFieldMask(readOptions);
-
-    final reader = _DocumentReader(
-      firestore: this,
-      documents: documents,
-      fieldMask: fieldMask,
-    );
-
-    return reader.get();
+    throw UnimplementedError();
   }
 
   /// Executes the given updateFunction and commits the changes applied within
@@ -272,82 +137,14 @@ class Firestore implements FirebaseService {
   /// Transactions that are not committed within than 270 seconds are also
   /// aborted. Any remaining locks are released when a transaction times out.
   Future<T> runTransaction<T>(
-    TransactionHandler<T> updateFuntion, {
-    TransactionOptions? transactionOptions,
+    googleapis_firestore.TransactionHandler<T> updateFunction, {
+    googleapis_firestore.TransactionOptions? transactionOptions,
   }) {
-    if (transactionOptions != null) {}
-
-    final transaction = Transaction(this, transactionOptions);
-
-    return transaction._runTransaction(updateFuntion);
+    throw UnimplementedError();
   }
 
   @override
   Future<void> delete() async {
     // Close HTTP client if we created it (emulator mode)
-    // In production mode, we use app.client which is closed by the app
-    if (Environment.isFirestoreEmulatorEnabled()) {
-      try {
-        final client = await _client._client;
-        client.close();
-      } catch (_) {
-        // Ignore errors if client wasn't initialized
-      }
-    }
   }
-}
-
-class SettingsCredentials {
-  SettingsCredentials({this.clientEmail, this.privateKey});
-
-  final String? clientEmail;
-  final String? privateKey;
-}
-
-/// Settings used to directly configure a `Firestore` instance.
-@freezed
-class Settings with _$Settings {
-  /// Settings used to directly configure a `Firestore` instance.
-  factory Settings({
-    /// The database name. If omitted, the default database will be used.
-    String? databaseId,
-
-    /// Whether to use `BigInt` for integer types when deserializing Firestore
-    /// Documents. Regardless of magnitude, all integer values are returned as
-    /// `BigInt` to match the precision of the Firestore backend. Floating point
-    /// numbers continue to use JavaScript's `number` type.
-    bool? useBigInt,
-  }) = _Settings;
-}
-
-sealed class TransactionOptions {
-  bool get readOnly;
-
-  int get maxAttempts;
-}
-
-class ReadOnlyTransactionOptions extends TransactionOptions {
-  ReadOnlyTransactionOptions({Timestamp? readTime}) : _readTime = readTime;
-  @override
-  bool readOnly = true;
-
-  @override
-  int get maxAttempts => 1;
-
-  Timestamp? get readTime => _readTime;
-
-  final Timestamp? _readTime;
-}
-
-class ReadWriteTransactionOptions extends TransactionOptions {
-  ReadWriteTransactionOptions({int maxAttempts = 5})
-    : _maxAttempts = maxAttempts;
-
-  final int _maxAttempts;
-
-  @override
-  bool readOnly = false;
-
-  @override
-  int get maxAttempts => _maxAttempts;
 }

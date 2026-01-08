@@ -21,7 +21,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
-import '../firestore/util/helpers.dart';
+import '../helpers.dart';
 import '../mock.dart';
 import 'util/helpers.dart';
 
