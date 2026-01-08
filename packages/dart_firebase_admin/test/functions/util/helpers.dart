@@ -3,7 +3,7 @@ import 'package:dart_firebase_admin/src/app.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:test/test.dart';
 
-import '../../google_cloud_firestore/util/helpers.dart';
+import '../../firestore/util/helpers.dart';
 
 /// Validates that Cloud Tasks emulator environment variable is set.
 ///

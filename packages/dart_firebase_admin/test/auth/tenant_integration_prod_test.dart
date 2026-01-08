@@ -30,7 +30,7 @@ import 'package:googleapis/identitytoolkit/v1.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
-import '../google_cloud_firestore/util/helpers.dart';
+import '../firestore/util/helpers.dart';
 
 const _uid = Uuid();
 

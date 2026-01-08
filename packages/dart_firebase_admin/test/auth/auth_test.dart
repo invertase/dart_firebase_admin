@@ -7,7 +7,7 @@ import 'package:googleapis/identitytoolkit/v1.dart';
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import '../google_cloud_firestore/util/helpers.dart';
+import '../firestore/util/helpers.dart';
 import '../mock.dart';
 
 void main() {

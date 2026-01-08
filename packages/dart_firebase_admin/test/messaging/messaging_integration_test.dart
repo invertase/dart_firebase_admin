@@ -12,7 +12,7 @@
 import 'package:dart_firebase_admin/src/messaging/messaging.dart';
 import 'package:test/test.dart';
 
-import '../google_cloud_firestore/util/helpers.dart';
+import '../firestore/util/helpers.dart';
 
 // Properly formatted but fake FCM registration token (same approach as Node.js SDK)
 // This token has the correct format but won't actually deliver messages.

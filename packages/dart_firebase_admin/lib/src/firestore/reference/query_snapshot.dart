@@ -1,5 +1,6 @@
 part of '../firestore.dart';
 
+@immutable
 class QuerySnapshot<T> {
   QuerySnapshot._({
     required this.docs,

@@ -1,5 +1,6 @@
 part of '../firestore.dart';
 
+@immutable
 base class Query<T> {
   const Query._({
     required this.firestore,

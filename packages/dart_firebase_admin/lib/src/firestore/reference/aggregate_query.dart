@@ -1,5 +1,6 @@
 part of '../firestore.dart';
 
+@immutable
 class AggregateQuery {
   const AggregateQuery._({required this.query, required this.aggregations});
 

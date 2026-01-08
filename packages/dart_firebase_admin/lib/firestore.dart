@@ -1,4 +1,4 @@
-export 'src/google_cloud_firestore/firestore.dart'
+export 'src/firestore/firestore.dart'
     hide
         $SettingsCopyWith,
         ApiMapValue,

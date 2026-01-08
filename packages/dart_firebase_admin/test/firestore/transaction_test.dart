@@ -5,7 +5,7 @@
 import 'dart:core';
 import 'dart:math';
 import 'package:dart_firebase_admin/firestore.dart';
-import 'package:dart_firebase_admin/src/google_cloud_firestore/status_code.dart';
+import 'package:dart_firebase_admin/src/firestore/status_code.dart';
 import 'package:test/test.dart';
 import 'util/helpers.dart' as helpers;
 

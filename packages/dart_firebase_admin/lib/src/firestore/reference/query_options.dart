@@ -1,5 +1,6 @@
 part of '../firestore.dart';
 
+@immutable
 class _QueryCursor {
   const _QueryCursor({required this.before, required this.values});
 

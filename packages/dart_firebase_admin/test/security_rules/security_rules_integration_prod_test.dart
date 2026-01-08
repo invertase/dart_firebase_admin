@@ -1,7 +1,7 @@
 import 'package:dart_firebase_admin/security_rules.dart';
 import 'package:test/test.dart';
 
-import '../google_cloud_firestore/util/helpers.dart';
+import '../firestore/util/helpers.dart';
 import '../mock.dart';
 
 void main() {

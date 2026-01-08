@@ -8,7 +8,7 @@ import 'package:dart_firebase_admin/src/app_check/token_verifier.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../google_cloud_firestore/util/helpers.dart';
+import '../firestore/util/helpers.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
 
