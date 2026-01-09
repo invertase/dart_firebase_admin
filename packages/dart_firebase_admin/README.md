@@ -114,6 +114,9 @@ print("Token: ${result.token}");
 ### Firestore
 
 ```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:googleapis_firestore/googleapis_firestore.dart';
+
 final app = FirebaseApp.initializeApp();
 
 // Getting a document
@@ -121,11 +124,11 @@ final snapshot = await app.firestore().collection("users").doc("<user-id>").get(
 print(snapshot.data());
 
 // Querying a collection
-final snapshot = await app.firestore().collection("users")
-  .where('age', .greaterThan, 18)
+final querySnapshot = await app.firestore().collection("users")
+  .where('age', WhereFilter.greaterThan, 18)
   .orderBy('age', descending: true)
   .get();
-print(snapshot.docs())
+print(querySnapshot.docs);
 
 // Running a transaction (e.g. adding credits to a balance)
 final balance = await app.firestore().runTransaction((tsx) async {
@@ -136,13 +139,13 @@ final balance = await app.firestore().runTransaction((tsx) async {
   final snapshot = await tsx.get(ref);
 
   // Get the users current balance (or 0 if it doesn't exist)
-  final currentBalance = snapshot.exists() ? snapshot.data()?['balanace'] ?? 0 : 0;
+  final currentBalance = snapshot.exists ? snapshot.data()?['balance'] ?? 0 : 0;
 
   // Add 10 credits to the users balance
   final newBalance = currentBalance + 10;
 
   // Update the document within the transaction
-  await tsx.update(ref, {
+  tsx.update(ref, {
     'balance': newBalance,
   });
 
