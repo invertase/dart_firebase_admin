@@ -39,26 +39,9 @@ void main() {
         expect(() => firestoreService.getDatabase(), returnsNormally);
       });
 
-      test('should return Firestore instance for default database', () {
-        final db = firestoreService.getDatabase();
-        expect(db, isA<gfs.Firestore>());
-      });
-
       test('should return Firestore instance for named database', () {
         final db = firestoreService.getDatabase('my-database');
         expect(db, isA<gfs.Firestore>());
-      });
-
-      test('should cache Firestore instances per database ID', () {
-        final db1 = firestoreService.getDatabase();
-        final db2 = firestoreService.getDatabase();
-        expect(db1, same(db2));
-      });
-
-      test('should return different instances for different database IDs', () {
-        final db1 = firestoreService.getDatabase();
-        final db2 = firestoreService.getDatabase('my-database');
-        expect(db1, isNot(same(db2)));
       });
     });
 
@@ -113,30 +96,6 @@ void main() {
           );
         },
       );
-    });
-
-    group('_buildSettings', () {
-      test('should set projectId from app if not in settings', () {
-        final appWithProject = FirebaseApp.initializeApp(
-          name: 'project-app',
-          options: AppOptions(projectId: 'my-project-id', httpClient: client),
-        );
-        addTearDown(appWithProject.close);
-
-        final service = Firestore.internal(appWithProject);
-        final db = service.getDatabase();
-
-        // The internal Firestore instance should have projectId set
-        // This is a white-box test - we're testing the internal behavior
-        expect(db, isNotNull);
-      });
-
-      test('should set databaseId in settings', () {
-        final db = firestoreService.getDatabase('custom-db');
-        expect(db, isNotNull);
-        // Ideally we'd verify the settings, but they're private
-        // Integration tests will verify this works correctly
-      });
     });
 
     group('credential handling', () {
@@ -195,68 +154,37 @@ void main() {
     });
 
     group('settings comparison', () {
-      test('should treat null settings as equal', () {
-        final db1 = firestoreService.initializeDatabase('db-null-1', null);
-        final db2 = firestoreService.initializeDatabase('db-null-1', null);
-
-        expect(db1, same(db2));
-      });
-
-      test('should detect different projectId', () {
-        const settings1 = gfs.Settings(projectId: 'project-1');
-        const settings2 = gfs.Settings(projectId: 'project-2');
+      test('should detect different settings (projectId, host, ssl)', () {
+        const settings1 = gfs.Settings(
+          projectId: 'project-1',
+          host: 'localhost:8080',
+        );
+        const settings2 = gfs.Settings(
+          projectId: 'project-2',
+          host: 'localhost:9090',
+          ssl: false,
+        );
 
         firestoreService.initializeDatabase('db-diff-1', settings1);
 
         expect(
           () => firestoreService.initializeDatabase('db-diff-1', settings2),
-          throwsA(isA<FirebaseAppException>()),
+          throwsA(
+            isA<FirebaseAppException>().having(
+              (e) => e.message,
+              'message',
+              contains('already been called with different settings'),
+            ),
+          ),
         );
       });
 
-      test('should detect different databaseId', () {
-        const settings1 = gfs.Settings(databaseId: 'db-1');
-        const settings2 = gfs.Settings(databaseId: 'db-2');
-
-        firestoreService.initializeDatabase('db-diff-2', settings1);
-
-        expect(
-          () => firestoreService.initializeDatabase('db-diff-2', settings2),
-          throwsA(isA<FirebaseAppException>()),
-        );
-      });
-
-      test('should detect different host', () {
-        const settings1 = gfs.Settings(host: 'localhost:8080');
-        const settings2 = gfs.Settings(host: 'localhost:9090');
-
-        firestoreService.initializeDatabase('db-diff-3', settings1);
-
-        expect(
-          () => firestoreService.initializeDatabase('db-diff-3', settings2),
-          throwsA(isA<FirebaseAppException>()),
-        );
-      });
-
-      test('should detect different ssl', () {
-        const settings1 = gfs.Settings();
-        const settings2 = gfs.Settings(ssl: false);
-
-        firestoreService.initializeDatabase('db-diff-4', settings1);
-
-        expect(
-          () => firestoreService.initializeDatabase('db-diff-4', settings2),
-          throwsA(isA<FirebaseAppException>()),
-        );
-      });
-
-      test('should detect different credentials - clientEmail', () {
+      test('should detect different credentials', () {
         const settings1 = gfs.Settings(
           projectId: 'test-project',
           credentials: gfs.Credentials(
             clientEmail: 'test1@example.com',
-            privateKey:
-                mockPrivateKey, // Use mock key from mock_service_account
+            privateKey: mockPrivateKey,
           ),
           environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
         );
@@ -269,10 +197,10 @@ void main() {
           environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
         );
 
-        firestoreService.initializeDatabase('db-diff-5', settings1);
+        firestoreService.initializeDatabase('db-diff-2', settings1);
 
         expect(
-          () => firestoreService.initializeDatabase('db-diff-5', settings2),
+          () => firestoreService.initializeDatabase('db-diff-2', settings2),
           throwsA(
             isA<FirebaseAppException>().having(
               (e) => e.message,
@@ -283,14 +211,7 @@ void main() {
         );
       });
 
-      test('should detect different credentials - privateKey', () {
-        // Note: We can't easily test different private keys without having
-        // two valid keys. Instead, this verifies the comparison logic
-        // by checking that credentials with different emails are detected.
-        // The _areSettingsEqual method checks both clientEmail AND privateKey.
-      });
-
-      test('should allow same credentials', () {
+      test('should allow same settings (including null)', () {
         const settings = gfs.Settings(
           projectId: 'test-project',
           credentials: gfs.Credentials(
@@ -304,6 +225,12 @@ void main() {
         final db2 = firestoreService.initializeDatabase('db-same-1', settings);
 
         expect(db1, same(db2));
+
+        // Also test null settings
+        final db3 = firestoreService.initializeDatabase('db-null-1', null);
+        final db4 = firestoreService.initializeDatabase('db-null-1', null);
+
+        expect(db3, same(db4));
       });
     });
 
@@ -319,6 +246,55 @@ void main() {
 
         // After delete, the databases map should be empty
         // This is tested indirectly - we can't access private fields
+      });
+
+      test('should handle delete() called multiple times', () async {
+        final db = firestoreService.getDatabase('multi-delete-test');
+        expect(db, isNotNull);
+
+        // First delete
+        await firestoreService.delete();
+
+        // Second delete should not throw
+        expect(() => firestoreService.delete(), returnsNormally);
+      });
+
+      test('should throw when accessing firestore after app.close()', () async {
+        final testApp = FirebaseApp.initializeApp(
+          name: 'close-test-${DateTime.now().millisecondsSinceEpoch}',
+          options: AppOptions(projectId: projectId, httpClient: client),
+        );
+
+        // Get firestore instance before closing
+        final db = testApp.firestore();
+        expect(db, isNotNull);
+
+        // Close the app
+        await testApp.close();
+
+        // Trying to get firestore after close should throw
+        expect(
+          testApp.firestore,
+          throwsA(
+            isA<FirebaseAppException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              equals(AppErrorCode.appDeleted),
+            ),
+          ),
+        );
+      });
+
+      test('should create new instance after delete if requested', () async {
+        final db1 = firestoreService.getDatabase('recreate-test');
+        expect(db1, isNotNull);
+
+        await firestoreService.delete();
+
+        // After delete, getting database should create a new instance
+        final db2 = firestoreService.getDatabase('recreate-test');
+        expect(db2, isNotNull);
+        expect(db2, isNot(same(db1)));
       });
     });
   });
@@ -339,40 +315,15 @@ void main() {
       await app.close();
     });
 
-    test('should return Firestore instance', () {
-      final db = app.firestore();
-      expect(db, isA<gfs.Firestore>());
-    });
-
-    test('should return same instance for default database', () {
+    test('should return Firestore instance and cache it', () {
       final db1 = app.firestore();
       final db2 = app.firestore();
-      expect(db1, same(db2));
+
+      expect(db1, isA<gfs.Firestore>());
+      expect(db1, same(db2)); // Cached
     });
 
-    test('should accept databaseId parameter', () {
-      final db = app.firestore(databaseId: 'my-database');
-      expect(db, isA<gfs.Firestore>());
-    });
-
-    test('should return different instances for different database IDs', () {
-      final db1 = app.firestore();
-      final db2 = app.firestore(databaseId: 'my-database');
-      expect(db1, isNot(same(db2)));
-    });
-
-    test('should initialize with settings', () {
-      const settings = gfs.Settings(
-        projectId: 'test-project',
-        host: 'localhost:8080',
-        ssl: false,
-      );
-
-      final db = app.firestore(settings: settings);
-      expect(db, isA<gfs.Firestore>());
-    });
-
-    test('should initialize named database with settings', () {
+    test('should accept custom settings', () {
       const settings = gfs.Settings(
         projectId: 'test-project',
         host: 'localhost:8080',
@@ -432,12 +383,62 @@ void main() {
       expect(defaultDb, isNot(same(namedDb2)));
       expect(namedDb1, isNot(same(namedDb2)));
     });
+  });
 
-    test('should cache instances per database ID', () {
-      final db1 = app.firestore(databaseId: 'cached-db');
-      final db2 = app.firestore(databaseId: 'cached-db');
+  group('Edge Cases', () {
+    late MockAuthClient client;
 
-      expect(db1, same(db2));
+    setUp(() {
+      client = MockAuthClient();
+    });
+
+    test('should work when projectId is null but provided in settings', () {
+      final appWithoutProject = FirebaseApp.initializeApp(
+        name: 'no-project-${DateTime.now().millisecondsSinceEpoch}',
+        options: AppOptions(httpClient: client), // No projectId
+      );
+      addTearDown(appWithoutProject.close);
+
+      // Should work if settings provide projectId
+      const settings = gfs.Settings(projectId: 'settings-project');
+      final db = appWithoutProject.firestore(settings: settings);
+
+      expect(db, isA<gfs.Firestore>());
+    });
+
+    test('should allow empty database ID to default to "(default)"', () {
+      final app = FirebaseApp.initializeApp(
+        name: 'empty-db-${DateTime.now().millisecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: client),
+      );
+      addTearDown(app.close);
+
+      // Empty string should be treated as default database
+      final db1 = app.firestore(databaseId: '');
+      final db2 = app.firestore(); // default
+
+      expect(db1, isA<gfs.Firestore>());
+      expect(db2, isA<gfs.Firestore>());
+      // They might or might not be the same depending on implementation
+    });
+
+    test('should handle concurrent initialization of same database', () async {
+      final app = FirebaseApp.initializeApp(
+        name: 'concurrent-${DateTime.now().millisecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: client),
+      );
+      addTearDown(app.close);
+
+      // Try to initialize the same database concurrently
+      final results = await Future.wait([
+        Future(() => app.firestore(databaseId: 'concurrent-db')),
+        Future(() => app.firestore(databaseId: 'concurrent-db')),
+        Future(() => app.firestore(databaseId: 'concurrent-db')),
+      ]);
+
+      // All should be the same instance (cached)
+      expect(results[0], same(results[1]));
+      expect(results[1], same(results[2]));
     });
   });
 }

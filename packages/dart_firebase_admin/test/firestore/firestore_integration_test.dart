@@ -41,21 +41,6 @@ void main() {
     });
 
     group('Basic Operations', () {
-      test('getFirestore() returns a Firestore client', () {
-        expect(firestore, isA<gfs.Firestore>());
-      });
-
-      test('app.firestore() returns a Firestore client', () {
-        final db = app.firestore();
-        expect(db, isA<gfs.Firestore>());
-      });
-
-      test('app.firestore() returns the same instance', () {
-        final db1 = app.firestore();
-        final db2 = app.firestore();
-        expect(db1, same(db2));
-      });
-
       test('supports basic CRUD operations', () async {
         final docRef = firestore.collection('cities').doc('mountain-view');
         final mountainView = {'name': 'Mountain View', 'population': 77846};
@@ -301,13 +286,6 @@ void main() {
         // Cleanup
         await docInDefault.delete();
         await docInNamed.delete();
-      });
-
-      test('caches database instances per database ID', () {
-        final db1 = app.firestore(databaseId: 'cached-db');
-        final db2 = app.firestore(databaseId: 'cached-db');
-
-        expect(db1, same(db2));
       });
     });
 
