@@ -24,10 +24,7 @@ void main() {
       // Create app with mock HTTP client to prevent actual authentication
       app = FirebaseApp.initializeApp(
         name: 'test-app-${DateTime.now().millisecondsSinceEpoch}',
-        options: AppOptions(
-          projectId: projectId,
-          httpClient: client,
-        ),
+        options: AppOptions(projectId: projectId, httpClient: client),
       );
 
       firestoreService = Firestore.internal(app);
@@ -116,10 +113,7 @@ void main() {
       test('should set projectId from app if not in settings', () {
         final appWithProject = FirebaseApp.initializeApp(
           name: 'project-app',
-          options: AppOptions(
-            projectId: 'my-project-id',
-            httpClient: client,
-          ),
+          options: AppOptions(projectId: 'my-project-id', httpClient: client),
         );
         addTearDown(appWithProject.close);
 
@@ -182,10 +176,7 @@ void main() {
 
           final adcApp = FirebaseApp.initializeApp(
             name: 'adc-app',
-            options: AppOptions(
-              projectId: 'test-project',
-              httpClient: client,
-            ),
+            options: AppOptions(projectId: 'test-project', httpClient: client),
           );
           addTearDown(adcApp.close);
 
@@ -258,7 +249,8 @@ void main() {
           projectId: 'test-project',
           credentials: gfs.Credentials(
             clientEmail: 'test1@example.com',
-            privateKey: mockPrivateKey, // Use mock key from mock_service_account
+            privateKey:
+                mockPrivateKey, // Use mock key from mock_service_account
           ),
           environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
         );
@@ -333,10 +325,7 @@ void main() {
       client = MockAuthClient();
       app = FirebaseApp.initializeApp(
         name: 'firestore-api-test-${DateTime.now().millisecondsSinceEpoch}',
-        options: AppOptions(
-          projectId: projectId,
-          httpClient: client,
-        ),
+        options: AppOptions(projectId: projectId, httpClient: client),
       );
     });
 
@@ -415,10 +404,7 @@ void main() {
       client = MockAuthClient();
       app = FirebaseApp.initializeApp(
         name: 'multi-db-test-${DateTime.now().millisecondsSinceEpoch}',
-        options: AppOptions(
-          projectId: projectId,
-          httpClient: client,
-        ),
+        options: AppOptions(projectId: projectId, httpClient: client),
       );
     });
 

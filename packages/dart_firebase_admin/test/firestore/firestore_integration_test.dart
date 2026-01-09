@@ -15,8 +15,10 @@ import '../helpers.dart';
 void main() {
   // Skip all tests if emulator is not configured
   if (!isFirestoreEmulatorEnabled()) {
-    print('Skipping Firestore integration tests. '
-        'Set FIRESTORE_EMULATOR_HOST environment variable to run these tests.');
+    print(
+      'Skipping Firestore integration tests. '
+      'Set FIRESTORE_EMULATOR_HOST environment variable to run these tests.',
+    );
     return;
   }
 
@@ -56,10 +58,7 @@ void main() {
 
       test('supports basic CRUD operations', () async {
         final docRef = firestore.collection('cities').doc('mountain-view');
-        final mountainView = {
-          'name': 'Mountain View',
-          'population': 77846,
-        };
+        final mountainView = {'name': 'Mountain View', 'population': 77846};
 
         // Create
         await docRef.set(mountainView);
@@ -124,12 +123,25 @@ void main() {
         final collection = firestore.collection('test-cities');
 
         // Add test data
-        await collection.doc('city1').set({'name': 'City 1', 'population': 1000});
-        await collection.doc('city2').set({'name': 'City 2', 'population': 2000});
-        await collection.doc('city3').set({'name': 'City 3', 'population': 3000});
+        await collection.doc('city1').set({
+          'name': 'City 1',
+          'population': 1000,
+        });
+        await collection.doc('city2').set({
+          'name': 'City 2',
+          'population': 2000,
+        });
+        await collection.doc('city3').set({
+          'name': 'City 3',
+          'population': 3000,
+        });
 
         // Query
-        final query = collection.where('population', gfs.WhereFilter.greaterThan, 1500);
+        final query = collection.where(
+          'population',
+          gfs.WhereFilter.greaterThan,
+          1500,
+        );
         final querySnapshot = await query.get();
 
         expect(querySnapshot.docs.length, equals(2));
@@ -143,30 +155,33 @@ void main() {
     });
 
     group('Field Values', () {
-      test('FieldValue.serverTimestamp provides server-side timestamp', () async {
-        final docRef = firestore.collection('cities').doc('timestamped-city');
-        final cityData = {
-          'name': 'Mountain View',
-          'population': 77846,
-          'createdAt': gfs.FieldValue.serverTimestamp,
-        };
+      test(
+        'FieldValue.serverTimestamp provides server-side timestamp',
+        () async {
+          final docRef = firestore.collection('cities').doc('timestamped-city');
+          final cityData = {
+            'name': 'Mountain View',
+            'population': 77846,
+            'createdAt': gfs.FieldValue.serverTimestamp,
+          };
 
-        await docRef.set(cityData);
+          await docRef.set(cityData);
 
-        final snapshot = await docRef.get();
-        expect(snapshot.exists, isTrue);
-        expect(snapshot.data()?['name'], equals('Mountain View'));
-        expect(snapshot.data()?['createdAt'], isA<gfs.Timestamp>());
+          final snapshot = await docRef.get();
+          expect(snapshot.exists, isTrue);
+          expect(snapshot.data()?['name'], equals('Mountain View'));
+          expect(snapshot.data()?['createdAt'], isA<gfs.Timestamp>());
 
-        // Cleanup
-        await docRef.delete();
-      });
+          // Cleanup
+          await docRef.delete();
+        },
+      );
 
       test('FieldValue.increment works correctly', () async {
         final docRef = firestore.collection('counters').doc('increment-test');
         await docRef.set({'count': 5});
 
-        await docRef.update({'count': gfs.FieldValue.increment(3)});
+        await docRef.update({'count': const gfs.FieldValue.increment(3)});
 
         final snapshot = await docRef.get();
         expect(snapshot.data()?['count'], equals(8));
@@ -177,10 +192,12 @@ void main() {
 
       test('FieldValue.arrayUnion adds elements to array', () async {
         final docRef = firestore.collection('lists').doc('array-test');
-        await docRef.set({'items': ['a', 'b']});
+        await docRef.set({
+          'items': ['a', 'b'],
+        });
 
         await docRef.update({
-          'items': gfs.FieldValue.arrayUnion(['c', 'd'])
+          'items': const gfs.FieldValue.arrayUnion(['c', 'd']),
         });
 
         final snapshot = await docRef.get();
@@ -193,10 +210,12 @@ void main() {
 
       test('FieldValue.arrayRemove removes elements from array', () async {
         final docRef = firestore.collection('lists').doc('array-remove-test');
-        await docRef.set({'items': ['a', 'b', 'c', 'd']});
+        await docRef.set({
+          'items': ['a', 'b', 'c', 'd'],
+        });
 
         await docRef.update({
-          'items': gfs.FieldValue.arrayRemove(['b', 'c'])
+          'items': const gfs.FieldValue.arrayRemove(['b', 'c']),
         });
 
         final snapshot = await docRef.get();
@@ -209,7 +228,11 @@ void main() {
 
       test('FieldValue.delete removes a field', () async {
         final docRef = firestore.collection('cities').doc('delete-field-test');
-        await docRef.set({'name': 'Test City', 'population': 1000, 'country': 'USA'});
+        await docRef.set({
+          'name': 'Test City',
+          'population': 1000,
+          'country': 'USA',
+        });
 
         await docRef.update({'country': gfs.FieldValue.delete});
 
@@ -231,16 +254,14 @@ void main() {
 
         await sourceDoc.set({'name': 'Mountain View', 'population': 77846});
 
-        await targetDoc.set({
-          'name': 'Palo Alto',
-          'sisterCity': sourceDoc,
-        });
+        await targetDoc.set({'name': 'Palo Alto', 'sisterCity': sourceDoc});
 
         final snapshot = await targetDoc.get();
         expect(snapshot.exists, isTrue);
         expect(snapshot.data()?['name'], equals('Palo Alto'));
 
-        final sisterCityRef = snapshot.data()?['sisterCity'] as gfs.DocumentReference?;
+        final sisterCityRef =
+            snapshot.data()?['sisterCity'] as gfs.DocumentReference?;
         expect(sisterCityRef, isNotNull);
         expect(sisterCityRef!.path, equals(sourceDoc.path));
 
@@ -312,12 +333,12 @@ void main() {
     group('GeoPoint', () {
       test('supports storing and retrieving GeoPoints', () async {
         final docRef = firestore.collection('locations').doc('office');
-        final location = gfs.GeoPoint(latitude: 37.422, longitude: -122.084); // Googleplex
+        final location = gfs.GeoPoint(
+          latitude: 37.422,
+          longitude: -122.084,
+        ); // Googleplex
 
-        await docRef.set({
-          'name': 'Google HQ',
-          'location': location,
-        });
+        await docRef.set({'name': 'Google HQ', 'location': location});
 
         final snapshot = await docRef.get();
         expect(snapshot.exists, isTrue);
@@ -347,10 +368,7 @@ void main() {
         await docRef.set({'name': 'Test City'});
 
         // Empty field path should throw
-        expect(
-          () => docRef.update({'': 'value'}),
-          throwsA(anything),
-        );
+        expect(() => docRef.update({'': 'value'}), throwsA(anything));
 
         // Cleanup
         await docRef.delete();
@@ -363,4 +381,3 @@ void main() {
 bool isFirestoreEmulatorEnabled() {
   return Platform.environment['FIRESTORE_EMULATOR_HOST'] != null;
 }
-

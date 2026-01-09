@@ -30,9 +30,12 @@ abstract class Environment {
   ///   print('Using Firestore emulator at $emulatorHost');
   /// }
   /// ```
-  static String? getFirestoreEmulatorHost([Map<String, String>? environmentOverride]) {
+  static String? getFirestoreEmulatorHost([
+    Map<String, String>? environmentOverride,
+  ]) {
     // Check environment override first (for testing)
-    if (environmentOverride != null && environmentOverride.containsKey(firestoreEmulatorHost)) {
+    if (environmentOverride != null &&
+        environmentOverride.containsKey(firestoreEmulatorHost)) {
       return environmentOverride[firestoreEmulatorHost];
     }
 
@@ -53,7 +56,9 @@ abstract class Environment {
   ///   print('Using Firestore emulator');
   /// }
   /// ```
-  static bool isFirestoreEmulatorEnabled([Map<String, String>? environmentOverride]) {
+  static bool isFirestoreEmulatorEnabled([
+    Map<String, String>? environmentOverride,
+  ]) {
     return getFirestoreEmulatorHost(environmentOverride) != null;
   }
 }

@@ -68,7 +68,9 @@ class FirestoreHttpClient {
 
   /// Gets the Firestore API host URL based on emulator configuration.
   Uri get _firestoreApiHost {
-    final emulatorHost = Environment.getFirestoreEmulatorHost(_settings.environmentOverride);
+    final emulatorHost = Environment.getFirestoreEmulatorHost(
+      _settings.environmentOverride,
+    );
 
     if (emulatorHost != null) {
       return Uri.http(emulatorHost, '/');
@@ -78,7 +80,8 @@ class FirestoreHttpClient {
   }
 
   /// Checks if the Firestore emulator is enabled via environment variable.
-  bool get _isUsingEmulator => Environment.isFirestoreEmulatorEnabled(_settings.environmentOverride);
+  bool get _isUsingEmulator =>
+      Environment.isFirestoreEmulatorEnabled(_settings.environmentOverride);
 
   /// Lazy-initialized HTTP client that's cached for reuse.
   late final Future<googleapis_auth.AuthClient> _client = _createClient();
