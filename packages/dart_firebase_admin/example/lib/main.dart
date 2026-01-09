@@ -10,7 +10,7 @@ Future<void> main() async {
   // await authExample(admin);
 
   // Uncomment to run firestore example
-  // await firestoreExample(admin);
+  await firestoreExample(admin);
 
   // Uncomment to run project config example
   // await projectConfigExample(admin);
@@ -61,6 +61,8 @@ Future<void> authExample(FirebaseApp admin) async {
 Future<void> firestoreExample(FirebaseApp admin) async {
   print('\n### Firestore Example ###\n');
 
+  // Example 1: Using the default database
+  print('> Using default database...\n');
   final firestore = admin.firestore();
 
   try {
@@ -72,6 +74,49 @@ Future<void> firestoreExample(FirebaseApp admin) async {
     }
   } catch (e) {
     print('> Error setting document: $e');
+  }
+
+  // Example 2: Using a named database (multi-database support)
+  print('\n> Using named database "my-database"...\n');
+  final namedFirestore = admin.firestore(databaseId: 'my-database');
+
+  try {
+    final collection = namedFirestore.collection('products');
+    await collection.doc('product-1').set({
+      'name': 'Widget',
+      'price': 19.99,
+      'inStock': true,
+    });
+    print('> Document written to named database\n');
+
+    final doc = await collection.doc('product-1').get();
+    if (doc.exists) {
+      print('> Retrieved from named database: ${doc.data()}');
+    }
+  } catch (e) {
+    print('> Error with named database: $e');
+  }
+
+  // Example 3: Using multiple databases simultaneously
+  print('\n> Demonstrating multiple database access...\n');
+  try {
+    final defaultDb = admin.firestore();
+    final analyticsDb = admin.firestore(databaseId: 'analytics-db');
+
+    await defaultDb.collection('users').doc('user-1').set({
+      'name': 'Alice',
+      'email': 'alice@example.com',
+    });
+
+    await analyticsDb.collection('events').doc('event-1').set({
+      'type': 'page_view',
+      'timestamp': DateTime.now().toIso8601String(),
+      'userId': 'user-1',
+    });
+
+    print('> Successfully wrote to multiple databases');
+  } catch (e) {
+    print('> Error with multiple databases: $e');
   }
 }
 
