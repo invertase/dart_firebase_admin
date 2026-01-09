@@ -151,43 +151,46 @@ class FirebaseApp {
   /// Gets the App Check service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  AppCheck appCheck() =>
-      getOrInitService(FirebaseServiceType.appCheck.name, AppCheck.internal);
+  AppCheck appCheck() => AppCheck.internal(this);
 
   /// Gets the Auth service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  Auth auth() => getOrInitService(FirebaseServiceType.auth.name, Auth.internal);
+  Auth auth() => Auth.internal(this);
 
   /// Gets the Firestore service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
   /// Optional [settings] are only applied when creating a new instance.
-  Firestore firestore({googleapis_firestore.Settings? settings}) =>
-      getOrInitService(
-        FirebaseServiceType.firestore.name,
-        (app) => Firestore.internal(app, settings: settings),
-      );
+  ///
+  /// For multi-database support, use [databaseId] to specify a named database.
+  /// Default is '(default)'.
+  googleapis_firestore.Firestore firestore({
+    googleapis_firestore.Settings? settings,
+    String databaseId = kDefaultDatabaseId,
+  }) {
+    final service = Firestore.internal(this);
+
+    if (settings != null) {
+      return service.initializeDatabase(databaseId, settings);
+    }
+    return service.getDatabase(databaseId);
+  }
 
   /// Gets the Messaging service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  Messaging messaging() =>
-      getOrInitService(FirebaseServiceType.messaging.name, Messaging.internal);
+  Messaging messaging() => Messaging.internal(this);
 
   /// Gets the Security Rules service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  SecurityRules securityRules() => getOrInitService(
-    FirebaseServiceType.securityRules.name,
-    SecurityRules.internal,
-  );
+  SecurityRules securityRules() => SecurityRules.internal(this);
 
   /// Gets the Functions service instance for this app.
   ///
   /// Returns a cached instance if one exists, otherwise creates a new one.
-  Functions functions() =>
-      getOrInitService(FirebaseServiceType.functions.name, Functions.internal);
+  Functions functions() => Functions.internal(this);
 
   /// Closes this app and cleans up all associated resources.
   ///

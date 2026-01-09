@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dart_firebase_admin/firestore.dart';
 import 'package:dart_firebase_admin/messaging.dart';
 import 'package:dart_firebase_admin/security_rules.dart';
 import 'package:dart_firebase_admin/src/app.dart';
@@ -323,26 +322,41 @@ void main() {
 
       test('firestore returns Firestore instance', () {
         final firestore = app.firestore();
-        expect(firestore, isA<Firestore>());
-        expect(identical(firestore.app, app), isTrue);
+        expect(firestore, isA<googleapis_firestore.Firestore>());
+        // Verify we can use Firestore methods
+        expect(firestore.collection('test'), isNotNull);
       });
 
       test('firestore returns cached instance', () {
         final firestore1 = app.firestore();
         final firestore2 = app.firestore();
         expect(identical(firestore1, firestore2), isTrue);
-        expect(identical(firestore2, Firestore.internal(app)), isTrue);
       });
 
-      test('firestore returns cached instance even if different '
-          'settings specified', () {
-        final firestore1 = app.firestore(
-          settings: const googleapis_firestore.Settings(databaseId: 'test-db1'),
+      test(
+        'firestore with different databaseId returns different instances',
+        () {
+          final firestore1 = app.firestore(databaseId: 'db1');
+          final firestore2 = app.firestore(databaseId: 'db2');
+          expect(identical(firestore1, firestore2), isFalse);
+        },
+      );
+
+      test('firestore throws when reinitializing with different settings', () {
+        // Initialize with first settings
+        app.firestore(
+          settings: const googleapis_firestore.Settings(host: 'localhost:8080'),
         );
-        final firestore2 = app.firestore(
-          settings: const googleapis_firestore.Settings(databaseId: 'test-db2'),
+
+        // Try to initialize again with different settings - should throw
+        expect(
+          () => app.firestore(
+            settings: const googleapis_firestore.Settings(
+              host: 'different:9090',
+            ),
+          ),
+          throwsA(isA<FirebaseAppException>()),
         );
-        expect(identical(firestore1, firestore2), isTrue);
       });
 
       test('messaging returns Messaging instance', () {

@@ -4,7 +4,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
-import 'package:googleapis_auth/auth_io.dart'
+import 'package:googleapis_auth/googleapis_auth.dart'
+    as googleapis_auth
     show AuthClient, AccessCredentials;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:http/http.dart'
@@ -21,7 +22,6 @@ part 'convert.dart';
 part 'document.dart';
 part 'document_change.dart';
 part 'document_reader.dart';
-part 'emulator_client.dart';
 part 'field_value.dart';
 part 'filter.dart';
 part 'firestore_exception.dart';
@@ -120,6 +120,7 @@ class Settings {
     this.keyFilename,
     this.ignoreUndefinedProperties = false,
     this.useBigInt = false,
+    this.environmentOverride,
   });
 
   /// The project ID from the Google Developer's Console, e.g. 'grape-spaceship-123'.
@@ -192,6 +193,20 @@ class Settings {
   /// Defaults to false.
   final bool useBigInt;
 
+  /// Environment variable overrides for testing.
+  ///
+  /// This allows tests to inject environment variables (like FIRESTORE_EMULATOR_HOST)
+  /// without modifying the actual process environment.
+  ///
+  /// Example:
+  /// ```dart
+  /// final settings = Settings(
+  ///   environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
+  /// );
+  /// ```
+  @visibleForTesting
+  final Map<String, String>? environmentOverride;
+
   /// Converts these settings to a GoogleCredential for internal use.
   ///
   /// Priority: credentials > keyFilename > Application Default Credentials
@@ -225,6 +240,7 @@ class Settings {
     String? keyFilename,
     bool? ignoreUndefinedProperties,
     bool? useBigInt,
+    Map<String, String>? environmentOverride,
   }) {
     return Settings(
       projectId: projectId ?? this.projectId,
@@ -236,6 +252,7 @@ class Settings {
       ignoreUndefinedProperties:
           ignoreUndefinedProperties ?? this.ignoreUndefinedProperties,
       useBigInt: useBigInt ?? this.useBigInt,
+      environmentOverride: environmentOverride ?? this.environmentOverride,
     );
   }
 

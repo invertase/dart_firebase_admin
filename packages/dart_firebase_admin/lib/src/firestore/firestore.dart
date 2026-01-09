@@ -6,145 +6,185 @@ import 'package:meta/meta.dart';
 
 import '../app.dart';
 
-// part 'firestore_exception.dart';
+/// Default database ID used by Firestore
+const String kDefaultDatabaseId = '(default)';
 
+/// Firestore service for Firebase Admin SDK.
+///
+/// Supports multiple named databases similar to Node.js SDK.
 class Firestore implements FirebaseService {
-  /// Creates or returns the cached Firestore instance for the given app.
-  ///
-  /// Note: Settings can only be specified on the first call. Subsequent calls
-  /// will return the cached instance and ignore any new settings.
+  /// Internal constructor
+  Firestore._(this.app);
+
+  /// Factory constructor that ensures singleton per app.
   @internal
-  factory Firestore.internal(
-    FirebaseApp app, {
-    googleapis_firestore.Settings? settings,
-  }) {
+  factory Firestore.internal(FirebaseApp app) {
     return app.getOrInitService(
       FirebaseServiceType.firestore.name,
-      (app) => Firestore._(app, settings: settings),
+      Firestore._,
     );
-  }
-
-  Firestore._(this.app, {googleapis_firestore.Settings? settings}) {
-    _delegate = googleapis_firestore.Firestore(settings: settings);
   }
 
   @override
   final FirebaseApp app;
-  late final googleapis_firestore.Firestore _delegate;
 
-  // TODO batch
-  // TODO bulkWriter
-  // TODO bundle
-  // TODO recursiveDelete
+  // Maps database IDs to Firestore delegate instances
+  final Map<String, googleapis_firestore.Firestore> _databases = {};
 
-  /// Fetches the root collections that are associated with this Firestore
-  /// database.
-  ///
-  /// Returns a Promise that resolves with an array of CollectionReferences.
-  ///
-  /// ```dart
-  /// firestore.listCollections().then((collections) {
-  ///   for (final collection in collections) {
-  ///     print('Found collection with id: ${collection.id}');
-  ///   }
-  /// });
-  /// ```
-  Future<
-    List<
-      googleapis_firestore.CollectionReference<
-        googleapis_firestore.DocumentData
-      >
-    >
-  >
-  listCollections() => _delegate.listCollections();
+  // Maps database IDs to their settings
+  final Map<String, googleapis_firestore.Settings?> _settings = {};
 
-  /// Gets a [googleapis_firestore.DocumentReference] instance that
-  /// refers to the document at the specified path.
+  /// Gets the settings used to initialize a specific database.
+  /// Returns null if the database hasn't been initialized yet.
   ///
-  /// - [documentPath]: A slash-separated path to a document.
-  ///
-  /// Returns The [googleapis_firestore.DocumentReference] instance.
-  ///
-  /// ```dart
-  /// final documentRef = firestore.doc('collection/document');
-  /// print('Path of document is ${documentRef.path}');
-  /// ```
-  googleapis_firestore.DocumentReference<googleapis_firestore.DocumentData> doc(
-    String documentPath,
-  ) => _delegate.doc(documentPath);
-
-  /// Gets a [googleapis_firestore.CollectionReference] instance
-  /// that refers to the collection at the specified path.
-  ///
-  /// - [collectionPath]: A slash-separated path to a collection.
-  ///
-  /// Returns [googleapis_firestore.CollectionReference] A reference to the new
-  /// sub-collection.
-  googleapis_firestore.CollectionReference<googleapis_firestore.DocumentData>
-  collection(String collectionPath) {
-    throw UnimplementedError();
+  /// This is exposed for testing purposes to verify credential extraction.
+  @visibleForTesting
+  googleapis_firestore.Settings? getSettingsForDatabase(String databaseId) {
+    return _settings[databaseId];
   }
 
-  /// Creates and returns a new Query that includes all documents in the
-  /// database that are contained in a collection or subcollection with the
-  /// given collectionId.
+  /// Gets the actual settings that would be built for a database.
+  /// This calls _buildSettings without initializing the database.
   ///
-  /// - [collectionId] Identifies the collections to query over.
-  /// Every collection or subcollection with this ID as the last segment of its
-  /// path will be included. Cannot contain a slash.
-  ///
-  /// ```dart
-  /// final docA = await firestore.doc('my-group/docA').set({foo: 'bar'});
-  /// final docB = await firestore.doc('abc/def/my-group/docB').set({foo: 'bar'});
-  ///
-  /// final query = firestore.collectionGroup('my-group')
-  ///    .where('foo', WhereOperator.equal 'bar');
-  /// final snapshot = await query.get();
-  /// print('Found ${snapshot.size} documents.');
-  /// ```
-  googleapis_firestore.CollectionGroup<googleapis_firestore.DocumentData>
-  collectionGroup(String collectionId) {
-    throw UnimplementedError();
+  /// This is exposed for testing purposes to verify settings construction.
+  @visibleForTesting
+  googleapis_firestore.Settings buildSettingsForTesting(
+    String databaseId,
+    googleapis_firestore.Settings? userSettings,
+  ) {
+    return _buildSettings(databaseId, userSettings);
   }
 
-  // Retrieves multiple documents from Firestore.
-  Future<List<googleapis_firestore.DocumentSnapshot<T>>> getAll<T>(
-    List<googleapis_firestore.DocumentReference<T>> documents, [
-    googleapis_firestore.ReadOptions? readOptions,
-  ]) async {
-    throw UnimplementedError();
+  /// Gets or creates a Firestore instance for the specified database.
+  @internal
+  googleapis_firestore.Firestore getDatabase([
+    String databaseId = kDefaultDatabaseId,
+  ]) {
+    var database = _databases[databaseId];
+    if (database == null) {
+      database = _initFirestore(databaseId, null);
+      _databases[databaseId] = database;
+      _settings[databaseId] = null;
+    }
+    return database;
   }
 
-  /// Executes the given updateFunction and commits the changes applied within
-  /// the transaction.
-  /// You can use the transaction object passed to 'updateFunction' to read and
-  /// modify Firestore documents under lock. You have to perform all reads
-  /// before before you perform any write.
-  /// Transactions can be performed as read-only or read-write transactions. By
-  /// default, transactions are executed in read-write mode.
-  /// A read-write transaction obtains a pessimistic lock on all documents that
-  /// are read during the transaction. These locks block other transactions,
-  /// batched writes, and other non-transactional writes from changing that
-  /// document. Any writes in a read-write transactions are committed once
-  /// 'updateFunction' resolves, which also releases all locks.
-  /// If a read-write transaction fails with contention, the transaction is
-  /// retried up to five times. The updateFunction is invoked once for each
-  /// attempt.
-  /// Read-only transactions do not lock documents. They can be used to read
-  /// documents at a consistent snapshot in time, which may be up to 60 seconds
-  /// in the past. Read-only transactions are not retried.
-  /// Transactions time out after 60 seconds if no documents are read.
-  /// Transactions that are not committed within than 270 seconds are also
-  /// aborted. Any remaining locks are released when a transaction times out.
-  Future<T> runTransaction<T>(
-    googleapis_firestore.TransactionHandler<T> updateFunction, {
-    googleapis_firestore.TransactionOptions? transactionOptions,
-  }) {
-    throw UnimplementedError();
+  /// Initializes a Firestore instance with specific settings.
+  /// Throws if the database was already initialized with different settings.
+  @internal
+  googleapis_firestore.Firestore initializeDatabase(
+    String databaseId,
+    googleapis_firestore.Settings? settings,
+  ) {
+    final existingInstance = _databases[databaseId];
+    if (existingInstance != null) {
+      final initialSettings = _settings[databaseId];
+      if (_areSettingsEqual(settings, initialSettings)) {
+        return existingInstance;
+      }
+      throw FirebaseAppException(
+        AppErrorCode.internalError,
+        'initializeFirestore() has already been called with different options. '
+        'To avoid this error, call initializeFirestore() with the same options '
+        'as when it was originally called, or call getFirestore() to return the '
+        'already initialized instance.',
+      );
+    }
+
+    final newInstance = _initFirestore(databaseId, settings);
+    _databases[databaseId] = newInstance;
+    // Store user-provided settings (not built settings) for comparison
+    // This allows us to detect if the user tries to reinitialize with
+    // different settings
+    _settings[databaseId] = settings;
+    return newInstance;
+  }
+
+  /// Creates Firestore settings from the Firebase app configuration
+  googleapis_firestore.Settings _buildSettings(
+    String databaseId,
+    googleapis_firestore.Settings? userSettings,
+  ) {
+    final projectId = app.projectId;
+    final appCredential = app.options.credential;
+
+    // Start with user settings or empty settings
+    var settings = userSettings ?? const googleapis_firestore.Settings();
+
+    // Extract credentials from app (if not provided by user)
+    if (settings.credentials == null && settings.keyFilename == null) {
+      if (appCredential is ServiceAccountCredential) {
+        // Extract service account credentials
+        settings = settings.copyWith(
+          credentials: googleapis_firestore.Credentials(
+            clientEmail: appCredential.clientEmail,
+            privateKey: appCredential.privateKey,
+          ),
+        );
+      } else if (appCredential is ApplicationDefaultCredential) {
+        // Let googleapis_firestore discover ADC automatically
+      } else if (appCredential != null) {
+        // Unsupported credential type
+        throw FirebaseAppException(
+          AppErrorCode.invalidCredential,
+          'Firestore requires ServiceAccountCredential or '
+          'ApplicationDefaultCredential. Got: ${appCredential.runtimeType}',
+        );
+      }
+    }
+
+    // Set database ID
+    settings = settings.copyWith(databaseId: databaseId);
+
+    // Set project ID if available and not already set
+    if (projectId != null && settings.projectId == null) {
+      settings = settings.copyWith(projectId: projectId);
+    }
+
+    return settings;
+  }
+
+  googleapis_firestore.Firestore _initFirestore(
+    String databaseId,
+    googleapis_firestore.Settings? settings,
+  ) {
+    final firestoreSettings = _buildSettings(databaseId, settings);
+    return googleapis_firestore.Firestore(settings: firestoreSettings);
+  }
+
+  bool _areSettingsEqual(
+    googleapis_firestore.Settings? a,
+    googleapis_firestore.Settings? b,
+  ) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+
+    // Compare basic fields
+    if (a.projectId != b.projectId ||
+        a.databaseId != b.databaseId ||
+        a.host != b.host ||
+        a.ssl != b.ssl ||
+        a.keyFilename != b.keyFilename) {
+      return false;
+    }
+
+    // Compare credentials
+    final credsA = a.credentials;
+    final credsB = b.credentials;
+
+    if (credsA == null && credsB == null) return true;
+    if (credsA == null || credsB == null) return false;
+
+    // Compare credential fields
+    return credsA.clientEmail == credsB.clientEmail &&
+        credsA.privateKey == credsB.privateKey;
   }
 
   @override
   Future<void> delete() async {
-    // Close HTTP client if we created it (emulator mode)
+    // Terminate all Firestore instances
+    await Future.wait(_databases.values.map((db) => db.terminate()));
+    _databases.clear();
+    _settings.clear();
   }
 }

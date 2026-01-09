@@ -20,6 +20,9 @@ abstract class Environment {
   ///
   /// Returns the host:port string if [firestoreEmulatorHost] is set, otherwise null.
   ///
+  /// If [environmentOverride] is provided, it will be checked first before
+  /// falling back to Platform.environment.
+  ///
   /// Example:
   /// ```dart
   /// final emulatorHost = Environment.getFirestoreEmulatorHost();
@@ -27,7 +30,13 @@ abstract class Environment {
   ///   print('Using Firestore emulator at $emulatorHost');
   /// }
   /// ```
-  static String? getFirestoreEmulatorHost() {
+  static String? getFirestoreEmulatorHost([Map<String, String>? environmentOverride]) {
+    // Check environment override first (for testing)
+    if (environmentOverride != null && environmentOverride.containsKey(firestoreEmulatorHost)) {
+      return environmentOverride[firestoreEmulatorHost];
+    }
+
+    // Fall back to actual environment variables
     return Platform.environment[firestoreEmulatorHost];
   }
 
@@ -35,13 +44,16 @@ abstract class Environment {
   ///
   /// Returns `true` if [firestoreEmulatorHost] is set in the environment.
   ///
+  /// If [environmentOverride] is provided, it will be checked first before
+  /// falling back to Platform.environment.
+  ///
   /// Example:
   /// ```dart
   /// if (Environment.isFirestoreEmulatorEnabled()) {
   ///   print('Using Firestore emulator');
   /// }
   /// ```
-  static bool isFirestoreEmulatorEnabled() {
-    return getFirestoreEmulatorHost() != null;
+  static bool isFirestoreEmulatorEnabled([Map<String, String>? environmentOverride]) {
+    return getFirestoreEmulatorHost(environmentOverride) != null;
   }
 }
