@@ -98,11 +98,17 @@ void main() {
           expect(
             () => firestoreService.initializeDatabase('test-db-2', settings2),
             throwsA(
-              isA<FirebaseAppException>().having(
-                (e) => e.message,
-                'message',
-                contains('already been called with different options'),
-              ),
+              isA<FirebaseAppException>()
+                  .having(
+                    (e) => e.errorCode,
+                    'errorCode',
+                    equals(AppErrorCode.failedPrecondition),
+                  )
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    contains('already been called with different settings'),
+                  ),
             ),
           );
         },
@@ -271,7 +277,7 @@ void main() {
             isA<FirebaseAppException>().having(
               (e) => e.message,
               'message',
-              contains('already been called with different options'),
+              contains('already been called with different settings'),
             ),
           ),
         );
@@ -389,7 +395,7 @@ void main() {
           isA<FirebaseAppException>().having(
             (e) => e.message,
             'message',
-            contains('already been called with different options'),
+            contains('already been called with different settings'),
           ),
         ),
       );

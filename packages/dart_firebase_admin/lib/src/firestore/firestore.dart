@@ -83,10 +83,10 @@ class Firestore implements FirebaseService {
         return existingInstance;
       }
       throw FirebaseAppException(
-        AppErrorCode.internalError,
-        'initializeFirestore() has already been called with different options. '
-        'To avoid this error, call initializeFirestore() with the same options '
-        'as when it was originally called, or call getFirestore() to return the '
+        AppErrorCode.failedPrecondition,
+        'app.firestore() has already been called with different settings for database "$databaseId". '
+        'To avoid this error, call app.firestore() with the same settings '
+        'as when it was originally called, or call app.firestore() to return the '
         'already initialized instance.',
       );
     }

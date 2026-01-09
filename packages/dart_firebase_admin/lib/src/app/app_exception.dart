@@ -70,6 +70,12 @@ enum AppErrorCode {
   /// No Firebase app exists with the given name.
   noApp(code: 'no-app', message: 'No Firebase app exists with the given name.'),
 
+  /// Operation failed because a precondition was not met.
+  failedPrecondition(
+    code: 'failed-precondition',
+    message: 'The operation failed because a precondition was not met.',
+  ),
+
   /// Unable to parse the server response.
   unableToParseResponse(
     code: 'unable-to-parse-response',
