@@ -7,3 +7,4 @@ environment:
 
 dependencies:
   dart_firebase_admin: any
+  googleapis_firestore: any
