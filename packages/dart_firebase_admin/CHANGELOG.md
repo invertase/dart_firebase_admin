@@ -1,3 +1,7 @@
+## Unreleased fix/major/minor
+
+- Upgrade dependencies. (thanks to @birjuvachhani)
+
 ## 0.4.1 - 2025-03-21
 
 - Bump intl to `0.20.0`
