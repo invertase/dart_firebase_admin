@@ -270,4 +270,12 @@ enum FirestoreClientErrorCode {
   final StatusCode statusCode;
   final String code;
   final String message;
+
+  /// Maps a gRPC status code to the corresponding FirestoreClientErrorCode.
+  static FirestoreClientErrorCode fromStatusCode(int code) {
+    return values.firstWhere(
+      (errorCode) => errorCode.statusCode.value == code,
+      orElse: () => FirestoreClientErrorCode.unknown,
+    );
+  }
 }

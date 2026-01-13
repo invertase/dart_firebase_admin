@@ -2,6 +2,7 @@ import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/functions.dart';
 import 'package:dart_firebase_admin/messaging.dart';
+import 'package:googleapis_firestore/googleapis_firestore.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
@@ -117,6 +118,264 @@ Future<void> firestoreExample(FirebaseApp admin) async {
     print('> Successfully wrote to multiple databases');
   } catch (e) {
     print('> Error with multiple databases: $e');
+  }
+
+  // Example 4: BulkWriter - Basic Usage
+  print('\n### BulkWriter Examples ###\n');
+  print('> Basic BulkWriter usage...\n');
+
+  try {
+    final bulkWriter = firestore.bulkWriter();
+
+    // Queue multiple write operations
+    final futures = <Future<WriteResult>>[];
+    for (var i = 0; i < 10; i++) {
+      futures.add(
+        bulkWriter.set(firestore.collection('bulk-demo').doc('item-$i'), {
+          'name': 'Item $i',
+          'index': i,
+          'createdAt': DateTime.now().toIso8601String(),
+        }),
+      );
+    }
+
+    // Close and wait for all operations to complete
+    await bulkWriter.close();
+
+    print('> Successfully wrote 10 documents in bulk\n');
+  } catch (e) {
+    print('> Error with BulkWriter: $e');
+  }
+
+  // Example 5: BulkWriter - Advanced with Error Handling
+  print('> BulkWriter with error handling and retry logic...\n');
+
+  try {
+    final bulkWriter = firestore.bulkWriter();
+
+    var successCount = 0;
+    var errorCount = 0;
+
+    // Set up success callback
+    bulkWriter.onWriteResult((ref, result) {
+      successCount++;
+      print('  ✓ Success: ${ref.path} at ${result.writeTime}');
+    });
+
+    // Set up error callback with custom retry logic
+    bulkWriter.onWriteError((error) {
+      errorCount++;
+      print('  ✗ Error: ${error.documentRef.path} - ${error.message}');
+
+      // Retry on transient errors, but not more than 3 times
+      if (error.failedAttempts < 3 &&
+          (error.code.name == 'unavailable' || error.code.name == 'aborted')) {
+        print('    → Retrying (attempt ${error.failedAttempts + 1})...');
+        return true; // Retry
+      }
+      return false; // Don't retry
+    });
+
+    // Mix of operations: create, set, update, delete
+    await bulkWriter.create(firestore.collection('orders').doc('order-1'), {
+      'status': 'pending',
+      'total': 99.99,
+    });
+
+    await bulkWriter.set(firestore.collection('orders').doc('order-2'), {
+      'status': 'completed',
+      'total': 149.99,
+    });
+
+    // Update existing doc (create it first to avoid error)
+    final orderRef = firestore.collection('orders').doc('order-3');
+    await orderRef.set({'status': 'processing'});
+
+    await bulkWriter.update(orderRef, {
+      FieldPath(const ['status']): 'shipped',
+      FieldPath(const ['shippedAt']): DateTime.now().toIso8601String(),
+    });
+
+    await bulkWriter.delete(
+      firestore.collection('orders').doc('order-to-delete'),
+    );
+
+    await bulkWriter.close();
+
+    print('\n> BulkWriter completed:');
+    print('  - Successful writes: $successCount');
+    print('  - Failed writes: $errorCount\n');
+  } catch (e) {
+    print('> Error with advanced BulkWriter: $e');
+  }
+
+  // Example 6: BulkWriter - Large Batch Processing
+  print('> BulkWriter processing 100+ documents...\n');
+
+  try {
+    final bulkWriter = firestore.bulkWriter();
+    final startTime = DateTime.now();
+
+    // Process 100 documents efficiently
+    final futures = <Future<WriteResult>>[];
+    for (var i = 0; i < 100; i++) {
+      futures.add(
+        bulkWriter.set(firestore.collection('analytics').doc('event-$i'), {
+          'eventType': i % 5 == 0 ? 'pageview' : 'click',
+          'userId': 'user-${i % 10}',
+          'timestamp': DateTime.now().toIso8601String(),
+          'metadata': {'index': i, 'batch': i ~/ 20},
+        }),
+      );
+    }
+
+    await bulkWriter.close();
+    final duration = DateTime.now().difference(startTime);
+
+    print('> Processed 100 documents in ${duration.inMilliseconds}ms\n');
+  } catch (e) {
+    print('> Error with large batch: $e');
+  }
+
+  // Example 7: BulkWriter - Flush Pattern for Real-time Updates
+  print('> BulkWriter with flush pattern...\n');
+
+  try {
+    final bulkWriter = firestore.bulkWriter();
+
+    // Batch 1: User updates
+    for (var i = 0; i < 5; i++) {
+      await bulkWriter.set(firestore.collection('users-batch').doc('user-$i'), {
+        'name': 'User $i',
+        'status': 'active',
+      });
+    }
+
+    // Flush ensures all writes up to this point complete
+    await bulkWriter.flush();
+    print('  ✓ Batch 1 flushed (5 user updates)');
+
+    // Batch 2: Settings updates (after batch 1 completes)
+    for (var i = 0; i < 3; i++) {
+      await bulkWriter.set(firestore.collection('settings').doc('setting-$i'), {
+        'key': 'setting-$i',
+        'value': i * 10,
+      });
+    }
+
+    await bulkWriter.flush();
+    print('  ✓ Batch 2 flushed (3 settings updates)');
+
+    await bulkWriter.close();
+    print('> Flush pattern completed\n');
+  } catch (e) {
+    print('> Error with flush pattern: $e');
+  }
+
+  // Example 8: BulkWriter - Data Migration Pattern
+  print('> BulkWriter for data migration...\n');
+
+  try {
+    final bulkWriter = firestore.bulkWriter();
+
+    // Simulate migrating data from one collection to another
+    final sourceCollection = firestore.collection('old-data');
+    final targetCollection = firestore.collection('new-data');
+
+    // Create some source data first
+    for (var i = 0; i < 5; i++) {
+      await sourceCollection.doc('old-$i').set({
+        'legacyField': 'value-$i',
+        'oldFormat': true,
+      });
+    }
+
+    // Read from source and write to target with transformation
+    final sourceSnapshot = await sourceCollection.get();
+
+    for (final doc in sourceSnapshot.docs) {
+      final oldData = doc.data() as Map<String, dynamic>;
+
+      // Transform data to new format
+      final newData = {
+        'newField': oldData['legacyField'],
+        'migrated': true,
+        'migratedAt': DateTime.now().toIso8601String(),
+        'originalId': doc.id,
+      };
+
+      await bulkWriter.set(targetCollection.doc(doc.id), newData);
+    }
+
+    await bulkWriter.close();
+    print('> Migrated ${sourceSnapshot.docs.length} documents\n');
+  } catch (e) {
+    print('> Error with data migration: $e');
+  }
+
+  // Example 9: BulkWriter - Transaction-like Cleanup
+  print('> BulkWriter with cleanup pattern...\n');
+
+  try {
+    final bulkWriter = firestore.bulkWriter();
+
+    var operationsTracked = 0;
+
+    bulkWriter.onWriteResult((ref, result) {
+      operationsTracked++;
+    });
+
+    // Create temp documents
+    for (var i = 0; i < 5; i++) {
+      await bulkWriter.set(firestore.collection('temp-data').doc('temp-$i'), {
+        'temporary': true,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+    }
+
+    await bulkWriter.flush();
+    print('  ✓ Created 5 temporary documents');
+
+    // Do some work...
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    // Clean up temp documents
+    for (var i = 0; i < 5; i++) {
+      await bulkWriter.delete(firestore.collection('temp-data').doc('temp-$i'));
+    }
+
+    await bulkWriter.close();
+    print('  ✓ Cleaned up temporary documents');
+    print('> Total operations: $operationsTracked\n');
+  } catch (e) {
+    print('> Error with cleanup pattern: $e');
+  }
+
+  // Example 10: BulkWriter - Rate Limiting Demonstration
+  print('> BulkWriter automatic rate limiting...\n');
+
+  try {
+    final bulkWriter = firestore.bulkWriter();
+
+    print('  Queueing 500 operations (will be automatically rate-limited)...');
+
+    final startTime = DateTime.now();
+
+    // Queue many operations - BulkWriter will automatically rate limit
+    for (var i = 0; i < 500; i++) {
+      await bulkWriter.set(
+        firestore.collection('rate-limit-demo').doc('doc-$i'),
+        {'index': i, 'timestamp': DateTime.now().toIso8601String()},
+      );
+    }
+
+    await bulkWriter.close();
+
+    final duration = DateTime.now().difference(startTime);
+    print('  ✓ Completed 500 operations in ${duration.inSeconds}s');
+    print('  (BulkWriter automatically batched and rate-limited)\n');
+  } catch (e) {
+    print('> Error with rate limiting demo: $e');
   }
 }
 

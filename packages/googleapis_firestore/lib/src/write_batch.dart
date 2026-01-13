@@ -147,34 +147,89 @@ class WriteBatch {
 
   /// Write to the document referred to by the provided
   /// [DocumentReference]. If the document does not
-  /// exist yet, it will be created.
-  void set<T>(DocumentReference<T> documentReference, T data) {
+  /// exist yet, it will be created. If [SetOptions] is provided,
+  /// the data can be merged into the existing document.
+  void set<T>(
+    DocumentReference<T> documentReference,
+    T data, {
+    SetOptions? options,
+  }) {
     final firestoreData = documentReference._converter.toFirestore(data);
 
-    _validateDocumentData('data', firestoreData, allowDeletes: false);
+    final mergeLeaves =
+        options != null && options.isMerge && options.mergeFields == null;
+    final mergePaths = options?.mergeFields;
+
+    _validateDocumentData(
+      'data',
+      firestoreData,
+      allowDeletes: mergePaths != null || mergeLeaves,
+    );
 
     _verifyNotCommited();
 
-    final transform = _DocumentTransform.fromObject(
-      documentReference,
-      firestoreData,
-    );
-    transform.validate();
+    _DocumentMask? documentMask;
 
-    firestore_v1.Write op() {
-      final document = DocumentSnapshot._fromObject(
+    if (mergePaths != null) {
+      documentMask = _DocumentMask.fromFieldMask(mergePaths);
+      final filteredData = documentMask.applyTo(firestoreData);
+
+      final transform = _DocumentTransform.fromObject(
+        documentReference,
+        filteredData,
+      );
+      transform.validate();
+
+      firestore_v1.Write op() {
+        final document = DocumentSnapshot._fromObject(
+          documentReference,
+          filteredData,
+        );
+
+        final write = document._toWriteProto();
+
+        final mask = documentMask!;
+        mask.removeFields(transform.transforms.keys.toList());
+        write.updateMask = mask.toProto();
+
+        if (transform.transforms.isNotEmpty) {
+          write.updateTransforms = transform.toProto(firestore._serializer);
+        }
+
+        return write;
+      }
+
+      _operations.add((docPath: documentReference.path, op: op));
+    } else {
+      final transform = _DocumentTransform.fromObject(
         documentReference,
         firestoreData,
       );
+      transform.validate();
 
-      final write = document._toWriteProto();
-      if (transform.transforms.isNotEmpty) {
-        write.updateTransforms = transform.toProto(firestore._serializer);
+      firestore_v1.Write op() {
+        final document = DocumentSnapshot._fromObject(
+          documentReference,
+          firestoreData,
+        );
+
+        final write = document._toWriteProto();
+
+        if (mergeLeaves) {
+          final mask = _DocumentMask.fromObject(firestoreData);
+          mask.removeFields(transform.transforms.keys.toList());
+          write.updateMask = mask.toProto();
+        }
+
+        if (transform.transforms.isNotEmpty) {
+          write.updateTransforms = transform.toProto(firestore._serializer);
+        }
+
+        return write;
       }
-      return write;
-    }
 
-    _operations.add((docPath: documentReference.path, op: op));
+      _operations.add((docPath: documentReference.path, op: op));
+    }
   }
 
   /// Update fields of the document referred to by the provided

@@ -312,6 +312,12 @@ class FieldPath extends _Path<FieldPath> {
         .join('.');
   }
 
+  /// Checks whether this field path is a prefix of the specified path.
+  bool isPrefixOf(FieldPath other) => _isPrefixOf(other);
+
+  /// Appends a child segment to this field path.
+  FieldPath append(FieldPath childSegment) => _appendPath(childSegment);
+
   @override
   FieldPath _construct(List<String> segments) => FieldPath(segments);
 

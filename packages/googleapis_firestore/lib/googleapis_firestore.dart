@@ -18,6 +18,12 @@ export 'src/firestore.dart'
         QuerySnapshot,
         QueryDocumentSnapshot,
         WriteBatch,
+        BulkWriter,
+        BulkWriterOptions,
+        BulkWriterThrottling,
+        EnabledThrottling,
+        DisabledThrottling,
+        BulkWriterError,
         Transaction,
         TransactionOptions,
         ReadOnlyTransactionOptions,
@@ -42,4 +48,5 @@ export 'src/firestore.dart'
         DocumentChange,
         DocumentChangeType,
         Precondition,
-        TransactionHandler;
+        TransactionHandler,
+        SetOptions;

@@ -15,6 +15,7 @@ import '../helpers.dart';
 void main() {
   // Skip all tests if emulator is not configured
   if (!isFirestoreEmulatorEnabled()) {
+    // ignore: avoid_print
     print(
       'Skipping Firestore integration tests. '
       'Set FIRESTORE_EMULATOR_HOST environment variable to run these tests.',
@@ -253,7 +254,10 @@ void main() {
         // Verify we can fetch the referenced document
         final sisterSnapshot = await sisterCityRef.get();
         expect(sisterSnapshot.exists, isTrue);
-        expect(sisterSnapshot.data()?['name'], equals('Mountain View'));
+        expect(
+          (sisterSnapshot.data() as Map<String, dynamic>?)?['name'],
+          equals('Mountain View'),
+        );
 
         // Cleanup
         await sourceDoc.delete();

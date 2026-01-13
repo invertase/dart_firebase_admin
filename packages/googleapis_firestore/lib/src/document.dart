@@ -474,7 +474,109 @@ class _DocumentMask {
     return _DocumentMask(fieldPaths);
   }
 
+  /// Creates a document mask from a list of field paths.
+  factory _DocumentMask.fromFieldMask(List<FieldPath> fieldMask) {
+    return _DocumentMask(List.from(fieldMask));
+  }
+
+  /// Creates a document mask with the field names of a document.
+  /// Recursively extracts all field paths from the data object.
+  factory _DocumentMask.fromObject(Map<String, Object?> data) {
+    final fieldPaths = <FieldPath>[];
+
+    void extractFieldPaths(
+      Map<String, Object?> currentData, [
+      FieldPath? currentPath,
+    ]) {
+      var isEmpty = true;
+
+      for (final entry in currentData.entries) {
+        isEmpty = false;
+
+        final key = entry.key;
+        final childSegment = FieldPath([key]);
+        final childPath = currentPath != null
+            ? currentPath.append(childSegment)
+            : childSegment;
+        final value = entry.value;
+
+        if (value is _FieldTransform) {
+          if (value.includeInDocumentMask) {
+            fieldPaths.add(childPath);
+          }
+        } else if (value is Map<String, Object?>) {
+          extractFieldPaths(value, childPath);
+        } else if (value != null) {
+          fieldPaths.add(childPath);
+        }
+      }
+
+      // Add a field path for an explicitly updated empty map.
+      if (currentPath != null && isEmpty) {
+        fieldPaths.add(currentPath);
+      }
+    }
+
+    extractFieldPaths(data);
+    return _DocumentMask(fieldPaths);
+  }
+
   final List<FieldPath> _sortedPaths;
+
+  bool get isEmpty => _sortedPaths.isEmpty;
+
+  /// Removes the specified field paths from this document mask.
+  void removeFields(List<FieldPath> fieldPaths) {
+    _sortedPaths.removeWhere((path) => fieldPaths.any((fp) => path == fp));
+  }
+
+  /// Returns whether this document mask contains the specified field path.
+  bool contains(FieldPath fieldPath) {
+    return _sortedPaths.any((path) => path == fieldPath);
+  }
+
+  /// Applies this DocumentMask to data and returns a new object containing only
+  /// the fields specified in the mask.
+  Map<String, Object?> applyTo(Map<String, Object?> data) {
+    final remainingPaths = List<FieldPath>.from(_sortedPaths);
+
+    Map<String, Object?> processObject(
+      Map<String, Object?> currentData, [
+      FieldPath? currentPath,
+    ]) {
+      final result = <String, Object?>{};
+
+      for (final entry in currentData.entries) {
+        final key = entry.key;
+        final childSegment = FieldPath([key]);
+        final childPath = currentPath != null
+            ? currentPath.append(childSegment)
+            : childSegment;
+
+        // Check if this field or any of its children are in the mask
+        final shouldInclude = remainingPaths.any((path) {
+          return path == childPath || path.isPrefixOf(childPath);
+        });
+
+        if (shouldInclude) {
+          final value = entry.value;
+
+          if (value is Map<String, Object?>) {
+            result[key] = processObject(value, childPath);
+          } else {
+            result[key] = value;
+          }
+
+          // Remove this path from remaining
+          remainingPaths.removeWhere((path) => path == childPath);
+        }
+      }
+
+      return result;
+    }
+
+    return processObject(data);
+  }
 
   firestore_v1.DocumentMask toProto() {
     if (_sortedPaths.isEmpty) return firestore_v1.DocumentMask();

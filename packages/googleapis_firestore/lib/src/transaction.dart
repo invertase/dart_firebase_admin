@@ -140,24 +140,24 @@ class Transaction {
     _writeBatch.create(documentRef, documentData);
   }
 
-  //TODO support SetOptions to include merge parameter
-
   /// Write to the document referred to by the provided
   /// [DocumentReference]. If the document does not exist yet, it will be
   /// created. If the document already exists, its contents will be
-  /// overwritten with the newly provided data.
+  /// overwritten with the newly provided data unless [SetOptions] is provided
+  /// to merge the data.
   ///
   /// - [documentRef]: A reference to the document to be set.
   /// - [data] The object to serialize as the document.
+  /// - [options] Optional [SetOptions] to control merge behavior.
   ///
-  void set<T>(DocumentReference<T> documentRef, T data) {
+  void set<T>(DocumentReference<T> documentRef, T data, {SetOptions? options}) {
     if (_writeBatch == null) {
       throw FirestoreException(
         FirestoreClientErrorCode.failedPrecondition,
         readOnlyWriteErrorMsg,
       );
     }
-    _writeBatch.set<T>(documentRef, data);
+    _writeBatch.set<T>(documentRef, data, options: options);
   }
 
   /// Updates fields in the document referred to by the provided

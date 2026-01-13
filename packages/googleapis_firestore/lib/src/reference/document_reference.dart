@@ -135,9 +135,11 @@ final class DocumentReference<T> implements _Serializable {
   }
 
   /// Writes to the document referred to by this DocumentReference. If the
-  /// document does not yet exist, it will be created.
-  Future<WriteResult> set(T data) async {
-    final writeBatch = WriteBatch._(firestore)..set(this, data);
+  /// document does not yet exist, it will be created. If [SetOptions] is provided,
+  /// the data can be merged into the existing document.
+  Future<WriteResult> set(T data, {SetOptions? options}) async {
+    final writeBatch = WriteBatch._(firestore)
+      ..set(this, data, options: options);
 
     final results = await writeBatch.commit();
     return results.single;

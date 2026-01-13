@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
+
 import 'package:collection/collection.dart';
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
 import 'package:googleapis_auth/googleapis_auth.dart'
@@ -12,11 +14,11 @@ import 'package:http/http.dart'
     show BaseRequest, StreamedResponse, ByteStream, BaseClient, Client;
 import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
-
 import 'backoff.dart';
 import 'environment.dart';
 
 part 'aggregate.dart';
+part 'bulk_writer.dart';
 part 'collection_group.dart';
 part 'convert.dart';
 part 'document.dart';
@@ -28,6 +30,7 @@ part 'firestore_exception.dart';
 part 'firestore_http_client.dart';
 part 'geo_point.dart';
 part 'path.dart';
+part 'rate_limiter.dart';
 part 'reference/aggregate_query.dart';
 part 'reference/aggregate_query_snapshot.dart';
 part 'reference/collection_reference.dart';
@@ -43,6 +46,7 @@ part 'reference/query_snapshot.dart';
 part 'reference/query_util.dart';
 part 'reference/types.dart';
 part 'serializer.dart';
+part 'set_options.dart';
 part 'status_code.dart';
 part 'timestamp.dart';
 part 'transaction.dart';
@@ -549,6 +553,66 @@ class Firestore {
   // ignore: use_to_and_as_if_applicable
   WriteBatch batch() {
     return WriteBatch._(this);
+  }
+
+  /// Creates a [BulkWriter] instance for performing a large number of writes
+  /// in parallel.
+  ///
+  /// BulkWriter automatically batches writes (maximum 20 operations per batch),
+  /// sends them in parallel, and includes automatic retry logic for transient
+  /// failures. Each write operation returns its own Future that resolves when
+  /// that specific write completes.
+  ///
+  /// The [options] parameter allows you to configure rate limiting and throttling:
+  /// - Default (no options): 500 ops/sec initial, 10,000 ops/sec max
+  /// - Disable throttling entirely:
+  ///   ```dart
+  ///   firestore.bulkWriter(
+  ///     BulkWriterOptions(throttling: DisabledThrottling()),
+  ///   )
+  ///   ```
+  /// - Custom throttling:
+  ///   ```dart
+  ///   firestore.bulkWriter(
+  ///     BulkWriterOptions(
+  ///       throttling: EnabledThrottling(
+  ///         initialOpsPerSecond: 100,
+  ///         maxOpsPerSecond: 1000,
+  ///       ),
+  ///     ),
+  ///   )
+  ///   ```
+  ///
+  /// Example:
+  /// ```dart
+  /// final bulkWriter = firestore.bulkWriter();
+  ///
+  /// // Set up error handling
+  /// bulkWriter.onWriteError((error) {
+  ///   if (error.code == FirestoreClientErrorCode.unavailable &&
+  ///       error.failedAttempts < 5) {
+  ///     return true; // Retry
+  ///   }
+  ///   print('Failed write: ${error.documentRef.path}');
+  ///   return false; // Don't retry
+  /// });
+  ///
+  /// // Each write returns its own Future
+  /// final future1 = bulkWriter.set(
+  ///   firestore.collection('cities').doc('SF'),
+  ///   {'name': 'San Francisco'},
+  /// );
+  /// final future2 = bulkWriter.set(
+  ///   firestore.collection('cities').doc('LA'),
+  ///   {'name': 'Los Angeles'},
+  /// );
+  ///
+  /// // Wait for all writes to complete
+  /// await bulkWriter.close();
+  /// ```
+  // ignore: use_to_and_as_if_applicable
+  BulkWriter bulkWriter([BulkWriterOptions? options]) {
+    return BulkWriter._(this, options);
   }
 
   /// Executes the given [updateFunction] and commits the changes applied
