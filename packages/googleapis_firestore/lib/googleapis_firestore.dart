@@ -49,4 +49,5 @@ export 'src/firestore.dart'
         DocumentChangeType,
         Precondition,
         TransactionHandler,
-        SetOptions;
+        SetOptions,
+        BundleBuilder;
