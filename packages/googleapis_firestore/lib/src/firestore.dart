@@ -30,6 +30,7 @@ part 'order.dart';
 part 'path.dart';
 part 'query_partition.dart';
 part 'query_profile.dart';
+part 'query_reader.dart';
 part 'rate_limiter.dart';
 part 'reference/aggregate_query.dart';
 part 'reference/aggregate_query_snapshot.dart';
