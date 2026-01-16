@@ -120,7 +120,6 @@ class _DocumentReader<T> {
         }
       }
     } on FirestoreException catch (firestoreError) {
-      // Matches Node SDK: retry if NOT in transaction and made progress
       final shouldRetry =
           // Transactional reads are retried via the transaction runner
           request.transaction == null &&

@@ -42,7 +42,7 @@ void main() {
     for (final MapEntry(key: messagingError, value: code)
         in authServerToClientCode.entries) {
       test('converts $messagingError error codes', () async {
-        final clientMock = MockAuthClient();
+        final clientMock = ClientMock();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(

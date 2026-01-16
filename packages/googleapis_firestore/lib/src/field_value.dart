@@ -1,5 +1,43 @@
 part of 'firestore.dart';
 
+/// Represents a vector value in Firestore.
+///
+/// Create an instance with [FieldValue.vector].
+@immutable
+class VectorValue {
+  /// Creates a VectorValue from a list of numbers.
+  ///
+  /// Makes a copy of the provided list to ensure immutability.
+  VectorValue(List<double> values) : _values = List.unmodifiable(values);
+
+  final List<double> _values;
+
+  /// Returns a copy of the raw number array form of the vector.
+  List<double> toArray() => List.from(_values);
+
+  /// Returns true if the two VectorValue instances have the same raw number arrays.
+  bool isEqual(VectorValue other) {
+    if (_values.length != other._values.length) return false;
+    for (var i = 0; i < _values.length; i++) {
+      if (_values[i] != other._values[i]) return false;
+    }
+    return true;
+  }
+
+  /// Converts this VectorValue to its Firestore protobuf representation.
+  firestore_v1.Value _toProto(_Serializer serializer) {
+    return serializer.encodeVector(_values);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is VectorValue && isEqual(other);
+  }
+
+  @override
+  int get hashCode => Object.hashAll(_values);
+}
+
 abstract class FieldValue {
   /// Returns a special value that can be used with set(), create() or update()
   /// that tells the server to increment the the field's current value by the
@@ -66,6 +104,16 @@ abstract class FieldValue {
   /// ```
   const factory FieldValue.arrayRemove(List<Object?> elements) =
       _ArrayRemoveTransform;
+
+  /// Creates a VectorValue instance from an array of numbers.
+  ///
+  /// Vector values are used for vector similarity search operations in Firestore.
+  ///
+  /// ```dart
+  /// final vector = FieldValue.vector([1.0, 2.0, 3.0]);
+  /// await documentRef.set({'embedding': vector});
+  /// ```
+  static VectorValue vector(List<double> values) => VectorValue(values);
 
   /// Returns a sentinel for use with update() to mark a field for deletion.
   ///
@@ -443,6 +491,7 @@ void _validateUserInput(
     case DocumentReference():
     case GeoPoint():
     case Timestamp() || DateTime():
+    case VectorValue():
     case null:
     case num():
     case BigInt():

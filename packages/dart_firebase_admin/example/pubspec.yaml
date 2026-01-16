@@ -1,10 +1,19 @@
 name: dart_firebase_admin_example
 publish_to: none
-resolution: workspace
 
 environment:
-  sdk: '>=3.9.0 <4.0.0'
+  sdk: '^3.9.0'
 
 dependencies:
-  dart_firebase_admin: any
-  googleapis_firestore: any
+  dart_firebase_admin: ^0.1.0
+  googleapis_auth_utils: ^0.1.0
+  googleapis_firestore: ^0.1.0
+
+dependency_overrides:
+  dart_firebase_admin:
+    path: ../../dart_firebase_admin
+  googleapis_auth_utils:
+    path: ../../googleapis_auth_utils
+  googleapis_firestore:
+    path: ../../googleapis_firestore
+

@@ -17,6 +17,12 @@ class QuerySnapshot<T> {
   /// A list of all the documents in this QuerySnapshot.
   final List<QueryDocumentSnapshot<T>> docs;
 
+  /// The number of documents in the QuerySnapshot.
+  int get size => docs.length;
+
+  /// Returns true if there are no documents in the QuerySnapshot.
+  bool get empty => docs.isEmpty;
+
   /// Returns a list of the documents changes since the last snapshot.
   ///
   /// If this is the first snapshot, all documents will be in the list as added

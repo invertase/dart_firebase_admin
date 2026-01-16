@@ -29,6 +29,27 @@ class _Serializer {
     );
   }
 
+  /// Encodes a vector (list of doubles) into the Firestore 'Value' representation.
+  ///
+  /// Vectors are stored as a map with a special `__type__` field set to `__vector__`
+  /// and a `value` field containing the array of numbers.
+  firestore_v1.Value encodeVector(List<double> values) {
+    return firestore_v1.Value(
+      mapValue: firestore_v1.MapValue(
+        fields: {
+          '__type__': firestore_v1.Value(stringValue: '__vector__'),
+          'value': firestore_v1.Value(
+            arrayValue: firestore_v1.ArrayValue(
+              values: values
+                  .map((v) => firestore_v1.Value(doubleValue: v))
+                  .toList(),
+            ),
+          ),
+        },
+      ),
+    );
+  }
+
   /// Encodes a Dart value into the Firestore 'Value' representation.
   firestore_v1.Value? encodeValue(Object? value) {
     switch (value) {
@@ -54,6 +75,9 @@ class _Serializer {
 
       case null:
         return firestore_v1.Value(nullValue: 'NULL_VALUE');
+
+      case VectorValue():
+        return value._toProto(this);
 
       case _Serializable():
         return value._toProto();
@@ -123,6 +147,18 @@ class _Serializer {
         return null;
       case firestore_v1.Value(:final mapValue?):
         final fields = mapValue.fields;
+        // Check if this is a vector value (special map with __type__: __vector__)
+        if (fields != null &&
+            fields['__type__']?.stringValue == '__vector__' &&
+            fields['value']?.arrayValue != null) {
+          final vectorValues = fields['value']!.arrayValue!.values;
+          if (vectorValues != null) {
+            final doubles = vectorValues
+                .map((v) => v.doubleValue ?? 0.0)
+                .toList();
+            return VectorValue(doubles);
+          }
+        }
         return <String, Object?>{
           if (fields != null)
             for (final entry in fields.entries)

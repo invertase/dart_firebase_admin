@@ -370,6 +370,96 @@ base class Query<T> {
   /// ```
   Future<QuerySnapshot<T>> get() => _get(transactionId: null);
 
+  /// Plans and optionally executes this query, returning an [ExplainResults]
+  /// object which contains information about the planning, and optionally
+  /// the execution statistics and results.
+  ///
+  /// ```dart
+  /// final query = firestore.collection('col').where('foo', WhereFilter.equal, 'bar');
+  ///
+  /// // Get query plan without executing
+  /// final explainResults = await query.explain();
+  /// print('Indexes used: ${explainResults.metrics.planSummary.indexesUsed}');
+  ///
+  /// // Get query plan and execute
+  /// final explainResultsWithData = await query.explain(ExplainOptions(analyze: true));
+  /// print('Results: ${explainResultsWithData.snapshot?.docs.length}');
+  /// print('Read operations: ${explainResultsWithData.metrics.executionStats?.readOperations}');
+  /// ```
+  Future<ExplainResults<QuerySnapshot<T>?>> explain([
+    ExplainOptions? options,
+  ]) async {
+    final response = await firestore._firestoreClient.v1((
+      api,
+      projectId,
+    ) async {
+      final request = _toProto(transactionId: null, readTime: null);
+      request.explainOptions =
+          options?.toProto() ?? firestore_v1.ExplainOptions();
+
+      return api.projects.databases.documents.runQuery(
+        request,
+        _buildProtoParentPath(),
+      );
+    });
+
+    ExplainMetrics? metrics;
+    QuerySnapshot<T>? snapshot;
+    Timestamp? readTime;
+
+    final docs = <QueryDocumentSnapshot<T>>[];
+
+    for (final element in response) {
+      // Extract explain metrics if present
+      if (element.explainMetrics != null) {
+        metrics = ExplainMetrics._fromProto(element.explainMetrics!);
+      }
+
+      // Extract document if present (when analyze: true)
+      final document = element.document;
+      if (document != null) {
+        final docSnapshot = DocumentSnapshot._fromDocument(
+          document,
+          element.readTime,
+          firestore,
+        );
+
+        final finalDoc =
+            _DocumentSnapshotBuilder(
+                docSnapshot.ref.withConverter<T>(
+                  fromFirestore: _queryOptions.converter.fromFirestore,
+                  toFirestore: _queryOptions.converter.toFirestore,
+                ),
+              )
+              ..fieldsProto = firestore_v1.MapValue(fields: document.fields)
+              ..readTime = docSnapshot.readTime
+              ..createTime = docSnapshot.createTime
+              ..updateTime = docSnapshot.updateTime;
+
+        docs.add(finalDoc.build() as QueryDocumentSnapshot<T>);
+      }
+
+      if (element.readTime != null) {
+        readTime = Timestamp._fromString(element.readTime!);
+      }
+    }
+
+    // Create snapshot only if we have documents (analyze: true)
+    if (docs.isNotEmpty || ((options?.analyze ?? false) && readTime != null)) {
+      snapshot = QuerySnapshot<T>._(
+        query: this,
+        readTime: readTime,
+        docs: docs,
+      );
+    }
+
+    if (metrics == null) {
+      throw StateError('No explain metrics returned from query');
+    }
+
+    return ExplainResults._create(metrics: metrics, snapshot: snapshot);
+  }
+
   Future<QuerySnapshot<T>> _get({required String? transactionId}) async {
     final response = await firestore._firestoreClient.v1((
       api,
@@ -428,20 +518,9 @@ base class Query<T> {
   firestore_v1.RunQueryRequest _toProto({
     required String? transactionId,
     required Timestamp? readTime,
-    firestore_v1.TransactionOptions? transactionOptions,
   }) {
-    // Validate mutual exclusivity of transaction parameters
-    final providedParams = [
-      transactionId,
-      readTime,
-      transactionOptions,
-    ].nonNulls.length;
-
-    if (providedParams > 1) {
-      throw ArgumentError(
-        'Only one of transactionId, readTime, or transactionOptions can be specified. '
-        'Got: transactionId=$transactionId, readTime=$readTime, transactionOptions=$transactionOptions',
-      );
+    if (readTime != null && transactionId != null) {
+      throw ArgumentError('readTime and transactionId cannot both be set.');
     }
 
     final structuredQuery = _toStructuredQuery();
@@ -493,8 +572,6 @@ base class Query<T> {
       runQueryRequest.transaction = transactionId;
     } else if (readTime != null) {
       runQueryRequest.readTime = readTime._toProto().timestampValue;
-    } else if (transactionOptions != null) {
-      runQueryRequest.newTransaction = transactionOptions;
     }
 
     return runQueryRequest;
@@ -998,5 +1075,102 @@ base class Query<T> {
       'field must be a String or FieldPath, got ${field.runtimeType}',
     );
     return aggregate(AggregateField.average(field));
+  }
+
+  /// Returns a query that can perform vector distance (similarity) search.
+  ///
+  /// The returned query, when executed, performs a distance (similarity) search
+  /// on the specified [vectorField] against the given [queryVector] and returns
+  /// the top documents that are closest to the [queryVector].
+  ///
+  /// Only documents whose [vectorField] field is a [VectorValue] of the same
+  /// dimension as [queryVector] participate in the query, all other documents
+  /// are ignored.
+  ///
+  /// ```dart
+  /// // Returns the closest 10 documents whose Euclidean distance from their
+  /// // 'embedding' fields are closest to [41, 42].
+  /// final vectorQuery = firestore.collection('documents').findNearest(
+  ///   vectorField: 'embedding',
+  ///   queryVector: [41.0, 42.0],
+  ///   limit: 10,
+  ///   distanceMeasure: DistanceMeasure.euclidean,
+  ///   distanceResultField: 'distance',  // Optional
+  ///   distanceThreshold: 0.5,           // Optional
+  /// );
+  ///
+  /// final querySnapshot = await vectorQuery.get();
+  /// querySnapshot.forEach((doc) {
+  ///   print('Found ${doc.id} with distance ${doc.get('distance')}');
+  /// });
+  /// ```
+  VectorQuery<T> findNearest({
+    required Object vectorField,
+    required Object queryVector,
+    required int limit,
+    required DistanceMeasure distanceMeasure,
+    Object? distanceResultField,
+    double? distanceThreshold,
+  }) {
+    // Validate vectorField
+    if (vectorField is! String && vectorField is! FieldPath) {
+      throw ArgumentError.value(
+        vectorField,
+        'vectorField',
+        'must be a String or FieldPath',
+      );
+    }
+
+    // Validate queryVector
+    if (queryVector is! VectorValue && queryVector is! List<double>) {
+      throw ArgumentError.value(
+        queryVector,
+        'queryVector',
+        'must be a VectorValue or List<double>',
+      );
+    }
+
+    // Validate limit
+    if (limit <= 0) {
+      throw ArgumentError.value(limit, 'limit', 'must be a positive number');
+    }
+
+    if (limit > 1000) {
+      throw ArgumentError.value(limit, 'limit', 'must be at most 1000');
+    }
+
+    // Validate queryVector is not empty
+    final vectorValues = queryVector is VectorValue
+        ? queryVector.toArray()
+        : queryVector as List<double>;
+    if (vectorValues.isEmpty) {
+      throw ArgumentError.value(
+        queryVector,
+        'queryVector',
+        'vector size must be larger than 0',
+      );
+    }
+
+    // Validate distanceResultField
+    if (distanceResultField != null &&
+        distanceResultField is! String &&
+        distanceResultField is! FieldPath) {
+      throw ArgumentError.value(
+        distanceResultField,
+        'distanceResultField',
+        'must be a String or FieldPath',
+      );
+    }
+
+    final options = VectorQueryOptions(
+      vectorField: vectorField,
+      queryVector: queryVector,
+      limit: limit,
+      distanceMeasure: distanceMeasure,
+      distanceResultField: distanceResultField,
+      distanceThreshold: distanceThreshold,
+    );
+
+    return VectorQuery<T>._(query: this, options: options);
   }
 }
