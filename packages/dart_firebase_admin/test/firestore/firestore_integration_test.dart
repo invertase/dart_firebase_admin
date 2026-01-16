@@ -1,28 +1,9 @@
-import 'dart:io';
-
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:googleapis_firestore/googleapis_firestore.dart' as gfs;
 import 'package:test/test.dart';
-
 import '../helpers.dart';
 
-/// Integration tests for Firestore wrapper.
-///
-/// These tests require the Firestore emulator to be running.
-/// Start it with: firebase emulators:start --only firestore
-///
-/// Or run tests with: firebase emulators:exec "dart test test/firestore/firestore_integration_test.dart"
 void main() {
-  // Skip all tests if emulator is not configured
-  if (!isFirestoreEmulatorEnabled()) {
-    // ignore: avoid_print
-    print(
-      'Skipping Firestore integration tests. '
-      'Set FIRESTORE_EMULATOR_HOST environment variable to run these tests.',
-    );
-    return;
-  }
-
   group('Firestore Integration Tests', () {
     late FirebaseApp app;
     late gfs.Firestore firestore;
@@ -33,7 +14,11 @@ void main() {
         options: const AppOptions(projectId: projectId),
       );
 
-      firestore = app.firestore();
+      firestore = app.firestore(
+        settings: const gfs.Settings(
+          environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
+        ),
+      );
     });
 
     tearDown(() async {
@@ -255,7 +240,7 @@ void main() {
         final sisterSnapshot = await sisterCityRef.get();
         expect(sisterSnapshot.exists, isTrue);
         expect(
-          (sisterSnapshot.data() as Map<String, dynamic>?)?['name'],
+          (sisterSnapshot.data() as Map<String, dynamic>)['name'],
           equals('Mountain View'),
         );
 
@@ -357,9 +342,4 @@ void main() {
       });
     });
   });
-}
-
-/// Checks if the Firestore emulator is enabled via environment variable.
-bool isFirestoreEmulatorEnabled() {
-  return Platform.environment['FIRESTORE_EMULATOR_HOST'] != null;
 }

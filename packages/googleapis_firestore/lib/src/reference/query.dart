@@ -428,9 +428,20 @@ base class Query<T> {
   firestore_v1.RunQueryRequest _toProto({
     required String? transactionId,
     required Timestamp? readTime,
+    firestore_v1.TransactionOptions? transactionOptions,
   }) {
-    if (readTime != null && transactionId != null) {
-      throw ArgumentError('readTime and transactionId cannot both be set.');
+    // Validate mutual exclusivity of transaction parameters
+    final providedParams = [
+      transactionId,
+      readTime,
+      transactionOptions,
+    ].nonNulls.length;
+
+    if (providedParams > 1) {
+      throw ArgumentError(
+        'Only one of transactionId, readTime, or transactionOptions can be specified. '
+        'Got: transactionId=$transactionId, readTime=$readTime, transactionOptions=$transactionOptions',
+      );
     }
 
     final structuredQuery = _toStructuredQuery();
@@ -482,6 +493,8 @@ base class Query<T> {
       runQueryRequest.transaction = transactionId;
     } else if (readTime != null) {
       runQueryRequest.readTime = readTime._toProto().timestampValue;
+    } else if (transactionOptions != null) {
+      runQueryRequest.newTransaction = transactionOptions;
     }
 
     return runQueryRequest;
