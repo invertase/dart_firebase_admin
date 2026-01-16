@@ -73,8 +73,6 @@ class Transaction {
   Future<String>? _transactionIdPromise;
   String? _prevTransactionId;
 
-  // TODO support Query as parameter for [get]
-
   /// Retrieves a single document from the database. Holds a pessimistic lock on
   /// the returned document.
   ///
@@ -96,6 +94,43 @@ class Transaction {
       DocumentReference<T>,
       DocumentSnapshot<T>
     >(docRef, resultFn: _getSingleFn);
+  }
+
+  /// Executes a query and returns the results. Holds a pessimistic lock on
+  /// all documents in the result set.
+  ///
+  /// - [query]: The query to execute.
+  ///
+  /// Returns a [QuerySnapshot] containing the query results.
+  ///
+  /// All documents matched by the query will be locked for the duration of
+  /// the transaction. The query is executed at a consistent snapshot, ensuring
+  /// that all reads see the same data.
+  ///
+  /// ```dart
+  /// firestore.runTransaction((transaction) async {
+  ///   final query = firestore.collection('users')
+  ///       .where('active', WhereFilter.equal, true)
+  ///       .limit(100);
+  ///
+  ///   final snapshot = await transaction.getQuery(query);
+  ///
+  ///   for (final doc in snapshot.docs) {
+  ///     transaction.update(doc.ref, {'processed': true});
+  ///   }
+  /// });
+  /// ```
+  Future<QuerySnapshot<T>> getQuery<T>(Query<T> query) async {
+    if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
+      throw FirestoreException(
+        FirestoreClientErrorCode.failedPrecondition,
+        readAfterWriteErrorMsg,
+      );
+    }
+    return _withLazyStartedTransaction<Query<T>, QuerySnapshot<T>>(
+      query,
+      resultFn: _getQueryFn,
+    );
   }
 
   /// Retrieve multiple documents from the database by the provided
@@ -375,6 +410,27 @@ class Transaction {
       firestore: _firestore,
       documents: docsdocumentRefs,
       fieldMask: fieldMask,
+      transactionId: transactionId,
+      readTime: readTime,
+      transactionOptions: transactionOptions,
+    );
+
+    final result = await reader._get();
+    return _TransactionResult(
+      transaction: result.transaction,
+      result: result.result,
+    );
+  }
+
+  Future<_TransactionResult<QuerySnapshot<T>>> _getQueryFn<T>(
+    Query<T> query, {
+    String? transactionId,
+    Timestamp? readTime,
+    firestore_v1.TransactionOptions? transactionOptions,
+    List<FieldPath>? fieldMask,
+  }) async {
+    final reader = _QueryReader(
+      query: query,
       transactionId: transactionId,
       readTime: readTime,
       transactionOptions: transactionOptions,
