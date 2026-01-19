@@ -1,5 +1,3 @@
-part of 'firestore.dart';
-
 /// Status codes for Firestore operations.
 ///
 /// These codes are used to indicate the result of Firestore operations and

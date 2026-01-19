@@ -6,7 +6,6 @@ import 'package:test/test.dart';
 
 import 'helpers.dart';
 
-@Tags(['prod'])
 void main() {
   group(
     'QueryPartition Tests [Production]',
@@ -355,6 +354,85 @@ void main() {
           reason: 'No duplicate documents across partitions',
         );
       });
+
+      test(
+        'handles paginated partition responses with large partition counts',
+        () async {
+          // Create enough documents to potentially trigger pagination
+          // The API typically paginates around 128-256 partitions
+          const documentCount = 500;
+          const desiredPartitionCount = 300;
+
+          final collectionGroupId =
+              'pagination-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionGroupsToCleanup.add(collectionGroupId);
+
+          // Create documents across multiple parents to maximize partition points
+          for (var i = 0; i < documentCount; i++) {
+            final parentPath = 'parent${i % 10}';
+            await firestore
+                .doc(
+                  '$parentPath/doc/$collectionGroupId/doc${i.toString().padLeft(4, '0')}',
+                )
+                .set({'value': i});
+          }
+
+          final collectionGroup = firestore.collectionGroup(collectionGroupId);
+          final partitions = await getPartitions(
+            collectionGroup,
+            desiredPartitionCount,
+          );
+
+          // Verify we got partitions
+          expect(partitions.length, greaterThan(0));
+          expect(partitions.length, lessThanOrEqualTo(desiredPartitionCount));
+
+          // Verify partition structure
+          expect(
+            partitions[0].startAt,
+            isNull,
+            reason: 'First partition starts at beginning',
+          );
+          expect(
+            partitions.last.endBefore,
+            isNull,
+            reason: 'Last partition ends at end',
+          );
+
+          // Verify all partitions are continuous (no gaps)
+          for (var i = 0; i < partitions.length - 1; i++) {
+            expect(partitions[i].endBefore, isNotNull);
+            expect(partitions[i + 1].startAt, isNotNull);
+            expect(
+              partitions[i].endBefore,
+              equals(partitions[i + 1].startAt),
+              reason:
+                  'Partition $i endBefore must equal partition ${i + 1} startAt',
+            );
+          }
+
+          // Verify all documents can be retrieved (no data loss)
+          final allDocuments = <QueryDocumentSnapshot<Map<String, Object?>>>[];
+          for (final partition in partitions) {
+            final snapshot = await partition.toQuery().get();
+            allDocuments.addAll(snapshot.docs);
+          }
+
+          expect(
+            allDocuments,
+            hasLength(documentCount),
+            reason: 'All documents must be retrievable across partitions',
+          );
+
+          // Verify no duplicates
+          final docIds = allDocuments.map((doc) => doc.id).toSet();
+          expect(
+            docIds,
+            hasLength(documentCount),
+            reason: 'No document should appear in multiple partitions',
+          );
+        },
+      );
     },
     skip: hasGoogleEnv
         ? false

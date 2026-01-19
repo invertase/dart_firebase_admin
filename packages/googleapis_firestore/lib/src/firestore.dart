@@ -1,21 +1,19 @@
 import 'dart:async';
-import 'dart:convert' show jsonDecode, jsonEncode, utf8;
+import 'dart:convert' show jsonEncode, utf8;
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
-import 'package:googleapis_auth/googleapis_auth.dart'
-    as googleapis_auth
-    show AuthClient, AccessCredentials;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
-import 'package:http/http.dart'
-    show BaseRequest, StreamedResponse, ByteStream, BaseClient, Client;
 import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
+
 import 'backoff.dart';
-import 'environment.dart';
+import 'firestore_exception.dart';
+import 'firestore_http_client.dart';
+import 'status_code.dart';
 
 part 'aggregate.dart';
 part 'bulk_writer.dart';
@@ -27,11 +25,11 @@ part 'document_change.dart';
 part 'document_reader.dart';
 part 'field_value.dart';
 part 'filter.dart';
-part 'firestore_exception.dart';
-part 'firestore_http_client.dart';
 part 'geo_point.dart';
+part 'order.dart';
 part 'path.dart';
 part 'query_partition.dart';
+part 'query_profile.dart';
 part 'rate_limiter.dart';
 part 'reference/aggregate_query.dart';
 part 'reference/aggregate_query_snapshot.dart';
@@ -39,9 +37,6 @@ part 'reference/collection_reference.dart';
 part 'reference/composite_filter_internal.dart';
 part 'reference/constants.dart';
 part 'reference/document_reference.dart';
-part 'reference/explain_metrics.dart';
-part 'reference/explain_options.dart';
-part 'reference/explain_results.dart';
 part 'reference/field_filter_internal.dart';
 part 'reference/field_order.dart';
 part 'reference/filter_internal.dart';
@@ -55,7 +50,6 @@ part 'reference/vector_query_options.dart';
 part 'reference/vector_query_snapshot.dart';
 part 'serializer.dart';
 part 'set_options.dart';
-part 'status_code.dart';
 part 'timestamp.dart';
 part 'transaction.dart';
 part 'types.dart';
@@ -216,7 +210,6 @@ class Settings {
   ///   environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
   /// );
   /// ```
-  @visibleForTesting
   final Map<String, String>? environmentOverride;
 
   /// Converts these settings to a GoogleCredential for internal use.
@@ -364,8 +357,24 @@ class Firestore {
   /// Creates a Firestore instance.
   ///
   /// [settings] Configuration options for this Firestore instance.
-  Firestore({Settings? settings}) : _settings = settings ?? const Settings() {
-    _validateAndApplySettings();
+  factory Firestore({Settings? settings}) {
+    return Firestore._(settings: settings);
+  }
+
+  @internal
+  factory Firestore.internal({
+    Settings? settings,
+    FirestoreHttpClient? client,
+  }) {
+    return Firestore._(settings: settings, client: client);
+  }
+
+  Firestore._({Settings? settings, FirestoreHttpClient? client})
+    : _settings = settings ?? const Settings() {
+    _credential = _settings._toGoogleCredential();
+    _firestoreClient =
+        client ??
+        FirestoreHttpClient(credential: _credential, settings: _settings);
   }
 
   final Settings _settings;
@@ -375,19 +384,6 @@ class Firestore {
   /// The serializer to use for the Protobuf transformation.
   /// @internal
   late final _Serializer _serializer = _Serializer(this);
-
-  /// Validates and applies the provided settings.
-  ///
-  /// Handles:
-  /// - Credential conversion
-  /// - HTTP client initialization
-  void _validateAndApplySettings() {
-    _credential = _settings._toGoogleCredential();
-    _firestoreClient = FirestoreHttpClient(
-      credential: _credential,
-      settings: _settings,
-    );
-  }
 
   /// Returns the project ID for this Firestore instance.
   ///
@@ -771,6 +767,6 @@ class Firestore {
   /// After calling terminate, the Firestore instance is no longer usable.
   Future<void> terminate() async {
     // Close connections if needed
-    (await _firestoreClient._client).close();
+    await _firestoreClient.close();
   }
 }
