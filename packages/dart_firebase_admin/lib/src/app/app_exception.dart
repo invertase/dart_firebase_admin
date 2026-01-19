@@ -13,8 +13,6 @@ class FirebaseAppException extends FirebaseAdminException {
 }
 
 /// Firebase App error codes with their default messages.
-///
-/// These error codes match the Node.js SDK's AppErrorCodes for consistency.
 enum AppErrorCode {
   /// Firebase app with the given name has already been deleted.
   appDeleted(

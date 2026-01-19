@@ -33,13 +33,13 @@ abstract class Environment {
   static String? getFirestoreEmulatorHost([
     Map<String, String>? environmentOverride,
   ]) {
-    // Check environment override first (for testing)
-    if (environmentOverride != null &&
-        environmentOverride.containsKey(firestoreEmulatorHost)) {
+    // If environmentOverride is provided, use it as the single source of truth
+    // This allows tests to explicitly remove environment variables
+    if (environmentOverride != null) {
       return environmentOverride[firestoreEmulatorHost];
     }
 
-    // Fall back to actual environment variables
+    // Fall back to actual environment variables only if no override provided
     return Platform.environment[firestoreEmulatorHost];
   }
 

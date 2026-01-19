@@ -14,7 +14,7 @@ import 'package:test/test.dart';
 
 import '../helpers.dart';
 
-// Properly formatted but fake FCM registration token (same approach as Node.js SDK)
+// Properly formatted but fake FCM registration token
 // This token has the correct format but won't actually deliver messages.
 // The tests verify API communication, not actual message delivery.
 const registrationToken =
@@ -97,7 +97,7 @@ void main() {
       test(
         'sendEachForMulticast() with invalid token returns invalid argument error',
         () async {
-          // Use invalid tokens to test error handling (like Node.js SDK)
+          // Use invalid tokens to test error handling
           final multicastMessage = MulticastMessage(
             tokens: ['not-a-token', 'also-not-a-token'],
             notification: Notification(title: 'Multicast Test'),

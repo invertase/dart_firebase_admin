@@ -34,6 +34,7 @@ export 'src/firestore.dart'
         FieldPath,
         CollectionGroup,
         Query,
+        QueryPartition,
         AggregateQuery,
         AggregateQuerySnapshot,
         AggregateField,

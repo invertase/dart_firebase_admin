@@ -57,7 +57,6 @@ void main() {
 
             final updatedUser = await testAuth.getUser(user.uid);
             // When custom claims are cleared, Firebase returns an empty map, not null
-            // This matches Node SDK behavior: expect(userRecord.customClaims).to.deep.equal({})
             expect(updatedUser.customClaims, isEmpty);
           } finally {
             if (user != null) {

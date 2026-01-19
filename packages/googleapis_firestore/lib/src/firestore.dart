@@ -31,6 +31,7 @@ part 'firestore_exception.dart';
 part 'firestore_http_client.dart';
 part 'geo_point.dart';
 part 'path.dart';
+part 'query_partition.dart';
 part 'rate_limiter.dart';
 part 'reference/aggregate_query.dart';
 part 'reference/aggregate_query_snapshot.dart';
