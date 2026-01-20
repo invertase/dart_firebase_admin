@@ -201,7 +201,6 @@ final class DocumentReference<T> implements _Serializable {
     );
   }
 
-  // TODO listCollections
   // TODO snapshots
 
   @override

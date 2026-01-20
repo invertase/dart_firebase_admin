@@ -10,7 +10,6 @@ import 'package:googleapis_firestore/googleapis_firestore.dart'
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../helpers.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
 
@@ -235,7 +234,7 @@ void main() {
 
     group('client', () {
       test('returns custom client when provided', () async {
-        final mockClient = MockAuthClient();
+        final mockClient = ClientMock();
         final app = FirebaseApp.initializeApp(
           options: AppOptions(projectId: mockProjectId, httpClient: mockClient),
         );
@@ -267,22 +266,16 @@ void main() {
       //   await FirebaseApp.deleteApp(app);
       // });
 
-      test('reuses same client on subsequent calls', () {
-        runZoned(() async {
-          final mockClient = MockAuthClient();
-          final app = FirebaseApp.initializeApp(
-            options: AppOptions(
-              projectId: mockProjectId,
-              httpClient: mockClient,
-            ),
-          );
-          final client1 = await app.client;
-          final client2 = await app.client;
+      test('reuses same client on subsequent calls', () async {
+        final app = FirebaseApp.initializeApp(
+          options: const AppOptions(projectId: mockProjectId),
+        );
+        final client1 = await app.client;
+        final client2 = await app.client;
 
-          expect(identical(client1, client2), isTrue);
+        expect(identical(client1, client2), isTrue);
 
-          await FirebaseApp.deleteApp(app);
-        }, zoneValues: {envSymbol: <String, String>{}});
+        await FirebaseApp.deleteApp(app);
       });
     });
 
@@ -290,15 +283,9 @@ void main() {
       late FirebaseApp app;
 
       setUp(() {
-        runZoned(() {
-          final mockClient = MockAuthClient();
-          app = FirebaseApp.initializeApp(
-            options: AppOptions(
-              projectId: mockProjectId,
-              httpClient: mockClient,
-            ),
-          );
-        }, zoneValues: {});
+        app = FirebaseApp.initializeApp(
+          options: const AppOptions(projectId: mockProjectId),
+        );
       });
 
       tearDown(() async {
@@ -334,29 +321,23 @@ void main() {
       });
 
       test('firestore returns Firestore instance', () {
-        final firestore = app.firestore(settings: mockFirestoreSettings);
+        final firestore = app.firestore();
         expect(firestore, isA<googleapis_firestore.Firestore>());
         // Verify we can use Firestore methods
         expect(firestore.collection('test'), isNotNull);
       });
 
       test('firestore returns cached instance', () {
-        final firestore1 = app.firestore(settings: mockFirestoreSettings);
-        final firestore2 = app.firestore(settings: mockFirestoreSettings);
+        final firestore1 = app.firestore();
+        final firestore2 = app.firestore();
         expect(identical(firestore1, firestore2), isTrue);
       });
 
       test(
         'firestore with different databaseId returns different instances',
         () {
-          final firestore1 = app.firestore(
-            settings: mockFirestoreSettingsWithDb('db1'),
-            databaseId: 'db1',
-          );
-          final firestore2 = app.firestore(
-            settings: mockFirestoreSettingsWithDb('db2'),
-            databaseId: 'db2',
-          );
+          final firestore1 = app.firestore(databaseId: 'db1');
+          final firestore2 = app.firestore(databaseId: 'db2');
           expect(identical(firestore1, firestore2), isFalse);
         },
       );
@@ -364,10 +345,7 @@ void main() {
       test('firestore throws when reinitializing with different settings', () {
         // Initialize with first settings
         app.firestore(
-          settings: const googleapis_firestore.Settings(
-            host: 'localhost:8080',
-            environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
-          ),
+          settings: const googleapis_firestore.Settings(host: 'localhost:8080'),
         );
 
         // Try to initialize again with different settings - should throw
@@ -375,9 +353,6 @@ void main() {
           () => app.firestore(
             settings: const googleapis_firestore.Settings(
               host: 'different:9090',
-              environmentOverride: {
-                'FIRESTORE_EMULATOR_HOST': 'localhost:8080',
-              },
             ),
           ),
           throwsA(isA<FirebaseAppException>()),
@@ -423,7 +398,7 @@ void main() {
           ),
         );
         expect(
-          () => app.firestore(settings: mockFirestoreSettings),
+          () => app.firestore(),
           throwsA(
             isA<FirebaseAppException>().having(
               (e) => e.code,
@@ -469,26 +444,20 @@ void main() {
         expect(app.isDeleted, isTrue);
       });
 
-      test('closes HTTP client when created by SDK', () {
-        runZoned(() async {
-          final mockClient = MockAuthClient();
-          final app = FirebaseApp.initializeApp(
-            options: AppOptions(
-              projectId: mockProjectId,
-              httpClient: mockClient,
-            ),
-          );
+      test('closes HTTP client when created by SDK', () async {
+        final app = FirebaseApp.initializeApp(
+          options: const AppOptions(projectId: mockProjectId),
+        );
 
-          await app.client;
+        await app.client;
 
-          await app.close();
+        await app.close();
 
-          expect(app.isDeleted, isTrue);
-        }, zoneValues: {});
+        expect(app.isDeleted, isTrue);
       });
 
       test('does not close custom HTTP client', () async {
-        final mockClient = MockAuthClient();
+        final mockClient = ClientMock();
         final app = FirebaseApp.initializeApp(
           options: AppOptions(projectId: mockProjectId, httpClient: mockClient),
         );
@@ -532,7 +501,7 @@ void main() {
           await runZoned(zoneValues: {envSymbol: testEnv}, () async {
             // Create mocks
             final mockHttpClient = AuthHttpClientMock();
-            final mockClient = MockAuthClient();
+            final mockClient = ClientMock();
 
             final app = FirebaseApp.initializeApp(
               options: const AppOptions(projectId: mockProjectId),

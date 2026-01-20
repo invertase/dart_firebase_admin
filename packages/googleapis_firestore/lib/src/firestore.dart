@@ -31,7 +31,6 @@ part 'firestore_exception.dart';
 part 'firestore_http_client.dart';
 part 'geo_point.dart';
 part 'path.dart';
-part 'query_reader.dart';
 part 'rate_limiter.dart';
 part 'reference/aggregate_query.dart';
 part 'reference/aggregate_query_snapshot.dart';
@@ -39,6 +38,9 @@ part 'reference/collection_reference.dart';
 part 'reference/composite_filter_internal.dart';
 part 'reference/constants.dart';
 part 'reference/document_reference.dart';
+part 'reference/explain_metrics.dart';
+part 'reference/explain_options.dart';
+part 'reference/explain_results.dart';
 part 'reference/field_filter_internal.dart';
 part 'reference/field_order.dart';
 part 'reference/filter_internal.dart';
@@ -47,6 +49,9 @@ part 'reference/query_options.dart';
 part 'reference/query_snapshot.dart';
 part 'reference/query_util.dart';
 part 'reference/types.dart';
+part 'reference/vector_query.dart';
+part 'reference/vector_query_options.dart';
+part 'reference/vector_query_snapshot.dart';
 part 'serializer.dart';
 part 'set_options.dart';
 part 'status_code.dart';
@@ -338,9 +343,6 @@ class ReadWriteTransactionOptions extends TransactionOptions {
 
 /// The Cloud Firestore service interface.
 ///
-/// Do not call this constructor directly. Instead, use the wrapper provided
-/// by firebase-admin.
-///
 /// Example (standalone usage):
 /// ```dart
 /// // Using Application Default Credentials
@@ -586,22 +588,35 @@ class Firestore {
   /// Creates a DocumentSnapshot from raw proto data.
   ///
   /// This is an internal test helper method that allows creating snapshots
-  /// from raw document protos without actual Firestore operations.
+  /// from raw document protos or document names without actual Firestore operations.
+  ///
+  /// If passed a [firestore_v1.Document], creates a snapshot for an existing document.
+  /// If passed a [String], creates a snapshot for a missing document.
   ///
   /// @nodoc
-  @visibleForTesting
+  @internal
   DocumentSnapshot<Object?> snapshot_(
-    firestore_v1.Document document,
+    Object documentOrName,
     Timestamp readTime,
   ) {
-    return DocumentSnapshot._fromDocument(
-      document,
-      _toGoogleDateTime(
-        seconds: readTime.seconds,
-        nanoseconds: readTime.nanoseconds,
-      ),
-      this,
+    final readTimeString = _toGoogleDateTime(
+      seconds: readTime.seconds,
+      nanoseconds: readTime.nanoseconds,
     );
+
+    if (documentOrName is String) {
+      return DocumentSnapshot._missing(documentOrName, readTimeString, this);
+    } else if (documentOrName is firestore_v1.Document) {
+      return DocumentSnapshot._fromDocument(
+        documentOrName,
+        readTimeString,
+        this,
+      );
+    } else {
+      throw ArgumentError(
+        'documentOrName must be either a String or firestore_v1.Document',
+      );
+    }
   }
 
   /// Creates a QuerySnapshot for testing purposes.
@@ -748,8 +763,6 @@ class Firestore {
     return reader.get();
   }
 
-  // TODO: Implement bulkWriter() method
-  // TODO: Implement bundle() method
   // TODO: Implement recursiveDelete() method
 
   /// Terminates the Firestore client and closes all open connections.

@@ -50,4 +50,14 @@ export 'src/firestore.dart'
         Precondition,
         TransactionHandler,
         SetOptions,
-        BundleBuilder;
+        BundleBuilder,
+        VectorValue,
+        VectorQuery,
+        VectorQuerySnapshot,
+        VectorQueryOptions,
+        DistanceMeasure,
+        ExplainOptions,
+        ExplainResults,
+        ExplainMetrics,
+        PlanSummary,
+        ExecutionStats;

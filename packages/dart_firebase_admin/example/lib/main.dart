@@ -2,7 +2,6 @@ import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/functions.dart';
 import 'package:dart_firebase_admin/messaging.dart';
-import 'firestore_example.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
@@ -11,7 +10,7 @@ Future<void> main() async {
   // await authExample(admin);
 
   // Uncomment to run firestore example
-  await firestoreExample(admin);
+  // await firestoreExample(admin);
 
   // Uncomment to run project config example
   // await projectConfigExample(admin);
