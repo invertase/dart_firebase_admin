@@ -13,7 +13,7 @@ void registerFallbacks() {
 
 class FirebaseAdminMock extends Mock implements FirebaseApp {}
 
-class ClientMock extends Mock implements AuthClient {}
+class MockAuthClient extends Mock implements AuthClient {}
 
 class AuthRequestHandlerMock extends Mock implements AuthRequestHandler {}
 
