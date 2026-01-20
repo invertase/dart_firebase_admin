@@ -454,7 +454,6 @@ base class Query<T> {
     }
 
     if (metrics == null) {
-      // TODO: should this be state error?
       throw StateError('No explain metrics returned from query');
     }
 
