@@ -12,7 +12,7 @@ import '../mock.dart';
 class ProjectsMessagesResourceMock extends Mock
     implements fmc1.ProjectsMessagesResource {}
 
-class FirebaseMessagingHttpClientMock extends Mock
+class FirebaseMessagingHttpMockAuthClient extends Mock
     implements FirebaseMessagingHttpClient {}
 
 class FirebaseCloudMessagingApiMock extends Mock
@@ -28,7 +28,7 @@ void main() {
   late Messaging messaging;
   late FirebaseMessagingRequestHandler requestHandler;
 
-  final httpClient = FirebaseMessagingHttpClientMock();
+  final httpClient = FirebaseMessagingHttpMockAuthClient();
   final messages = ProjectsMessagesResourceMock();
   final projectResourceMock = ProjectsResourceMock();
   final messagingApiMock = FirebaseCloudMessagingApiMock();
@@ -87,7 +87,7 @@ void main() {
       (code: 505, error: MessagingClientErrorCode.unknownError),
     ]) {
       test('converts $code codes into errors', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(Stream.value(utf8.encode('')), code),
@@ -113,7 +113,7 @@ void main() {
     for (final MapEntry(key: messagingError, value: code)
         in messagingServerToClientCode.entries) {
       test('converts $messagingError error codes', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(

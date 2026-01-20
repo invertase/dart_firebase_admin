@@ -530,7 +530,7 @@ void main() {
         ).thenAnswer((_) async => decodedToken);
 
         // Always mock HTTP client for getUser calls
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -605,7 +605,7 @@ void main() {
         ).thenAnswer((_) async => decodedToken);
 
         // Mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -748,7 +748,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -825,7 +825,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         // validSince is after auth_time, so token is revoked
         final validSince = DateTime.now().subtract(const Duration(hours: 1));
         when(() => clientMock.send(any())).thenAnswer(
@@ -909,7 +909,7 @@ void main() {
             ),
           ).thenAnswer((_) async => decodedToken);
 
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           // validSince is before auth_time, so token is not revoked
           final validSince = DateTime.now().subtract(const Duration(hours: 1));
           when(() => clientMock.send(any())).thenAnswer(
@@ -1005,7 +1005,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedIdToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1119,7 +1119,7 @@ void main() {
           ).thenAnswer((_) async => decodedToken);
 
           // Always mock HTTP client for getUser calls
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -1199,7 +1199,7 @@ void main() {
         ).thenAnswer((_) async => decodedToken);
 
         // Mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1342,7 +1342,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1418,7 +1418,7 @@ void main() {
             ),
           ).thenAnswer((_) async => decodedToken);
 
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           // validSince is before auth_time, so cookie is not revoked
           final validSince = DateTime.now().subtract(const Duration(hours: 2));
           when(() => clientMock.send(any())).thenAnswer(

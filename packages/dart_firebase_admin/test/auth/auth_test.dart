@@ -106,7 +106,7 @@ void main() {
     group('Email Action Links', () {
       group('generatePasswordResetLink', () {
         test('generates link without ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -141,7 +141,7 @@ void main() {
         });
 
         test('generates link with ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -217,7 +217,7 @@ void main() {
         });
 
         test('generates link with linkDomain (new property)', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
 
           when(() => clientMock.send(any())).thenAnswer((_) {
             return Future.value(
@@ -260,7 +260,7 @@ void main() {
 
       group('generateEmailVerificationLink', () {
         test('generates link without ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -289,7 +289,7 @@ void main() {
         });
 
         test('generates link with ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -326,7 +326,7 @@ void main() {
         });
 
         test('generates link with linkDomain (new property)', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
 
           when(() => clientMock.send(any())).thenAnswer((_) {
             return Future.value(
@@ -413,7 +413,7 @@ void main() {
 
       group('generateSignInWithEmailLink', () {
         test('generates link without ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
 
           when(() => clientMock.send(any())).thenAnswer((_) {
             return Future.value(
@@ -449,7 +449,7 @@ void main() {
         });
 
         test('generates link with linkDomain (new property)', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
 
           when(() => clientMock.send(any())).thenAnswer((_) {
             return Future.value(
@@ -489,7 +489,7 @@ void main() {
         });
 
         test('generates link with ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -563,7 +563,7 @@ void main() {
 
       group('generateVerifyAndChangeEmailLink', () {
         test('generates link without ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -600,7 +600,7 @@ void main() {
         });
 
         test('generates link with ActionCodeSettings', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
 
           when(() => clientMock.send(any())).thenAnswer((_) {
             return Future.value(
@@ -643,7 +643,7 @@ void main() {
         });
 
         test('generates link with linkDomain (new property)', () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
 
           when(() => clientMock.send(any())).thenAnswer((_) {
             return Future.value(
@@ -782,7 +782,7 @@ void main() {
 
     group('setCustomUserClaims', () {
       test('sets custom claims for user', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -835,7 +835,7 @@ void main() {
       });
 
       test('clears claims when null is passed', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -855,7 +855,7 @@ void main() {
       });
 
       test('throws error when backend returns error', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -892,7 +892,7 @@ void main() {
 
     group('revokeRefreshTokens', () {
       test('revokes refresh tokens successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -947,7 +947,7 @@ void main() {
       });
 
       test('throws error when backend returns error', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -981,7 +981,7 @@ void main() {
 
     group('deleteUser', () {
       test('deletes user successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1027,7 +1027,7 @@ void main() {
       });
 
       test('throws error when backend returns error', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1061,7 +1061,7 @@ void main() {
 
     group('deleteUsers', () {
       test('deletes multiple users successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1084,7 +1084,7 @@ void main() {
       });
 
       test('handles errors for some users', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1142,7 +1142,7 @@ void main() {
       });
 
       test('handles multiple errors with correct indexing', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1186,7 +1186,7 @@ void main() {
 
     group('listUsers', () {
       test('lists users successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1232,7 +1232,7 @@ void main() {
       });
 
       test('supports pagination parameters', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1255,7 +1255,7 @@ void main() {
       });
 
       test('lists users with default options', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1294,7 +1294,7 @@ void main() {
       });
 
       test('returns empty list when no users exist', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1319,7 +1319,7 @@ void main() {
       });
 
       test('throws error when backend returns error', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1353,7 +1353,7 @@ void main() {
 
     group('getUsers', () {
       test('gets multiple users by identifiers', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1410,7 +1410,7 @@ void main() {
       test(
         'returns no users when given identifiers that do not exist',
         () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -1458,7 +1458,7 @@ void main() {
       test(
         'returns users by various identifier types including provider',
         () async {
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -1550,7 +1550,7 @@ void main() {
     group('getUser', () {
       test('gets user successfully', () async {
         const testUid = 'test-uid-123';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1618,7 +1618,7 @@ void main() {
 
       test('throws error when backend returns error', () async {
         const testUid = 'test-uid-123';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1656,7 +1656,7 @@ void main() {
     group('getUserByEmail', () {
       test('gets user by email successfully', () async {
         const testEmail = 'user@example.com';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1727,7 +1727,7 @@ void main() {
 
       test('throws error when backend returns error', () async {
         const testEmail = 'user@example.com';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1768,7 +1768,7 @@ void main() {
     group('getUserByPhoneNumber', () {
       test('gets user by phone number successfully', () async {
         const testPhoneNumber = '+11234567890';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1837,7 +1837,7 @@ void main() {
 
       test('throws error when backend returns error', () async {
         const testPhoneNumber = '+11234567890';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1879,7 +1879,7 @@ void main() {
       test('gets user by provider uid successfully', () async {
         const providerId = 'google.com';
         const providerUid = 'google_uid';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -1950,7 +1950,7 @@ void main() {
         'redirects to getUserByPhoneNumber when providerId is phone',
         () async {
           const phoneNumber = '+11234567890';
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           when(() => clientMock.send(any())).thenAnswer(
             (_) => Future.value(
               StreamedResponse(
@@ -1994,7 +1994,7 @@ void main() {
 
       test('redirects to getUserByEmail when providerId is email', () async {
         const email = 'user@example.com';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2038,7 +2038,7 @@ void main() {
       test('throws error when backend returns error', () async {
         const providerId = 'google.com';
         const providerUid = 'google_uid';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2081,7 +2081,7 @@ void main() {
 
     group('importUsers', () {
       test('imports users successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2109,7 +2109,7 @@ void main() {
       });
 
       test('handles partial failures', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2149,7 +2149,7 @@ void main() {
       });
 
       test('throws error when backend returns error', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2187,7 +2187,7 @@ void main() {
 
     group('listProviderConfigs', () {
       test('lists OIDC provider configs successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2244,7 +2244,7 @@ void main() {
       });
 
       test('lists SAML provider configs successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2297,7 +2297,7 @@ void main() {
       });
 
       test('returns empty list when no configs exist', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2326,7 +2326,7 @@ void main() {
       });
 
       test('throws error when backend returns error', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2377,7 +2377,7 @@ void main() {
       });
 
       test('updates OIDC provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2421,7 +2421,7 @@ void main() {
       });
 
       test('updates SAML provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2475,7 +2475,7 @@ void main() {
       });
 
       test('throws error when backend returns error for OIDC', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2513,7 +2513,7 @@ void main() {
       });
 
       test('throws error when backend returns error for SAML', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2554,7 +2554,7 @@ void main() {
     group('updateUser', () {
       test('updates user successfully', () async {
         const testUid = 'test-uid-123';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         var callCount = 0;
         when(() => clientMock.send(any())).thenAnswer((_) {
           callCount++;
@@ -2644,7 +2644,7 @@ void main() {
 
       test('throws error when backend returns error', () async {
         const testUid = 'test-uid-123';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2708,7 +2708,7 @@ void main() {
         ).thenAnswer((_) async => decodedToken);
 
         // Always mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2832,7 +2832,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -2903,7 +2903,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         // validSince is after auth_time, so token is revoked
         final validSince = DateTime.now().subtract(const Duration(hours: 1));
         when(() => clientMock.send(any())).thenAnswer(
@@ -2981,7 +2981,7 @@ void main() {
             ),
           ).thenAnswer((_) async => decodedToken);
 
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           // validSince is before auth_time, so token is not revoked
           final validSince = DateTime.now().subtract(const Duration(hours: 1));
           when(() => clientMock.send(any())).thenAnswer(
@@ -3037,7 +3037,7 @@ void main() {
 
     group('createSessionCookie', () {
       test('creates session cookie successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3103,7 +3103,7 @@ void main() {
       });
 
       test('validates expiresIn duration - minimum allowed', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3131,7 +3131,7 @@ void main() {
       });
 
       test('validates expiresIn duration - maximum allowed', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3161,7 +3161,7 @@ void main() {
       });
 
       test('handles backend error', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3194,7 +3194,7 @@ void main() {
     group('createUser', () {
       test('creates user successfully', () async {
         const testUid = 'test-uid-123';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         var callCount = 0;
         when(() => clientMock.send(any())).thenAnswer((_) {
           callCount++;
@@ -3249,7 +3249,7 @@ void main() {
       });
 
       test('throws error when createNewAccount fails', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3282,7 +3282,7 @@ void main() {
 
       test('throws internal error when getUser returns user not found', () async {
         const testUid = 'test-uid-123';
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         var callCount = 0;
         when(() => clientMock.send(any())).thenAnswer((_) {
           callCount++;
@@ -3330,7 +3330,7 @@ void main() {
         'propagates error when getUser fails with non-user-not-found error',
         () async {
           const testUid = 'test-uid-123';
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           var callCount = 0;
           when(() => clientMock.send(any())).thenAnswer((_) {
             callCount++;
@@ -3392,7 +3392,7 @@ void main() {
       });
 
       test('deletes OIDC provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3412,7 +3412,7 @@ void main() {
       });
 
       test('deletes SAML provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3432,7 +3432,7 @@ void main() {
       });
 
       test('throws error when backend returns error for OIDC', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3467,7 +3467,7 @@ void main() {
       });
 
       test('throws error when backend returns error for SAML', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3518,7 +3518,7 @@ void main() {
       });
 
       test('gets OIDC provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3553,7 +3553,7 @@ void main() {
       });
 
       test('gets SAML provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3599,7 +3599,7 @@ void main() {
       });
 
       test('throws error when backend returns error for OIDC', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3631,7 +3631,7 @@ void main() {
       });
 
       test('throws error when backend returns error for SAML', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3687,7 +3687,7 @@ void main() {
       });
 
       test('creates OIDC provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3731,7 +3731,7 @@ void main() {
       });
 
       test('creates SAML provider config successfully', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3817,7 +3817,7 @@ void main() {
         ).thenAnswer((_) async => decodedToken);
 
         // Always mock HTTP client for getUser calls (needed when emulator is enabled or checkRevoked is true)
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -3955,7 +3955,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -4029,7 +4029,7 @@ void main() {
           ),
         ).thenAnswer((_) async => decodedToken);
 
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         // validSince is after auth_time, so cookie is revoked
         final validSince = DateTime.now().subtract(const Duration(hours: 1));
         when(() => clientMock.send(any())).thenAnswer(
@@ -4110,7 +4110,7 @@ void main() {
             ),
           ).thenAnswer((_) async => decodedToken);
 
-          final clientMock = ClientMock();
+          final clientMock = MockAuthClient();
           // validSince is before auth_time, so cookie is not revoked
           final validSince = DateTime.now().subtract(const Duration(hours: 1));
           when(() => clientMock.send(any())).thenAnswer(
