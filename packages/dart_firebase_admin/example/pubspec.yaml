@@ -8,6 +8,7 @@ dependencies:
   dart_firebase_admin: ^0.1.0
   googleapis_auth_utils: ^0.1.0
   googleapis_firestore: ^0.1.0
+  googleapis_storage: ^0.1.0
 
 dependency_overrides:
   dart_firebase_admin:
@@ -16,4 +17,6 @@ dependency_overrides:
     path: ../../googleapis_auth_utils
   googleapis_firestore:
     path: ../../googleapis_firestore
+  googleapis_storage:
+    path: ../../googleapis_storage
 
