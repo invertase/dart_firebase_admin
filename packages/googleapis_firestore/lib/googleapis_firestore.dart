@@ -7,9 +7,6 @@ library;
 export 'src/firestore.dart'
     show
         Firestore,
-        FirestoreException,
-        FirestoreClientErrorCode,
-        StatusCode,
         Settings,
         Credentials,
         CollectionReference,
@@ -34,6 +31,7 @@ export 'src/firestore.dart'
         FieldPath,
         CollectionGroup,
         Query,
+        QueryPartition,
         AggregateQuery,
         AggregateQuerySnapshot,
         AggregateField,
@@ -61,3 +59,6 @@ export 'src/firestore.dart'
         ExplainMetrics,
         PlanSummary,
         ExecutionStats;
+export 'src/firestore_exception.dart'
+    show FirestoreException, FirestoreClientErrorCode;
+export 'src/status_code.dart' show StatusCode;

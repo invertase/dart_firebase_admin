@@ -265,7 +265,6 @@ class FunctionsRequestHandler {
 
     if (extensionId != null && extensionId.isNotEmpty && isComputeEngine) {
       // Running as extension with ComputeEngine - use ID token with Authorization header.
-      // This is the same approach as Node.js SDK for Firebase Extensions.
       final idToken = authClient.credentials.idToken;
       if (idToken != null && idToken.isNotEmpty) {
         httpRequest.headers = {

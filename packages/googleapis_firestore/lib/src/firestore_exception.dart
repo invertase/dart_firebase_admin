@@ -1,4 +1,9 @@
-part of 'firestore.dart';
+import 'dart:convert';
+
+import 'package:googleapis/firestore/v1.dart' as firestore_v1;
+import 'package:meta/meta.dart';
+
+import 'status_code.dart';
 
 /// Extracts error code from error response.
 String? _getErrorCode(Object? response) {
@@ -73,22 +78,24 @@ FirestoreException _createFirestoreError({
 }
 
 /// A generic guard wrapper for API calls to handle exceptions.
-R _firestoreGuard<R>(R Function() cb) {
+@internal
+R firestoreGuard<R>(R Function() cb) {
   try {
     final value = cb();
 
     if (value is Future) {
-      return value.catchError(_handleException) as R;
+      return value.catchError(handleFirestoreException) as R;
     }
 
     return value;
   } catch (error, stackTrace) {
-    _handleException(error, stackTrace);
+    handleFirestoreException(error, stackTrace);
   }
 }
 
 /// Converts an Exception to a FirestoreError.
-Never _handleException(Object exception, StackTrace stackTrace) {
+@internal
+Never handleFirestoreException(Object exception, StackTrace stackTrace) {
   if (exception is firestore_v1.DetailedApiRequestError) {
     Error.throwWithStackTrace(
       _createFirestoreError(

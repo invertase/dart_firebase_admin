@@ -98,6 +98,7 @@ enum MultiFactorConfigState {
   disabled('DISABLED');
 
   const MultiFactorConfigState(this.value);
+
   final String value;
 
   static MultiFactorConfigState fromString(String value) {
@@ -252,8 +253,7 @@ class _MultiFactorAuthConfig implements MultiFactorConfig {
     return _MultiFactorAuthConfig(
       state: MultiFactorConfigState.fromString(stateValue as String),
       factorIds: factorIds.isEmpty ? null : factorIds,
-      providerConfigs:
-          providerConfigs, // Always return list, never null (matches Node.js SDK)
+      providerConfigs: providerConfigs,
     );
   }
 
@@ -368,6 +368,7 @@ enum RecaptchaProviderEnforcementState {
   enforce('ENFORCE');
 
   const RecaptchaProviderEnforcementState(this.value);
+
   final String value;
 
   static RecaptchaProviderEnforcementState fromString(String value) {
@@ -383,6 +384,7 @@ enum RecaptchaAction {
   block('BLOCK');
 
   const RecaptchaAction(this.value);
+
   final String value;
 
   static RecaptchaAction fromString(String value) {
@@ -400,6 +402,7 @@ enum RecaptchaKeyClientType {
   android('ANDROID');
 
   const RecaptchaKeyClientType(this.value);
+
   final String value;
 
   static RecaptchaKeyClientType fromString(String value) {
@@ -651,9 +654,6 @@ class _RecaptchaAuthConfig implements RecaptchaConfig {
       options.managedRules!.forEach(_validateManagedRule);
     }
 
-    // Note: In Dart, bool? is already type-checked at compile time, so we don't need runtime validation
-    // But we keep the validation structure for consistency with Node.js SDK
-
     if (options.smsTollFraudManagedRules != null) {
       options.smsTollFraudManagedRules!.forEach(_validateTollFraudManagedRule);
     }
@@ -734,6 +734,7 @@ enum PasswordPolicyEnforcementState {
   off('OFF');
 
   const PasswordPolicyEnforcementState(this.value);
+
   final String value;
 
   static PasswordPolicyEnforcementState fromString(String value) {

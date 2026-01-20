@@ -10,8 +10,6 @@ import '../app.dart';
 const String kDefaultDatabaseId = '(default)';
 
 /// Firestore service for Firebase Admin SDK.
-///
-/// Supports multiple named databases similar to Node.js SDK.
 class Firestore implements FirebaseService {
   /// Internal constructor
   Firestore._(this.app);

@@ -1,5 +1,3 @@
-part of 'firestore.dart';
-
 /// Status codes for Firestore operations.
 ///
 /// These codes are used to indicate the result of Firestore operations and
@@ -25,7 +23,6 @@ enum StatusCode {
 
   const StatusCode(this.value);
 
-  // Imported from https://github.com/googleapis/nodejs-firestore/blob/fba4949be5be8b26720f0fefcf176e549829e382/dev/src/v1/firestore_client_config.json
   static const nonIdempotentRetryCodes = <StatusCode>[];
   static const idempotentRetryCodes = <StatusCode>[
     StatusCode.deadlineExceeded,

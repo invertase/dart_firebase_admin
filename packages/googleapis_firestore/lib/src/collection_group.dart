@@ -13,6 +13,142 @@ final class CollectionGroup<T> extends Query<T> {
          ),
        );
 
+  /// Partitions a query by returning partition cursors that can be used to run
+  /// the query in parallel.
+  ///
+  /// The returned partition cursors are split points that can be used as
+  /// starting and end points for individual query invocations.
+  ///
+  /// This method automatically handles paginated API responses and fetches
+  /// all available partition cursors across multiple pages.
+  ///
+  /// Example:
+  /// ```dart
+  /// final query = firestore.collectionGroup('collectionId');
+  /// await for (final partition in query.getPartitions(42)) {
+  ///   final partitionedQuery = partition.toQuery();
+  ///   final querySnapshot = await partitionedQuery.get();
+  ///   print('Partition contained ${querySnapshot.docs.length} documents');
+  /// }
+  /// ```
+  ///
+  /// [desiredPartitionCount] The desired maximum number of partition points.
+  /// The number must be strictly positive. The actual number of partitions
+  /// returned may be fewer.
+  ///
+  /// Returns a stream of [QueryPartition]s.
+  Stream<QueryPartition<T>> getPartitions(int desiredPartitionCount) async* {
+    // Validate the partition count
+    _validatePartitionCount(desiredPartitionCount);
+
+    // Fetch all partition cursors
+    final partitions = desiredPartitionCount > 1
+        ? await _fetchAllPartitionCursors(desiredPartitionCount)
+        : <List<firestore_v1.Value>>[];
+
+    // Sort partitions as they may not be ordered across multiple pages
+    if (partitions.isNotEmpty) {
+      mergeSort(partitions, compare: compareArrays);
+    }
+
+    // Yield all partitions
+    yield* _yieldPartitions(partitions);
+  }
+
+  /// Validates that the partition count is valid.
+  void _validatePartitionCount(int desiredPartitionCount) {
+    if (desiredPartitionCount < 1) {
+      throw FirestoreException(
+        FirestoreClientErrorCode.invalidArgument,
+        'Value for argument "desiredPartitionCount" must be within [1, Infinity] inclusive, but was: $desiredPartitionCount',
+      );
+    }
+  }
+
+  /// Fetches all partition cursors from the API, handling pagination automatically.
+  Future<List<List<firestore_v1.Value>>> _fetchAllPartitionCursors(
+    int desiredPartitionCount,
+  ) async {
+    final partitions = <List<firestore_v1.Value>>[];
+
+    // Partition queries require explicit ordering by __name__.
+    final queryWithDefaultOrder = orderBy(FieldPath.documentId);
+    final structuredQuery = queryWithDefaultOrder._toStructuredQuery();
+
+    // Since we are always returning an extra partition (with an empty endBefore
+    // cursor), we reduce the desired partition count by one.
+    final adjustedPartitionCount = desiredPartitionCount - 1;
+
+    // Fetch all partition cursors, automatically handling pagination
+    String? pageToken;
+    do {
+      final response = await _fetchPartitionPage(
+        structuredQuery: structuredQuery,
+        partitionCount: adjustedPartitionCount,
+        pageToken: pageToken,
+      );
+
+      // Collect partitions from this page
+      if (response.partitions != null) {
+        for (final cursor in response.partitions!) {
+          if (cursor.values != null) {
+            partitions.add(cursor.values!);
+          }
+        }
+      }
+
+      // Continue to next page if token is present
+      pageToken = response.nextPageToken;
+    } while (pageToken != null && pageToken.isNotEmpty);
+
+    return partitions;
+  }
+
+  /// Fetches a single page of partition cursors from the API.
+  Future<firestore_v1.PartitionQueryResponse> _fetchPartitionPage({
+    required firestore_v1.StructuredQuery structuredQuery,
+    required int partitionCount,
+    String? pageToken,
+  }) async {
+    final partitionRequest = firestore_v1.PartitionQueryRequest(
+      structuredQuery: structuredQuery,
+      partitionCount: '$partitionCount',
+      pageToken: pageToken,
+    );
+
+    return firestore._firestoreClient.v1((api, projectId) {
+      return api.projects.databases.documents.partitionQuery(
+        partitionRequest,
+        '${firestore._formattedDatabaseName}/documents',
+      );
+    });
+  }
+
+  /// Yields all partitions from the sorted list of cursor values.
+  Stream<QueryPartition<T>> _yieldPartitions(
+    List<List<firestore_v1.Value>> partitions,
+  ) async* {
+    // Yield partitions with appropriate start and end cursors
+    for (var i = 0; i < partitions.length; i++) {
+      yield QueryPartition<T>(
+        firestore,
+        _queryOptions.collectionId,
+        _queryOptions.converter,
+        i > 0 ? partitions[i - 1] : null,
+        partitions[i],
+      );
+    }
+
+    // Return the extra partition with the empty cursor.
+    yield QueryPartition<T>(
+      firestore,
+      _queryOptions.collectionId,
+      _queryOptions.converter,
+      partitions.isNotEmpty ? partitions.last : null,
+      null,
+    );
+  }
+
   @override
   CollectionGroup<U> withConverter<U>({
     required FromFirestore<U> fromFirestore,

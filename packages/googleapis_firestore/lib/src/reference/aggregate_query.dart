@@ -68,21 +68,25 @@ class AggregateQuery {
     AggregateQuerySnapshot? snapshot;
     final results = <String, Object?>{};
     Timestamp? readTime;
+    var hadResult = false;
 
     for (final result in response) {
       if (result.explainMetrics != null) {
         metrics = ExplainMetrics._fromProto(result.explainMetrics!);
       }
 
-      if (result.result != null && result.result!.aggregateFields != null) {
-        for (final entry in result.result!.aggregateFields!.entries) {
-          final value = entry.value;
-          if (value.integerValue != null) {
-            results[entry.key] = int.parse(value.integerValue!);
-          } else if (value.doubleValue != null) {
-            results[entry.key] = value.doubleValue;
-          } else if (value.nullValue != null) {
-            results[entry.key] = null;
+      if (result.result != null) {
+        hadResult = true;
+        if (result.result!.aggregateFields != null) {
+          for (final entry in result.result!.aggregateFields!.entries) {
+            final value = entry.value;
+            if (value.integerValue != null) {
+              results[entry.key] = int.parse(value.integerValue!);
+            } else if (value.doubleValue != null) {
+              results[entry.key] = value.doubleValue;
+            } else if (value.nullValue != null) {
+              results[entry.key] = null;
+            }
           }
         }
       }
@@ -92,8 +96,8 @@ class AggregateQuery {
       }
     }
 
-    if (results.isNotEmpty ||
-        ((options?.analyze ?? false) && readTime != null)) {
+    // Create snapshot if backend returned a result
+    if (hadResult) {
       snapshot = AggregateQuerySnapshot._(
         query: this,
         readTime: readTime,

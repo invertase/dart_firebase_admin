@@ -434,7 +434,6 @@ class BulkWriter {
   /// Also retries INTERNAL errors for delete operations.
   static bool _defaultErrorCallback(BulkWriterError error) {
     // Delete operations with INTERNAL errors should be retried.
-    // This matches the Node.js SDK behavior.
     final isRetryableDeleteError =
         error.operationType == 'delete' &&
         error.code == FirestoreClientErrorCode.internal;
@@ -709,11 +708,9 @@ class BulkWriter {
 
     // Advance the `_lastOperation` pointer. This ensures that `_lastOperation`
     // only resolves when both the previous and the current write resolve.
-    // This matches Node.js behavior where _lastOp tracks all operations.
     // We use a helper to silently handle the future without propagating errors.
     _lastOperation = _lastOperation.then((_) {
       // Silently handle the user future (don't propagate errors to _lastOperation)
-      // This matches Node.js silencePromise behavior
       return userFuture.then<void>((_) => null, onError: (_) => null);
     });
 

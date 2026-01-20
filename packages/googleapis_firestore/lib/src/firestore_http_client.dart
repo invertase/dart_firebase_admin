@@ -1,4 +1,14 @@
-part of 'firestore.dart';
+import 'dart:async';
+
+import 'package:googleapis/firestore/v1.dart' as firestore_v1;
+import 'package:googleapis_auth/googleapis_auth.dart' as googleapis_auth;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:http/http.dart';
+import 'package:meta/meta.dart';
+
+import '../googleapis_firestore.dart';
+import 'environment.dart';
+import 'firestore_exception.dart';
 
 /// Internal HTTP request implementation that wraps a stream.
 ///
@@ -109,7 +119,7 @@ class FirestoreHttpClient {
 
     _cachedProjectId = projectId;
 
-    return _firestoreGuard(() => fn(client, projectId));
+    return firestoreGuard(() => fn(client, projectId));
   }
 
   /// Executes a Firestore v1 API operation with automatic projectId injection.
@@ -121,4 +131,10 @@ class FirestoreHttpClient {
       projectId,
     ),
   );
+
+  /// Closes the HTTP client and releases resources.
+  Future<void> close() async {
+    final client = await _client;
+    client.close();
+  }
 }
