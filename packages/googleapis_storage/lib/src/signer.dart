@@ -4,11 +4,17 @@ class _InternalSignedUrlConfig {
   final SignedUrlConfig signedConfig;
   final Bucket bucket;
   final BucketFile? file;
+  final int expiration;
+  final DateTime accessibleAt;
+  final String? cname;
 
   _InternalSignedUrlConfig({
     required this.signedConfig,
     required this.bucket,
     this.file,
+    required this.expiration,
+    required this.accessibleAt,
+    this.cname,
   });
 }
 
@@ -48,13 +54,13 @@ class URLSigner {
     }
 
     final isVirtualHostedStyle = config.virtualHostedStyle ?? false;
-    final customHost = config.cname != null
-        ? config.cname!
-        : isVirtualHostedStyle
-        // TODO: Check bucket id vs name
-        // TODO: Why is universeDomain optional?
-        ? 'https://${bucket.id}.storage.${bucket.storage.options.universeDomain}'
-        : null;
+    String? customHost;
+    if (config.cname != null) {
+      customHost = config.cname!;
+    } else if (isVirtualHostedStyle) {
+      customHost =
+          'https://${bucket.id}.storage.${bucket.storage.options.universeDomain}';
+    }
 
     const secondsToMilliseconds = 1000;
     // Create internal config object with merged values
@@ -62,6 +68,11 @@ class URLSigner {
       signedConfig: config,
       bucket: bucket,
       file: file,
+      expiration: expiresInSeconds,
+      accessibleAt: DateTime.fromMillisecondsSinceEpoch(
+        secondsToMilliseconds * accessibleAtInSeconds,
+      ),
+      cname: customHost,
     );
 
     final version = config.version ?? SignedUrlVersion.v2;
@@ -71,21 +82,24 @@ class URLSigner {
       SignedUrlVersion.v4 => _getSignedUrlV4(internalConfig),
     };
 
+    // Merge with additional query params
+    final allQueryParams = {...queryParams, ...?config.queryParams};
+
     // Build the signed URL
     final baseUrl =
         config.host?.toString() ??
-        internalConfig.signedConfig.cname ??
+        customHost ??
         bucket.storage.config.apiEndpoint;
 
     final signedUrl = Uri.parse(baseUrl);
     final resourcePath = _getResourcePath(
-      internalConfig.signedConfig.cname != null,
+      customHost != null,
       internalConfig.bucket,
       internalConfig.file,
     );
 
     // Convert query params to query string
-    final queryString = queryParams.entries
+    final queryString = allQueryParams.entries
         .map(
           (e) =>
               '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value.toString())}',
@@ -94,25 +108,164 @@ class URLSigner {
 
     final finalUrl = signedUrl.replace(path: resourcePath, query: queryString);
 
-    // TODO: Implement this
-    // We need to sign a blob using iam credentials service, which doesn't
-    // exist in Dart, so we'd need to port the following somehow:
-    // https://github.com/googleapis/google-auth-library-nodejs/blob/e664d9b06ff77f4d04127435b605323cb549c8f2/src/auth/googleauth.ts#L1272-L1320
-    throw UnimplementedError('Not implemented');
-
     return finalUrl.toString();
   }
 
   Future<Map<String, Object>> _getSignedUrlV2(
     _InternalSignedUrlConfig config,
   ) async {
-    return {};
+    final canonicalHeadersString = _getCanonicalHeaders(
+      config.signedConfig.extensionHeaders ?? {},
+    );
+    final resourcePath = _getResourcePath(false, config.bucket, config.file);
+
+    final blobToSign = [
+      config.signedConfig.method.value,
+      config.signedConfig.contentMd5 ?? '',
+      config.signedConfig.contentType ?? '',
+      config.expiration.toString(),
+      canonicalHeadersString + resourcePath,
+    ].join('\n');
+
+    final authClient = await bucket.storage.authClient;
+    final signature = await authClient.sign(
+      blobToSign,
+      endpoint: config.signedConfig.signingEndpoint?.toString(),
+    );
+
+    // Get credentials to get client email
+    final credential = authClient.credential;
+    final clientEmail =
+        credential?.serviceAccountCredentials?.email ??
+        await authClient.getServiceAccountEmail();
+
+    if (clientEmail == null) {
+      throw StateError(
+        'Unable to determine service account email for signing. '
+        'Ensure you are running with service account credentials.',
+      );
+    }
+
+    return {
+      'GoogleAccessId': clientEmail,
+      'Expires': config.expiration.toString(),
+      'Signature': signature,
+    };
   }
 
   Future<Map<String, Object>> _getSignedUrlV4(
     _InternalSignedUrlConfig config,
   ) async {
-    return {};
+    const sevenDays = 7 * 24 * 60 * 60;
+    final millisecondsToSeconds = 1.0 / 1000.0;
+    final expiresPeriodInSeconds =
+        config.expiration -
+        config.accessibleAt.millisecondsSinceEpoch * millisecondsToSeconds;
+
+    // V4 limit expiration to be 7 days maximum
+    if (expiresPeriodInSeconds > sevenDays) {
+      throw ArgumentError(
+        'Max allowed expiration is seven days ($sevenDays seconds).',
+      );
+    }
+
+    final extensionHeaders = <String, String>{
+      ...?config.signedConfig.extensionHeaders,
+    };
+
+    final fqdn = Uri.parse(
+      config.signedConfig.host?.toString() ??
+          config.cname ??
+          bucket.storage.config.apiEndpoint,
+    );
+    extensionHeaders['host'] = fqdn.host;
+
+    if (config.signedConfig.contentMd5 != null) {
+      extensionHeaders['content-md5'] = config.signedConfig.contentMd5!;
+    }
+    if (config.signedConfig.contentType != null) {
+      extensionHeaders['content-type'] = config.signedConfig.contentType!;
+    }
+
+    String? contentSha256;
+    final sha256Header = extensionHeaders['x-goog-content-sha256'];
+    if (sha256Header != null) {
+      if (!RegExp(r'^[A-Fa-f0-9]{64}$').hasMatch(sha256Header)) {
+        throw ArgumentError(
+          'The header X-Goog-Content-SHA256 must be a hexadecimal string.',
+        );
+      }
+      contentSha256 = sha256Header;
+    }
+
+    final signedHeaders =
+        extensionHeaders.keys.map((h) => h.toLowerCase()).toList()..sort();
+    final signedHeadersString = signedHeaders.join(';');
+
+    final extensionHeadersString = _getCanonicalHeaders(extensionHeaders);
+    final datestamp = _formatAsUTCISO(config.accessibleAt);
+    final credentialScope = '$datestamp/auto/storage/goog4_request';
+
+    final authClient = await bucket.storage.authClient;
+
+    // Get credentials to get client email
+    final credential = authClient.credential;
+    final clientEmail =
+        credential?.serviceAccountCredentials?.email ??
+        await authClient.getServiceAccountEmail();
+
+    if (clientEmail == null) {
+      throw StateError(
+        'Unable to determine service account email for signing. '
+        'Ensure you are running with service account credentials.',
+      );
+    }
+
+    final credentialString = '$clientEmail/$credentialScope';
+    final dateISO = _formatAsUTCISO(config.accessibleAt, includeTime: true);
+
+    final queryParams = <String, String>{
+      'X-Goog-Algorithm': 'GOOG4-RSA-SHA256',
+      'X-Goog-Credential': credentialString,
+      'X-Goog-Date': dateISO,
+      'X-Goog-Expires': expiresPeriodInSeconds.toInt().toString(),
+      'X-Goog-SignedHeaders': signedHeadersString,
+      ...?config.signedConfig.queryParams,
+    };
+
+    final canonicalQueryParams = _getCanonicalQueryParams(queryParams);
+    final canonicalRequest = _getCanonicalRequest(
+      config.signedConfig.method.value,
+      _getResourcePath(config.cname != null, config.bucket, config.file),
+      canonicalQueryParams,
+      extensionHeadersString,
+      signedHeadersString,
+      contentSha256,
+    );
+
+    final hash = crypto.sha256
+        .convert(utf8.encode(canonicalRequest))
+        .toString();
+
+    final blobToSign = [
+      'GOOG4-RSA-SHA256',
+      dateISO,
+      credentialScope,
+      hash,
+    ].join('\n');
+
+    final signature = await authClient.sign(
+      blobToSign,
+      endpoint: config.signedConfig.signingEndpoint?.toString(),
+    );
+
+    // Convert base64 signature to hex
+    final signatureBytes = base64Decode(signature);
+    final signatureHex = signatureBytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+
+    return {...queryParams, 'X-Goog-Signature': signatureHex};
   }
 
   /// Get the resource path for the signed URL.
@@ -120,7 +273,6 @@ class URLSigner {
   /// - If [cname] is true: returns `/${file || ''}`
   /// - Else if [file] exists: returns `/${bucket}/${file}`
   /// - Else: returns `/${bucket}`
-  // TODO: Check this is correct / encoded
   String _getResourcePath(bool cname, Bucket bucket, BucketFile? file) {
     if (cname) {
       return '/${file?.id ?? ''}';
@@ -129,5 +281,83 @@ class URLSigner {
     } else {
       return '/${bucket.id}';
     }
+  }
+
+  /// Create canonical headers for signing.
+  ///
+  /// The canonical headers for v4-signing demands header names are
+  /// first lowercased, followed by sorting the header names.
+  /// Then, construct the canonical headers part of the request:
+  ///  `<lowercasedHeaderName>` + ":" + Trim(`<value>`) + "\n"
+  String _getCanonicalHeaders(Map<String, String> headers) {
+    // Sort headers by their lowercased names
+    final sortedHeaders =
+        headers.entries
+            .map((e) => MapEntry(e.key.toLowerCase(), e.value))
+            .toList()
+          ..sort((a, b) => a.key.compareTo(b.key));
+
+    return sortedHeaders.where((e) => e.value.isNotEmpty).map((e) {
+      // Trim leading and trailing spaces.
+      // Convert sequential (2+) spaces into a single space
+      final canonicalValue = e.value.trim().replaceAll(RegExp(r'\s{2,}'), ' ');
+      return '${e.key}:$canonicalValue\n';
+    }).join();
+  }
+
+  /// Create canonical request for V4 signing.
+  String _getCanonicalRequest(
+    String method,
+    String path,
+    String query,
+    String headers,
+    String signedHeaders,
+    String? contentSha256,
+  ) {
+    return [
+      method,
+      path,
+      query,
+      headers,
+      signedHeaders,
+      contentSha256 ?? 'UNSIGNED-PAYLOAD',
+    ].join('\n');
+  }
+
+  /// Get canonical query params string.
+  String _getCanonicalQueryParams(Map<String, String> query) {
+    final pairs = query.entries
+        .map(
+          (e) => [
+            Uri.encodeQueryComponent(e.key),
+            Uri.encodeQueryComponent(e.value),
+          ],
+        )
+        .toList();
+
+    pairs.sort((a, b) => a[0].compareTo(b[0]));
+
+    return pairs.map((pair) => '${pair[0]}=${pair[1]}').join('&');
+  }
+
+  /// Format date as UTC ISO string.
+  ///
+  /// If [includeTime] is false, returns YYYYMMDD format.
+  /// If [includeTime] is true, returns YYYYMMDDTHHmmssZ format.
+  String _formatAsUTCISO(DateTime date, {bool includeTime = false}) {
+    final utc = date.toUtc();
+    final year = utc.year.toString().padLeft(4, '0');
+    final month = utc.month.toString().padLeft(2, '0');
+    final day = utc.day.toString().padLeft(2, '0');
+
+    if (!includeTime) {
+      return '$year$month$day';
+    }
+
+    final hour = utc.hour.toString().padLeft(2, '0');
+    final minute = utc.minute.toString().padLeft(2, '0');
+    final second = utc.second.toString().padLeft(2, '0');
+
+    return '$year$month${day}T$hour$minute${second}Z';
   }
 }

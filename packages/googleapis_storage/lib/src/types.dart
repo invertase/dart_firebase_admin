@@ -1472,7 +1472,7 @@ abstract class EncryptionKey with _$EncryptionKey {
     return EncryptionKey(keyBase64: keyBase64, keyHash: keyHash);
   }
 
-  /// Creates an [EncryptionKey] from a buffer (List<int>).
+  /// Creates an [EncryptionKey] from a buffer (`List<int>`).
   ///
   /// The buffer is converted to base64, and then a SHA256 hash is computed
   /// by decoding the base64 string back to bytes and hashing those bytes.

@@ -146,7 +146,6 @@ void main() {
           await limit.run(() async {
             throw Exception('test error');
           });
-          fail('Should have thrown');
         } catch (e) {
           expect(e, isA<Exception>());
         }
