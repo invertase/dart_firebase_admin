@@ -14,7 +14,7 @@ void main() {
     () {
       late Storage storage;
       late String projectId;
-      const bucketName = 'test-bucket';
+      const bucketName = 'dart-firebase-admin.firebasestorage.app';
       const fileName = 'test-file.txt';
 
       setUp(() {
@@ -169,6 +169,174 @@ void main() {
         expect(url, isNotEmpty);
         expect(url, contains(bucketName));
         expect(url, contains(fileName));
+      });
+    },
+    skip: !hasGoogleEnv
+        ? 'GOOGLE_APPLICATION_CREDENTIALS environment variable not set'
+        : null,
+  );
+
+  group(
+    'File.getSignedUrl E2E tests',
+    () {
+      late Storage storage;
+      late String projectId;
+      const bucketName = 'dart-firebase-admin.firebasestorage.app';
+      const fileName = 'e2e-test-file.txt';
+      const fileContent = 'Hello from signed URL E2E test!';
+
+      setUp(() {
+        final serviceAccountFile = File(credPath!);
+        final serviceAccountJson = json.decode(
+          serviceAccountFile.readAsStringSync(),
+        );
+        projectId = serviceAccountJson['project_id'] as String;
+
+        final credentials = Credentials(
+          clientEmail: serviceAccountJson['client_email'] as String,
+          privateKey: serviceAccountJson['private_key'] as String,
+        );
+
+        storage = Storage(
+          StorageOptions(credentials: credentials, projectId: projectId),
+        );
+      });
+
+      tearDown(() async {
+        // Clean up: delete the test file
+        try {
+          final bucket = storage.bucket(bucketName);
+          final file = bucket.file(fileName);
+          await file.delete();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+
+        final client = await storage.authClient;
+        client.close();
+      });
+
+      test(
+        'should upload file, generate signed URL, and download via URL',
+        () async {
+          final bucket = storage.bucket(bucketName);
+          final file = bucket.file(fileName);
+
+          // Step 1: Upload the file
+          await file.save(utf8.encode(fileContent));
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+
+          // Step 2: Generate a signed URL for reading
+          final expires = DateTime.now().add(const Duration(minutes: 5));
+          final signedUrl = await file.getSignedUrl(
+            GetFileSignedUrlOptions(
+              action: 'read',
+              expires: expires,
+              version: SignedUrlVersion.v4,
+            ),
+          );
+
+          expect(signedUrl, isNotEmpty);
+          expect(signedUrl, contains('X-Goog-Algorithm=GOOG4-RSA-SHA256'));
+
+          // Step 3: Use the signed URL to download the file via HTTP
+          final httpClient = HttpClient();
+          try {
+            final request = await httpClient.getUrl(Uri.parse(signedUrl));
+            final response = await request.close();
+
+            expect(response.statusCode, 200);
+
+            // Step 4: Verify the downloaded content matches
+            final downloadedBytes = await response.fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+            final downloadedContent = utf8.decode(downloadedBytes);
+
+            expect(downloadedContent, fileContent);
+          } finally {
+            httpClient.close();
+          }
+        },
+      );
+
+      test('should generate signed upload URL and upload via URL', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file(fileName);
+        const uploadContent = 'Uploaded via signed URL!';
+
+        // Step 1: Generate a signed URL for writing
+        final expires = DateTime.now().add(const Duration(minutes: 5));
+        final signedUrl = await file.getSignedUrl(
+          GetFileSignedUrlOptions(
+            action: 'write',
+            expires: expires,
+            version: SignedUrlVersion.v4,
+            contentType: 'text/plain',
+          ),
+        );
+
+        expect(signedUrl, isNotEmpty);
+
+        // Step 2: Upload file using the signed URL
+        final httpClient = HttpClient();
+        try {
+          final request = await httpClient.putUrl(Uri.parse(signedUrl));
+          request.headers.set('Content-Type', 'text/plain');
+          request.add(utf8.encode(uploadContent));
+          final response = await request.close();
+
+          expect(response.statusCode, 200);
+          await response.drain();
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+
+          // Step 3: Verify the file was uploaded by downloading it normally
+          final downloadedBytes = await file.download();
+          final downloadedContent = utf8.decode(downloadedBytes);
+
+          expect(downloadedContent, uploadContent);
+        } finally {
+          httpClient.close();
+        }
+      });
+
+      test('should fail to access file after signed URL expires', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file(fileName);
+
+        // Upload the file first
+        await file.save(utf8.encode(fileContent));
+
+        // Generate a signed URL that expires in 1 second
+        final expires = DateTime.now().add(const Duration(seconds: 1));
+        final signedUrl = await file.getSignedUrl(
+          GetFileSignedUrlOptions(
+            action: 'read',
+            expires: expires,
+            version: SignedUrlVersion.v4,
+          ),
+        );
+
+        // Wait for the URL to expire (also ensures file is available)
+        await Future<void>.delayed(const Duration(seconds: 2));
+
+        // Try to access the expired URL
+        final httpClient = HttpClient();
+        try {
+          final request = await httpClient.getUrl(Uri.parse(signedUrl));
+          final response = await request.close();
+
+          // Should get 400 Bad Request or 403 Forbidden for expired/invalid signature
+          expect(response.statusCode, anyOf([400, 403]));
+          await response.drain();
+        } finally {
+          httpClient.close();
+        }
       });
     },
     skip: !hasGoogleEnv

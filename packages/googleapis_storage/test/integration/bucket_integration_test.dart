@@ -14,7 +14,7 @@ void main() {
     () {
       late Storage storage;
       late String projectId;
-      const bucketName = 'test-bucket';
+      const bucketName = 'dart-firebase-admin.firebasestorage.app';
 
       setUp(() {
         final serviceAccountFile = File(credPath!);
