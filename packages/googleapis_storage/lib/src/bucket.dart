@@ -36,9 +36,6 @@ class Bucket extends ServiceObject<BucketMetadata>
 
   final String name;
 
-  /// Internal constructor for testing purposes.
-  ///
-  /// Allows injecting a custom [URLSigner] for testing.
   @internal
   Bucket.internal(
     this.storage,
@@ -61,7 +58,6 @@ class Bucket extends ServiceObject<BucketMetadata>
          metadata: BucketMetadata()..name = name,
        );
 
-  // Private constructor redirects to internal with null signer
   Bucket._(Storage storage, String name, [BucketOptions? options])
     : this.internal(storage, name, options, null);
 

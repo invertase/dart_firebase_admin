@@ -34,7 +34,6 @@ class URLSigner {
 
   URLSigner._(this.bucket, this.file);
 
-  /// Internal constructor for testing.
   @visibleForTesting
   URLSigner.internal(this.bucket, this.file);
 

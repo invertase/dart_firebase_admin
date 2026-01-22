@@ -25,12 +25,7 @@ void main() {
       mockSigner = MockURLSigner();
 
       // Use internal constructor to inject the mock signer
-      file = BucketFile.internal(
-        bucket,
-        'test-file.txt',
-        null,
-        mockSigner,
-      );
+      file = BucketFile.internal(bucket, 'test-file.txt', null, mockSigner);
 
       when(
         () => mockSigner.getSignedUrl(any()),

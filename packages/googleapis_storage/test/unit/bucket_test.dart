@@ -23,12 +23,7 @@ void main() {
       mockSigner = MockURLSigner();
 
       // Use internal constructor to inject the mock signer
-      bucket = Bucket.internal(
-        storage,
-        'test-bucket',
-        null,
-        mockSigner,
-      );
+      bucket = Bucket.internal(storage, 'test-bucket', null, mockSigner);
 
       when(
         () => mockSigner.getSignedUrl(any()),

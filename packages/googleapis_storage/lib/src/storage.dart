@@ -78,11 +78,7 @@ class StorageOptions extends ServiceOptions {
     super.projectId,
   });
 
-  /// Converts these options to a GoogleCredential for internal use.
-  ///
-  /// Priority: credentials > keyFilename > Application Default Credentials
   GoogleCredential extractCredential() {
-    // Priority 1: Explicit credentials object
     if (credentials != null) {
       return GoogleCredential.fromServiceAccountParams(
         privateKey: credentials!.privateKey,
@@ -91,12 +87,10 @@ class StorageOptions extends ServiceOptions {
       );
     }
 
-    // Priority 2: Key file path
     if (keyFilename != null) {
       return GoogleCredential.fromServiceAccount(io.File(keyFilename!));
     }
 
-    // Priority 3: Application Default Credentials
     return GoogleCredential.fromApplicationDefaultCredentials();
   }
 

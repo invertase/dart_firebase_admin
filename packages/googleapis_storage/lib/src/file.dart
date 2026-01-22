@@ -10,35 +10,31 @@ class BucketFile extends ServiceObject<FileMetadata>
         GettableMixin<FileMetadata, BucketFile>,
         DeletableMixin<FileMetadata>,
         SettableMixin<FileMetadata> {
-  /// Internal constructor for testing purposes.
-  ///
-  /// Allows injecting a custom [URLSigner] for testing.
   @internal
   BucketFile.internal(
     this.bucket,
     this.name, [
     FileOptions? options,
     URLSigner? signer,
-  ])  : options = (options ?? const FileOptions()).copyWith(
-          // Inherit from bucket's storage options crc32cGenerator (which has a default) if not specified in file options
-          crc32cGenerator: options?.crc32cGenerator ??
-              bucket.storage.options.crc32cGenerator,
-          // Use provided userProject, or fall back to bucket's instance-level userProject
-          // This ensures setUserProject() on the bucket is reflected in newly created files
-          userProject: options?.userProject ?? bucket.userProject,
-          // kmsKeyName and encryptionKey are file-specific and not inherited
-        ),
-        acl = Acl._objectAcl(bucket.storage, bucket.id, name),
-        userProject = options?.userProject ?? bucket.userProject,
-        preconditionOpts = options?.preconditionOpts,
-        crc32cGenerator = options?.crc32cGenerator ?? bucket.crc32cGenerator,
-        kmsKeyName = options?.kmsKeyName,
-        _signer = signer,
-        super(service: bucket.storage, id: name, metadata: FileMetadata());
+  ]) : options = (options ?? const FileOptions()).copyWith(
+         // Inherit from bucket's storage options crc32cGenerator (which has a default) if not specified in file options
+         crc32cGenerator:
+             options?.crc32cGenerator ?? bucket.storage.options.crc32cGenerator,
+         // Use provided userProject, or fall back to bucket's instance-level userProject
+         // This ensures setUserProject() on the bucket is reflected in newly created files
+         userProject: options?.userProject ?? bucket.userProject,
+         // kmsKeyName and encryptionKey are file-specific and not inherited
+       ),
+       acl = Acl._objectAcl(bucket.storage, bucket.id, name),
+       userProject = options?.userProject ?? bucket.userProject,
+       preconditionOpts = options?.preconditionOpts,
+       crc32cGenerator = options?.crc32cGenerator ?? bucket.crc32cGenerator,
+       kmsKeyName = options?.kmsKeyName,
+       _signer = signer,
+       super(service: bucket.storage, id: name, metadata: FileMetadata());
 
-  // Private constructor redirects to internal with null signer
   BucketFile._(Bucket bucket, String name, [FileOptions? options])
-      : this.internal(bucket, name, options, null);
+    : this.internal(bucket, name, options, null);
 
   final String name;
   final Bucket bucket;
