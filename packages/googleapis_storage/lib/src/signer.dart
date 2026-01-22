@@ -32,6 +32,11 @@ class URLSigner {
   final Bucket bucket;
   final BucketFile? file;
 
+  /// [clientEmail] is the service account email used in `X-Goog-Credential`.
+  ///
+  /// [signBlob] must produce a base64-encoded RSA-SHA256 signature for the
+  /// given string. For testing you can use [UrlSigner.insecureHmacSigner],
+  /// but for production use RSA or IAM Credentials.
   URLSigner._(this.bucket, this.file);
 
   @visibleForTesting
