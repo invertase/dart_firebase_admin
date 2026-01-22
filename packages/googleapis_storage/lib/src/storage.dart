@@ -1,24 +1,111 @@
 part of '../googleapis_storage.dart';
 
+/// Plain credentials object for service account authentication.
+///
+/// Example:
+/// ```dart
+/// final credentials = Credentials(
+///   clientEmail: 'my-sa@my-project.iam.gserviceaccount.com',
+///   privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
+/// );
+/// ```
+@immutable
+class Credentials {
+  /// Creates service account credentials.
+  const Credentials({required this.clientEmail, required this.privateKey});
+
+  /// The service account email address.
+  final String clientEmail;
+
+  /// The service account private key in PEM format.
+  final String privateKey;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Credentials &&
+          runtimeType == other.runtimeType &&
+          clientEmail == other.clientEmail &&
+          privateKey == other.privateKey;
+
+  @override
+  int get hashCode => Object.hash(clientEmail, privateKey);
+}
+
 class StorageOptions extends ServiceOptions {
   final String? apiEndpoint;
   final Crc32Generator? crc32cGenerator;
   final RetryOptions? retryOptions;
 
+  /// The client_email and private_key properties of the service account
+  /// to use with your Storage project.
+  ///
+  /// Can be omitted in environments that support Application Default Credentials.
+  /// If your credentials are stored in a JSON file, you can specify a
+  /// [keyFilename] instead.
+  ///
+  /// Example:
+  /// ```dart
+  /// credentials: Credentials(
+  ///   clientEmail: 'my-sa@my-project.iam.gserviceaccount.com',
+  ///   privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
+  /// )
+  /// ```
+  final Credentials? credentials;
+
+  /// Local file containing the Service Account credentials as downloaded from
+  /// the Google Developers Console.
+  ///
+  /// Can be omitted in environments that support Application Default Credentials.
+  /// To configure Storage with custom credentials, use the [credentials]
+  /// property instead.
+  ///
+  /// Example:
+  /// ```dart
+  /// keyFilename: '/path/to/service-account.json'
+  /// ```
+  final String? keyFilename;
+
   const StorageOptions({
     this.apiEndpoint,
     this.crc32cGenerator,
     this.retryOptions,
+    this.credentials,
+    this.keyFilename,
     super.authClient,
     super.useAuthWithCustomEndpoint,
     super.universeDomain,
     super.projectId,
   });
 
+  /// Converts these options to a GoogleCredential for internal use.
+  ///
+  /// Priority: credentials > keyFilename > Application Default Credentials
+  GoogleCredential extractCredential() {
+    // Priority 1: Explicit credentials object
+    if (credentials != null) {
+      return GoogleCredential.fromServiceAccountParams(
+        privateKey: credentials!.privateKey,
+        email: credentials!.clientEmail,
+        projectId: projectId,
+      );
+    }
+
+    // Priority 2: Key file path
+    if (keyFilename != null) {
+      return GoogleCredential.fromServiceAccount(io.File(keyFilename!));
+    }
+
+    // Priority 3: Application Default Credentials
+    return GoogleCredential.fromApplicationDefaultCredentials();
+  }
+
   StorageOptions copyWith({
     String? apiEndpoint,
     Crc32Generator? crc32cGenerator,
     RetryOptions? retryOptions,
+    Credentials? credentials,
+    String? keyFilename,
     FutureOr<AuthClient>? authClient,
     bool? useAuthWithCustomEndpoint,
     String? universeDomain,
@@ -28,6 +115,8 @@ class StorageOptions extends ServiceOptions {
       apiEndpoint: apiEndpoint ?? this.apiEndpoint,
       crc32cGenerator: crc32cGenerator ?? this.crc32cGenerator,
       retryOptions: retryOptions ?? this.retryOptions,
+      credentials: credentials ?? this.credentials,
+      keyFilename: keyFilename ?? this.keyFilename,
       authClient: authClient ?? super.authClient,
       useAuthWithCustomEndpoint:
           useAuthWithCustomEndpoint ?? super.useAuthWithCustomEndpoint,

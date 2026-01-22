@@ -69,6 +69,8 @@ class _TestStorageOptions extends StorageOptions {
     String? apiEndpoint,
     Crc32Generator? crc32cGenerator,
     RetryOptions? retryOptions,
+    Credentials? credentials,
+    String? keyFilename,
     FutureOr<auth.AuthClient>? authClient,
     bool? useAuthWithCustomEndpoint,
     String? universeDomain,
@@ -97,6 +99,8 @@ void main() {
         isNull,
       ); // Default is applied in Storage constructor
       expect(options.retryOptions, isNull);
+      expect(options.credentials, isNull);
+      expect(options.keyFilename, isNull);
       expect(options.authClient, isNull);
       expect(options.useAuthWithCustomEndpoint, isNull);
       expect(options.universeDomain, isNull);

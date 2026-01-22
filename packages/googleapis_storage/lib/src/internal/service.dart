@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:googleapis_auth/auth_io.dart';
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:googleapis_storage/googleapis_storage.dart'; // Try importing to see StorageOptions
 import 'package:http/http.dart' as http;
 import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart' as auth_io;
@@ -14,7 +15,7 @@ typedef RequestInterceptor = http.BaseRequest Function(http.BaseRequest);
 abstract class ServiceOptions {
   /// The authenticated HTTP client. If not provided, will be required
   /// unless using a custom endpoint without auth.
-  final FutureOr<AuthClient>? authClient;
+  final FutureOr<auth_io.AuthClient>? authClient;
 
   /// Whether to use authentication with custom endpoints.
   /// Defaults to false (no auth) for custom endpoints/emulators.
@@ -54,7 +55,7 @@ abstract class Service<T extends ServiceOptions> {
   /// The Storage API client from googleapis package.
   /// This handles all the low-level API calls to Google Cloud Storage.
   storage_v1.StorageApi? _storageClient;
-  AuthClient? _authClient;
+  auth_io.AuthClient? _authClient;
 
   Future<storage_v1.StorageApi> get storageClient async {
     return _storageClient ??= await _createStorageClient();
@@ -65,19 +66,35 @@ abstract class Service<T extends ServiceOptions> {
   /// This is always created, even for custom endpoints without auth,
   /// because it's needed for projectId resolution (similar to Node.js SDK).
   /// The authClient is created lazily on first access.
-  Future<AuthClient> get authClient async {
+  ///
+  /// Priority:
+  /// 1. Explicit authClient in options (advanced use)
+  /// 2. Credentials/keyFilename in StorageOptions → GoogleCredential → AuthClient
+  /// 3. Application Default Credentials (ADC)
+  Future<auth_io.AuthClient> get authClient async {
     if (_authClient != null) {
       return _authClient!;
     }
 
+    // Priority 1: Explicit authClient (for advanced use cases)
     if (options.authClient != null) {
       return _authClient = await options.authClient!;
     }
 
-    // Auto-create from Application Default Credentials
+    // Priority 2: If StorageOptions with credentials/keyFilename, use GoogleCredential
+    GoogleCredential? googleCredential;
+    if (options is StorageOptions) {
+      final storageOpts = options as StorageOptions;
+      if (storageOpts.credentials != null || storageOpts.keyFilename != null) {
+        googleCredential = storageOpts.extractCredential();
+      }
+    }
+
+    // Priority 3: Use createAuthClient (with GoogleCredential or ADC if null)
     // Using the same scopes as Node.js SDK (storage.ts lines 778-782)
-    return _authClient = await auth_io.clientViaApplicationDefaultCredentials(
-      scopes: [
+    return _authClient = await createAuthClient(
+      googleCredential, // null = ADC
+      [
         'https://www.googleapis.com/auth/iam',
         'https://www.googleapis.com/auth/cloud-platform',
         'https://www.googleapis.com/auth/devstorage.full_control',

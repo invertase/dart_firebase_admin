@@ -17,6 +17,9 @@ import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 import 'package:mime/mime.dart';
 
+export 'package:googleapis_auth_utils/googleapis_auth_utils.dart'
+    show GoogleCredential;
+
 import 'src/internal/service_object.dart';
 import 'src/internal/streaming.dart';
 import 'src/internal/limit.dart';
