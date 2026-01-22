@@ -36,21 +36,34 @@ class Bucket extends ServiceObject<BucketMetadata>
 
   final String name;
 
-  Bucket._(this.storage, String name, [BucketOptions? options])
-    : // Allow for "gs://"-style input, and strip any trailing slashes.
-      name = name
-          .replaceAll(RegExp(r'^gs://'), '')
-          .replaceAll(RegExp(r'/+$'), ''),
-      _options = options ?? const BucketOptions(),
-      _userProject = options?.userProject,
-      acl = Acl._bucketAcl(storage, name),
-      aclDefault = Acl._bucketDefaultObjectAcl(storage, name),
-      crc32cGenerator = options?.crc32cGenerator ?? storage.crc32cGenerator,
-      super(
-        service: storage,
-        id: name,
-        metadata: BucketMetadata()..name = name,
-      );
+  /// Internal constructor for testing purposes.
+  ///
+  /// Allows injecting a custom [URLSigner] for testing.
+  @internal
+  Bucket.internal(
+    this.storage,
+    String name, [
+    BucketOptions? options,
+    URLSigner? signer,
+  ]) : // Allow for "gs://"-style input, and strip any trailing slashes.
+       name = name
+           .replaceAll(RegExp(r'^gs://'), '')
+           .replaceAll(RegExp(r'/+$'), ''),
+       _options = options ?? const BucketOptions(),
+       _userProject = options?.userProject,
+       _signer = signer,
+       acl = Acl._bucketAcl(storage, name),
+       aclDefault = Acl._bucketDefaultObjectAcl(storage, name),
+       crc32cGenerator = options?.crc32cGenerator ?? storage.crc32cGenerator,
+       super(
+         service: storage,
+         id: name,
+         metadata: BucketMetadata()..name = name,
+       );
+
+  // Private constructor redirects to internal with null signer
+  Bucket._(Storage storage, String name, [BucketOptions? options])
+    : this.internal(storage, name, options, null);
 
   @override
   Future<Bucket> create(BucketMetadata bucket) async {
@@ -830,6 +843,7 @@ class Bucket extends ServiceObject<BucketMetadata>
       expires: options.expires,
       version: options.version,
       cname: options.cname,
+      virtualHostedStyle: options.virtualHostedStyle,
       extensionHeaders: options.extensionHeaders,
       queryParams: options.queryParams,
       host: options.host,
