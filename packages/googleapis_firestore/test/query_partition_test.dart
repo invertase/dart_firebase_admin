@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
 import 'package:googleapis_firestore/googleapis_firestore.dart';
 import 'package:googleapis_firestore/src/firestore_http_client.dart';
@@ -29,11 +31,15 @@ void main() {
     late Firestore firestore;
 
     setUp(() {
-      firestore = Firestore(
-        settings: const Settings(
-          projectId: 'test-project',
-          environmentOverride: {'GOOGLE_CLOUD_PROJECT': 'test-project'},
-        ),
+      runZoned(
+        () {
+          firestore = Firestore(
+            settings: const Settings(projectId: 'test-project'),
+          );
+        },
+        zoneValues: {
+          envSymbol: <String, String>{'GOOGLE_CLOUD_PROJECT': 'test-project'},
+        },
       );
     });
 

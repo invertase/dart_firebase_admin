@@ -1,9 +1,6 @@
-import 'dart:io';
-
+import 'dart:async';
 import 'package:googleapis_firestore/googleapis_firestore.dart';
-import 'package:googleapis_firestore/src/environment.dart';
 import 'package:test/test.dart';
-
 import 'helpers.dart';
 
 /// Production-only tests for Query explain() API.
@@ -18,17 +15,17 @@ void main() {
       final collectionsToCleanup = <String>[];
 
       setUp(() async {
-        // Remove emulator env var to ensure we connect to production
-        // This allows prod tests to run even inside firebase emulators:exec
-        final prodEnv = Map<String, String>.from(Platform.environment);
-        prodEnv.remove(Environment.firestoreEmulatorHost);
-
-        // Create Firestore instance for production tests
-        firestore = Firestore(
-          settings: Settings(
-            projectId: 'dart-firebase-admin',
-            environmentOverride: prodEnv,
-          ),
+        // Use runZoned with empty env to ensure we connect to production
+        // This clears any emulator env vars set by firebase emulators:exec
+        runZoned(
+          () {
+            firestore = Firestore(
+              settings: const Settings(projectId: 'dart-firebase-admin'),
+            );
+          },
+          zoneValues: {
+            envSymbol: <String, String>{}, // Empty = use Platform.environment
+          },
         );
       });
 
@@ -211,16 +208,17 @@ void main() {
       final collectionsToCleanup = <String>[];
 
       setUp(() async {
-        // Remove emulator env var to ensure we connect to production
-        // This allows prod tests to run even inside firebase emulators:exec
-        final prodEnv = Map<String, String>.from(Platform.environment);
-        prodEnv.remove(Environment.firestoreEmulatorHost);
-
-        firestore = Firestore(
-          settings: Settings(
-            projectId: 'dart-firebase-admin',
-            environmentOverride: prodEnv,
-          ),
+        // Use runZoned with empty env to ensure we connect to production
+        // This clears any emulator env vars set by firebase emulators:exec
+        runZoned(
+          () {
+            firestore = Firestore(
+              settings: const Settings(projectId: 'dart-firebase-admin'),
+            );
+          },
+          zoneValues: {
+            envSymbol: <String, String>{}, // Empty = use Platform.environment
+          },
         );
       });
 

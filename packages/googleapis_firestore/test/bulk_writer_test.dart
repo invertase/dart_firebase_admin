@@ -1,15 +1,22 @@
+import 'dart:async';
+
 import 'package:googleapis_firestore/googleapis_firestore.dart';
 import 'package:test/test.dart';
 
 /// Creates a mock Firestore instance for unit testing without needing an emulator
 Firestore createMockFirestore() {
-  return Firestore(
-    settings: const Settings(
-      projectId: 'test-project',
-      // Use environmentOverride to avoid needing actual credentials/emulator
-      environmentOverride: {'GOOGLE_CLOUD_PROJECT': 'test-project'},
-    ),
+  late Firestore firestore;
+  runZoned(
+    () {
+      firestore = Firestore(
+        settings: const Settings(projectId: 'test-project'),
+      );
+    },
+    zoneValues: {
+      envSymbol: <String, String>{'GOOGLE_CLOUD_PROJECT': 'test-project'},
+    },
   );
+  return firestore;
 }
 
 void main() {

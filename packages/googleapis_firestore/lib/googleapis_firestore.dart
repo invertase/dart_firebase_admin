@@ -4,6 +4,8 @@
 /// you to interact with Firestore databases from Dart applications.
 library;
 
+import 'package:meta/meta.dart';
+
 export 'src/firestore.dart'
     show
         Firestore,
@@ -62,3 +64,8 @@ export 'src/firestore.dart'
 export 'src/firestore_exception.dart'
     show FirestoreException, FirestoreClientErrorCode;
 export 'src/status_code.dart' show StatusCode;
+
+/// Symbol for accessing environment variables in tests via Zones.
+/// This allows tests to override Platform.environment values.
+@internal
+const envSymbol = #_envSymbol;
