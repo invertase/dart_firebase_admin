@@ -1,14 +1,24 @@
+import 'dart:async';
+
 import 'package:googleapis_firestore/googleapis_firestore.dart';
 import 'package:test/test.dart';
 
 void main() {
   // Shared Firestore instance for unit tests (no emulator needed)
-  final firestore = Firestore(
-    settings: const Settings(
-      projectId: 'test-project',
-      environmentOverride: {'GOOGLE_CLOUD_PROJECT': 'test-project'},
-    ),
-  );
+  late Firestore firestore;
+
+  setUpAll(() {
+    runZoned(
+      () {
+        firestore = Firestore(
+          settings: const Settings(projectId: 'test-project'),
+        );
+      },
+      zoneValues: {
+        envSymbol: <String, String>{'GOOGLE_CLOUD_PROJECT': 'test-project'},
+      },
+    );
+  });
   group('VectorValue', () {
     test('constructor creates VectorValue from list', () {
       final vector = VectorValue(const [1.0, 2.0, 3.0]);

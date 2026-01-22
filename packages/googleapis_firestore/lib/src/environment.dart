@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:io';
+
+import '../googleapis_firestore.dart';
 
 /// Environment variable names used by Google Cloud Firestore.
 ///
@@ -20,8 +23,10 @@ abstract class Environment {
   ///
   /// Returns the host:port string if [firestoreEmulatorHost] is set, otherwise null.
   ///
-  /// If [environmentOverride] is provided, it will be checked first before
-  /// falling back to Platform.environment.
+  /// Priority order:
+  /// 1. Zone.current[envSymbol] (for package tests using runZoned)
+  /// 2. [environmentOverride] parameter (for client code tests)
+  /// 3. Platform.environment (actual system environment)
   ///
   /// Example:
   /// ```dart
@@ -33,13 +38,19 @@ abstract class Environment {
   static String? getFirestoreEmulatorHost([
     Map<String, String>? environmentOverride,
   ]) {
-    // If environmentOverride is provided, use it as the single source of truth
+    // First check Zone (for package tests)
+    final zoneEnv = Zone.current[envSymbol] as Map<String, String>?;
+    if (zoneEnv != null) {
+      return zoneEnv[firestoreEmulatorHost];
+    }
+
+    // Then check environmentOverride (for client code)
     // This allows tests to explicitly remove environment variables
     if (environmentOverride != null) {
       return environmentOverride[firestoreEmulatorHost];
     }
 
-    // Fall back to actual environment variables only if no override provided
+    // Finally fall back to actual environment variables
     return Platform.environment[firestoreEmulatorHost];
   }
 
@@ -47,8 +58,10 @@ abstract class Environment {
   ///
   /// Returns `true` if [firestoreEmulatorHost] is set in the environment.
   ///
-  /// If [environmentOverride] is provided, it will be checked first before
-  /// falling back to Platform.environment.
+  /// Priority order (same as [getFirestoreEmulatorHost]):
+  /// 1. Zone.current[envSymbol] (for package tests using runZoned)
+  /// 2. [environmentOverride] parameter (for client code tests)
+  /// 3. Platform.environment (actual system environment)
   ///
   /// Example:
   /// ```dart
