@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -142,28 +143,30 @@ void main() {
       });
 
       test('should create working Storage instance with credentials', () async {
-        final serviceAccountFile = File(credPath!);
-        final serviceAccountJson = json.decode(
-          serviceAccountFile.readAsStringSync(),
-        );
-        final projectId = serviceAccountJson['project_id'] as String;
+        await runZoned(() async {
+          final serviceAccountFile = File(credPath!);
+          final serviceAccountJson = json.decode(
+            serviceAccountFile.readAsStringSync(),
+          );
+          final projectId = serviceAccountJson['project_id'] as String;
 
-        final credentials = Credentials(
-          clientEmail: serviceAccountJson['client_email'] as String,
-          privateKey: serviceAccountJson['private_key'] as String,
-        );
+          final credentials = Credentials(
+            clientEmail: serviceAccountJson['client_email'] as String,
+            privateKey: serviceAccountJson['private_key'] as String,
+          );
 
-        final storage = Storage(
-          StorageOptions(credentials: credentials, projectId: projectId),
-        );
+          final storage = Storage(
+            StorageOptions(credentials: credentials, projectId: projectId),
+          );
 
-        final serviceAccount = await storage.getServiceAccount();
+          final serviceAccount = await storage.getServiceAccount();
 
-        expect(serviceAccount, isNotNull);
-        expect(serviceAccount.emailAddress, isNotEmpty);
+          expect(serviceAccount, isNotNull);
+          expect(serviceAccount.emailAddress, isNotEmpty);
 
-        final client = await storage.authClient;
-        client.close();
+          final client = await storage.authClient;
+          client.close();
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
     },
     skip: !hasGoogleEnv

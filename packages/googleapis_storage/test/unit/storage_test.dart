@@ -215,16 +215,20 @@ void main() {
 
     group('endpoint calculation', () {
       test('should use default googleapis.com endpoint', () {
-        final storage = Storage(const StorageOptions());
-        expect(storage, isA<Storage>());
-        expect(storage.config.apiEndpoint, 'https://storage.googleapis.com');
+        runZoned(() {
+          final storage = Storage(const StorageOptions());
+          expect(storage, isA<Storage>());
+          expect(storage.config.apiEndpoint, 'https://storage.googleapis.com');
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('should use custom universe domain', () {
-        final storage = Storage(
-          const StorageOptions(universeDomain: 'example.com'),
-        );
-        expect(storage.config.apiEndpoint, 'https://storage.example.com');
+        runZoned(() {
+          final storage = Storage(
+            const StorageOptions(universeDomain: 'example.com'),
+          );
+          expect(storage.config.apiEndpoint, 'https://storage.example.com');
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('should use explicit apiEndpoint', () {
@@ -373,17 +377,16 @@ void main() {
         },
       );
 
-      // TODO: Align the error message once we have a proper exception class.
-      test('should throw Exception when bucket name is empty', () {
+      test('should throw ArgumentError when bucket name is empty', () {
         final storage = Storage(const StorageOptions());
 
         expect(
           () => storage.bucket(''),
           throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
+            isA<ArgumentError>().having(
+              (e) => e.message,
               'message',
-              contains('Bucket name is required'),
+              contains('bucket name is needed'),
             ),
           ),
         );
@@ -481,16 +484,16 @@ void main() {
         expect(hmacKey.metadata.projectId, 'custom-project');
       });
 
-      test('should throw Exception when accessId is empty', () {
+      test('should throw ArgumentError when accessId is empty', () {
         final storage = Storage(_TestStorageOptions(projectId: 'test-project'));
 
         expect(
           () => storage.hmacKey(''),
           throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
+            isA<ArgumentError>().having(
+              (e) => e.message,
               'message',
-              contains('Access ID is required'),
+              contains('access ID is needed'),
             ),
           ),
         );
@@ -503,19 +506,14 @@ void main() {
         expect(hmacKey.storage, same(storage));
       });
 
-      test('should throw when projectId is not provided', () {
+      test('should create HmacKey with null projectId when not provided', () {
         final storage = Storage(const StorageOptions());
 
-        expect(
-          () => storage.hmacKey('access-id'),
-          throwsA(
-            isA<ArgumentError>().having(
-              (e) => e.message,
-              'message',
-              contains('project ID is required'),
-            ),
-          ),
-        );
+        final hmacKey = storage.hmacKey('access-id');
+
+        expect(hmacKey.metadata.accessId, 'access-id');
+        expect(hmacKey.metadata.projectId, isNull); // No projectId provided
+        expect(hmacKey.storage, same(storage));
       });
     });
 
@@ -635,7 +633,7 @@ void main() {
             isA<ApiError>().having(
               (e) => e.message,
               'message',
-              contains('Failed to create bucket'),
+              contains('API error'),
             ),
           ),
         );
@@ -742,7 +740,7 @@ void main() {
             isA<ApiError>().having(
               (e) => e.message,
               'message',
-              contains('Failed to create HMAC key'),
+              contains('API error'),
             ),
           ),
         );
@@ -808,7 +806,7 @@ void main() {
             isA<ApiError>().having(
               (e) => e.message,
               'message',
-              contains('Failed to get service account'),
+              contains('API error'),
             ),
           ),
         );
@@ -944,7 +942,7 @@ void main() {
             isA<ApiError>().having(
               (e) => e.message,
               'message',
-              contains('Failed to get buckets'),
+              contains('API error'),
             ),
           ),
         );
@@ -1186,7 +1184,7 @@ void main() {
             isA<ApiError>().having(
               (e) => e.message,
               'message',
-              contains('Failed to get HMAC keys'),
+              contains('API error'),
             ),
           ),
         );

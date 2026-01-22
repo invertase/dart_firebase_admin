@@ -129,16 +129,19 @@ class HashStreamValidator extends StreamTransformerBase<List<int>, List<int>> {
           }
 
           // Perform validation if expected values are provided
-          // If we're doing validation, assume the worst-- a data integrity mismatch.
-          // If not, these tests won't be performed, and we can assume the best.
-          bool failed = crc32cEnabled || md5Enabled;
+          // Start optimistic - only fail if validation is explicitly requested and fails
+          bool failed = false;
 
           if (crc32cEnabled && crc32cExpected != null && crc32cHash != null) {
-            failed = !crc32cHash.validate(crc32cExpected!);
+            if (!crc32cHash.validate(crc32cExpected!)) {
+              failed = true;
+            }
           }
 
           if (md5Enabled && md5Expected != null && md5Digest != null) {
-            failed = md5Digest != md5Expected;
+            if (md5Digest != md5Expected) {
+              failed = true;
+            }
           }
 
           if (failed) {
@@ -147,9 +150,9 @@ class HashStreamValidator extends StreamTransformerBase<List<int>, List<int>> {
               'To be sure the content is the same, you should download the file again.',
             );
             sink.addError(mismatchError);
-          } else {
-            sink.close();
           }
+
+          sink.close();
         },
         handleError: (error, stackTrace, sink) {
           sink.addError(error, stackTrace);

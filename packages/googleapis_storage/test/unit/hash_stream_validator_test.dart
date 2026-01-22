@@ -147,7 +147,7 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
 
       test('should throw ApiError when CRC32C does not match', () async {
@@ -161,7 +161,13 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsError(isA<ApiError>()));
+
+        try {
+          await stream.drain();
+          fail('Should have thrown ApiError');
+        } catch (e) {
+          expect(e, isA<ApiError>());
+        }
       });
 
       test('should calculate CRC32C across multiple chunks', () async {
@@ -199,7 +205,7 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
 
       test('should validate MD5 successfully when hash matches', () async {
@@ -214,7 +220,7 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
 
       test('should throw ApiError when MD5 does not match', () async {
@@ -228,7 +234,13 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsError(isA<ApiError>()));
+
+        try {
+          await stream.drain();
+          fail('Should have thrown ApiError');
+        } catch (e) {
+          expect(e, isA<ApiError>());
+        }
       });
 
       test('should calculate MD5 across multiple chunks', () async {
@@ -248,7 +260,7 @@ void main() {
         final stream = Stream.fromIterable(
           chunks,
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
     });
 
@@ -271,7 +283,7 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
 
       test(
@@ -293,7 +305,13 @@ void main() {
           final stream = Stream.value(
             utf8.encode(input).toList(),
           ).transform<List<int>>(validator);
-          await expectLater(stream, emitsError(isA<ApiError>()));
+
+          try {
+            await stream.drain();
+            fail('Should have thrown ApiError');
+          } catch (e) {
+            expect(e, isA<ApiError>());
+          }
         },
       );
 
@@ -317,7 +335,13 @@ void main() {
           final stream = Stream.value(
             utf8.encode(input).toList(),
           ).transform<List<int>>(validator);
-          await expectLater(stream, emitsError(isA<ApiError>()));
+
+          try {
+            await stream.drain();
+            fail('Should have thrown ApiError');
+          } catch (e) {
+            expect(e, isA<ApiError>());
+          }
         },
       );
     });
@@ -334,7 +358,7 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
 
         expect(validator.crc32c, expectedCrc32c);
       });
@@ -354,7 +378,7 @@ void main() {
         final stream = Stream.value(
           utf8.encode(input).toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
     });
 
@@ -421,7 +445,12 @@ void main() {
           error,
         ).transform<List<int>>(validator);
 
-        await expectLater(stream, emitsError(error));
+        try {
+          await stream.drain();
+          fail('Should have thrown exception');
+        } catch (e) {
+          expect(e, error);
+        }
       });
 
       test('should handle errors during hash calculation', () async {
@@ -437,7 +466,13 @@ void main() {
         final stream = Stream.value(
           utf8.encode('test').toList(),
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsError(isA<Exception>()));
+
+        try {
+          await stream.drain();
+          fail('Should have thrown exception');
+        } catch (e) {
+          expect(e, isA<Exception>());
+        }
       });
     });
 
@@ -451,7 +486,7 @@ void main() {
         );
 
         final stream = Stream.value(<int>[]).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
 
       test('should handle empty data with MD5 enabled', () async {
@@ -462,7 +497,7 @@ void main() {
         );
 
         final stream = Stream.value(<int>[]).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
 
       test('should handle large data streams', () async {
@@ -485,7 +520,7 @@ void main() {
         final stream = Stream.fromIterable(
           chunks,
         ).transform<List<int>>(validator);
-        await expectLater(stream, emitsDone);
+        await stream.drain();
       });
     });
   });
