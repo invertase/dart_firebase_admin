@@ -351,18 +351,9 @@ class URLSigner {
   /// If [includeTime] is true, returns YYYYMMDDTHHmmssZ format.
   String _formatAsUTCISO(DateTime date, {bool includeTime = false}) {
     final utc = date.toUtc();
-    final year = utc.year.toString().padLeft(4, '0');
-    final month = utc.month.toString().padLeft(2, '0');
-    final day = utc.day.toString().padLeft(2, '0');
-
     if (!includeTime) {
-      return '$year$month$day';
+      return DateFormat('yyyyMMdd').format(utc);
     }
-
-    final hour = utc.hour.toString().padLeft(2, '0');
-    final minute = utc.minute.toString().padLeft(2, '0');
-    final second = utc.second.toString().padLeft(2, '0');
-
-    return '$year$month${day}T$hour$minute${second}Z';
+    return DateFormat("yyyyMMdd'T'HHmmss'Z'").format(utc);
   }
 }
