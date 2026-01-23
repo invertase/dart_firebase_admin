@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,6 +9,7 @@ import '../helpers.dart';
 
 void main() {
   final credPath = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
+  final testEnv = <String, String>{'GOOGLE_APPLICATION_CREDENTIALS': credPath!};
 
   group(
     'Bucket.getSignedUrl integration tests',
@@ -17,7 +19,7 @@ void main() {
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
+        final serviceAccountFile = File(credPath);
         final serviceAccountJson = json.decode(
           serviceAccountFile.readAsStringSync(),
         );
@@ -28,9 +30,11 @@ void main() {
           privateKey: serviceAccountJson['private_key'] as String,
         );
 
-        storage = Storage(
-          StorageOptions(credentials: credentials, projectId: projectId),
-        );
+        runZoned(() {
+          storage = Storage(
+            StorageOptions(credentials: credentials, projectId: projectId),
+          );
+        }, zoneValues: {envSymbol: testEnv});
       });
 
       tearDown(() async {
@@ -125,7 +129,7 @@ void main() {
       const testFile2 = 'e2e-bucket-list-test-2.txt';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
+        final serviceAccountFile = File(credPath);
         final serviceAccountJson = json.decode(
           serviceAccountFile.readAsStringSync(),
         );
@@ -136,9 +140,11 @@ void main() {
           privateKey: serviceAccountJson['private_key'] as String,
         );
 
-        storage = Storage(
-          StorageOptions(credentials: credentials, projectId: projectId),
-        );
+        runZoned(() {
+          storage = Storage(
+            StorageOptions(credentials: credentials, projectId: projectId),
+          );
+        }, zoneValues: {envSymbol: testEnv});
       });
 
       tearDown(() async {

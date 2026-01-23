@@ -124,22 +124,26 @@ void main() {
           privateKey: serviceAccountJson['private_key'] as String,
         );
 
-        final storage = Storage(
-          StorageOptions(
-            authClient: explicitClient,
-            credentials: credentials,
-            keyFilename: credPath,
-            projectId: projectId,
-          ),
-        );
+        final testEnv = <String, String>{
+          'GOOGLE_APPLICATION_CREDENTIALS': credPath,
+        };
+        await runZoned(() async {
+          final storage = Storage(
+            StorageOptions(
+              authClient: explicitClient,
+              credentials: credentials,
+              keyFilename: credPath,
+              projectId: projectId,
+            ),
+          );
+          final client = await storage.authClient;
+          expect(client, same(explicitClient));
 
-        final client = await storage.authClient;
-        expect(client, same(explicitClient));
+          final pid = await client.getProjectId();
+          expect(pid, isNotEmpty);
 
-        final pid = await client.getProjectId();
-        expect(pid, isNotEmpty);
-
-        client.close();
+          client.close();
+        }, zoneValues: {envSymbol: testEnv});
       });
 
       test('should create working Storage instance with credentials', () async {
