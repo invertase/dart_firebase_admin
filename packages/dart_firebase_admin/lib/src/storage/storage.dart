@@ -1,6 +1,6 @@
-import 'package:googleapis_storage/googleapis_storage.dart' as storage_api;
+import 'package:googleapis_storage/googleapis_storage.dart'
+    as googleapis_storage;
 import 'package:meta/meta.dart';
-
 import '../app.dart';
 
 class Storage implements FirebaseService {
@@ -13,16 +13,16 @@ class Storage implements FirebaseService {
       final emulatorHost = Environment.getStorageEmulatorHost()!;
 
       if (RegExp('https?://').hasMatch(emulatorHost)) {
-        // TODO: Use exception class
-        throw Exception(
+        throw FirebaseAppException(
+          AppErrorCode.failedPrecondition,
           'FIREBASE_STORAGE_EMULATOR_HOST should not contain a protocol (http or https).',
         );
       }
       apiEndpoint = 'http://$emulatorHost';
     }
 
-    _delegate = storage_api.Storage(
-      storage_api.StorageOptions(
+    _delegate = googleapis_storage.Storage(
+      googleapis_storage.StorageOptions(
         authClient: isEmulator ? null : app.client,
         apiEndpoint: apiEndpoint,
         useAuthWithCustomEndpoint: false,
@@ -39,9 +39,9 @@ class Storage implements FirebaseService {
   @override
   final FirebaseApp app;
 
-  late final storage_api.Storage _delegate;
+  late final googleapis_storage.Storage _delegate;
 
-  storage_api.Bucket bucket(String? name) {
+  googleapis_storage.Bucket bucket(String? name) {
     final bucketName = name ?? app.options.storageBucket;
     if (bucketName == null || bucketName.isEmpty) {
       throw FirebaseAppException(
