@@ -9,7 +9,7 @@ import '../helpers.dart';
 
 void main() {
   final credPath = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
-  final testEnv = <String, String>{'GOOGLE_APPLICATION_CREDENTIALS': credPath!};
+  final testEnv = <String, String?>{'GOOGLE_APPLICATION_CREDENTIALS': credPath};
 
   group(
     'File.getSignedUrl integration tests',
@@ -20,7 +20,7 @@ void main() {
       const fileName = 'test-file.txt';
 
       setUp(() {
-        final serviceAccountFile = File(credPath);
+        final serviceAccountFile = File(credPath!);
         final serviceAccountJson = json.decode(
           serviceAccountFile.readAsStringSync(),
         );
@@ -190,7 +190,7 @@ void main() {
       const fileContent = 'Hello from signed URL E2E test!';
 
       setUp(() {
-        final serviceAccountFile = File(credPath);
+        final serviceAccountFile = File(credPath!);
         final serviceAccountJson = json.decode(
           serviceAccountFile.readAsStringSync(),
         );

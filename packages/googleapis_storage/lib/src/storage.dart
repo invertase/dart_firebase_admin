@@ -139,7 +139,7 @@ class Storage extends Service<StorageOptions> {
 
     // Check Zone for test environment variables, fallback to Platform.environment
     final env =
-        Zone.current[envSymbol] as Map<String, String>? ??
+        Zone.current[envSymbol] as Map<String, String?>? ??
         io.Platform.environment;
     final emulatorHost = env['STORAGE_EMULATOR_HOST'];
     if (emulatorHost != null) {

@@ -9,7 +9,7 @@ import '../helpers.dart';
 
 void main() {
   final credPath = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
-  final testEnv = <String, String>{'GOOGLE_APPLICATION_CREDENTIALS': credPath!};
+  final testEnv = <String, String?>{'GOOGLE_APPLICATION_CREDENTIALS': credPath};
 
   group(
     'Bucket.getSignedUrl integration tests',
@@ -19,7 +19,7 @@ void main() {
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
 
       setUp(() {
-        final serviceAccountFile = File(credPath);
+        final serviceAccountFile = File(credPath!);
         final serviceAccountJson = json.decode(
           serviceAccountFile.readAsStringSync(),
         );
@@ -129,7 +129,7 @@ void main() {
       const testFile2 = 'e2e-bucket-list-test-2.txt';
 
       setUp(() {
-        final serviceAccountFile = File(credPath);
+        final serviceAccountFile = File(credPath!);
         final serviceAccountJson = json.decode(
           serviceAccountFile.readAsStringSync(),
         );
