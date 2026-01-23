@@ -40,6 +40,12 @@ abstract class Environment {
   /// Format: `host:port` (e.g., `127.0.0.1:9499`)
   static const cloudTasksEmulatorHost = 'CLOUD_TASKS_EMULATOR_HOST';
 
+  /// Firebase Storage Emulator host address.
+  ///
+  /// When set, Storage service automatically connects to the emulator instead of production.
+  /// Format: `host:port` (e.g., `localhost:9199`)
+  static const firebaseStorageEmulatorHost = 'FIREBASE_STORAGE_EMULATOR_HOST';
+
   /// Checks if the Firestore emulator is enabled via environment variable.
   ///
   /// Returns `true` if [firestoreEmulatorHost] is set in the environment.
@@ -86,5 +92,38 @@ abstract class Environment {
     final env =
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
     return env[cloudTasksEmulatorHost] != null;
+  }
+
+  /// Checks if the Storage emulator is enabled via environment variable.
+  ///
+  /// Returns `true` if [firebaseStorageEmulatorHost] is set in the environment.
+  ///
+  /// Example:
+  /// ```dart
+  /// if (Environment.isStorageEmulatorEnabled()) {
+  ///   print('Using Storage emulator');
+  /// }
+  /// ```
+  static bool isStorageEmulatorEnabled() {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    return env[firebaseStorageEmulatorHost] != null;
+  }
+
+  /// Gets the Storage emulator host from environment variables.
+  ///
+  /// Returns the host:port string if set, otherwise null.
+  ///
+  /// Example:
+  /// ```dart
+  /// final host = Environment.getStorageEmulatorHost();
+  /// if (host != null) {
+  ///   print('Storage emulator at $host');
+  /// }
+  /// ```
+  static String? getStorageEmulatorHost() {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    return env[firebaseStorageEmulatorHost];
   }
 }

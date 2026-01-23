@@ -7,7 +7,8 @@ enum FirebaseServiceType {
   firestore(name: 'firestore'),
   messaging(name: 'messaging'),
   securityRules(name: 'security-rules'),
-  functions(name: 'functions');
+  functions(name: 'functions'),
+  storage(name: 'storage');
 
   const FirebaseServiceType({required this.name});
 

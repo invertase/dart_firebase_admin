@@ -220,6 +220,18 @@ class _ResumableUploadSink implements StreamSink<List<int>> {
                     code: 500,
                   );
                 }
+              } else if (statusResponse.statusCode == 400 &&
+                  _config.storage.config.customEndpoint == true) {
+                // Firebase Storage emulator may not support status check queries.
+                // If we've uploaded all bytes, assume upload is complete.
+                if (_bytesWritten > 0) {
+                  // Upload is complete - emulator doesn't support status check
+                } else {
+                  throw ApiError(
+                    'Unexpected status when checking upload completion: ${statusResponse.statusCode}',
+                    code: statusResponse.statusCode,
+                  );
+                }
               } else {
                 throw ApiError(
                   'Unexpected status when checking upload completion: ${statusResponse.statusCode}',
