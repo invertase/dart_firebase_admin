@@ -1,12 +1,6 @@
 part of '../googleapis_storage.dart';
 
 class StorageOptions extends ServiceOptions {
-  final String? apiEndpoint;
-  final Crc32Generator? crc32cGenerator;
-  final RetryOptions? retryOptions;
-
-  final auth_utils.GoogleCredential? credentials;
-
   const StorageOptions({
     this.apiEndpoint,
     this.crc32cGenerator,
@@ -17,6 +11,18 @@ class StorageOptions extends ServiceOptions {
     super.universeDomain,
     super.projectId,
   });
+
+  final String? apiEndpoint;
+  final Crc32Generator? crc32cGenerator;
+  final RetryOptions? retryOptions;
+
+  /// A credential used to authenticate the Admin SDK.
+  ///
+  /// Use one of:
+  /// - [Credential.fromServiceAccount] - For service account JSON files
+  /// - [Credential.fromServiceAccountParams] - For individual service account parameters
+  /// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
+  final auth_utils.GoogleCredential? credentials;
 
   StorageOptions copyWith({
     String? apiEndpoint,
