@@ -1,7 +1,5 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-
+import 'dart:async';
 import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:test/test.dart';
 
@@ -15,26 +13,16 @@ void main() {
     'URLSigner integration tests',
     () {
       late Storage storage;
-      late String projectId;
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
       const fileName = 'test-file.txt';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
-        final serviceAccountJson = json.decode(
-          serviceAccountFile.readAsStringSync(),
-        );
-        projectId = serviceAccountJson['project_id'] as String;
-
-        final credentials = Credentials(
-          clientEmail: serviceAccountJson['client_email'] as String,
-          privateKey: serviceAccountJson['private_key'] as String,
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
         );
 
         runZoned(() {
-          storage = Storage(
-            StorageOptions(credentials: credentials, projectId: projectId),
-          );
+          storage = Storage(StorageOptions(credentials: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 

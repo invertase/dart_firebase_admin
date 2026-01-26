@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
-import 'package:googleapis_storage/googleapis_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart' as auth_io;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart' as auth_utils;
+import 'package:googleapis_storage/googleapis_storage.dart';
+import 'package:http/http.dart' as http;
 import 'emulator_client.dart';
 
 typedef RequestInterceptor = http.BaseRequest Function(http.BaseRequest);
@@ -92,15 +92,15 @@ abstract class Service<T extends ServiceOptions> {
       return _authClient = await options.authClient!;
     }
 
-    GoogleCredential? googleCredential;
+    auth_utils.GoogleCredential? googleCredential;
     if (options is StorageOptions) {
       final storageOpts = options as StorageOptions;
-      if (storageOpts.credentials != null || storageOpts.keyFilename != null) {
-        googleCredential = storageOpts.extractCredential();
-      }
+      googleCredential =
+          storageOpts.credentials ??
+          auth_utils.GoogleCredential.fromApplicationDefaultCredentials();
     }
 
-    return _authClient = await createAuthClient(googleCredential, [
+    return _authClient = await auth_utils.createAuthClient(googleCredential, [
       'https://www.googleapis.com/auth/iam',
       'https://www.googleapis.com/auth/cloud-platform',
       'https://www.googleapis.com/auth/devstorage.full_control',

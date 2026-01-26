@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:googleapis/storage/v1.dart' as storage_v1;
-import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart' as auth_utils;
+import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -69,7 +70,7 @@ class _TestStorageOptions extends StorageOptions {
     String? apiEndpoint,
     Crc32Generator? crc32cGenerator,
     RetryOptions? retryOptions,
-    Credentials? credentials,
+    auth_utils.GoogleCredential? credentials,
     String? keyFilename,
     FutureOr<auth.AuthClient>? authClient,
     bool? useAuthWithCustomEndpoint,
@@ -100,7 +101,6 @@ void main() {
       ); // Default is applied in Storage constructor
       expect(options.retryOptions, isNull);
       expect(options.credentials, isNull);
-      expect(options.keyFilename, isNull);
       expect(options.authClient, isNull);
       expect(options.useAuthWithCustomEndpoint, isNull);
       expect(options.universeDomain, isNull);

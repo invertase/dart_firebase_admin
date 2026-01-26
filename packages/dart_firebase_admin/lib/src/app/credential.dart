@@ -7,6 +7,7 @@ const envSymbol = #_envSymbol;
 ///
 /// Create credentials using one of the factory methods:
 /// - [Credential.fromServiceAccount] - For service account JSON files
+/// - [Credential.fromServiceAccountParams] - For individual service account parameters
 /// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
 ///
 /// The credential is used to authenticate all API calls made by the Admin SDK.

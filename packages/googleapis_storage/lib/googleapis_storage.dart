@@ -9,7 +9,7 @@ import 'package:crypto/crypto.dart' as crypto;
 
 import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:googleapis_auth_utils/googleapis_auth_utils.dart' as auth_utils;
 import 'package:googleapis_storage/src/internal/api_error.dart';
 import 'package:googleapis_storage/src/internal/api.dart';
 import 'package:googleapis_storage/src/internal/service.dart';

@@ -15,25 +15,15 @@ void main() {
     'Bucket.getSignedUrl integration tests',
     () {
       late Storage storage;
-      late String projectId;
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
-        final serviceAccountJson = json.decode(
-          serviceAccountFile.readAsStringSync(),
-        );
-        projectId = serviceAccountJson['project_id'] as String;
-
-        final credentials = Credentials(
-          clientEmail: serviceAccountJson['client_email'] as String,
-          privateKey: serviceAccountJson['private_key'] as String,
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
         );
 
         runZoned(() {
-          storage = Storage(
-            StorageOptions(credentials: credentials, projectId: projectId),
-          );
+          storage = Storage(StorageOptions(credentials: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 
@@ -123,27 +113,17 @@ void main() {
     'Bucket.getSignedUrl E2E tests',
     () {
       late Storage storage;
-      late String projectId;
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
       const testFile1 = 'e2e-bucket-list-test-1.txt';
       const testFile2 = 'e2e-bucket-list-test-2.txt';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
-        final serviceAccountJson = json.decode(
-          serviceAccountFile.readAsStringSync(),
-        );
-        projectId = serviceAccountJson['project_id'] as String;
-
-        final credentials = Credentials(
-          clientEmail: serviceAccountJson['client_email'] as String,
-          privateKey: serviceAccountJson['private_key'] as String,
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
         );
 
         runZoned(() {
-          storage = Storage(
-            StorageOptions(credentials: credentials, projectId: projectId),
-          );
+          storage = Storage(StorageOptions(credentials: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 
@@ -169,7 +149,7 @@ void main() {
         await bucket.file(testFile2).save(utf8.encode('test content 2'));
 
         // Brief delay to handle eventual consistency
-        await Future<void>.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(const Duration(seconds: 10));
 
         // Step 2: Generate a signed URL for listing
         final expires = DateTime.now().add(const Duration(minutes: 5));

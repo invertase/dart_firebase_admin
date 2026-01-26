@@ -15,26 +15,16 @@ void main() {
     'File.getSignedUrl integration tests',
     () {
       late Storage storage;
-      late String projectId;
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
       const fileName = 'test-file.txt';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
-        final serviceAccountJson = json.decode(
-          serviceAccountFile.readAsStringSync(),
-        );
-        projectId = serviceAccountJson['project_id'] as String;
-
-        final credentials = Credentials(
-          clientEmail: serviceAccountJson['client_email'] as String,
-          privateKey: serviceAccountJson['private_key'] as String,
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
         );
 
         runZoned(() {
-          storage = Storage(
-            StorageOptions(credentials: credentials, projectId: projectId),
-          );
+          storage = Storage(StorageOptions(credentials: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 
@@ -184,27 +174,17 @@ void main() {
     'File.getSignedUrl E2E tests',
     () {
       late Storage storage;
-      late String projectId;
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
       const fileName = 'e2e-test-file.txt';
       const fileContent = 'Hello from signed URL E2E test!';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
-        final serviceAccountJson = json.decode(
-          serviceAccountFile.readAsStringSync(),
-        );
-        projectId = serviceAccountJson['project_id'] as String;
-
-        final credentials = Credentials(
-          clientEmail: serviceAccountJson['client_email'] as String,
-          privateKey: serviceAccountJson['private_key'] as String,
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
         );
 
         runZoned(() {
-          storage = Storage(
-            StorageOptions(credentials: credentials, projectId: projectId),
-          );
+          storage = Storage(StorageOptions(credentials: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 
@@ -232,7 +212,7 @@ void main() {
           await file.save(utf8.encode(fileContent));
 
           // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(milliseconds: 500));
+          await Future<void>.delayed(const Duration(seconds: 10));
 
           // Step 2: Generate a signed URL for reading
           final expires = DateTime.now().add(const Duration(minutes: 5));
