@@ -13,24 +13,14 @@ void main() {
     'Bucket.getSignedUrl integration tests',
     () {
       late Storage storage;
-      late String projectId;
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
 
       setUp(() {
-        final serviceAccountFile = File(credPath!);
-        final serviceAccountJson = json.decode(
-          serviceAccountFile.readAsStringSync(),
-        );
-        projectId = serviceAccountJson['project_id'] as String;
-
-        final credentials = GoogleCredential.fromServiceAccountParams(
-          email: serviceAccountJson['client_email'] as String,
-          privateKey: serviceAccountJson['private_key'] as String,
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
         );
 
-        storage = Storage(
-          StorageOptions(credentials: credentials, projectId: projectId),
-        );
+        storage = Storage(StorageOptions(credentials: credentials));
       });
 
       tearDown(() async {
