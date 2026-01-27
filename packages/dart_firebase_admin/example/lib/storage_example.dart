@@ -24,7 +24,7 @@ Future<void> basicExample(FirebaseApp admin) async {
 
     const fileContent = 'Hello from basicExample() in storage_example.dart';
     print('> Uploading file "${file.name}" to Storage...\n');
-    await file.save(utf8.encode(fileContent));
+    await file.save(fileContent);
     print('> ✓ File uploaded successfully!\n');
 
     print('> Deleting file "${file.name}"...\n');

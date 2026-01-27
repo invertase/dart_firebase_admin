@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:test/test.dart';
@@ -212,7 +213,7 @@ void main() {
           await file.save(utf8.encode(fileContent));
 
           // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 10));
+          await Future<void>.delayed(const Duration(seconds: 5));
 
           // Step 2: Generate a signed URL for reading
           final expires = DateTime.now().add(const Duration(minutes: 5));
@@ -322,6 +323,311 @@ void main() {
           await response.drain();
         } finally {
           httpClient.close();
+        }
+      });
+    },
+    skip: !hasGoogleEnv
+        ? 'GOOGLE_APPLICATION_CREDENTIALS environment variable not set'
+        : null,
+  );
+
+  group(
+    'File operations integration tests',
+    () {
+      late Storage storage;
+      const bucketName = 'dart-firebase-admin.firebasestorage.app';
+      late Bucket bucket;
+      const testContent = 'Hello from Dart integration tests!';
+
+      setUp(() {
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
+        );
+
+        runZoned(() {
+          storage = Storage(StorageOptions(credentials: credentials));
+        }, zoneValues: {envSymbol: testEnv});
+
+        bucket = storage.bucket(bucketName);
+      });
+
+      tearDown(() async {
+        final client = await storage.authClient;
+        client.close();
+      });
+
+      test('should save and download file with String data', () async {
+        const fileName = 'integration-test-string.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Save file with String data (gzip enabled)
+          await file.save(testContent, SaveOptions(gzip: true));
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Download and verify
+          final downloadedBytes = await file.download();
+          final downloadedContent = utf8.decode(downloadedBytes);
+
+          expect(downloadedContent, testContent);
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should save and download file with List<int> data', () async {
+        const fileName = 'integration-test-list.txt';
+        final file = bucket.file(fileName);
+        final data = [72, 101, 108, 108, 111]; // "Hello"
+
+        try {
+          // Save file with List<int> data
+          await file.save(data);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Download and verify
+          final downloadedBytes = await file.download();
+
+          expect(downloadedBytes, data);
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should save and download file with Uint8List data', () async {
+        const fileName = 'integration-test-uint8list.txt';
+        final file = bucket.file(fileName);
+        final data = Uint8List.fromList([1, 2, 3, 4, 5]);
+
+        try {
+          // Save file with Uint8List data
+          await file.save(data);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Download and verify
+          final downloadedBytes = await file.download();
+
+          expect(downloadedBytes, data);
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should save and download file with Stream data', () async {
+        const fileName = 'integration-test-stream.txt';
+        final file = bucket.file(fileName);
+        final dataStream = Stream<List<int>>.fromIterable([
+          [72, 101, 108, 108, 111], // "Hello"
+          [32, 87, 111, 114, 108, 100], // " World"
+        ]);
+
+        try {
+          // Save file with Stream data
+          await file.save(dataStream);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Download and verify
+          final downloadedBytes = await file.download();
+          final downloadedContent = utf8.decode(downloadedBytes);
+
+          expect(downloadedContent, 'Hello World');
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should get metadata for a file', () async {
+        const fileName = 'integration-test-metadata.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Get metadata
+          final metadata = await file.getMetadata();
+
+          expect(metadata.name, fileName);
+          expect(metadata.bucket, bucketName);
+          expect(metadata.size, isNotNull);
+          expect(metadata.contentType, isNotNull);
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should set metadata for a file', () async {
+        const fileName = 'integration-test-set-metadata.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Set custom metadata
+          final newMetadata = await file.setMetadata(
+            FileMetadata(
+              metadata: {
+                'customKey': 'customValue',
+                'description': 'Test file description',
+              },
+            ),
+          );
+
+          expect(newMetadata.metadata?['customKey'], 'customValue');
+          expect(newMetadata.metadata?['description'], 'Test file description');
+
+          // Verify metadata persisted
+          final retrievedMetadata = await file.getMetadata();
+          expect(retrievedMetadata.metadata?['customKey'], 'customValue');
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should copy a file', () async {
+        const sourceFileName = 'integration-test-copy-source.txt';
+        const destFileName = 'integration-test-copy-dest.txt';
+        final sourceFile = bucket.file(sourceFileName);
+        final destFile = bucket.file(destFileName);
+
+        try {
+          // Upload source file
+          await sourceFile.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Copy file
+          await sourceFile.copy(CopyDestination.file(destFile));
+
+          // Verify destination exists and has same content
+          final downloadedBytes = await destFile.download();
+          final downloadedContent = utf8.decode(downloadedBytes);
+
+          expect(downloadedContent, testContent);
+        } finally {
+          await sourceFile.delete().catchError((_) {});
+          await destFile.delete().catchError((_) {});
+        }
+      });
+
+      test('should move a file', () async {
+        const sourceFileName = 'integration-test-move-source.txt';
+        const destFileName = 'integration-test-move-dest.txt';
+        final sourceFile = bucket.file(sourceFileName);
+        final destFile = bucket.file(destFileName);
+
+        try {
+          // Upload source file
+          await sourceFile.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Move file
+          await sourceFile.move(CopyDestination.file(destFile));
+
+          // Verify destination exists and source doesn't
+          final destDownloaded = await destFile.download();
+          final destContent = utf8.decode(destDownloaded);
+          expect(destContent, testContent);
+
+          final sourceExists = await sourceFile.exists();
+          expect(sourceExists, false);
+        } finally {
+          await sourceFile.delete().catchError((_) {});
+          await destFile.delete().catchError((_) {});
+        }
+      });
+
+      test('should rename a file', () async {
+        const oldFileName = 'integration-test-old-name.txt';
+        const newFileName = 'integration-test-new-name.txt';
+        final oldFile = bucket.file(oldFileName);
+        final newFile = bucket.file(newFileName);
+
+        try {
+          // Upload file with old name
+          await oldFile.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Rename file
+          await oldFile.rename(CopyDestination.path(newFileName));
+
+          // Verify new name exists and old doesn't
+          final newFileDownloaded = await newFile.download();
+          final newFileContent = utf8.decode(newFileDownloaded);
+          expect(newFileContent, testContent);
+
+          final oldFileExists = await oldFile.exists();
+          expect(oldFileExists, false);
+        } finally {
+          await oldFile.delete().catchError((_) {});
+          await newFile.delete().catchError((_) {});
+        }
+      });
+
+      test('should delete a file', () async {
+        const fileName = 'integration-test-delete.txt';
+        final file = bucket.file(fileName);
+
+        // Upload file
+        await file.save(testContent);
+
+        // Brief delay to handle eventual consistency
+        await Future<void>.delayed(const Duration(seconds: 5));
+
+        // Verify it exists
+        var exists = await file.exists();
+        expect(exists, true);
+
+        // Delete file
+        await file.delete();
+
+        // Verify it's gone
+        exists = await file.exists();
+        expect(exists, false);
+      });
+
+      test('should check if file exists', () async {
+        const existingFileName = 'integration-test-exists.txt';
+        const nonExistingFileName = 'integration-test-does-not-exist.txt';
+        final existingFile = bucket.file(existingFileName);
+        final nonExistingFile = bucket.file(nonExistingFileName);
+
+        try {
+          // Upload a file
+          await existingFile.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Check existing file
+          final existsTrue = await existingFile.exists();
+          expect(existsTrue, true);
+
+          // Check non-existing file
+          final existsFalse = await nonExistingFile.exists();
+          expect(existsFalse, false);
+        } finally {
+          await existingFile.delete().catchError((_) {});
         }
       });
     },

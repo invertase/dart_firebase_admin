@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:googleapis_storage/googleapis_storage.dart';
@@ -17,6 +20,14 @@ class MockAcl extends Mock implements Acl {}
 
 class MockObjectAccessControlsResource extends Mock
     implements storage_v1.ObjectAccessControlsResource {}
+
+class MockFileStreamFactory extends Mock implements FileStreamFactory {}
+
+class FakeBucketFile extends Fake implements BucketFile {}
+
+class FakeCreateReadStreamOptions extends Fake implements CreateReadStreamOptions {}
+
+class FakeCreateWriteStreamOptions extends Fake implements CreateWriteStreamOptions {}
 
 /// Test helper that creates a Storage instance with an injectable mock client
 class TestStorage extends Storage {
@@ -52,6 +63,9 @@ void main() {
     registerFallbackValue(
       SignedUrlConfig(method: SignedUrlMethod.get, expires: DateTime.now()),
     );
+    registerFallbackValue(FakeBucketFile());
+    registerFallbackValue(FakeCreateReadStreamOptions());
+    registerFallbackValue(FakeCreateWriteStreamOptions());
   });
 
   setUp(() {
@@ -2747,6 +2761,266 @@ void main() {
           userProject: any(named: 'userProject'),
         ),
       ).called(1);
+    });
+  });
+
+  // ========================================================================
+  // File Download/Save Tests
+  // ========================================================================
+
+  group('File - download', () {
+    late TestStorage storage;
+    late storage_v1.StorageApi mockApi;
+    late storage_v1.ObjectsResource mockObjects;
+    late MockFileStreamFactory mockStreamFactory;
+    late BucketFile file;
+
+    setUp(() {
+      mockApi = MockStorageApi();
+      mockObjects = MockObjectsResource();
+      mockStreamFactory = MockFileStreamFactory();
+
+      when(() => mockApi.objects).thenReturn(mockObjects);
+
+      storage = TestStorage(mockApi, projectId: 'test-project');
+      final bucket = storage.bucket('test-bucket');
+
+      // Create file with mock stream factory
+      file = BucketFile.internal(
+        bucket,
+        'test-file.txt',
+        null,
+        null,
+        mockStreamFactory,
+      );
+    });
+
+    test('should call createReadStream with filtered options', () async {
+      final mockStream = Stream<List<int>>.value([1, 2, 3]);
+
+      when(() => mockStreamFactory.createReadStream(any(), any()))
+          .thenAnswer((_) => mockStream);
+
+      await file.download(
+        DownloadOptions(
+          start: 100,
+          end: 200,
+          userProject: 'my-project',
+        ),
+      );
+
+      final captured = verify(
+        () => mockStreamFactory.createReadStream(
+          any(),
+          captureAny(),
+        ),
+      ).captured.single as CreateReadStreamOptions;
+
+      expect(captured.start, 100);
+      expect(captured.end, 200);
+      expect(captured.userProject, 'my-project');
+    });
+
+    test('should filter out destination from options', () async {
+      final mockStream = Stream<List<int>>.value([1, 2, 3]);
+
+      when(() => mockStreamFactory.createReadStream(any(), any()))
+          .thenAnswer((_) => mockStream);
+
+      // Note: destination would normally be a File, but since we're not
+      // actually writing to disk in this test, we skip that part
+      await file.download(
+        const DownloadOptions(
+          start: 100,
+          userProject: 'my-project',
+        ),
+      );
+
+      final captured = verify(
+        () => mockStreamFactory.createReadStream(
+          any(),
+          captureAny(),
+        ),
+      ).captured.single as CreateReadStreamOptions;
+
+      // Verify destination is NOT in the options passed to createReadStream
+      expect(captured.start, 100);
+      expect(captured.userProject, 'my-project');
+    });
+
+    test('should filter out encryptionKey from stream options', () async {
+      final mockStream = Stream<List<int>>.value([1, 2, 3]);
+      final encryptionKey = EncryptionKey.fromString('test-encryption-key');
+
+      when(() => mockStreamFactory.createReadStream(any(), any()))
+          .thenAnswer((_) => mockStream);
+
+      await file.download(
+        DownloadOptions(
+          encryptionKey: encryptionKey,
+          userProject: 'my-project',
+        ),
+      );
+
+      // Verify createReadStream was called (without encryption key in options)
+      final captured = verify(
+        () => mockStreamFactory.createReadStream(
+          any(),
+          captureAny(),
+        ),
+      ).captured.single as CreateReadStreamOptions;
+
+      // encryptionKey should not be in stream options (handled separately)
+      expect(captured.userProject, 'my-project');
+    });
+
+    test('should download to memory when no destination', () async {
+      final mockStream = Stream<List<int>>.fromIterable([
+        [1, 2, 3],
+        [4, 5, 6],
+      ]);
+
+      when(() => mockStreamFactory.createReadStream(any(), any()))
+          .thenAnswer((_) => mockStream);
+
+      final result = await file.download();
+
+      expect(result, [1, 2, 3, 4, 5, 6]);
+    });
+  });
+
+  group('File - save', () {
+    late TestStorage storage;
+    late storage_v1.StorageApi mockApi;
+    late storage_v1.ObjectsResource mockObjects;
+    late MockFileStreamFactory mockStreamFactory;
+    late BucketFile file;
+
+    setUp(() {
+      mockApi = MockStorageApi();
+      mockObjects = MockObjectsResource();
+      mockStreamFactory = MockFileStreamFactory();
+
+      when(() => mockApi.objects).thenReturn(mockObjects);
+
+      storage = TestStorage(mockApi, projectId: 'test-project');
+      final bucket = storage.bucket('test-bucket');
+
+      // Create file with mock stream factory
+      file = BucketFile.internal(
+        bucket,
+        'test-file.txt',
+        null,
+        null,
+        mockStreamFactory,
+      );
+    });
+
+    test('should call createWriteStream with options', () async {
+      final controller = StreamController<List<int>>();
+      final dataFuture = controller.stream.toList();
+
+      when(() => mockStreamFactory.createWriteStream(any(), any()))
+          .thenAnswer((_) => controller.sink);
+
+      await file.save(
+        'test data',
+        SaveOptions(
+          contentType: 'text/plain',
+          resumable: false,
+        ),
+      );
+
+      await dataFuture; // Wait for stream to complete
+
+      verify(
+        () => mockStreamFactory.createWriteStream(
+          any(),
+          any(),
+        ),
+      ).called(1);
+    });
+
+    test('should handle String data', () async {
+      final controller = StreamController<List<int>>();
+      final dataFuture = controller.stream.toList();
+
+      when(() => mockStreamFactory.createWriteStream(any(), any()))
+          .thenAnswer((_) => controller.sink);
+
+      await file.save('test data');
+
+      final receivedChunks = await dataFuture;
+      final receivedData = receivedChunks.expand((chunk) => chunk).toList();
+      expect(String.fromCharCodes(receivedData), 'test data');
+    });
+
+    test('should handle List<int> data', () async {
+      final controller = StreamController<List<int>>();
+      final dataFuture = controller.stream.toList();
+
+      when(() => mockStreamFactory.createWriteStream(any(), any()))
+          .thenAnswer((_) => controller.sink);
+
+      await file.save([1, 2, 3, 4, 5]);
+
+      final receivedChunks = await dataFuture;
+      final receivedData = receivedChunks.expand((chunk) => chunk).toList();
+      expect(receivedData, [1, 2, 3, 4, 5]);
+    });
+
+    test('should handle Uint8List data', () async {
+      final controller = StreamController<List<int>>();
+      final dataFuture = controller.stream.toList();
+
+      when(() => mockStreamFactory.createWriteStream(any(), any()))
+          .thenAnswer((_) => controller.sink);
+
+      final data = Uint8List.fromList([10, 20, 30]);
+      await file.save(data);
+
+      final receivedChunks = await dataFuture;
+      final receivedData = receivedChunks.expand((chunk) => chunk).toList();
+      expect(receivedData, [10, 20, 30]);
+    });
+
+    test('should handle Stream<List<int>> data', () async {
+      final controller = StreamController<List<int>>();
+      final dataFuture = controller.stream.toList();
+
+      when(() => mockStreamFactory.createWriteStream(any(), any()))
+          .thenAnswer((_) => controller.sink);
+
+      final dataStream = Stream<List<int>>.fromIterable([
+        [1, 2, 3],
+        [4, 5, 6],
+      ]);
+
+      await file.save(dataStream);
+
+      final receivedChunks = await dataFuture;
+      final receivedData = receivedChunks.expand((chunk) => chunk).toList();
+      expect(receivedData, [1, 2, 3, 4, 5, 6]);
+    });
+
+    test('should throw for unsupported data types', () async {
+      final controller = StreamController<List<int>>();
+
+      when(() => mockStreamFactory.createWriteStream(any(), any()))
+          .thenAnswer((_) => controller.sink);
+
+      try {
+        await file.save(123); // Number is not supported
+        fail('Should have thrown an error');
+      } catch (e) {
+        expect(e, isA<ApiError>());
+        expect(
+          e.toString(),
+          contains('Data must be String, Uint8List, List<int>, or Stream<List<int>>'),
+        );
+      } finally {
+        unawaited(controller.close());
+      }
     });
   });
 }

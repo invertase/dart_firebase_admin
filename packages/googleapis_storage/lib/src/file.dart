@@ -5,6 +5,41 @@ final _httpsPublicUrlRegex = RegExp(
   r'^https://storage\.googleapis\.com/([a-z0-9_.-]+)/(.+)$',
 );
 
+/// Factory for creating streams used by BucketFile.
+/// This allows for dependency injection in tests.
+abstract class FileStreamFactory {
+  Stream<List<int>> createReadStream(
+    BucketFile file,
+    CreateReadStreamOptions options,
+  );
+
+  StreamSink<List<int>> createWriteStream(
+    BucketFile file,
+    CreateWriteStreamOptions options,
+  );
+}
+
+/// Default implementation that delegates to the actual stream methods.
+class DefaultFileStreamFactory implements FileStreamFactory {
+  const DefaultFileStreamFactory();
+
+  @override
+  Stream<List<int>> createReadStream(
+    BucketFile file,
+    CreateReadStreamOptions options,
+  ) {
+    return file.createReadStream(options);
+  }
+
+  @override
+  StreamSink<List<int>> createWriteStream(
+    BucketFile file,
+    CreateWriteStreamOptions options,
+  ) {
+    return file.createWriteStream(options);
+  }
+}
+
 class BucketFile extends ServiceObject<FileMetadata>
     with
         GettableMixin<FileMetadata, BucketFile>,
@@ -16,6 +51,7 @@ class BucketFile extends ServiceObject<FileMetadata>
     this.name, [
     FileOptions? options,
     URLSigner? signer,
+    FileStreamFactory? streamFactory,
   ]) : options = (options ?? const FileOptions()).copyWith(
          // Inherit from bucket's storage options crc32cGenerator (which has a default) if not specified in file options
          crc32cGenerator:
@@ -31,6 +67,7 @@ class BucketFile extends ServiceObject<FileMetadata>
        crc32cGenerator = options?.crc32cGenerator ?? bucket.crc32cGenerator,
        kmsKeyName = options?.kmsKeyName,
        _signer = signer,
+       _streamFactory = streamFactory ?? const DefaultFileStreamFactory(),
        super(service: bucket.storage, id: name, metadata: FileMetadata());
 
   BucketFile._(Bucket bucket, String name, [FileOptions? options])
@@ -43,6 +80,7 @@ class BucketFile extends ServiceObject<FileMetadata>
   final PreconditionOptions? preconditionOpts;
   final Crc32Generator crc32cGenerator;
   final String? kmsKeyName;
+  final FileStreamFactory _streamFactory;
   URLSigner? _signer;
   EncryptionKey? _encryptionKey;
 
@@ -317,6 +355,7 @@ class BucketFile extends ServiceObject<FileMetadata>
         );
 
         // Build request headers
+        // Request gzip encoding so we can validate compressed data before decompressing
         final headers = <String, String>{
           'Accept-Encoding': 'gzip',
           'Cache-Control': 'no-store',
@@ -370,6 +409,7 @@ class BucketFile extends ServiceObject<FileMetadata>
         // The object is safe to validate if:
         // 1. It was stored gzip and returned to us gzip OR
         // 2. It was never stored as gzip
+        // We disabled autoUncompress on HttpClient, so we can validate before decompressing
         final safeToValidate =
             (storedContentEncoding == 'gzip' && isCompressed) ||
             storedContentEncoding == 'identity';
@@ -411,7 +451,8 @@ class BucketFile extends ServiceObject<FileMetadata>
         // Build the processing pipeline from the response stream
         Stream<List<int>> pipeline = response.stream;
 
-        // Apply validation if needed
+        // Apply validation FIRST if safe (validates compressed data before decompression)
+        // This matches Node.js SDK behavior
         HashStreamValidator? validateStream;
         if (safeToValidate && shouldRunValidation) {
           validateStream = HashStreamValidator(
@@ -426,7 +467,7 @@ class BucketFile extends ServiceObject<FileMetadata>
           pipeline = pipeline.transform(validateStream);
         }
 
-        // Apply decompression if needed
+        // Apply decompression SECOND if needed (after validation)
         if (isCompressed && decompress) {
           pipeline = pipeline.transform(io.gzip.decoder);
         }
@@ -715,15 +756,16 @@ class BucketFile extends ServiceObject<FileMetadata>
 
     // Set up the data processing pipeline.
     // Data flows: controller.stream -> [gzip] -> [hash validation] -> upload sink
-    // Each transform is applied sequentially as data flows through.
+    // When gzip is enabled, hash is calculated on COMPRESSED data (matching Node.js SDK)
+    // because the server stores the hash of the compressed bytes.
     Stream<List<int>> pipeline = controller.stream;
 
-    // Apply gzip compression if enabled
+    // Apply gzip compression FIRST if enabled
     if (shouldGzip) {
       pipeline = pipeline.transform(io.gzip.encoder);
     }
 
-    // Apply hash validation if enabled (calculates CRC32C or MD5 as data flows)
+    // Apply hash validation SECOND if enabled (calculates CRC32C or MD5 on compressed data)
     if (hashValidator != null) {
       pipeline = pipeline.transform(hashValidator);
     }
@@ -786,7 +828,7 @@ class BucketFile extends ServiceObject<FileMetadata>
     );
 
     // Create the read stream
-    final fileStream = createReadStream(readStreamOptions);
+    final fileStream = _streamFactory.createReadStream(this, readStreamOptions);
 
     if (destination != null) {
       // Download to file
@@ -1187,7 +1229,7 @@ class BucketFile extends ServiceObject<FileMetadata>
 
   Future<void> _saveData(Object data, SaveOptions options) async {
     final completer = Completer<void>();
-    final writable = createWriteStream(options);
+    final writable = _streamFactory.createWriteStream(this, options);
 
     // Progress events are handled in createWriteStream
 
