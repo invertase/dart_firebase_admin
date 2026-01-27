@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io' as io;
 import 'dart:typed_data';
 
 import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:googleapis_storage/googleapis_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -25,18 +28,23 @@ class MockFileStreamFactory extends Mock implements FileStreamFactory {}
 
 class FakeBucketFile extends Fake implements BucketFile {}
 
-class FakeCreateReadStreamOptions extends Fake implements CreateReadStreamOptions {}
+class FakeCreateReadStreamOptions extends Fake
+    implements CreateReadStreamOptions {}
 
-class FakeCreateWriteStreamOptions extends Fake implements CreateWriteStreamOptions {}
+class FakeCreateWriteStreamOptions extends Fake
+    implements CreateWriteStreamOptions {}
+
+class FakeBaseRequest extends Fake implements http.BaseRequest {}
 
 /// Test helper that creates a Storage instance with an injectable mock client
 class TestStorage extends Storage {
   final storage_v1.StorageApi mockClient;
+  final auth.AuthClient? mockAuth;
 
-  TestStorage(this.mockClient, {String? projectId})
+  TestStorage(this.mockClient, {String? projectId, this.mockAuth})
     : super(
         StorageOptions(
-          authClient: MockAuthClient(),
+          authClient: mockAuth ?? MockAuthClient(),
           useAuthWithCustomEndpoint: false,
           projectId: projectId,
         ),
@@ -46,7 +54,7 @@ class TestStorage extends Storage {
   Future<storage_v1.StorageApi> get storageClient async => mockClient;
 
   @override
-  Future<auth.AuthClient> get authClient async => MockAuthClient();
+  Future<auth.AuthClient> get authClient async => mockAuth ?? MockAuthClient();
 }
 
 void main() {
@@ -66,6 +74,7 @@ void main() {
     registerFallbackValue(FakeBucketFile());
     registerFallbackValue(FakeCreateReadStreamOptions());
     registerFallbackValue(FakeCreateWriteStreamOptions());
+    registerFallbackValue(FakeBaseRequest());
   });
 
   setUp(() {
@@ -2798,23 +2807,19 @@ void main() {
     test('should call createReadStream with filtered options', () async {
       final mockStream = Stream<List<int>>.value([1, 2, 3]);
 
-      when(() => mockStreamFactory.createReadStream(any(), any()))
-          .thenAnswer((_) => mockStream);
+      when(
+        () => mockStreamFactory.createReadStream(any(), any()),
+      ).thenAnswer((_) => mockStream);
 
       await file.download(
-        DownloadOptions(
-          start: 100,
-          end: 200,
-          userProject: 'my-project',
-        ),
+        DownloadOptions(start: 100, end: 200, userProject: 'my-project'),
       );
 
-      final captured = verify(
-        () => mockStreamFactory.createReadStream(
-          any(),
-          captureAny(),
-        ),
-      ).captured.single as CreateReadStreamOptions;
+      final captured =
+          verify(
+                () => mockStreamFactory.createReadStream(any(), captureAny()),
+              ).captured.single
+              as CreateReadStreamOptions;
 
       expect(captured.start, 100);
       expect(captured.end, 200);
@@ -2824,24 +2829,21 @@ void main() {
     test('should filter out destination from options', () async {
       final mockStream = Stream<List<int>>.value([1, 2, 3]);
 
-      when(() => mockStreamFactory.createReadStream(any(), any()))
-          .thenAnswer((_) => mockStream);
+      when(
+        () => mockStreamFactory.createReadStream(any(), any()),
+      ).thenAnswer((_) => mockStream);
 
       // Note: destination would normally be a File, but since we're not
       // actually writing to disk in this test, we skip that part
       await file.download(
-        const DownloadOptions(
-          start: 100,
-          userProject: 'my-project',
-        ),
+        const DownloadOptions(start: 100, userProject: 'my-project'),
       );
 
-      final captured = verify(
-        () => mockStreamFactory.createReadStream(
-          any(),
-          captureAny(),
-        ),
-      ).captured.single as CreateReadStreamOptions;
+      final captured =
+          verify(
+                () => mockStreamFactory.createReadStream(any(), captureAny()),
+              ).captured.single
+              as CreateReadStreamOptions;
 
       // Verify destination is NOT in the options passed to createReadStream
       expect(captured.start, 100);
@@ -2852,8 +2854,9 @@ void main() {
       final mockStream = Stream<List<int>>.value([1, 2, 3]);
       final encryptionKey = EncryptionKey.fromString('test-encryption-key');
 
-      when(() => mockStreamFactory.createReadStream(any(), any()))
-          .thenAnswer((_) => mockStream);
+      when(
+        () => mockStreamFactory.createReadStream(any(), any()),
+      ).thenAnswer((_) => mockStream);
 
       await file.download(
         DownloadOptions(
@@ -2863,12 +2866,11 @@ void main() {
       );
 
       // Verify createReadStream was called (without encryption key in options)
-      final captured = verify(
-        () => mockStreamFactory.createReadStream(
-          any(),
-          captureAny(),
-        ),
-      ).captured.single as CreateReadStreamOptions;
+      final captured =
+          verify(
+                () => mockStreamFactory.createReadStream(any(), captureAny()),
+              ).captured.single
+              as CreateReadStreamOptions;
 
       // encryptionKey should not be in stream options (handled separately)
       expect(captured.userProject, 'my-project');
@@ -2880,8 +2882,9 @@ void main() {
         [4, 5, 6],
       ]);
 
-      when(() => mockStreamFactory.createReadStream(any(), any()))
-          .thenAnswer((_) => mockStream);
+      when(
+        () => mockStreamFactory.createReadStream(any(), any()),
+      ).thenAnswer((_) => mockStream);
 
       final result = await file.download();
 
@@ -2920,33 +2923,27 @@ void main() {
       final controller = StreamController<List<int>>();
       final dataFuture = controller.stream.toList();
 
-      when(() => mockStreamFactory.createWriteStream(any(), any()))
-          .thenAnswer((_) => controller.sink);
+      when(
+        () => mockStreamFactory.createWriteStream(any(), any()),
+      ).thenAnswer((_) => controller.sink);
 
       await file.save(
         'test data',
-        SaveOptions(
-          contentType: 'text/plain',
-          resumable: false,
-        ),
+        SaveOptions(contentType: 'text/plain', resumable: false),
       );
 
       await dataFuture; // Wait for stream to complete
 
-      verify(
-        () => mockStreamFactory.createWriteStream(
-          any(),
-          any(),
-        ),
-      ).called(1);
+      verify(() => mockStreamFactory.createWriteStream(any(), any())).called(1);
     });
 
     test('should handle String data', () async {
       final controller = StreamController<List<int>>();
       final dataFuture = controller.stream.toList();
 
-      when(() => mockStreamFactory.createWriteStream(any(), any()))
-          .thenAnswer((_) => controller.sink);
+      when(
+        () => mockStreamFactory.createWriteStream(any(), any()),
+      ).thenAnswer((_) => controller.sink);
 
       await file.save('test data');
 
@@ -2959,8 +2956,9 @@ void main() {
       final controller = StreamController<List<int>>();
       final dataFuture = controller.stream.toList();
 
-      when(() => mockStreamFactory.createWriteStream(any(), any()))
-          .thenAnswer((_) => controller.sink);
+      when(
+        () => mockStreamFactory.createWriteStream(any(), any()),
+      ).thenAnswer((_) => controller.sink);
 
       await file.save([1, 2, 3, 4, 5]);
 
@@ -2973,8 +2971,9 @@ void main() {
       final controller = StreamController<List<int>>();
       final dataFuture = controller.stream.toList();
 
-      when(() => mockStreamFactory.createWriteStream(any(), any()))
-          .thenAnswer((_) => controller.sink);
+      when(
+        () => mockStreamFactory.createWriteStream(any(), any()),
+      ).thenAnswer((_) => controller.sink);
 
       final data = Uint8List.fromList([10, 20, 30]);
       await file.save(data);
@@ -2988,8 +2987,9 @@ void main() {
       final controller = StreamController<List<int>>();
       final dataFuture = controller.stream.toList();
 
-      when(() => mockStreamFactory.createWriteStream(any(), any()))
-          .thenAnswer((_) => controller.sink);
+      when(
+        () => mockStreamFactory.createWriteStream(any(), any()),
+      ).thenAnswer((_) => controller.sink);
 
       final dataStream = Stream<List<int>>.fromIterable([
         [1, 2, 3],
@@ -3006,8 +3006,9 @@ void main() {
     test('should throw for unsupported data types', () async {
       final controller = StreamController<List<int>>();
 
-      when(() => mockStreamFactory.createWriteStream(any(), any()))
-          .thenAnswer((_) => controller.sink);
+      when(
+        () => mockStreamFactory.createWriteStream(any(), any()),
+      ).thenAnswer((_) => controller.sink);
 
       try {
         await file.save(123); // Number is not supported
@@ -3016,11 +3017,192 @@ void main() {
         expect(e, isA<ApiError>());
         expect(
           e.toString(),
-          contains('Data must be String, Uint8List, List<int>, or Stream<List<int>>'),
+          contains(
+            'Data must be String, Uint8List, List<int>, or Stream<List<int>>',
+          ),
         );
       } finally {
         unawaited(controller.close());
       }
+    });
+  });
+
+  group('File - createReadStream (HTTP-level tests)', () {
+    late MockStorageApi mockClient;
+    late MockAuthClient mockAuthClient;
+    late Storage storage;
+    late Bucket bucket;
+    late BucketFile file;
+
+    setUp(() {
+      mockClient = MockStorageApi();
+      mockAuthClient = MockAuthClient();
+
+      storage = TestStorage(
+        mockClient,
+        projectId: 'test-project',
+        mockAuth: mockAuthClient,
+      );
+      bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+    });
+
+    test('should validate and decompress gzipped files correctly', () async {
+      // With StorageHttpClient, Storage API requests use autoUncompress=false
+      // So gzipped responses come back still compressed with proper validation.
+
+      final originalData = utf8.encode('Hello World from gzipped file!');
+      final gzippedData = io.gzip.encode(originalData);
+
+      // Calculate CRC32C on compressed data (what server calculated and stored)
+      final compressedCrc32c = Crc32c();
+      compressedCrc32c.update(gzippedData);
+      final compressedCrc32cBase64 = compressedCrc32c.toBase64();
+
+      // Mock HTTP response with compressed data (autoUncompress=false behavior):
+      // - Returns COMPRESSED data (no auto-decompression)
+      // - Headers correctly indicate "content-encoding: gzip"
+      // - CRC32C is for the COMPRESSED data
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(
+            gzippedData,
+          ), // ← Still compressed (autoUncompress=false)
+          200,
+          headers: {
+            'content-encoding': 'gzip',
+            'x-goog-stored-content-encoding': 'gzip',
+            'x-goog-hash':
+                'crc32c=$compressedCrc32cBase64', // ← CRC32C of compressed data
+          },
+        );
+      });
+
+      // Call createReadStream - should:
+      // 1. Validate the compressed data against compressed CRC32C ✓
+      // 2. Manually decompress the validated data ✓
+      final stream = file.createReadStream(const CreateReadStreamOptions());
+      final result = await stream.toList();
+      final data = result.expand((chunk) => chunk).toList();
+
+      // Should have correctly validated and decompressed
+      expect(utf8.decode(data), 'Hello World from gzipped file!');
+
+      verify(() => mockAuthClient.send(any())).called(1);
+    });
+
+    test('should validate non-gzipped files correctly', () async {
+      final originalData = utf8.encode('Hello World uncompressed!');
+
+      // Calculate CRC32C on uncompressed data
+      final crc32c = Crc32c();
+      crc32c.update(originalData);
+      final crc32cBase64 = crc32c.toBase64();
+
+      // Mock HTTP response with uncompressed data
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(originalData),
+          200,
+          headers: {
+            'x-goog-stored-content-encoding': 'identity',
+            'x-goog-hash': 'crc32c=$crc32cBase64',
+          },
+        );
+      });
+
+      // Call createReadStream
+      final stream = file.createReadStream(const CreateReadStreamOptions());
+      final result = await stream.toList();
+      final data = result.expand((chunk) => chunk).toList();
+
+      // Should match original
+      expect(utf8.decode(data), 'Hello World uncompressed!');
+    });
+
+    test('should fail validation with wrong CRC32C', () async {
+      final originalData = utf8.encode('Hello World');
+
+      // Mock HTTP response with WRONG CRC32C
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(originalData),
+          200,
+          headers: {
+            'x-goog-stored-content-encoding': 'identity',
+            'x-goog-hash': 'crc32c=wronghash==',
+          },
+        );
+      });
+
+      // Call createReadStream - should fail validation
+      final stream = file.createReadStream(const CreateReadStreamOptions());
+
+      await expectLater(
+        stream.toList(),
+        throwsA(
+          isA<ApiError>().having(
+            (e) => e.toString(),
+            'message',
+            contains('downloaded data did not match'),
+          ),
+        ),
+      );
+    });
+
+    test(
+      'should skip validation when validation: ValidationType.none',
+      () async {
+        final originalData = utf8.encode('Hello World');
+
+        // Mock HTTP response with WRONG CRC32C (but validation disabled)
+        when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+          return http.StreamedResponse(
+            Stream.value(originalData),
+            200,
+            headers: {
+              'x-goog-stored-content-encoding': 'identity',
+              'x-goog-hash': 'crc32c=wronghash==',
+            },
+          );
+        });
+
+        // Call createReadStream with validation disabled
+        final stream = file.createReadStream(
+          const CreateReadStreamOptions(validation: ValidationType.none),
+        );
+        final result = await stream.toList();
+        final data = result.expand((chunk) => chunk).toList();
+
+        // Should succeed despite wrong hash
+        expect(utf8.decode(data), 'Hello World');
+      },
+    );
+
+    test('should handle range requests without validation', () async {
+      final originalData = utf8.encode('Hello World');
+      final rangeData = originalData.sublist(0, 5); // "Hello"
+
+      // Mock HTTP response for range request (no validation expected)
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(rangeData),
+          206, // Partial content
+          headers: {
+            'x-goog-stored-content-encoding': 'identity',
+            'content-range': 'bytes 0-4/11',
+          },
+        );
+      });
+
+      // Call createReadStream with range
+      final stream = file.createReadStream(
+        const CreateReadStreamOptions(start: 0, end: 4),
+      );
+      final result = await stream.toList();
+      final data = result.expand((chunk) => chunk).toList();
+
+      expect(utf8.decode(data), 'Hello');
     });
   });
 }
