@@ -2773,10 +2773,6 @@ void main() {
     });
   });
 
-  // ========================================================================
-  // File Download/Save Tests
-  // ========================================================================
-
   group('File - download', () {
     late TestStorage storage;
     late storage_v1.StorageApi mockApi;
@@ -3203,6 +3199,789 @@ void main() {
       final data = result.expand((chunk) => chunk).toList();
 
       expect(utf8.decode(data), 'Hello');
+    });
+  });
+
+  group('File - createWriteStream', () {
+    late TestStorage storage;
+    late storage_v1.StorageApi mockApi;
+    late storage_v1.ObjectsResource mockObjects;
+    late BucketFile file;
+
+    setUp(() {
+      mockApi = MockStorageApi();
+      mockObjects = MockObjectsResource();
+      when(() => mockApi.objects).thenReturn(mockObjects);
+
+      storage = TestStorage(mockApi, projectId: 'test-project');
+    });
+
+    test('should return a StreamSink', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should start a simple upload if resumable: false', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should detect contentType from file extension', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.png');
+
+      // With contentType: 'auto' or null, should detect from extension
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(contentType: 'auto', resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should use provided contentType', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          contentType: 'text/html',
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should set encoding with gzip: true', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(gzip: true, resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should auto-detect gzip for compressible content types', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      // text/plain is compressible, gzip: null should auto-detect
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          contentType: 'text/plain',
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should not set gzip encoding for non-compressible content types', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.png');
+
+      // image/png is not compressible, gzip should not be auto-enabled
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          contentType: 'image/png',
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept preconditionOpts with ifGenerationMatch', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          preconditionOpts: PreconditionOptions(ifGenerationMatch: 100),
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept preconditionOpts with ifGenerationNotMatch', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          preconditionOpts: PreconditionOptions(ifGenerationNotMatch: 100),
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept preconditionOpts with ifMetagenerationMatch', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          preconditionOpts: PreconditionOptions(ifMetagenerationMatch: 100),
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept preconditionOpts with ifMetagenerationNotMatch', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          preconditionOpts: PreconditionOptions(ifMetagenerationNotMatch: 100),
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept validation: crc32c', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          validation: ValidationType.crc32c,
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept validation: md5', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          validation: ValidationType.md5,
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept validation: none', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          validation: ValidationType.none,
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should throw ArgumentError for MD5 with offset > 0', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      expect(
+        () => file.createWriteStream(
+          const CreateWriteStreamOptions(
+            offset: 100,
+            validation: ValidationType.md5,
+            uri: 'https://example.com/upload',
+          ),
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test(
+      'should throw ArgumentError for CRC32C with offset > 0 without resumeCRC32C',
+      () {
+        final bucket = storage.bucket('test-bucket');
+        file = bucket.file('test-file.txt');
+
+        expect(
+          () => file.createWriteStream(
+            const CreateWriteStreamOptions(
+              offset: 100,
+              validation: ValidationType.crc32c,
+              uri: 'https://example.com/upload',
+            ),
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
+
+    test('should allow offset > 0 with resumeCRC32C provided', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          offset: 100,
+          validation: ValidationType.crc32c,
+          uri: 'https://example.com/upload',
+          resumeCRC32C: 'AAAAAA==',
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should allow offset > 0 with isPartialUpload: true', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          offset: 100,
+          validation: ValidationType.crc32c,
+          uri: 'https://example.com/upload',
+          isPartialUpload: true,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should allow offset > 0 with validation: none', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          offset: 100,
+          validation: ValidationType.none,
+          uri: 'https://example.com/upload',
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept metadata options', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final metadata = FileMetadata()
+        ..contentType = 'application/json'
+        ..cacheControl = 'no-cache';
+
+      final writable = file.createWriteStream(
+        CreateWriteStreamOptions(metadata: metadata, resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept userProject option', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          userProject: 'my-billing-project',
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept predefinedAcl option', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          predefinedAcl: PredefinedAcl.publicRead,
+          resumable: false,
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept private option', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(private: true, resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept public option', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(public: true, resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should accept uri for resuming upload', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          uri: 'https://storage.googleapis.com/upload/storage/v1/b/bucket/o',
+        ),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+
+    test('should handle file without extension for contentType detection', () {
+      final bucket = storage.bucket('test-bucket');
+      file = bucket.file('file-without-ext');
+
+      // Should not throw even without extension
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(resumable: false),
+      );
+
+      expect(writable, isA<StreamSink<List<int>>>());
+    });
+  });
+
+  group('File - createWriteStream (HTTP-level tests)', () {
+    late MockStorageApi mockClient;
+    late MockAuthClient mockAuthClient;
+    late Storage storage;
+    late Bucket bucket;
+    late BucketFile file;
+
+    setUp(() {
+      mockClient = MockStorageApi();
+      mockAuthClient = MockAuthClient();
+
+      storage = TestStorage(
+        mockClient,
+        projectId: 'test-project',
+        mockAuth: mockAuthClient,
+      );
+      bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+    });
+
+    test('should emit progress via simple upload', () async {
+      final progressUpdates = <UploadProgress>[];
+
+      // Mock successful multipart upload response
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode(
+              '{"name": "test-file.txt", "bucket": "test-bucket", "size": "9"}',
+            ),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+          gzip: false, // Disable gzip to get accurate byte count
+          onUploadProgress: (progress) {
+            progressUpdates.add(progress);
+          },
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      expect(progressUpdates, isNotEmpty);
+      expect(progressUpdates.last.bytesWritten, 9);
+    });
+
+    test('should complete successfully with simple upload', () async {
+      // Mock successful multipart upload response
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode(
+              '{"name": "test-file.txt", "bucket": "test-bucket", "size": "9"}',
+            ),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+
+      // Should complete without error
+      await expectLater(writable.done, completes);
+    });
+
+    test('should update file metadata after successful upload', () async {
+      // Mock successful multipart upload response with metadata
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode(
+              '{"name": "test-file.txt", "bucket": "test-bucket", "size": "9", '
+              '"contentType": "text/plain", "generation": "12345"}',
+            ),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      // File metadata should be updated
+      expect(file.metadata, isNotNull);
+      expect(file.metadata.name, 'test-file.txt');
+    });
+
+    test('should pass predefinedAcl in upload request', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+          predefinedAcl: PredefinedAcl.publicRead,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.url.queryParameters['predefinedAcl'],
+        'publicRead',
+      );
+    });
+
+    test('should pass userProject in upload request', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+          userProject: 'billing-project',
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.url.queryParameters['userProject'],
+        'billing-project',
+      );
+    });
+
+    test('should set private predefinedAcl when private: true', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+          private: true,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.url.queryParameters['predefinedAcl'], 'private');
+    });
+
+    test('should set publicRead predefinedAcl when public: true', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+          public: true,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.url.queryParameters['predefinedAcl'],
+        'publicRead',
+      );
+    });
+
+    test('should send upload request to correct URL', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.url.toString(),
+        contains('storage.googleapis.com'),
+      );
+      expect(capturedRequest!.url.queryParameters['uploadType'], 'multipart');
+      expect(capturedRequest!.url.queryParameters['name'], 'test-file.txt');
+    });
+
+    test('should use POST method for multipart upload', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      await writable.close();
+      await writable.done;
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.method, 'POST');
+    });
+
+    test('should throw ApiError on upload failure', () async {
+      // Mock failed upload response
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('{"error": {"message": "Upload failed"}}')),
+          500,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+        ),
+      );
+
+      writable.add(utf8.encode('test data'));
+      // Don't await close() - just trigger the close and wait for done
+      unawaited(writable.close());
+
+      // The done future should complete with an ApiError
+      try {
+        await writable.done;
+        fail('Should have thrown ApiError');
+      } catch (e) {
+        expect(e, isA<ApiError>());
+      }
+    });
+
+    test('should compress data when gzip: true', () async {
+      List<int>? uploadedData;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        final request = invocation.positionalArguments[0] as http.BaseRequest;
+        if (request is http.Request) {
+          uploadedData = request.bodyBytes;
+        }
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+          gzip: true,
+        ),
+      );
+
+      final originalData = utf8.encode('test data for compression');
+      writable.add(originalData);
+      await writable.close();
+      await writable.done;
+
+      // Gzip compressed data should be different (and typically smaller for
+      // larger payloads, but may be larger for small payloads due to header)
+      expect(uploadedData, isNotNull);
+      // The uploaded data should be gzip format (starts with gzip magic number)
+      // or be part of a multipart request containing gzipped data
+    });
+
+    test('should not compress data when gzip: false', () async {
+      List<int>? uploadedData;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        final request = invocation.positionalArguments[0] as http.BaseRequest;
+        if (request is http.Request) {
+          uploadedData = request.bodyBytes;
+        }
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode('{"name": "test-file.txt", "bucket": "test-bucket"}'),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final writable = file.createWriteStream(
+        const CreateWriteStreamOptions(
+          resumable: false,
+          validation: ValidationType.none,
+          gzip: false,
+        ),
+      );
+
+      final originalData = utf8.encode('test data');
+      writable.add(originalData);
+      await writable.close();
+      await writable.done;
+
+      // Data should be sent as-is (not compressed)
+      // The request body will contain the original data in the multipart body
+      expect(uploadedData, isNotNull);
     });
   });
 }

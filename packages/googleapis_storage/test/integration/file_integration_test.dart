@@ -630,6 +630,123 @@ void main() {
           await existingFile.delete().catchError((_) {});
         }
       });
+
+      test('should make a file public', () async {
+        const fileName = 'integration-test-make-public.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Make file public
+          await file.makePublic();
+
+          // Verify ACL has allUsers with READER role
+          final aclEntry = await file.acl.get(entity: 'allUsers');
+          expect(aclEntry.entity, 'allUsers');
+          expect(aclEntry.role, 'READER');
+        } finally {
+          await file.acl.delete(entity: 'allUsers').catchError((_) {});
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should make a file private', () async {
+        const fileName = 'integration-test-make-private.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // First make public, then private
+          await file.makePublic();
+          await file.makePrivate();
+
+          // Verify allUsers ACL no longer exists (throws 404)
+          expect(
+            () => file.acl.get(entity: 'allUsers'),
+            throwsA(isA<ApiError>()),
+          );
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should return correct public URL format', () async {
+        const fileName = 'integration-test-public-url.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Get public URL
+          final url = file.publicUrl();
+
+          // Verify URL format
+          expect(url, contains(bucketName));
+          expect(url, contains(fileName));
+          expect(url, contains('storage.googleapis.com'));
+
+          // Make file public and verify URL is accessible
+          await file.makePublic();
+
+          final httpClient = HttpClient();
+          try {
+            final request = await httpClient.getUrl(Uri.parse(url));
+            final response = await request.close();
+
+            expect(response.statusCode, 200);
+
+            final body = await response.transform(utf8.decoder).join();
+            expect(body, testContent);
+          } finally {
+            httpClient.close();
+          }
+        } finally {
+          await file.acl.delete(entity: 'allUsers').catchError((_) {});
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should get file and return instance with metadata', () async {
+        const fileName = 'integration-test-get.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Brief delay to handle eventual consistency
+          await Future<void>.delayed(const Duration(seconds: 5));
+
+          // Get file - should fetch metadata and return file instance
+          final returnedFile = await file.get();
+
+          // Verify it returns the same file instance
+          expect(returnedFile, same(file));
+
+          // Verify metadata was populated
+          expect(file.metadata, isNotNull);
+          expect(file.metadata.name, fileName);
+          expect(file.metadata.bucket, bucketName);
+          expect(file.metadata.size, isNotNull);
+          expect(int.parse(file.metadata.size!), greaterThan(0));
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
     },
     skip: !hasGoogleEnv
         ? 'GOOGLE_APPLICATION_CREDENTIALS environment variable not set'
