@@ -1924,10 +1924,6 @@ void main() {
     });
   });
 
-  // ========================================================================
-  // File Access Control Tests
-  // ========================================================================
-
   group('File - makePrivate', () {
     late TestStorage storage;
     late storage_v1.StorageApi mockApi;
@@ -3982,6 +3978,725 @@ void main() {
       // Data should be sent as-is (not compressed)
       // The request body will contain the original data in the multipart body
       expect(uploadedData, isNotNull);
+    });
+  });
+
+  group('File - setStorageClass', () {
+    late TestStorage storage;
+    late MockStorageApi mockApi;
+    late MockObjectsResource mockObjects;
+    late Bucket bucket;
+    late BucketFile file;
+
+    setUp(() {
+      mockApi = MockStorageApi();
+      mockObjects = MockObjectsResource();
+      when(() => mockApi.objects).thenReturn(mockObjects);
+
+      storage = TestStorage(mockApi, projectId: 'test-project');
+      bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+    });
+
+    test('should call copy with correct storage class', () async {
+      const storageClass = 'nearline';
+
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket'
+            ..storageClass = 'NEARLINE',
+        ),
+      );
+
+      await file.setStorageClass(storageClass);
+
+      verify(
+        () => mockObjects.rewrite(
+          any(),
+          'test-bucket',
+          'test-file.txt',
+          'test-bucket',
+          'test-file.txt',
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).called(1);
+    });
+
+    test('should convert camelCase to SNAKE_CASE', () async {
+      const storageClass = 'coldLine';
+
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket'
+            ..storageClass = 'COLD_LINE',
+        ),
+      );
+
+      await file.setStorageClass(storageClass);
+
+      // Metadata should be updated with COLD_LINE
+      expect(file.metadata.storageClass, 'COLD_LINE');
+    });
+
+    test('should convert hyphenated to SNAKE_CASE', () async {
+      const storageClass = 'multi-regional';
+
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket'
+            ..storageClass = 'MULTI_REGIONAL',
+        ),
+      );
+
+      await file.setStorageClass(storageClass);
+
+      // Metadata should be updated with MULTI_REGIONAL
+      expect(file.metadata.storageClass, 'MULTI_REGIONAL');
+    });
+
+    test('should accept userProject option', () async {
+      const storageClass = 'standard';
+
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket'
+            ..storageClass = 'STANDARD',
+        ),
+      );
+
+      await file.setStorageClass(
+        storageClass,
+        options: const SetFileStorageClassOptions(userProject: 'my-project'),
+      );
+
+      verify(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: 'my-project',
+          $fields: any(named: r'$fields'),
+        ),
+      ).called(1);
+    });
+  });
+
+  group('File - rotateEncryptionKey', () {
+    late TestStorage storage;
+    late MockStorageApi mockApi;
+    late MockObjectsResource mockObjects;
+    late Bucket bucket;
+    late BucketFile file;
+
+    setUp(() {
+      mockApi = MockStorageApi();
+      mockObjects = MockObjectsResource();
+      when(() => mockApi.objects).thenReturn(mockObjects);
+
+      storage = TestStorage(mockApi, projectId: 'test-project');
+      bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+    });
+
+    test('should call copy with new encryption key', () async {
+      final encryptionKey = EncryptionKey.fromString('test-encryption-key-32b');
+
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket',
+        ),
+      );
+
+      await file.rotateEncryptionKey(
+        RotateEncryptionKeyOptions(encryptionKey: encryptionKey),
+      );
+
+      verify(
+        () => mockObjects.rewrite(
+          any(),
+          'test-bucket',
+          'test-file.txt',
+          'test-bucket',
+          'test-file.txt',
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).called(1);
+    });
+
+    test('should accept kmsKeyName option', () async {
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket',
+        ),
+      );
+
+      await file.rotateEncryptionKey(
+        const RotateEncryptionKeyOptions(
+          kmsKeyName: 'projects/p/locations/l/keyRings/kr/cryptoKeys/ck',
+        ),
+      );
+
+      verify(
+        () => mockObjects.rewrite(
+          any(),
+          'test-bucket',
+          'test-file.txt',
+          'test-bucket',
+          'test-file.txt',
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).called(1);
+    });
+
+    test('should accept preconditionOpts', () async {
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket',
+        ),
+      );
+
+      await file.rotateEncryptionKey(
+        const RotateEncryptionKeyOptions(
+          preconditionOpts: PreconditionOptions(ifGenerationMatch: 12345),
+        ),
+      );
+
+      verify(
+        () => mockObjects.rewrite(
+          any(),
+          'test-bucket',
+          'test-file.txt',
+          'test-bucket',
+          'test-file.txt',
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: '12345',
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).called(1);
+    });
+
+    test('should return rotated file', () async {
+      when(
+        () => mockObjects.rewrite(
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          destinationKmsKeyName: any(named: 'destinationKmsKeyName'),
+          destinationPredefinedAcl: any(named: 'destinationPredefinedAcl'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          ifSourceGenerationMatch: any(named: 'ifSourceGenerationMatch'),
+          ifSourceGenerationNotMatch: any(named: 'ifSourceGenerationNotMatch'),
+          ifSourceMetagenerationMatch: any(
+            named: 'ifSourceMetagenerationMatch',
+          ),
+          ifSourceMetagenerationNotMatch: any(
+            named: 'ifSourceMetagenerationNotMatch',
+          ),
+          maxBytesRewrittenPerCall: any(named: 'maxBytesRewrittenPerCall'),
+          projection: any(named: 'projection'),
+          rewriteToken: any(named: 'rewriteToken'),
+          sourceGeneration: any(named: 'sourceGeneration'),
+          userProject: any(named: 'userProject'),
+          $fields: any(named: r'$fields'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.RewriteResponse(
+          done: true,
+          resource: storage_v1.Object()
+            ..name = 'test-file.txt'
+            ..bucket = 'test-bucket',
+        ),
+      );
+
+      final result = await file.rotateEncryptionKey();
+
+      expect(result, isA<BucketFile>());
+      expect(result.name, 'test-file.txt');
+    });
+  });
+
+  group('File - createResumableUpload', () {
+    late MockStorageApi mockClient;
+    late MockAuthClient mockAuthClient;
+    late Storage storage;
+    late Bucket bucket;
+    late BucketFile file;
+
+    setUp(() {
+      mockClient = MockStorageApi();
+      mockAuthClient = MockAuthClient();
+
+      storage = TestStorage(
+        mockClient,
+        projectId: 'test-project',
+        mockAuth: mockAuthClient,
+      );
+      bucket = storage.bucket('test-bucket');
+      file = bucket.file('test-file.txt');
+    });
+
+    test('should not require options', () async {
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('')),
+          200,
+          headers: {
+            'location':
+                'https://storage.googleapis.com/upload/storage/v1/b/bucket/o?uploadType=resumable&upload_id=123',
+          },
+        );
+      });
+
+      final uri = await file.createResumableUpload();
+
+      expect(uri, contains('upload_id'));
+    });
+
+    test('should return resumable upload URI', () async {
+      const expectedUri =
+          'https://storage.googleapis.com/upload/storage/v1/b/test-bucket/o?uploadType=resumable&upload_id=abc123';
+
+      when(() => mockAuthClient.send(any())).thenAnswer((_) async {
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('')),
+          200,
+          headers: {'location': expectedUri},
+        );
+      });
+
+      final uri = await file.createResumableUpload();
+
+      expect(uri, expectedUri);
+    });
+
+    test('should pass metadata in request', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('')),
+          200,
+          headers: {'location': 'https://example.com/upload'},
+        );
+      });
+
+      await file.createResumableUpload(
+        CreateResumableUploadOptions(
+          metadata: FileMetadata()..contentType = 'application/json',
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.method, 'POST');
+      expect(capturedRequest!.url.queryParameters['uploadType'], 'resumable');
+    });
+
+    test('should pass predefinedAcl in request', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('')),
+          200,
+          headers: {'location': 'https://example.com/upload'},
+        );
+      });
+
+      await file.createResumableUpload(
+        const CreateResumableUploadOptions(
+          predefinedAcl: PredefinedAcl.publicRead,
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.url.queryParameters['predefinedAcl'],
+        'publicRead',
+      );
+    });
+
+    test('should set private predefinedAcl when private: true', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('')),
+          200,
+          headers: {'location': 'https://example.com/upload'},
+        );
+      });
+
+      await file.createResumableUpload(
+        const CreateResumableUploadOptions(private: true),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.url.queryParameters['predefinedAcl'], 'private');
+    });
+
+    test('should set publicRead predefinedAcl when public: true', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('')),
+          200,
+          headers: {'location': 'https://example.com/upload'},
+        );
+      });
+
+      await file.createResumableUpload(
+        const CreateResumableUploadOptions(public: true),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.url.queryParameters['predefinedAcl'],
+        'publicRead',
+      );
+    });
+
+    test('should pass userProject in request', () async {
+      http.BaseRequest? capturedRequest;
+
+      when(() => mockAuthClient.send(any())).thenAnswer((invocation) async {
+        capturedRequest = invocation.positionalArguments[0] as http.BaseRequest;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('')),
+          200,
+          headers: {'location': 'https://example.com/upload'},
+        );
+      });
+
+      await file.createResumableUpload(
+        const CreateResumableUploadOptions(userProject: 'billing-project'),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.url.queryParameters['userProject'],
+        'billing-project',
+      );
     });
   });
 }
