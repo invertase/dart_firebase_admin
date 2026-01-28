@@ -17,9 +17,10 @@ class AppOptions extends Equatable {
 
   /// A credential used to authenticate the Admin SDK.
   ///
-  /// This is the only required field. Use one of:
-  /// - [Credential.fromServiceAccount] - Service account JSON file
-  /// - [Credential.fromApplicationDefaultCredentials] - Application Default Credentials
+  /// Use one of:
+  /// - [Credential.fromServiceAccount] - For service account JSON files
+  /// - [Credential.fromServiceAccountParams] - For individual service account parameters
+  /// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
   final Credential? credential;
 
   /// The Firebase project ID.

@@ -8,3 +8,5 @@ pubspec.lock
 
 # TODO: Remove me
 lib-backup/
+
+service-account-key.json

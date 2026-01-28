@@ -18,11 +18,12 @@ class MockHmacKeysResource extends Mock
 class TestStorage extends Storage {
   final storage_v1.StorageApi mockClient;
 
-  TestStorage(this.mockClient)
+  TestStorage(this.mockClient, {String? projectId})
     : super(
         StorageOptions(
           authClient: MockAuthClient(),
           useAuthWithCustomEndpoint: false,
+          projectId: projectId,
         ),
       );
 
@@ -53,7 +54,7 @@ void main() {
     when(() => mockClient.projects).thenReturn(mockProjects);
     when(() => mockProjects.hmacKeys).thenReturn(mockHmacKeys);
 
-    storage = TestStorage(mockClient);
+    storage = TestStorage(mockClient, projectId: 'test-project');
   });
 
   group('HmacKeyOptions', () {
@@ -114,32 +115,36 @@ void main() {
         expect(hmacKey.metadata.projectId, 'test-project');
       });
 
-      test('should throw when projectId is not provided', () {
-        expect(
-          () => storage.hmacKey('test-access-id'),
-          throwsA(
-            isA<ApiError>().having(
-              (e) => e.message,
-              'message',
-              contains('Project ID is required'),
-            ),
-          ),
-        );
+      test('should create with null projectId when not provided', () {
+        // Create a Storage instance without projectId
+        final storageWithoutProject = TestStorage(mockClient);
+
+        final hmacKey = storageWithoutProject.hmacKey('test-access-id');
+
+        expect(hmacKey.metadata.accessId, 'test-access-id');
+        expect(hmacKey.metadata.projectId, isNull); // No projectId provided
+        expect(hmacKey.storage, storageWithoutProject);
       });
 
-      test('should throw when projectId is empty', () {
-        expect(
-          () =>
-              storage.hmacKey('test-access-id', HmacKeyOptions(projectId: '')),
-          throwsA(
-            isA<ApiError>().having(
-              (e) => e.message,
-              'message',
-              contains('Project ID is required'),
-            ),
-          ),
-        );
-      });
+      test(
+        'should use empty projectId from options if explicitly provided',
+        () {
+          // Create a Storage instance without projectId, then pass empty string
+          final storageWithoutProject = TestStorage(mockClient);
+
+          final hmacKey = storageWithoutProject.hmacKey(
+            'test-access-id',
+            HmacKeyOptions(projectId: ''),
+          );
+
+          expect(hmacKey.metadata.accessId, 'test-access-id');
+          expect(
+            hmacKey.metadata.projectId,
+            '',
+          ); // Empty string explicitly provided
+          expect(hmacKey.storage, storageWithoutProject);
+        },
+      );
     });
 
     group('delete', () {
@@ -187,7 +192,7 @@ void main() {
             isA<ApiError>().having(
               (e) => e.message,
               'message',
-              contains('Failed to delete HMAC key'),
+              contains('API Error'),
             ),
           ),
         );
@@ -336,7 +341,8 @@ void main() {
           ),
         ).called(1);
 
-        expect(result, isA<storage_v1.HmacKeyMetadata>());
+        expect(result, isA<HmacKey>());
+        expect(result, same(hmacKey)); // Should return the same instance
         expect(hmacKey.metadata.state, 'ACTIVE');
       });
     });

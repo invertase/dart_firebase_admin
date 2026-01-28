@@ -2,6 +2,7 @@ import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/functions.dart';
 import 'package:dart_firebase_admin/messaging.dart';
+import 'storage_example.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
@@ -23,6 +24,9 @@ Future<void> main() async {
 
   // Uncomment to run functions example
   // await functionsExample(admin);
+
+  // Uncomment to run storage example
+  await storageExample(admin);
 
   await admin.close();
 }

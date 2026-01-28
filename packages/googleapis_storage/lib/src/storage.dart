@@ -1,24 +1,34 @@
 part of '../googleapis_storage.dart';
 
 class StorageOptions extends ServiceOptions {
-  final String? apiEndpoint;
-  final Crc32Generator? crc32cGenerator;
-  final RetryOptions? retryOptions;
-
   const StorageOptions({
     this.apiEndpoint,
     this.crc32cGenerator,
     this.retryOptions,
+    this.credentials,
     super.authClient,
     super.useAuthWithCustomEndpoint,
     super.universeDomain,
     super.projectId,
   });
 
+  final String? apiEndpoint;
+  final Crc32Generator? crc32cGenerator;
+  final RetryOptions? retryOptions;
+
+  /// A credential used to authenticate the Admin SDK.
+  ///
+  /// Use one of:
+  /// - [Credential.fromServiceAccount] - For service account JSON files
+  /// - [Credential.fromServiceAccountParams] - For individual service account parameters
+  /// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
+  final auth_utils.GoogleCredential? credentials;
+
   StorageOptions copyWith({
     String? apiEndpoint,
     Crc32Generator? crc32cGenerator,
     RetryOptions? retryOptions,
+    auth_utils.GoogleCredential? credentials,
     FutureOr<AuthClient>? authClient,
     bool? useAuthWithCustomEndpoint,
     String? universeDomain,
@@ -28,6 +38,7 @@ class StorageOptions extends ServiceOptions {
       apiEndpoint: apiEndpoint ?? this.apiEndpoint,
       crc32cGenerator: crc32cGenerator ?? this.crc32cGenerator,
       retryOptions: retryOptions ?? this.retryOptions,
+      credentials: credentials ?? this.credentials,
       authClient: authClient ?? super.authClient,
       useAuthWithCustomEndpoint:
           useAuthWithCustomEndpoint ?? super.useAuthWithCustomEndpoint,
