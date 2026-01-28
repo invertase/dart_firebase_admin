@@ -1383,14 +1383,16 @@ class BucketFile extends ServiceObject<FileMetadata>
             uploadCompleter.complete();
           }
         } catch (e, stackTrace) {
-          sinkController.addError(e, stackTrace);
+          // Don't call sinkController.addError here - the stream is already
+          // closed (onDone means the stream finished). Just propagate the
+          // error through the uploadCompleter.
           if (!uploadCompleter.isCompleted) {
             uploadCompleter.completeError(e, stackTrace);
           }
         }
       },
       onError: (error, stackTrace) {
-        sinkController.addError(error, stackTrace);
+        // Stream error occurred before onDone - propagate through completer
         if (!uploadCompleter.isCompleted) {
           uploadCompleter.completeError(error, stackTrace);
         }
