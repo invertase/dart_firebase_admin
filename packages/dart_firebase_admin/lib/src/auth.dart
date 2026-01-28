@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:collection/collection.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart' as dart_jsonwebtoken;
 import 'package:googleapis/identitytoolkit/v1.dart' as auth1;

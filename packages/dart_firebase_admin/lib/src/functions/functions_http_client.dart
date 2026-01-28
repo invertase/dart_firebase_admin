@@ -14,10 +14,10 @@ class FunctionsHttpClient {
   /// Returns the host:port string (e.g., "localhost:9499") if the
   /// CLOUD_TASKS_EMULATOR_HOST environment variable is set.
   String? get _cloudTasksEmulatorHost {
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final host = env[Environment.cloudTasksEmulatorHost];
-    return (host != null && host.isNotEmpty) ? host : null;
+    final emulatorHost = Environment.getCloudTasksEmulatorHost();
+    return (emulatorHost != null && emulatorHost.isNotEmpty)
+        ? emulatorHost
+        : null;
   }
 
   /// Lazy-initialized HTTP client that's cached for reuse.

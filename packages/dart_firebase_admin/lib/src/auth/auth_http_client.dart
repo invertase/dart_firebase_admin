@@ -10,9 +10,7 @@ class AuthHttpClient {
   /// When [Environment.firebaseAuthEmulatorHost] is set, routes requests to
   /// the local Auth emulator. Otherwise, uses production Auth API.
   Uri get _authApiHost {
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final emulatorHost = env[Environment.firebaseAuthEmulatorHost];
+    final emulatorHost = Environment.getAuthEmulatorHost();
 
     if (emulatorHost != null) {
       return Uri.http(emulatorHost, 'identitytoolkit.googleapis.com/');
