@@ -126,4 +126,38 @@ abstract class Environment {
         Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
     return env[firebaseStorageEmulatorHost];
   }
+
+  /// Gets the Auth emulator host from environment variables.
+  ///
+  /// Returns the host:port string if set, otherwise null.
+  ///
+  /// Example:
+  /// ```dart
+  /// final host = Environment.getAuthEmulatorHost();
+  /// if (host != null) {
+  ///   print('Auth emulator at $host');
+  /// }
+  /// ```
+  static String? getAuthEmulatorHost() {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    return env[firebaseAuthEmulatorHost];
+  }
+
+  /// Gets the Cloud Tasks emulator host from environment variables.
+  ///
+  /// Returns the host:port string if set, otherwise null.
+  ///
+  /// Example:
+  /// ```dart
+  /// final host = Environment.getCloudTasksEmulatorHost();
+  /// if (host != null) {
+  ///   print('Tasks emulator at $host');
+  /// }
+  /// ```
+  static String? getCloudTasksEmulatorHost() {
+    final env =
+        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
+    return env[cloudTasksEmulatorHost];
+  }
 }
