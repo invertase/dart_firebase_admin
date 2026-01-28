@@ -30,19 +30,18 @@ class StorageHttpClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
-    // OAuth/auth endpoints need auto-decompression to parse JSON responses
-    if (_isAuthRequest(request.url)) {
-      return _withAutoDecompress.send(request);
-    }
     // Storage API handles compression manually for validation
-    return _withoutAutoDecompress.send(request);
+    if (_isStorageRequest(request.url)) {
+      return _withoutAutoDecompress.send(request);
+    }
+    // Everything else (auth, metadata API, etc.) uses auto-decompress
+    return _withAutoDecompress.send(request);
   }
 
-  /// Returns true if this is an OAuth/authentication request.
-  bool _isAuthRequest(Uri url) {
-    return url.host.contains('oauth') ||
-        url.host.contains('accounts.google') ||
-        url.path.contains('/token');
+  /// Returns true if this is a Cloud Storage API request.
+  bool _isStorageRequest(Uri url) {
+    return url.host == 'storage.googleapis.com' ||
+        url.host.endsWith('.storage.googleapis.com');
   }
 
   @override
