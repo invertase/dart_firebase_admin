@@ -16,13 +16,13 @@ Future<void> basicExample(FirebaseApp admin) async {
   try {
     final storage = admin.storage();
 
-    final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
+  final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
     print('> Using bucket: ${bucket.id}\n');
 
-    final file = bucket.file('foo.txt');
+  final file = bucket.file('foo.txt');
     print('> File: ${file.name}\n');
 
-    const fileContent = 'Hello from basicExample() in storage_example.dart';
+  const fileContent = 'Hello from basicExample() in storage_example.dart';
     print('> Uploading file "${file.name}" to Storage...\n');
     await file.save(utf8.encode(fileContent));
     print('> ✓ File uploaded successfully!\n');
