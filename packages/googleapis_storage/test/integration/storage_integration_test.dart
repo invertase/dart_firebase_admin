@@ -96,13 +96,13 @@ void main() {
             ),
           );
 
-        final client = await storage.authClient;
-        expect(client, same(explicitClient));
+          final client = await storage.authClient;
+          expect(client, same(explicitClient));
 
-        final pid = await client.getProjectId();
-        expect(pid, isNotEmpty);
+          final pid = await client.getProjectId();
+          expect(pid, isNotEmpty);
 
-        client.close();
+          client.close();
         }, zoneValues: {envSymbol: testEnv});
       });
 
