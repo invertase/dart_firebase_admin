@@ -212,8 +212,9 @@ void main() {
           // Step 1: Upload the file
           await file.save(utf8.encode(fileContent));
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          final exists = await waitForFileExists(file);
+          expect(exists, isTrue, reason: 'File should exist after upload');
 
           // Step 2: Generate a signed URL for reading
           final expires = DateTime.now().add(const Duration(minutes: 5));
@@ -279,8 +280,9 @@ void main() {
           expect(response.statusCode, 200);
           await response.drain();
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(milliseconds: 500));
+          // Wait for file to be available
+          final fileExists = await waitForFileExists(file);
+          expect(fileExists, isTrue, reason: 'File should exist after upload');
 
           // Step 3: Verify the file was uploaded by downloading it normally
           final downloadedBytes = await file.download();
@@ -299,6 +301,9 @@ void main() {
         // Upload the file first
         await file.save(utf8.encode(fileContent));
 
+        // Wait for file to be available
+        expect(await waitForFileExists(file), isTrue);
+
         // Generate a signed URL that expires in 1 second
         final expires = DateTime.now().add(const Duration(seconds: 1));
         final signedUrl = await file.getSignedUrl(
@@ -309,7 +314,7 @@ void main() {
           ),
         );
 
-        // Wait for the URL to expire (also ensures file is available)
+        // Wait for the URL to expire
         await Future<void>.delayed(const Duration(seconds: 2));
 
         // Try to access the expired URL
@@ -364,8 +369,8 @@ void main() {
           // Save file with String data (gzip enabled)
           await file.save(testContent, SaveOptions(gzip: true));
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Download and verify
           final downloadedBytes = await file.download();
@@ -386,8 +391,8 @@ void main() {
           // Save file with List<int> data
           await file.save(data);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Download and verify
           final downloadedBytes = await file.download();
@@ -407,8 +412,8 @@ void main() {
           // Save file with Uint8List data
           await file.save(data);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Download and verify
           final downloadedBytes = await file.download();
@@ -431,8 +436,8 @@ void main() {
           // Save file with Stream data
           await file.save(dataStream);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Download and verify
           final downloadedBytes = await file.download();
@@ -452,8 +457,8 @@ void main() {
           // Upload file first
           await file.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Get metadata
           final metadata = await file.getMetadata();
@@ -475,8 +480,8 @@ void main() {
           // Upload file first
           await file.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Set custom metadata
           final newMetadata = await file.setMetadata(
@@ -509,8 +514,8 @@ void main() {
           // Upload source file
           await sourceFile.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(sourceFile), isTrue);
 
           // Copy file
           await sourceFile.copy(CopyDestination.file(destFile));
@@ -536,8 +541,8 @@ void main() {
           // Upload source file
           await sourceFile.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(sourceFile), isTrue);
 
           // Move file
           await sourceFile.move(CopyDestination.file(destFile));
@@ -565,8 +570,8 @@ void main() {
           // Upload file with old name
           await oldFile.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(oldFile), isTrue);
 
           // Rename file
           await oldFile.rename(CopyDestination.path(newFileName));
@@ -591,8 +596,8 @@ void main() {
         // Upload file
         await file.save(testContent);
 
-        // Brief delay to handle eventual consistency
-        await Future<void>.delayed(const Duration(seconds: 5));
+        // Wait for file to be available
+        expect(await waitForFileExists(file), isTrue);
 
         // Verify it exists
         var exists = await file.exists();
@@ -616,8 +621,8 @@ void main() {
           // Upload a file
           await existingFile.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(existingFile), isTrue);
 
           // Check existing file
           final existsTrue = await existingFile.exists();
@@ -639,8 +644,8 @@ void main() {
           // Upload file first
           await file.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Make file public
           await file.makePublic();
@@ -663,8 +668,8 @@ void main() {
           // Upload file first
           await file.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // First make public, then private
           await file.makePublic();
@@ -688,8 +693,8 @@ void main() {
           // Upload file first
           await file.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Get public URL
           final url = file.publicUrl();
@@ -728,8 +733,8 @@ void main() {
           // Upload file first
           await file.save(testContent);
 
-          // Brief delay to handle eventual consistency
-          await Future<void>.delayed(const Duration(seconds: 5));
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
 
           // Get file - should fetch metadata and return file instance
           final returnedFile = await file.get();
