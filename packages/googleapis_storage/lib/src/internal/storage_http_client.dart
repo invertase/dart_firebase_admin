@@ -2,6 +2,7 @@ import 'dart:io' as io;
 
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
+import 'package:meta/meta.dart';
 
 /// HTTP client that routes requests to appropriate underlying clients
 /// based on compression handling needs.
@@ -11,11 +12,31 @@ import 'package:http/io_client.dart';
 class StorageHttpClient extends http.BaseClient {
   final http.Client _withAutoDecompress;
   final http.Client _withoutAutoDecompress;
+  final String _storageHost;
 
-  StorageHttpClient(this._withAutoDecompress, this._withoutAutoDecompress);
+  StorageHttpClient._(
+    this._withAutoDecompress,
+    this._withoutAutoDecompress,
+    String? storageEndpoint,
+  ) : _storageHost = _extractStorageHost(storageEndpoint);
+
+  static String _extractStorageHost(String? storageEndpoint) {
+    if (storageEndpoint == null) {
+      return 'storage.googleapis.com';
+    }
+    try {
+      final uri = Uri.parse(storageEndpoint);
+      return uri.host.isNotEmpty ? uri.host : 'storage.googleapis.com';
+    } catch (_) {
+      return 'storage.googleapis.com';
+    }
+  }
 
   /// Factory that creates a StorageHttpClient with properly configured clients.
-  factory StorageHttpClient.create() {
+  ///
+  /// [storageEndpoint] The configured storage API endpoint (e.g., 'https://storage.googleapis.com').
+  /// If not provided, defaults to 'storage.googleapis.com' for backward compatibility.
+  factory StorageHttpClient.create([String? storageEndpoint]) {
     final autoDecompressClient = IOClient(
       io.HttpClient()..autoUncompress = true,
     );
@@ -25,7 +46,29 @@ class StorageHttpClient extends http.BaseClient {
       io.HttpClient()..autoUncompress = false,
     );
 
-    return StorageHttpClient(autoDecompressClient, noAutoDecompressClient);
+    return StorageHttpClient._(
+      autoDecompressClient,
+      noAutoDecompressClient,
+      storageEndpoint,
+    );
+  }
+
+  /// Factory for testing that allows injecting mocked clients.
+  ///
+  /// [withAutoDecompress] Client for non-Storage API requests (auth, metadata).
+  /// [withoutAutoDecompress] Client for Storage API requests.
+  /// [storageEndpoint] The configured storage API endpoint.
+  @visibleForTesting
+  factory StorageHttpClient.forTesting({
+    required http.Client withAutoDecompress,
+    required http.Client withoutAutoDecompress,
+    String? storageEndpoint,
+  }) {
+    return StorageHttpClient._(
+      withAutoDecompress,
+      withoutAutoDecompress,
+      storageEndpoint,
+    );
   }
 
   @override
@@ -40,8 +83,8 @@ class StorageHttpClient extends http.BaseClient {
 
   /// Returns true if this is a Cloud Storage API request.
   bool _isStorageRequest(Uri url) {
-    return url.host == 'storage.googleapis.com' ||
-        url.host.endsWith('.storage.googleapis.com');
+    // Check against the configured storage host (supports custom universe domains)
+    return url.host == _storageHost || url.host.endsWith('.$_storageHost');
   }
 
   @override

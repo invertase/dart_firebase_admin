@@ -107,7 +107,7 @@ abstract class Service<T extends ServiceOptions> {
       'https://www.googleapis.com/auth/iam',
       'https://www.googleapis.com/auth/cloud-platform',
       'https://www.googleapis.com/auth/devstorage.full_control',
-    ], baseClient: StorageHttpClient.create());
+    ], baseClient: StorageHttpClient.create(config.apiEndpoint));
   }
 
   Future<storage_v1.StorageApi> _createStorageClient() async {
