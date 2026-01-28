@@ -4699,4 +4699,109 @@ void main() {
       );
     });
   });
+
+  group('File - generateSignedPostPolicyV2', () {
+    test('should throw ArgumentError when expiration is in the past', () async {
+      final pastDate = DateTime.now().subtract(const Duration(hours: 1));
+
+      expect(
+        () => file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(expires: pastDate),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('past'),
+          ),
+        ),
+      );
+    });
+
+    test(
+      'should throw ArgumentError when equals condition has wrong length',
+      () async {
+        final futureDate = DateTime.now().add(const Duration(hours: 1));
+
+        expect(
+          () => file.generateSignedPostPolicyV2(
+            GenerateSignedPostPolicyV2Options(
+              expires: futureDate,
+              equals: [
+                ['only-one-element'],
+              ],
+            ),
+          ),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('2 elements'),
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'should throw ArgumentError when startsWith condition has wrong length',
+      () async {
+        final futureDate = DateTime.now().add(const Duration(hours: 1));
+
+        expect(
+          () => file.generateSignedPostPolicyV2(
+            GenerateSignedPostPolicyV2Options(
+              expires: futureDate,
+              startsWith: [
+                ['one', 'two', 'three'],
+              ],
+            ),
+          ),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('2 elements'),
+            ),
+          ),
+        );
+      },
+    );
+  });
+
+  group('File - generateSignedPostPolicyV4', () {
+    test('should throw ArgumentError when expiration is in the past', () async {
+      final pastDate = DateTime.now().subtract(const Duration(hours: 1));
+
+      expect(
+        () => file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(expires: pastDate),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('past'),
+          ),
+        ),
+      );
+    });
+
+    test('should throw ArgumentError when expiration exceeds 7 days', () async {
+      final tooFarDate = DateTime.now().add(const Duration(days: 8));
+
+      expect(
+        () => file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(expires: tooFarDate),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('seven days'),
+          ),
+        ),
+      );
+    });
+  });
 }

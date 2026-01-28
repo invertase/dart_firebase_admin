@@ -910,16 +910,268 @@ class BucketFile extends ServiceObject<FileMetadata>
     return metadata.retentionExpirationTime!;
   }
 
-  Future<Map<String, dynamic>> generateSignedPostPolicyV2([
-    Map<String, dynamic>? options,
-  ]) {
-    throw UnimplementedError('generateSignedPostPolicyV2() is not implemented');
+  /// Get a signed policy document to allow a user to upload data with a POST
+  /// request.
+  ///
+  /// See https://cloud.google.com/storage/docs/xml-api/post-object-v2
+  ///
+  /// Throws [ArgumentError] if expiration date is in the past or if condition
+  /// arrays don't have exactly 2 elements.
+  /// Throws [SigningError] if signing fails.
+  ///
+  /// Example:
+  /// ```dart
+  /// final policy = await file.generateSignedPostPolicyV2(
+  ///   GenerateSignedPostPolicyV2Options(
+  ///     expires: DateTime.now().add(Duration(hours: 1)),
+  ///     equals: [['\$Content-Type', 'image/jpeg']],
+  ///     contentLengthRange: ContentLengthRange(min: 0, max: 1024 * 1024),
+  ///   ),
+  /// );
+  /// // Use policy.string, policy.base64, policy.signature for form upload
+  /// ```
+  Future<PolicyDocument> generateSignedPostPolicyV2(
+    GenerateSignedPostPolicyV2Options options,
+  ) async {
+    // Validate expiration
+    final expires = options.expires;
+    if (expires.isBefore(DateTime.now())) {
+      throw ArgumentError('Expiration date cannot be in the past.');
+    }
+
+    // Build conditions array
+    final conditions = <Object>[
+      ['eq', '\$key', name],
+      {'bucket': bucket.name},
+    ];
+
+    // Add equals conditions
+    if (options.equals != null) {
+      for (final condition in options.equals!) {
+        if (condition.length != 2) {
+          throw ArgumentError(
+            'Each equals condition must have exactly 2 elements.',
+          );
+        }
+        conditions.add(['eq', condition[0], condition[1]]);
+      }
+    }
+
+    // Add startsWith conditions
+    if (options.startsWith != null) {
+      for (final condition in options.startsWith!) {
+        if (condition.length != 2) {
+          throw ArgumentError(
+            'Each startsWith condition must have exactly 2 elements.',
+          );
+        }
+        conditions.add(['starts-with', condition[0], condition[1]]);
+      }
+    }
+
+    // Add optional conditions
+    if (options.acl != null) {
+      conditions.add({'acl': options.acl});
+    }
+    if (options.successRedirect != null) {
+      conditions.add({'success_action_redirect': options.successRedirect});
+    }
+    if (options.successStatus != null) {
+      conditions.add({'success_action_status': options.successStatus});
+    }
+    if (options.contentLengthRange != null) {
+      conditions.add([
+        'content-length-range',
+        options.contentLengthRange!.min,
+        options.contentLengthRange!.max,
+      ]);
+    }
+
+    // Create policy object
+    final policy = {
+      'expiration': _formatPolicyExpiration(expires),
+      'conditions': conditions,
+    };
+
+    // Encode policy
+    final policyString = jsonEncode(policy);
+    final policyBase64 = base64Encode(utf8.encode(policyString));
+
+    // Sign the policy
+    try {
+      final authClient = await storage.authClient;
+      final signature = await authClient.sign(
+        policyBase64,
+        endpoint: options.signingEndpoint?.toString(),
+      );
+
+      return PolicyDocument(
+        string: policyString,
+        base64: policyBase64,
+        signature: signature,
+      );
+    } catch (e) {
+      throw SigningError(e.toString());
+    }
   }
 
-  Future<Map<String, dynamic>> generateSignedPostPolicyV4([
-    Map<String, dynamic>? options,
-  ]) {
-    throw UnimplementedError('generateSignedPostPolicyV4() is not implemented');
+  /// Get a v4 signed policy document to allow a user to upload data with a POST
+  /// request.
+  ///
+  /// Maximum expiration is 7 days.
+  /// See https://cloud.google.com/storage/docs/xml-api/post-object
+  ///
+  /// Throws [ArgumentError] if expiration date is in the past or exceeds 7 days.
+  /// Throws [StateError] if service account email cannot be determined.
+  /// Throws [SigningError] if signing fails.
+  ///
+  /// Example:
+  /// ```dart
+  /// final policy = await file.generateSignedPostPolicyV4(
+  ///   GenerateSignedPostPolicyV4Options(
+  ///     expires: DateTime.now().add(Duration(hours: 1)),
+  ///     fields: {'x-goog-meta-test': 'data'},
+  ///   ),
+  /// );
+  /// // Use policy.url and policy.fields for form upload
+  /// ```
+  Future<SignedPostPolicyV4Output> generateSignedPostPolicyV4(
+    GenerateSignedPostPolicyV4Options options,
+  ) async {
+    // Validate expiration
+    final expires = options.expires;
+    final now = DateTime.now();
+
+    if (expires.isBefore(now)) {
+      throw ArgumentError('Expiration date cannot be in the past.');
+    }
+
+    const sevenDays = 7 * 24 * 60 * 60; // seconds
+    if (expires.difference(now).inSeconds > sevenDays) {
+      throw ArgumentError(
+        'Max allowed expiration is seven days ($sevenDays seconds).',
+      );
+    }
+
+    // Get auth client and credentials
+    final authClient = await storage.authClient;
+    final credential = authClient.credential;
+    final clientEmail =
+        credential?.serviceAccountCredentials?.email ??
+        await authClient.getServiceAccountEmail();
+
+    if (clientEmail == null) {
+      throw StateError(
+        'Unable to determine service account email for signing. '
+        'Ensure you are running with service account credentials.',
+      );
+    }
+
+    // Build credential string
+    final todayISO = _formatDateStamp(now);
+    final credentialScope = '$todayISO/auto/storage/goog4_request';
+    final credentialString = '$clientEmail/$credentialScope';
+    final nowISO = _formatDateISO(now);
+
+    // Build fields
+    var fields = Map<String, String>.from(options.fields ?? {});
+    fields = {
+      ...fields,
+      'key': name,
+      'x-goog-date': nowISO,
+      'x-goog-credential': credentialString,
+      'x-goog-algorithm': 'GOOG4-RSA-SHA256',
+    };
+
+    // Build conditions from fields (skip x-ignore-* prefixed)
+    final conditions = List<Object>.from(options.conditions ?? []);
+    conditions.add({'bucket': bucket.name});
+
+    for (final entry in fields.entries) {
+      if (!entry.key.startsWith('x-ignore-')) {
+        conditions.add({entry.key: entry.value});
+      }
+    }
+
+    // Create and encode policy
+    final policy = {
+      'conditions': conditions,
+      'expiration': _formatPolicyExpiration(expires),
+    };
+
+    final policyString = _unicodeJSONStringify(policy);
+    final policyBase64 = base64Encode(utf8.encode(policyString));
+
+    // Sign and convert to hex
+    try {
+      final signature = await authClient.sign(
+        policyBase64,
+        endpoint: options.signingEndpoint?.toString(),
+      );
+
+      final signatureBytes = base64Decode(signature);
+      final signatureHex = signatureBytes
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+
+      // Add policy and signature to fields
+      fields['policy'] = policyBase64;
+      fields['x-goog-signature'] = signatureHex;
+
+      // Build URL
+      String url;
+      final universeDomain = storage.options.universeDomain ?? 'googleapis.com';
+
+      if (options.virtualHostedStyle) {
+        url = 'https://${bucket.name}.storage.$universeDomain/';
+      } else if (options.bucketBoundHostname != null) {
+        url = '${options.bucketBoundHostname}/';
+      } else {
+        url = 'https://storage.$universeDomain/${bucket.name}/';
+      }
+
+      return SignedPostPolicyV4Output(url: url, fields: fields);
+    } catch (e) {
+      throw SigningError(e.toString());
+    }
+  }
+
+  /// Format date as UTC ISO string for policy expiration.
+  /// Returns format like '2024-01-15T10:30:00Z' with delimiters.
+  String _formatPolicyExpiration(DateTime date) {
+    final utc = date.toUtc();
+    return '${utc.year.toString().padLeft(4, '0')}-'
+        '${utc.month.toString().padLeft(2, '0')}-'
+        '${utc.day.toString().padLeft(2, '0')}T'
+        '${utc.hour.toString().padLeft(2, '0')}:'
+        '${utc.minute.toString().padLeft(2, '0')}:'
+        '${utc.second.toString().padLeft(2, '0')}Z';
+  }
+
+  /// Format date as YYYYMMDD for credential scope.
+  String _formatDateStamp(DateTime date) {
+    final utc = date.toUtc();
+    return '${utc.year}${utc.month.toString().padLeft(2, '0')}'
+        '${utc.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Format date as YYYYMMDDTHHmmssZ for x-goog-date.
+  String _formatDateISO(DateTime date) {
+    final utc = date.toUtc();
+    return '${utc.year}${utc.month.toString().padLeft(2, '0')}'
+        '${utc.day.toString().padLeft(2, '0')}T'
+        '${utc.hour.toString().padLeft(2, '0')}'
+        '${utc.minute.toString().padLeft(2, '0')}'
+        '${utc.second.toString().padLeft(2, '0')}Z';
+  }
+
+  /// JSON stringify with unicode escaping for non-ASCII characters.
+  String _unicodeJSONStringify(Object obj) {
+    return jsonEncode(obj).replaceAllMapped(
+      RegExp(r'[\u0080-\uFFFF]'),
+      (match) =>
+          '\\u${match.group(0)!.codeUnitAt(0).toRadixString(16).padLeft(4, '0')}',
+    );
   }
 
   /// Get a signed URL to allow limited time access to the file.

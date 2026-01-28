@@ -757,4 +757,520 @@ void main() {
         ? 'GOOGLE_APPLICATION_CREDENTIALS environment variable not set'
         : null,
   );
+
+  group(
+    'File.generateSignedPostPolicyV2 integration tests',
+    () {
+      late Storage storage;
+      const bucketName = 'dart-firebase-admin.firebasestorage.app';
+
+      setUp(() {
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
+        );
+
+        runZoned(() {
+          storage = Storage(StorageOptions(credentials: credentials));
+        }, zoneValues: {envSymbol: testEnv});
+      });
+
+      tearDown(() async {
+        final client = await storage.authClient;
+        client.close();
+      });
+
+      test('should create V2 signed policy with correct structure', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-policy-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(
+            expires: expires,
+            contentLengthRange: const ContentLengthRange(min: 0, max: 1024),
+          ),
+        );
+
+        // Verify policy structure
+        expect(policy.string, isNotEmpty);
+        expect(policy.base64, isNotEmpty);
+        expect(policy.signature, isNotEmpty);
+
+        // Verify policy JSON contains expected fields
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        expect(policyJson['expiration'], isNotEmpty);
+        expect(policyJson['conditions'], isA<List>());
+
+        // Verify conditions include key and bucket
+        final conditions = policyJson['conditions'] as List;
+        expect(
+          conditions.any((c) => c is List && c[0] == 'eq' && c[1] == r'$key'),
+          isTrue,
+        );
+        expect(
+          conditions.any((c) => c is Map && c['bucket'] == bucketName),
+          isTrue,
+        );
+      });
+
+      test('should include equals conditions in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-equals-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(
+            expires: expires,
+            equals: [
+              [r'$Content-Type', 'image/jpeg'],
+            ],
+          ),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        expect(
+          conditions.any(
+            (c) =>
+                c is List &&
+                c[0] == 'eq' &&
+                c[1] == r'$Content-Type' &&
+                c[2] == 'image/jpeg',
+          ),
+          isTrue,
+        );
+      });
+
+      test('should include startsWith conditions in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-startswith-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(
+            expires: expires,
+            startsWith: [
+              [r'$key', 'uploads/'],
+            ],
+          ),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        expect(
+          conditions.any(
+            (c) =>
+                c is List &&
+                c[0] == 'starts-with' &&
+                c[1] == r'$key' &&
+                c[2] == 'uploads/',
+          ),
+          isTrue,
+        );
+      });
+
+      test('should include ACL in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-acl-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(
+            expires: expires,
+            acl: 'public-read',
+          ),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        expect(
+          conditions.any((c) => c is Map && c['acl'] == 'public-read'),
+          isTrue,
+        );
+      });
+
+      test('should include success redirect in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-redirect-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+        const redirectUrl = 'https://example.com/success';
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(
+            expires: expires,
+            successRedirect: redirectUrl,
+          ),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        expect(
+          conditions.any(
+            (c) => c is Map && c['success_action_redirect'] == redirectUrl,
+          ),
+          isTrue,
+        );
+      });
+
+      test('should include success status in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-status-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+        const successStatus = '201';
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(
+            expires: expires,
+            successStatus: successStatus,
+          ),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        expect(
+          conditions.any(
+            (c) => c is Map && c['success_action_status'] == successStatus,
+          ),
+          isTrue,
+        );
+      });
+
+      test('should include content length range in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-content-length-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(
+            expires: expires,
+            contentLengthRange: const ContentLengthRange(min: 0, max: 1024),
+          ),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        expect(
+          conditions.any(
+            (c) =>
+                c is List &&
+                c[0] == 'content-length-range' &&
+                c[1] == 0 &&
+                c[2] == 1024,
+          ),
+          isTrue,
+        );
+      });
+
+      test('should add key equality condition with file name', () async {
+        final bucket = storage.bucket(bucketName);
+        const testFileName = 'v2-key-condition-test.txt';
+        final file = bucket.file(testFileName);
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(expires: expires),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        expect(
+          conditions.any(
+            (c) =>
+                c is List &&
+                c[0] == 'eq' &&
+                c[1] == r'$key' &&
+                c[2] == testFileName,
+          ),
+          isTrue,
+        );
+      });
+
+      test('should format expiration as ISO string', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v2-expiration-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV2(
+          GenerateSignedPostPolicyV2Options(expires: expires),
+        );
+
+        final policyJson = jsonDecode(policy.string) as Map<String, dynamic>;
+        final expiration = policyJson['expiration'] as String;
+
+        // Should be in ISO format like 2024-01-15T10:30:00Z
+        expect(
+          expiration,
+          matches(RegExp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')),
+        );
+      });
+    },
+    skip: !hasGoogleEnv
+        ? 'GOOGLE_APPLICATION_CREDENTIALS environment variable not set'
+        : null,
+  );
+
+  group(
+    'File.generateSignedPostPolicyV4 integration tests',
+    () {
+      late Storage storage;
+      const bucketName = 'dart-firebase-admin.firebasestorage.app';
+
+      setUp(() {
+        final credentials = GoogleCredential.fromServiceAccount(
+          File(credPath!),
+        );
+
+        runZoned(() {
+          storage = Storage(StorageOptions(credentials: credentials));
+        }, zoneValues: {envSymbol: testEnv});
+      });
+
+      tearDown(() async {
+        final client = await storage.authClient;
+        client.close();
+      });
+
+      test('should create V4 signed policy with correct structure', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-policy-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(expires: expires),
+        );
+
+        // Verify policy output structure
+        expect(policy.url, isNotEmpty);
+        expect(policy.fields, isNotEmpty);
+
+        // Verify URL format
+        expect(policy.url, contains('storage.googleapis.com'));
+        expect(policy.url, contains(bucketName));
+
+        // Verify required fields
+        expect(policy.fields['key'], file.name);
+        expect(policy.fields['x-goog-algorithm'], 'GOOG4-RSA-SHA256');
+        expect(policy.fields['x-goog-credential'], isNotEmpty);
+        expect(policy.fields['x-goog-date'], isNotEmpty);
+        expect(policy.fields['policy'], isNotEmpty);
+        expect(policy.fields['x-goog-signature'], isNotEmpty);
+      });
+
+      test('should include custom fields in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-fields-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(
+            expires: expires,
+            fields: {'x-goog-meta-test': 'value'},
+          ),
+        );
+
+        expect(policy.fields['x-goog-meta-test'], 'value');
+      });
+
+      test('should exclude x-ignore- prefixed fields from signature', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-ignore-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(
+            expires: expires,
+            fields: {
+              'x-goog-meta-included': 'yes',
+              'x-ignore-not-signed': 'ignored',
+            },
+          ),
+        );
+
+        // Both fields should be in output
+        expect(policy.fields['x-goog-meta-included'], 'yes');
+        expect(policy.fields['x-ignore-not-signed'], 'ignored');
+
+        // Decode policy to verify x-ignore- is not in conditions
+        final policyJson =
+            jsonDecode(utf8.decode(base64Decode(policy.fields['policy']!)))
+                as Map<String, dynamic>;
+        final conditions = policyJson['conditions'] as List;
+
+        // x-goog-meta-included should be in conditions
+        expect(
+          conditions.any((c) => c is Map && c['x-goog-meta-included'] == 'yes'),
+          isTrue,
+        );
+
+        // x-ignore-not-signed should NOT be in conditions
+        expect(
+          conditions.any(
+            (c) => c is Map && c.containsKey('x-ignore-not-signed'),
+          ),
+          isFalse,
+        );
+      });
+
+      test('should use virtualHostedStyle URL when specified', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-virtual-host-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(
+            expires: expires,
+            virtualHostedStyle: true,
+          ),
+        );
+
+        expect(policy.url, contains('$bucketName.storage.googleapis.com'));
+      });
+
+      test('should use bucketBoundHostname when specified', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-cname-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(
+            expires: expires,
+            bucketBoundHostname: 'https://cdn.example.com',
+          ),
+        );
+
+        expect(policy.url, startsWith('https://cdn.example.com'));
+      });
+
+      test('should encode special characters (unicode) in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-unicode-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(
+            expires: expires,
+            fields: {'x-goog-meta-foo': 'bår'},
+          ),
+        );
+
+        // Field should be in output as-is
+        expect(policy.fields['x-goog-meta-foo'], 'bår');
+
+        // Policy should have unicode escaped
+        final decodedPolicy = utf8.decode(
+          base64Decode(policy.fields['policy']!),
+        );
+        expect(decodedPolicy, contains(r'\u00e5'));
+      });
+
+      test('should accept additional conditions', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-conditions-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(
+            expires: expires,
+            conditions: [
+              ['starts-with', r'$key', 'uploads/'],
+            ],
+          ),
+        );
+
+        final decodedPolicy =
+            jsonDecode(utf8.decode(base64Decode(policy.fields['policy']!)))
+                as Map<String, dynamic>;
+        final conditions = decodedPolicy['conditions'] as List;
+
+        expect(
+          conditions.any(
+            (c) =>
+                c is List &&
+                c[0] == 'starts-with' &&
+                c[1] == r'$key' &&
+                c[2] == 'uploads/',
+          ),
+          isTrue,
+        );
+      });
+
+      test('should include bucket condition in policy', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-bucket-condition-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(expires: expires),
+        );
+
+        final decodedPolicy =
+            jsonDecode(utf8.decode(base64Decode(policy.fields['policy']!)))
+                as Map<String, dynamic>;
+        final conditions = decodedPolicy['conditions'] as List;
+
+        expect(
+          conditions.any((c) => c is Map && c['bucket'] == bucketName),
+          isTrue,
+        );
+      });
+
+      test('should include x-goog-credential in correct format', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-credential-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(expires: expires),
+        );
+
+        final credential = policy.fields['x-goog-credential']!;
+
+        // Should be in format: email/YYYYMMDD/auto/storage/goog4_request
+        expect(
+          credential,
+          matches(RegExp(r'.+/\d{8}/auto/storage/goog4_request$')),
+        );
+      });
+
+      test('should include x-goog-date in correct format', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-date-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(expires: expires),
+        );
+
+        final googDate = policy.fields['x-goog-date']!;
+
+        // Should be in format: YYYYMMDDTHHmmssZ
+        expect(googDate, matches(RegExp(r'^\d{8}T\d{6}Z$')));
+      });
+
+      test('should have signature in hex format', () async {
+        final bucket = storage.bucket(bucketName);
+        final file = bucket.file('v4-signature-test.txt');
+        final expires = DateTime.now().add(const Duration(hours: 1));
+
+        final policy = await file.generateSignedPostPolicyV4(
+          GenerateSignedPostPolicyV4Options(expires: expires),
+        );
+
+        final signature = policy.fields['x-goog-signature']!;
+
+        // Should be hex string (only 0-9 and a-f characters)
+        expect(signature, matches(RegExp(r'^[0-9a-f]+$')));
+      });
+    },
+    skip: !hasGoogleEnv
+        ? 'GOOGLE_APPLICATION_CREDENTIALS environment variable not set'
+        : null,
+  );
 }
