@@ -7,7 +7,6 @@ import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:http/http.dart' as http;
 import 'emulator_client.dart';
 
-import 'emulator_client.dart';
 import 'storage_http_client.dart';
 
 typedef RequestInterceptor = http.BaseRequest Function(http.BaseRequest);
