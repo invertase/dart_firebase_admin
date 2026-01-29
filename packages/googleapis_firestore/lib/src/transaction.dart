@@ -460,10 +460,8 @@ class Transaction {
         lastError = e;
 
         if (!_isRetryableTransactionError(e)) {
-          return Future.error(e);
+          rethrow;
         }
-      } catch (e) {
-        return Future.error(e);
       }
     }
 
@@ -483,7 +481,7 @@ class Transaction {
       return result;
     } catch (e) {
       await _rollback();
-      return Future.error(e);
+      rethrow;
     }
   }
 }
