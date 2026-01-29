@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:dart_firebase_admin/storage.dart';
 import 'package:googleapis_storage/googleapis_storage.dart' hide Storage;
 
 Future<void> storageExample(FirebaseApp admin) async {
@@ -14,13 +13,27 @@ Future<void> storageExample(FirebaseApp admin) async {
 Future<void> basicExample(FirebaseApp admin) async {
   print('> Basic Storage usage...\n');
 
-  final storage = Storage(admin);
+  try {
+    final storage = admin.storage();
 
-  final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
+    final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
+    print('> Using bucket: ${bucket.id}\n');
 
-  final file = bucket.file('foo.txt');
+    final file = bucket.file('foo.txt');
+    print('> File: ${file.name}\n');
 
-  await file.delete();
+    const fileContent = 'Hello from basicExample() in storage_example.dart';
+    print('> Uploading file "${file.name}" to Storage...\n');
+    await file.save(utf8.encode(fileContent));
+    print('> ✓ File uploaded successfully!\n');
+
+    print('> Deleting file "${file.name}"...\n');
+    await file.delete();
+    print('> ✓ File deleted successfully!\n');
+  } catch (e, stackTrace) {
+    print('> ✗ Error: $e\n');
+    print('> Stack trace: $stackTrace\n');
+  }
 }
 
 Future<void> signedUrlExample(FirebaseApp admin) async {
@@ -28,7 +41,7 @@ Future<void> signedUrlExample(FirebaseApp admin) async {
 
   String? url;
   try {
-    final storage = Storage(admin);
+    final storage = admin.storage();
 
     final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
     print('> Using bucket: ${bucket.id}\n');

@@ -65,11 +65,7 @@ class Storage extends Service<StorageOptions> {
     var apiEndpoint = 'https://storage.$universe';
     var customEndpoint = false;
 
-    // Check Zone for test environment variables, fallback to Platform.environment
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ??
-        io.Platform.environment;
-    final emulatorHost = env['STORAGE_EMULATOR_HOST'];
+    final emulatorHost = Environment.getStorageEmulatorHost();
     if (emulatorHost != null) {
       apiEndpoint = Storage._sanitizeEndpoint(emulatorHost);
       customEndpoint = true;

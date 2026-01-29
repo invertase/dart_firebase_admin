@@ -84,17 +84,26 @@ void main() {
               scopes: ['https://www.googleapis.com/auth/cloud-platform'],
             );
 
-        final storage = Storage(
-          StorageOptions(authClient: explicitClient, credentials: credentials),
-        );
+        final testEnv = <String, String>{
+          'GOOGLE_APPLICATION_CREDENTIALS': credPath,
+        };
 
-        final client = await storage.authClient;
-        expect(client, same(explicitClient));
+        await runZoned(() async {
+          final storage = Storage(
+            StorageOptions(
+              authClient: explicitClient,
+              credentials: credentials,
+            ),
+          );
 
-        final pid = await client.getProjectId();
-        expect(pid, isNotEmpty);
+          final client = await storage.authClient;
+          expect(client, same(explicitClient));
 
-        client.close();
+          final pid = await client.getProjectId();
+          expect(pid, isNotEmpty);
+
+          client.close();
+        }, zoneValues: {envSymbol: testEnv});
       });
 
       test('should create working Storage instance with credentials', () async {

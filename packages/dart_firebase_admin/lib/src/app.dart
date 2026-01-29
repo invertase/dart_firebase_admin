@@ -21,6 +21,7 @@ import '../firestore.dart';
 import '../functions.dart';
 import '../messaging.dart';
 import '../security_rules.dart';
+import '../storage.dart';
 
 part 'app/app_exception.dart';
 part 'app/app_options.dart';

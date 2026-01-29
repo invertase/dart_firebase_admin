@@ -5,6 +5,7 @@ import 'package:googleapis_auth/auth_io.dart' as auth_io;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart' as auth_utils;
 import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:http/http.dart' as http;
+import 'emulator_client.dart';
 
 typedef RequestInterceptor = http.BaseRequest Function(http.BaseRequest);
 
@@ -57,18 +58,35 @@ abstract class Service<T extends ServiceOptions> {
   storage_v1.StorageApi? _storageClient;
   auth_io.AuthClient? _authClient;
 
+  /// Plain HTTP client created for emulator mode (when using custom endpoint without auth).
+  /// This is tracked so it can be closed in terminate().
+  http.Client? _plainClient;
+
+  /// HTTP client wrapped in EmulatorClient for emulator mode auth.
+  /// This is tracked so it can be closed in terminate().
+  http.Client? _emulatorAuthClient;
+
   Future<storage_v1.StorageApi> get storageClient async {
     return _storageClient ??= await _createStorageClient();
   }
 
   /// Get or create the authenticated client.
   ///
-  /// This is always created, even for custom endpoints without auth,
-  /// because it's needed for projectId resolution (similar to Node.js SDK).
-  /// The authClient is created lazily on first access.
+  /// For emulators (custom endpoint without auth), returns an EmulatorClient
+  /// that doesn't attempt authentication. For production, creates an authenticated
+  /// client. The authClient is created lazily on first access.
   Future<auth_io.AuthClient> get authClient async {
     if (_authClient != null) {
       return _authClient!;
+    }
+
+    // For emulators (custom endpoint without auth), return EmulatorClient
+    // This prevents trying to fetch credentials from metadata server
+    if (config.customEndpoint == true &&
+        config.useAuthWithCustomEndpoint != true) {
+      final emulatorClient = http.Client();
+      _emulatorAuthClient = emulatorClient;
+      return _authClient = EmulatorClient(emulatorClient);
     }
 
     if (options.authClient != null) {
@@ -120,6 +138,7 @@ abstract class Service<T extends ServiceOptions> {
       // However, we still ensure authClient is available (via lazy getter above)
       // for projectId resolution, even though we don't use it for requests here
       final plainClient = http.Client();
+      _plainClient = plainClient;
       return storage_v1.StorageApi(
         plainClient,
         rootUrl: rootUrl,
@@ -137,6 +156,24 @@ abstract class Service<T extends ServiceOptions> {
   }
 
   Service(this.config, this.options);
+
+  /// Terminates the service and closes all open connections.
+  ///
+  /// Closes only clients that were created by the SDK (not ones passed in via options).
+  /// After calling terminate, the service instance is no longer usable.
+  Future<void> terminate() async {
+    // Close the plain HTTP client if it was created for emulator mode
+    _plainClient?.close();
+
+    // Close the emulator auth client if it was created
+    _emulatorAuthClient?.close();
+
+    // Close the auth client only if it was created by us (not passed in via options)
+    // Note: For EmulatorClient, we've already closed the underlying client above
+    if (_authClient != null && options.authClient == null) {
+      _authClient!.close();
+    }
+  }
 
   // final String apiEndpoint;
   // final String? projectId;

@@ -4,6 +4,7 @@ import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart' as auth_utils;
 import 'package:googleapis_storage/googleapis_storage.dart';
+import 'package:googleapis_storage/src/environment.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -256,7 +257,9 @@ void main() {
 
       test('should use STORAGE_EMULATOR_HOST from environment', () async {
         const emulatorHost = 'localhost:8080';
-        final testEnv = <String, String>{'STORAGE_EMULATOR_HOST': emulatorHost};
+        final testEnv = <String, String>{
+          Environment.storageEmulatorHost: emulatorHost,
+        };
 
         await runZoned(() {
           final storage = Storage(const StorageOptions());
@@ -271,7 +274,7 @@ void main() {
           const emulatorHost = 'localhost:8080';
           const explicitEndpoint = 'https://override.example.com';
           final testEnv = <String, String>{
-            'STORAGE_EMULATOR_HOST': emulatorHost,
+            Environment.storageEmulatorHost: emulatorHost,
           };
 
           await runZoned(() {
@@ -287,7 +290,9 @@ void main() {
 
       test('should sanitize STORAGE_EMULATOR_HOST without protocol', () async {
         const emulatorHost = 'localhost:8080';
-        final testEnv = <String, String>{'STORAGE_EMULATOR_HOST': emulatorHost};
+        final testEnv = <String, String>{
+          Environment.storageEmulatorHost: emulatorHost,
+        };
 
         await runZoned(() {
           final storage = Storage(const StorageOptions());
@@ -301,7 +306,7 @@ void main() {
         () async {
           const emulatorHost = 'localhost:8080///';
           final testEnv = <String, String>{
-            'STORAGE_EMULATOR_HOST': emulatorHost,
+            Environment.storageEmulatorHost: emulatorHost,
           };
 
           await runZoned(() {

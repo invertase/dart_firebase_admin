@@ -1,1 +1,1 @@
-export 'src/storage.dart';
+export 'src/storage/storage.dart';

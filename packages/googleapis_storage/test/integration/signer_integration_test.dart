@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:async';
 import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:test/test.dart';
 
@@ -7,6 +7,7 @@ import '../helpers.dart';
 
 void main() {
   final credPath = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'];
+  final testEnv = <String, String?>{'GOOGLE_APPLICATION_CREDENTIALS': credPath};
 
   group(
     'URLSigner integration tests',
@@ -20,7 +21,9 @@ void main() {
           File(credPath!),
         );
 
-        storage = Storage(StorageOptions(credentials: credentials));
+        runZoned(() {
+          storage = Storage(StorageOptions(credentials: credentials));
+        }, zoneValues: {envSymbol: testEnv});
       });
 
       tearDown(() async {

@@ -192,6 +192,11 @@ class FirebaseApp {
   /// Returns a cached instance if one exists, otherwise creates a new one.
   Functions functions() => Functions.internal(this);
 
+  /// Gets the Storage service instance for this app.
+  ///
+  /// Returns a cached instance if one exists, otherwise creates a new one.
+  Storage storage() => Storage.internal(this);
+
   /// Closes this app and cleans up all associated resources.
   ///
   /// This method:
