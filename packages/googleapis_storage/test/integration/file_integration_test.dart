@@ -560,6 +560,207 @@ void main() {
         }
       });
 
+      test('should moveFileAtomic a file', () async {
+        const sourceFileName = 'integration-test-moveatomic-source.txt';
+        const destFileName = 'integration-test-moveatomic-dest.txt';
+        final sourceFile = bucket.file(sourceFileName);
+        final destFile = bucket.file(destFileName);
+
+        try {
+          // Upload source file
+          await sourceFile.save(testContent);
+
+          // Wait for file to be available
+          expect(await waitForFileExists(sourceFile), isTrue);
+
+          // Move file atomically
+          final movedFile = await sourceFile.moveFileAtomic(
+            PathMoveFileAtomicDestination(destFileName),
+          );
+
+          // Verify returned file is correct
+          expect(movedFile.name, destFileName);
+          expect(movedFile.bucket.id, bucket.id);
+
+          // Verify destination exists and source doesn't
+          final destDownloaded = await destFile.download();
+          final destContent = utf8.decode(destDownloaded);
+          expect(destContent, testContent);
+
+          final sourceExists = await sourceFile.exists();
+          expect(sourceExists, false);
+        } finally {
+          await sourceFile.delete().catchError((_) {});
+          await destFile.delete().catchError((_) {});
+        }
+      });
+
+      test('should moveFileAtomic to nested path', () async {
+        const sourceFileName = 'integration-test-moveatomic-nested-source.txt';
+        const destFileName = 'nested/path/integration-test-moveatomic-dest.txt';
+        final sourceFile = bucket.file(sourceFileName);
+        final destFile = bucket.file(destFileName);
+
+        try {
+          // Upload source file
+          await sourceFile.save(testContent);
+
+          // Wait for file to be available
+          expect(await waitForFileExists(sourceFile), isTrue);
+
+          // Move file atomically to nested path
+          final movedFile = await sourceFile.moveFileAtomic(
+            PathMoveFileAtomicDestination(destFileName),
+          );
+
+          // Verify returned file is correct
+          expect(movedFile.name, destFileName);
+          expect(movedFile.bucket.id, bucket.id);
+
+          // Verify destination exists and source doesn't
+          final destDownloaded = await destFile.download();
+          final destContent = utf8.decode(destDownloaded);
+          expect(destContent, testContent);
+
+          final sourceExists = await sourceFile.exists();
+          expect(sourceExists, false);
+        } finally {
+          await sourceFile.delete().catchError((_) {});
+          await destFile.delete().catchError((_) {});
+        }
+      });
+
+      test('should moveFileAtomic with File destination object', () async {
+        const sourceFileName = 'integration-test-moveatomic-file-source.txt';
+        const destFileName = 'integration-test-moveatomic-file-dest.txt';
+        final sourceFile = bucket.file(sourceFileName);
+        final destFile = bucket.file(destFileName);
+
+        try {
+          // Upload source file
+          await sourceFile.save(testContent);
+
+          // Wait for file to be available
+          expect(await waitForFileExists(sourceFile), isTrue);
+
+          // Move file atomically using File destination object
+          final movedFile = await sourceFile.moveFileAtomic(
+            FileMoveFileAtomicDestination(destFile),
+          );
+
+          // Verify returned file is the same File object
+          expect(movedFile, destFile);
+          expect(movedFile.name, destFileName);
+          expect(movedFile.bucket.id, bucket.id);
+
+          // Verify destination exists and source doesn't
+          final destDownloaded = await destFile.download();
+          final destContent = utf8.decode(destDownloaded);
+          expect(destContent, testContent);
+
+          final sourceExists = await sourceFile.exists();
+          expect(sourceExists, false);
+        } finally {
+          await sourceFile.delete().catchError((_) {});
+          await destFile.delete().catchError((_) {});
+        }
+      });
+
+      test(
+        'should moveFileAtomic with gs:// URI destination (same bucket)',
+        () async {
+          const sourceFileName = 'integration-test-moveatomic-gs-source.txt';
+          const destFileName = 'integration-test-moveatomic-gs-dest.txt';
+          final sourceFile = bucket.file(sourceFileName);
+          final destFile = bucket.file(destFileName);
+          final gsUri = 'gs://${bucket.id}/$destFileName';
+
+          try {
+            // Upload source file
+            await sourceFile.save(testContent);
+
+            // Wait for file to be available
+            expect(await waitForFileExists(sourceFile), isTrue);
+
+            // Move file atomically using gs:// URI
+            final movedFile = await sourceFile.moveFileAtomic(
+              PathMoveFileAtomicDestination(gsUri),
+            );
+
+            // Verify returned file is correct
+            expect(movedFile.name, destFileName);
+            expect(movedFile.bucket.id, bucket.id);
+
+            // Verify destination exists and source doesn't
+            final destDownloaded = await destFile.download();
+            final destContent = utf8.decode(destDownloaded);
+            expect(destContent, testContent);
+
+            final sourceExists = await sourceFile.exists();
+            expect(sourceExists, false);
+          } finally {
+            await sourceFile.delete().catchError((_) {});
+            await destFile.delete().catchError((_) {});
+          }
+        },
+      );
+
+      test('should moveFileAtomic with precondition options', () async {
+        const sourceFileName =
+            'integration-test-moveatomic-precondition-source.txt';
+        const destFileName =
+            'integration-test-moveatomic-precondition-dest.txt';
+        final sourceFile = bucket.file(sourceFileName);
+        final destFile = bucket.file(destFileName);
+
+        try {
+          // Upload source file
+          await sourceFile.save(testContent);
+
+          // Wait for file to be available
+          expect(await waitForFileExists(sourceFile), isTrue);
+
+          // Add a delay to ensure file is fully committed and metadata is consistent
+          await Future<void>.delayed(const Duration(seconds: 2));
+
+          // Verify destination file doesn't exist (it shouldn't for this test)
+          final destExists = await destFile.exists();
+          expect(
+            destExists,
+            isFalse,
+            reason: 'Destination file should not exist',
+          );
+
+          // Move file atomically with ifGenerationMatch precondition
+          // For a destination that doesn't exist, use ifGenerationMatch: 0
+          // This prevents overwriting an existing file that might have been created
+          // between checking and moving
+          final movedFile = await sourceFile.moveFileAtomic(
+            PathMoveFileAtomicDestination(destFileName),
+            options: MoveOptions(
+              preconditionOpts: PreconditionOptions(
+                ifGenerationMatch: 0, // 0 means destination must not exist
+              ),
+            ),
+          );
+
+          // Verify returned file is correct
+          expect(movedFile.name, destFileName);
+          expect(movedFile.bucket.id, bucket.id);
+
+          // Verify destination exists and source doesn't
+          final destDownloaded = await destFile.download();
+          final destContent = utf8.decode(destDownloaded);
+          expect(destContent, testContent);
+
+          final sourceExists = await sourceFile.exists();
+          expect(sourceExists, false);
+        } finally {
+          await sourceFile.delete().catchError((_) {});
+          await destFile.delete().catchError((_) {});
+        }
+      });
+
       test('should rename a file', () async {
         const oldFileName = 'integration-test-old-name.txt';
         const newFileName = 'integration-test-new-name.txt';
@@ -609,6 +810,60 @@ void main() {
         // Verify it's gone
         exists = await file.exists();
         expect(exists, false);
+      });
+
+      test('should restore a soft-deleted file', () async {
+        const fileName = 'integration-test-restore.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
+
+          // Get metadata to retrieve generation
+          final metadata = await file.getMetadata();
+          final generation = metadata.generation != null
+              ? int.parse(metadata.generation!)
+              : null;
+
+          expect(
+            generation,
+            isNotNull,
+            reason: 'File should have a generation',
+          );
+
+          // Delete file (soft delete)
+          await file.delete();
+
+          // Verify file is deleted
+          final existsAfterDelete = await file.exists();
+          expect(existsAfterDelete, isFalse);
+
+          // Restore the file using the generation
+          final restoredFile = await file.restore(
+            RestoreFileOptions(generation: generation!),
+          );
+
+          // Verify restored file is the same instance
+          expect(restoredFile, same(file));
+
+          // Wait a bit for restore to propagate
+          await Future<void>.delayed(const Duration(seconds: 2));
+
+          // Verify file exists again
+          final existsAfterRestore = await file.exists();
+          expect(existsAfterRestore, isTrue);
+
+          // Verify content is restored
+          final restoredContent = await file.download();
+          final restoredText = utf8.decode(restoredContent);
+          expect(restoredText, testContent);
+        } finally {
+          await file.delete().catchError((_) {});
+        }
       });
 
       test('should check if file exists', () async {
@@ -680,6 +935,72 @@ void main() {
             () => file.acl.get(entity: 'allUsers'),
             throwsA(isA<ApiError>()),
           );
+        } finally {
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should check if file is public', () async {
+        const fileName = 'integration-test-is-public.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
+
+          // Initially file should be private
+          final isPublicBefore = await file.isPublic();
+          expect(isPublicBefore, isFalse);
+
+          // Make file public
+          await file.makePublic();
+
+          // Now file should be public
+          final isPublicAfter = await file.isPublic();
+          expect(isPublicAfter, isTrue);
+
+          // Make file private again
+          await file.makePrivate();
+
+          // File should be private again
+          final isPublicAfterPrivate = await file.isPublic();
+          expect(isPublicAfterPrivate, isFalse);
+        } finally {
+          await file.acl.delete(entity: 'allUsers').catchError((_) {});
+          await file.delete().catchError((_) {});
+        }
+      });
+
+      test('should get expiration date when retention policy exists', () async {
+        const fileName = 'integration-test-expiration-date.txt';
+        final file = bucket.file(fileName);
+
+        try {
+          // Upload file first
+          await file.save(testContent);
+
+          // Wait for file to be available
+          expect(await waitForFileExists(file), isTrue);
+
+          // Try to get expiration date
+          // Note: This will only work if the bucket has a retention policy
+          // If no retention policy exists, it will throw an exception
+          try {
+            final expirationDate = await file.getExpirationDate();
+            expect(expirationDate, isA<DateTime>());
+            expect(expirationDate.isAfter(DateTime.now()), isTrue);
+          } on Exception catch (e) {
+            // If bucket doesn't have retention policy, expect this error
+            expect(
+              e.toString(),
+              contains('An expiration time is not available'),
+            );
+            // This is expected behavior - skip test if bucket has no retention policy
+            return;
+          }
         } finally {
           await file.delete().catchError((_) {});
         }

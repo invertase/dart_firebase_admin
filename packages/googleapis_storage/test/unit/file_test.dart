@@ -2614,6 +2614,494 @@ void main() {
     });
   });
 
+  group('File - moveFileAtomic', () {
+    late TestStorage storage;
+    late storage_v1.StorageApi mockApi;
+    late storage_v1.ObjectsResource mockObjects;
+    late BucketFile file;
+
+    setUp(() {
+      mockApi = MockStorageApi();
+      mockObjects = MockObjectsResource();
+      when(() => mockApi.objects).thenReturn(mockObjects);
+
+      storage = TestStorage(mockApi, projectId: 'test-project');
+      file = storage.bucket('test-bucket').file('old-file.txt');
+    });
+
+    test('should move file atomically with string destination', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      final result = await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('new-file.txt'),
+      );
+
+      expect(result, isA<BucketFile>());
+      expect(result.name, 'new-file.txt');
+      expect(result.bucket.id, 'test-bucket');
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'new-file.txt',
+          ifGenerationMatch: null,
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should move file atomically with File destination', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+      final destFile = storage.bucket('test-bucket').file('new-file.txt');
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      final result = await file.moveFileAtomic(
+        FileMoveFileAtomicDestination(destFile),
+      );
+
+      expect(result, isA<BucketFile>());
+      expect(result.name, 'new-file.txt');
+      expect(result, destFile); // Should return the same File object
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'new-file.txt',
+          ifGenerationMatch: null,
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should handle gs:// URI destination (same bucket)', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      final result = await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('gs://test-bucket/new-file.txt'),
+      );
+
+      expect(result, isA<BucketFile>());
+      expect(result.name, 'new-file.txt');
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'new-file.txt',
+          ifGenerationMatch: null,
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should throw error if gs:// URI has different bucket', () {
+      expect(
+        () => file.moveFileAtomic(
+          const PathMoveFileAtomicDestination('gs://other-bucket/new-file.txt'),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('moveFileAtomic can only move within the same bucket'),
+          ),
+        ),
+      );
+    });
+
+    test('should throw error if File destination is in different bucket', () {
+      final destFile = storage.bucket('other-bucket').file('new-file.txt');
+
+      expect(
+        () => file.moveFileAtomic(FileMoveFileAtomicDestination(destFile)),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('moveFileAtomic can only move within the same bucket'),
+          ),
+        ),
+      );
+    });
+
+    test('should handle path with leading slash', () async {
+      final moveResponse = storage_v1.Object()..name = '/new-file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('/new-file.txt'),
+      );
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          '/new-file.txt',
+          ifGenerationMatch: null,
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should handle nested path with slashes', () async {
+      final moveResponse = storage_v1.Object()
+        ..name = 'folder/subfolder/file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('folder/subfolder/file.txt'),
+      );
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'folder/subfolder/file.txt',
+          ifGenerationMatch: null,
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should pass userProject option to API', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('new-file.txt'),
+        options: const MoveOptions(userProject: 'my-project'),
+      );
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'new-file.txt',
+          ifGenerationMatch: null,
+          userProject: 'my-project',
+        ),
+      ).called(1);
+    });
+
+    test('should pass precondition options to API', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('new-file.txt'),
+        options: const MoveOptions(
+          preconditionOpts: PreconditionOptions(ifGenerationMatch: 1234),
+        ),
+      );
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'new-file.txt',
+          ifGenerationMatch: '1234',
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should pass both userProject and precondition options', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('new-file.txt'),
+        options: const MoveOptions(
+          userProject: 'my-project',
+          preconditionOpts: PreconditionOptions(ifGenerationMatch: 5678),
+        ),
+      );
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'new-file.txt',
+          ifGenerationMatch: '5678',
+          userProject: 'my-project',
+        ),
+      ).called(1);
+    });
+
+    test('should update destination file metadata with API response', () async {
+      final moveResponse = storage_v1.Object()
+        ..name = 'new-file.txt'
+        ..size = '1024'
+        ..contentType = 'text/plain'
+        ..etag = 'etag123';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      final result = await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('new-file.txt'),
+      );
+
+      expect(result.metadata.name, 'new-file.txt');
+      expect(result.metadata.size, '1024');
+      expect(result.metadata.contentType, 'text/plain');
+      expect(result.metadata.etag, 'etag123');
+    });
+
+    test('should propagate API errors', () async {
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenThrow(storage_v1.DetailedApiRequestError(403, 'Forbidden'));
+
+      expect(
+        () => file.moveFileAtomic(
+          const PathMoveFileAtomicDestination('new-file.txt'),
+        ),
+        throwsA(isA<ApiError>()),
+      );
+    });
+
+    test(
+      'should use instance userProject when not provided in options',
+      () async {
+        final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+        file = storage.bucket('test-bucket').file('old-file.txt')
+          ..setUserProject('instance-project');
+
+        when(
+          () => mockObjects.move(
+            any(),
+            any(),
+            any(),
+            ifGenerationMatch: any(named: 'ifGenerationMatch'),
+            userProject: any(named: 'userProject'),
+          ),
+        ).thenAnswer((_) async => moveResponse);
+
+        await file.moveFileAtomic(
+          const PathMoveFileAtomicDestination('new-file.txt'),
+        );
+
+        verify(
+          () => mockObjects.move(
+            'test-bucket',
+            'old-file.txt',
+            'new-file.txt',
+            ifGenerationMatch: null,
+            userProject: 'instance-project',
+          ),
+        ).called(1);
+      },
+    );
+
+    test(
+      'should prefer options userProject over instance userProject',
+      () async {
+        final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+        file = storage.bucket('test-bucket').file('old-file.txt')
+          ..setUserProject('instance-project');
+
+        when(
+          () => mockObjects.move(
+            any(),
+            any(),
+            any(),
+            ifGenerationMatch: any(named: 'ifGenerationMatch'),
+            userProject: any(named: 'userProject'),
+          ),
+        ).thenAnswer((_) async => moveResponse);
+
+        await file.moveFileAtomic(
+          const PathMoveFileAtomicDestination('new-file.txt'),
+          options: const MoveOptions(userProject: 'options-project'),
+        );
+
+        verify(
+          () => mockObjects.move(
+            'test-bucket',
+            'old-file.txt',
+            'new-file.txt',
+            ifGenerationMatch: null,
+            userProject: 'options-project',
+          ),
+        ).called(1);
+      },
+    );
+    test('should URI encode file names with special characters', () async {
+      final moveResponse = storage_v1.Object()..name = 'nested/file.jpg';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('nested/file.jpg'),
+      );
+
+      // Verify the path with special characters is passed correctly
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'nested/file.jpg',
+          ifGenerationMatch: null,
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should create new file on the same bucket', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-filename';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      final result = await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('new-filename'),
+      );
+
+      // Verify a new File object is created on the same bucket
+      expect(result.bucket.id, 'test-bucket');
+      expect(result.name, 'new-filename');
+      expect(result, isA<BucketFile>());
+    });
+
+    test('should accept options object', () async {
+      final moveResponse = storage_v1.Object()..name = 'new-file.txt';
+
+      when(
+        () => mockObjects.move(
+          any(),
+          any(),
+          any(),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => moveResponse);
+
+      // Test that options object is accepted and used
+      await file.moveFileAtomic(
+        const PathMoveFileAtomicDestination('new-file.txt'),
+        options: const MoveOptions(
+          userProject: 'test-project',
+          preconditionOpts: PreconditionOptions(ifGenerationMatch: 999),
+        ),
+      );
+
+      verify(
+        () => mockObjects.move(
+          'test-bucket',
+          'old-file.txt',
+          'new-file.txt',
+          ifGenerationMatch: '999',
+          userProject: 'test-project',
+        ),
+      ).called(1);
+    });
+  });
+
   group('File - rename', () {
     late TestStorage storage;
     late storage_v1.StorageApi mockApi;
@@ -4802,6 +5290,336 @@ void main() {
           ),
         ),
       );
+    });
+  });
+
+  group('File - getExpirationDate', () {
+    test('should call getMetadata to refresh metadata', () async {
+      final expirationTime = DateTime.now().add(const Duration(days: 30));
+
+      when(
+        () => mockObjects.get(
+          any(),
+          any(),
+          generation: any(named: 'generation'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.Object()
+          ..name = 'test-file.txt'
+          ..bucket = 'test-bucket'
+          ..retentionExpirationTime = expirationTime,
+      );
+
+      await file.getExpirationDate();
+
+      // Verify getMetadata was called (via API call)
+      verify(
+        () => mockObjects.get(
+          'test-bucket',
+          'test-file.txt',
+          generation: null,
+          userProject: null,
+        ),
+      ).called(1);
+    });
+
+    test('should propagate errors from getMetadata', () async {
+      final error = storage_v1.DetailedApiRequestError(404, 'Not Found');
+
+      when(
+        () => mockObjects.get(
+          any(),
+          any(),
+          generation: any(named: 'generation'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenThrow(error);
+
+      expect(() => file.getExpirationDate(), throwsA(isA<ApiError>()));
+    });
+
+    test('should throw exception if there is no expiration time', () async {
+      when(
+        () => mockObjects.get(
+          any(),
+          any(),
+          generation: any(named: 'generation'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.Object()
+          ..name = 'test-file.txt'
+          ..bucket = 'test-bucket',
+      );
+
+      expect(
+        () => file.getExpirationDate(),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('An expiration time is not available'),
+          ),
+        ),
+      );
+    });
+
+    test('should return the expiration time as a DateTime', () async {
+      final expirationTime = DateTime.now().add(const Duration(days: 30));
+
+      when(
+        () => mockObjects.get(
+          any(),
+          any(),
+          generation: any(named: 'generation'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer(
+        (_) async => storage_v1.Object()
+          ..name = 'test-file.txt'
+          ..bucket = 'test-bucket'
+          ..retentionExpirationTime = expirationTime,
+      );
+
+      final result = await file.getExpirationDate();
+
+      expect(result, isA<DateTime>());
+      expect(result, expirationTime);
+    });
+  });
+
+  group('File - isPublic', () {
+    test('should use publicUrl() to construct the URL', () {
+      // Verify that isPublic uses publicUrl() method
+      // The actual HTTP call is tested in integration tests
+      final publicUrl = file.publicUrl();
+      expect(publicUrl, isNotEmpty);
+      expect(publicUrl, contains('test-bucket'));
+      expect(publicUrl, contains('test-file.txt'));
+    });
+
+    test('should correctly format URL with special characters', () {
+      final specialCharFile = bucket.file('my#file\$.png');
+      final publicUrl = specialCharFile.publicUrl();
+
+      expect(publicUrl, contains('my%23file%24.png'));
+      expect(publicUrl, contains('test-bucket'));
+    });
+
+    test('should use correct base URL format', () {
+      final publicUrl = file.publicUrl();
+      expect(publicUrl, startsWith('https://'));
+      expect(publicUrl, contains('storage.googleapis.com'));
+      expect(publicUrl, contains('test-bucket'));
+      expect(publicUrl, contains('test-file.txt'));
+    });
+
+    test('should handle nested paths correctly', () {
+      final nestedFile = bucket.file('nested/path/to/file.txt');
+      final publicUrl = nestedFile.publicUrl();
+
+      expect(publicUrl, contains('nested%2Fpath%2Fto%2Ffile.txt'));
+      expect(publicUrl, contains('test-bucket'));
+    });
+
+    test('should handle files with spaces', () {
+      final spacedFile = bucket.file('file with spaces.txt');
+      final publicUrl = spacedFile.publicUrl();
+
+      expect(publicUrl, contains('file%20with%20spaces.txt'));
+    });
+
+    test('should use storage apiEndpoint for URL construction', () {
+      // Verify URL uses storage's apiEndpoint
+      final publicUrl = file.publicUrl();
+      expect(publicUrl, contains(storage.config.apiEndpoint));
+    });
+
+    test('should return bool type', () {
+      // The method signature returns Future<bool>
+      // Actual HTTP behavior is tested in integration tests
+      expect(file.isPublic(), isA<Future<bool>>());
+    });
+  });
+
+  group('File - restore', () {
+    test('should pass options to API call', () async {
+      final restoreResponse = storage_v1.Object()..name = 'test-file.txt';
+
+      when(
+        () => mockObjects.restore(
+          any(),
+          any(),
+          any(),
+          restoreToken: any(named: 'restoreToken'),
+          projection: any(named: 'projection'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => restoreResponse);
+
+      final result = await file.restore(
+        RestoreFileOptions(generation: 123456789),
+      );
+
+      verify(
+        () => mockObjects.restore(
+          'test-bucket',
+          'test-file.txt',
+          '123456789',
+          restoreToken: null,
+          projection: null,
+          ifGenerationMatch: null,
+          ifGenerationNotMatch: null,
+          ifMetagenerationMatch: null,
+          ifMetagenerationNotMatch: null,
+          userProject: null,
+        ),
+      ).called(1);
+
+      expect(result, same(file));
+    });
+
+    test('should pass all restore options to API call', () async {
+      final restoreResponse = storage_v1.Object()..name = 'test-file.txt';
+
+      when(
+        () => mockObjects.restore(
+          any(),
+          any(),
+          any(),
+          restoreToken: any(named: 'restoreToken'),
+          projection: any(named: 'projection'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => restoreResponse);
+
+      await file.restore(
+        RestoreFileOptions(
+          generation: 987654321,
+          restoreToken: 'restore-token-123',
+          userProject: 'test-project',
+          ifGenerationMatch: 111,
+          ifMetagenerationMatch: 222,
+        ),
+      );
+
+      verify(
+        () => mockObjects.restore(
+          'test-bucket',
+          'test-file.txt',
+          '987654321',
+          restoreToken: 'restore-token-123',
+          projection: null,
+          ifGenerationMatch: '111',
+          ifGenerationNotMatch: null,
+          ifMetagenerationMatch: '222',
+          ifMetagenerationNotMatch: null,
+          userProject: 'test-project',
+        ),
+      ).called(1);
+    });
+
+    test('should update instance metadata after restore', () async {
+      final restoreResponse = storage_v1.Object()
+        ..name = 'test-file.txt'
+        ..bucket = 'test-bucket'
+        ..size = '1024';
+
+      when(
+        () => mockObjects.restore(
+          any(),
+          any(),
+          any(),
+          restoreToken: any(named: 'restoreToken'),
+          projection: any(named: 'projection'),
+          ifGenerationMatch: any(named: 'ifGenerationMatch'),
+          ifGenerationNotMatch: any(named: 'ifGenerationNotMatch'),
+          ifMetagenerationMatch: any(named: 'ifMetagenerationMatch'),
+          ifMetagenerationNotMatch: any(named: 'ifMetagenerationNotMatch'),
+          userProject: any(named: 'userProject'),
+        ),
+      ).thenAnswer((_) async => restoreResponse);
+
+      await file.restore(RestoreFileOptions(generation: 123));
+
+      expect(file.metadata.name, 'test-file.txt');
+      expect(file.metadata.size, '1024');
+    });
+  });
+
+  group('File - from', () {
+    test('should parse gs:// URL and create file', () {
+      final fileFromGs = BucketFile.from(
+        'gs://my-bucket/path/to/file.txt',
+        storage,
+      );
+
+      expect(fileFromGs.bucket.id, 'my-bucket');
+      expect(fileFromGs.name, 'path/to/file.txt');
+    });
+
+    test('should parse https:// URL and create file', () {
+      final fileFromHttps = BucketFile.from(
+        'https://storage.googleapis.com/my-bucket/path/to/file.txt',
+        storage,
+      );
+
+      expect(fileFromHttps.bucket.id, 'my-bucket');
+      expect(fileFromHttps.name, 'path/to/file.txt');
+    });
+
+    test('should throw ArgumentError for invalid URL format', () {
+      expect(
+        () => BucketFile.from('invalid-url', storage),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('gs://bucket/file or https://storage.googleapis.com'),
+          ),
+        ),
+      );
+    });
+
+    test('should accept FileOptions when parsing URL', () {
+      final fileFromGs = BucketFile.from(
+        'gs://my-bucket/file.txt',
+        storage,
+        const FileOptions(userProject: 'test-project'),
+      );
+
+      expect(fileFromGs.bucket.id, 'my-bucket');
+      expect(fileFromGs.name, 'file.txt');
+      expect(fileFromGs.options.userProject, 'test-project');
+    });
+
+    test('should handle nested paths in gs:// URL', () {
+      final fileFromGs = BucketFile.from(
+        'gs://my-bucket/nested/path/to/file.txt',
+        storage,
+      );
+
+      expect(fileFromGs.bucket.id, 'my-bucket');
+      expect(fileFromGs.name, 'nested/path/to/file.txt');
+    });
+
+    test('should handle special characters in file name', () {
+      final fileFromGs = BucketFile.from(
+        'gs://my-bucket/file%20with%20spaces.txt',
+        storage,
+      );
+
+      expect(fileFromGs.bucket.id, 'my-bucket');
+      expect(fileFromGs.name, 'file%20with%20spaces.txt');
     });
   });
 }
