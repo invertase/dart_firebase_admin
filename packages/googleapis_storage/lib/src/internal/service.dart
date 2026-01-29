@@ -7,6 +7,8 @@ import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:http/http.dart' as http;
 import 'emulator_client.dart';
 
+import 'storage_http_client.dart';
+
 typedef RequestInterceptor = http.BaseRequest Function(http.BaseRequest);
 
 /// Base options class for service configuration.
@@ -105,7 +107,7 @@ abstract class Service<T extends ServiceOptions> {
       'https://www.googleapis.com/auth/iam',
       'https://www.googleapis.com/auth/cloud-platform',
       'https://www.googleapis.com/auth/devstorage.full_control',
-    ]);
+    ], baseClient: StorageHttpClient.create(config.apiEndpoint));
   }
 
   Future<storage_v1.StorageApi> _createStorageClient() async {

@@ -1848,3 +1848,143 @@ abstract class DownloadFileInChunksOptions with _$DownloadFileInChunksOptions {
     bool? noReturnData,
   }) = _DownloadFileInChunksOptions;
 }
+
+/// Content length range constraint for POST policy.
+///
+/// Used in [GenerateSignedPostPolicyV2Options] to specify min/max content length.
+@freezed
+abstract class ContentLengthRange with _$ContentLengthRange {
+  const factory ContentLengthRange({
+    /// Minimum content length in bytes.
+    required int min,
+
+    /// Maximum content length in bytes.
+    required int max,
+  }) = _ContentLengthRange;
+}
+
+/// Options for generating a V2 signed POST policy.
+///
+/// V2 signed POST policies allow browser-based uploads directly to GCS.
+/// See https://cloud.google.com/storage/docs/xml-api/post-object-v2
+@freezed
+abstract class GenerateSignedPostPolicyV2Options
+    with _$GenerateSignedPostPolicyV2Options {
+  const factory GenerateSignedPostPolicyV2Options({
+    /// Expiration time for the policy.
+    required DateTime expires,
+
+    /// Equality conditions for form fields.
+    ///
+    /// Each condition is an array of `['$field', 'value']`.
+    /// Example: `[['\$Content-Type', 'image/jpeg']]`
+    List<List<String>>? equals,
+
+    /// Prefix conditions for form fields.
+    ///
+    /// Each condition is an array of `['$field', 'prefix']`.
+    /// Example: `[['\$key', 'uploads/']]`
+    List<List<String>>? startsWith,
+
+    /// ACL for the uploaded object (e.g., 'public-read', 'private').
+    String? acl,
+
+    /// URL to redirect to on successful upload.
+    String? successRedirect,
+
+    /// HTTP status to return on success (as string, e.g., '200', '201').
+    String? successStatus,
+
+    /// Content length range constraint.
+    ContentLengthRange? contentLengthRange,
+
+    /// Custom signing endpoint for the IAM signBlob API.
+    Uri? signingEndpoint,
+  }) = _GenerateSignedPostPolicyV2Options;
+}
+
+/// Options for generating a V4 signed POST policy.
+///
+/// V4 signed POST policies allow browser-based uploads directly to GCS.
+/// Maximum expiration is 7 days.
+/// See https://cloud.google.com/storage/docs/xml-api/post-object
+@freezed
+abstract class GenerateSignedPostPolicyV4Options
+    with _$GenerateSignedPostPolicyV4Options {
+  const factory GenerateSignedPostPolicyV4Options({
+    /// Expiration time for the policy (max 7 days from now).
+    required DateTime expires,
+
+    /// Custom bucket-bound hostname (e.g., 'https://cdn.example.com').
+    ///
+    /// If provided, the returned URL will use this hostname.
+    String? bucketBoundHostname,
+
+    /// Use virtual hosted-style URLs.
+    ///
+    /// If `true`, URLs will be like `https://bucket.storage.googleapis.com/`
+    /// instead of `https://storage.googleapis.com/bucket/`.
+    @Default(false) bool virtualHostedStyle,
+
+    /// Additional policy conditions.
+    ///
+    /// Can include arrays like `['starts-with', '\$key', 'uploads/']`
+    /// or objects like `{acl: 'public-read'}`.
+    List<Object>? conditions,
+
+    /// Form fields to include in the signed policy.
+    ///
+    /// Fields prefixed with 'x-ignore-' are included in the returned fields
+    /// but excluded from the policy signature.
+    Map<String, String>? fields,
+
+    /// Custom signing endpoint for the IAM signBlob API.
+    Uri? signingEndpoint,
+  }) = _GenerateSignedPostPolicyV4Options;
+}
+
+/// V2 signed policy document.
+///
+/// Returned by [BucketFile.generateSignedPostPolicyV2].
+@freezed
+abstract class PolicyDocument with _$PolicyDocument {
+  const factory PolicyDocument({
+    /// The policy document as plain text JSON.
+    required String string,
+
+    /// The policy document base64-encoded.
+    required String base64,
+
+    /// The base64-encoded signature.
+    required String signature,
+  }) = _PolicyDocument;
+}
+
+/// V4 signed POST policy output.
+///
+/// Returned by [BucketFile.generateSignedPostPolicyV4].
+@freezed
+abstract class SignedPostPolicyV4Output with _$SignedPostPolicyV4Output {
+  const factory SignedPostPolicyV4Output({
+    /// The POST request URL.
+    required String url,
+
+    /// Form fields to include in the POST request.
+    ///
+    /// Includes the `policy` and `x-goog-signature` fields along with
+    /// any user-provided fields.
+    required Map<String, String> fields,
+  }) = _SignedPostPolicyV4Output;
+}
+
+/// Exception thrown when signing a policy fails.
+class SigningError implements Exception {
+  /// Creates a new [SigningError] with the given [message].
+  SigningError(this.message);
+
+  /// The error message.
+  final String message;
+
+  @override
+  String toString() => 'SigningError: $message';
+}

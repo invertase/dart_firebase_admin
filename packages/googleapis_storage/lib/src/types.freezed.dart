@@ -9339,4 +9339,856 @@ as bool?,
 
 }
 
+/// @nodoc
+mixin _$ContentLengthRange {
+
+/// Minimum content length in bytes.
+ int get min;/// Maximum content length in bytes.
+ int get max;
+/// Create a copy of ContentLengthRange
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ContentLengthRangeCopyWith<ContentLengthRange> get copyWith => _$ContentLengthRangeCopyWithImpl<ContentLengthRange>(this as ContentLengthRange, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ContentLengthRange&&(identical(other.min, min) || other.min == min)&&(identical(other.max, max) || other.max == max));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,min,max);
+
+@override
+String toString() {
+  return 'ContentLengthRange(min: $min, max: $max)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ContentLengthRangeCopyWith<$Res>  {
+  factory $ContentLengthRangeCopyWith(ContentLengthRange value, $Res Function(ContentLengthRange) _then) = _$ContentLengthRangeCopyWithImpl;
+@useResult
+$Res call({
+ int min, int max
+});
+
+
+
+
+}
+/// @nodoc
+class _$ContentLengthRangeCopyWithImpl<$Res>
+    implements $ContentLengthRangeCopyWith<$Res> {
+  _$ContentLengthRangeCopyWithImpl(this._self, this._then);
+
+  final ContentLengthRange _self;
+  final $Res Function(ContentLengthRange) _then;
+
+/// Create a copy of ContentLengthRange
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? min = null,Object? max = null,}) {
+  return _then(_self.copyWith(
+min: null == min ? _self.min : min // ignore: cast_nullable_to_non_nullable
+as int,max: null == max ? _self.max : max // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+}
+
+
+
+/// @nodoc
+
+
+class _ContentLengthRange implements ContentLengthRange {
+  const _ContentLengthRange({required this.min, required this.max});
+  
+
+/// Minimum content length in bytes.
+@override final  int min;
+/// Maximum content length in bytes.
+@override final  int max;
+
+/// Create a copy of ContentLengthRange
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ContentLengthRangeCopyWith<_ContentLengthRange> get copyWith => __$ContentLengthRangeCopyWithImpl<_ContentLengthRange>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ContentLengthRange&&(identical(other.min, min) || other.min == min)&&(identical(other.max, max) || other.max == max));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,min,max);
+
+@override
+String toString() {
+  return 'ContentLengthRange(min: $min, max: $max)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ContentLengthRangeCopyWith<$Res> implements $ContentLengthRangeCopyWith<$Res> {
+  factory _$ContentLengthRangeCopyWith(_ContentLengthRange value, $Res Function(_ContentLengthRange) _then) = __$ContentLengthRangeCopyWithImpl;
+@override @useResult
+$Res call({
+ int min, int max
+});
+
+
+
+
+}
+/// @nodoc
+class __$ContentLengthRangeCopyWithImpl<$Res>
+    implements _$ContentLengthRangeCopyWith<$Res> {
+  __$ContentLengthRangeCopyWithImpl(this._self, this._then);
+
+  final _ContentLengthRange _self;
+  final $Res Function(_ContentLengthRange) _then;
+
+/// Create a copy of ContentLengthRange
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? min = null,Object? max = null,}) {
+  return _then(_ContentLengthRange(
+min: null == min ? _self.min : min // ignore: cast_nullable_to_non_nullable
+as int,max: null == max ? _self.max : max // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$GenerateSignedPostPolicyV2Options {
+
+/// Expiration time for the policy.
+ DateTime get expires;/// Equality conditions for form fields.
+///
+/// Each condition is an array of `['$field', 'value']`.
+/// Example: `[['\$Content-Type', 'image/jpeg']]`
+ List<List<String>>? get equals;/// Prefix conditions for form fields.
+///
+/// Each condition is an array of `['$field', 'prefix']`.
+/// Example: `[['\$key', 'uploads/']]`
+ List<List<String>>? get startsWith;/// ACL for the uploaded object (e.g., 'public-read', 'private').
+ String? get acl;/// URL to redirect to on successful upload.
+ String? get successRedirect;/// HTTP status to return on success (as string, e.g., '200', '201').
+ String? get successStatus;/// Content length range constraint.
+ ContentLengthRange? get contentLengthRange;/// Custom signing endpoint for the IAM signBlob API.
+ Uri? get signingEndpoint;
+/// Create a copy of GenerateSignedPostPolicyV2Options
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GenerateSignedPostPolicyV2OptionsCopyWith<GenerateSignedPostPolicyV2Options> get copyWith => _$GenerateSignedPostPolicyV2OptionsCopyWithImpl<GenerateSignedPostPolicyV2Options>(this as GenerateSignedPostPolicyV2Options, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GenerateSignedPostPolicyV2Options&&(identical(other.expires, expires) || other.expires == expires)&&const DeepCollectionEquality().equals(other.equals, equals)&&const DeepCollectionEquality().equals(other.startsWith, startsWith)&&(identical(other.acl, acl) || other.acl == acl)&&(identical(other.successRedirect, successRedirect) || other.successRedirect == successRedirect)&&(identical(other.successStatus, successStatus) || other.successStatus == successStatus)&&(identical(other.contentLengthRange, contentLengthRange) || other.contentLengthRange == contentLengthRange)&&(identical(other.signingEndpoint, signingEndpoint) || other.signingEndpoint == signingEndpoint));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,expires,const DeepCollectionEquality().hash(equals),const DeepCollectionEquality().hash(startsWith),acl,successRedirect,successStatus,contentLengthRange,signingEndpoint);
+
+@override
+String toString() {
+  return 'GenerateSignedPostPolicyV2Options(expires: $expires, equals: $equals, startsWith: $startsWith, acl: $acl, successRedirect: $successRedirect, successStatus: $successStatus, contentLengthRange: $contentLengthRange, signingEndpoint: $signingEndpoint)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GenerateSignedPostPolicyV2OptionsCopyWith<$Res>  {
+  factory $GenerateSignedPostPolicyV2OptionsCopyWith(GenerateSignedPostPolicyV2Options value, $Res Function(GenerateSignedPostPolicyV2Options) _then) = _$GenerateSignedPostPolicyV2OptionsCopyWithImpl;
+@useResult
+$Res call({
+ DateTime expires, List<List<String>>? equals, List<List<String>>? startsWith, String? acl, String? successRedirect, String? successStatus, ContentLengthRange? contentLengthRange, Uri? signingEndpoint
+});
+
+
+$ContentLengthRangeCopyWith<$Res>? get contentLengthRange;
+
+}
+/// @nodoc
+class _$GenerateSignedPostPolicyV2OptionsCopyWithImpl<$Res>
+    implements $GenerateSignedPostPolicyV2OptionsCopyWith<$Res> {
+  _$GenerateSignedPostPolicyV2OptionsCopyWithImpl(this._self, this._then);
+
+  final GenerateSignedPostPolicyV2Options _self;
+  final $Res Function(GenerateSignedPostPolicyV2Options) _then;
+
+/// Create a copy of GenerateSignedPostPolicyV2Options
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? expires = null,Object? equals = freezed,Object? startsWith = freezed,Object? acl = freezed,Object? successRedirect = freezed,Object? successStatus = freezed,Object? contentLengthRange = freezed,Object? signingEndpoint = freezed,}) {
+  return _then(_self.copyWith(
+expires: null == expires ? _self.expires : expires // ignore: cast_nullable_to_non_nullable
+as DateTime,equals: freezed == equals ? _self.equals : equals // ignore: cast_nullable_to_non_nullable
+as List<List<String>>?,startsWith: freezed == startsWith ? _self.startsWith : startsWith // ignore: cast_nullable_to_non_nullable
+as List<List<String>>?,acl: freezed == acl ? _self.acl : acl // ignore: cast_nullable_to_non_nullable
+as String?,successRedirect: freezed == successRedirect ? _self.successRedirect : successRedirect // ignore: cast_nullable_to_non_nullable
+as String?,successStatus: freezed == successStatus ? _self.successStatus : successStatus // ignore: cast_nullable_to_non_nullable
+as String?,contentLengthRange: freezed == contentLengthRange ? _self.contentLengthRange : contentLengthRange // ignore: cast_nullable_to_non_nullable
+as ContentLengthRange?,signingEndpoint: freezed == signingEndpoint ? _self.signingEndpoint : signingEndpoint // ignore: cast_nullable_to_non_nullable
+as Uri?,
+  ));
+}
+/// Create a copy of GenerateSignedPostPolicyV2Options
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ContentLengthRangeCopyWith<$Res>? get contentLengthRange {
+    if (_self.contentLengthRange == null) {
+    return null;
+  }
+
+  return $ContentLengthRangeCopyWith<$Res>(_self.contentLengthRange!, (value) {
+    return _then(_self.copyWith(contentLengthRange: value));
+  });
+}
+}
+
+
+
+/// @nodoc
+
+
+class _GenerateSignedPostPolicyV2Options implements GenerateSignedPostPolicyV2Options {
+  const _GenerateSignedPostPolicyV2Options({required this.expires, final  List<List<String>>? equals, final  List<List<String>>? startsWith, this.acl, this.successRedirect, this.successStatus, this.contentLengthRange, this.signingEndpoint}): _equals = equals,_startsWith = startsWith;
+  
+
+/// Expiration time for the policy.
+@override final  DateTime expires;
+/// Equality conditions for form fields.
+///
+/// Each condition is an array of `['$field', 'value']`.
+/// Example: `[['\$Content-Type', 'image/jpeg']]`
+ final  List<List<String>>? _equals;
+/// Equality conditions for form fields.
+///
+/// Each condition is an array of `['$field', 'value']`.
+/// Example: `[['\$Content-Type', 'image/jpeg']]`
+@override List<List<String>>? get equals {
+  final value = _equals;
+  if (value == null) return null;
+  if (_equals is EqualUnmodifiableListView) return _equals;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
+/// Prefix conditions for form fields.
+///
+/// Each condition is an array of `['$field', 'prefix']`.
+/// Example: `[['\$key', 'uploads/']]`
+ final  List<List<String>>? _startsWith;
+/// Prefix conditions for form fields.
+///
+/// Each condition is an array of `['$field', 'prefix']`.
+/// Example: `[['\$key', 'uploads/']]`
+@override List<List<String>>? get startsWith {
+  final value = _startsWith;
+  if (value == null) return null;
+  if (_startsWith is EqualUnmodifiableListView) return _startsWith;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
+/// ACL for the uploaded object (e.g., 'public-read', 'private').
+@override final  String? acl;
+/// URL to redirect to on successful upload.
+@override final  String? successRedirect;
+/// HTTP status to return on success (as string, e.g., '200', '201').
+@override final  String? successStatus;
+/// Content length range constraint.
+@override final  ContentLengthRange? contentLengthRange;
+/// Custom signing endpoint for the IAM signBlob API.
+@override final  Uri? signingEndpoint;
+
+/// Create a copy of GenerateSignedPostPolicyV2Options
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$GenerateSignedPostPolicyV2OptionsCopyWith<_GenerateSignedPostPolicyV2Options> get copyWith => __$GenerateSignedPostPolicyV2OptionsCopyWithImpl<_GenerateSignedPostPolicyV2Options>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GenerateSignedPostPolicyV2Options&&(identical(other.expires, expires) || other.expires == expires)&&const DeepCollectionEquality().equals(other._equals, _equals)&&const DeepCollectionEquality().equals(other._startsWith, _startsWith)&&(identical(other.acl, acl) || other.acl == acl)&&(identical(other.successRedirect, successRedirect) || other.successRedirect == successRedirect)&&(identical(other.successStatus, successStatus) || other.successStatus == successStatus)&&(identical(other.contentLengthRange, contentLengthRange) || other.contentLengthRange == contentLengthRange)&&(identical(other.signingEndpoint, signingEndpoint) || other.signingEndpoint == signingEndpoint));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,expires,const DeepCollectionEquality().hash(_equals),const DeepCollectionEquality().hash(_startsWith),acl,successRedirect,successStatus,contentLengthRange,signingEndpoint);
+
+@override
+String toString() {
+  return 'GenerateSignedPostPolicyV2Options(expires: $expires, equals: $equals, startsWith: $startsWith, acl: $acl, successRedirect: $successRedirect, successStatus: $successStatus, contentLengthRange: $contentLengthRange, signingEndpoint: $signingEndpoint)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$GenerateSignedPostPolicyV2OptionsCopyWith<$Res> implements $GenerateSignedPostPolicyV2OptionsCopyWith<$Res> {
+  factory _$GenerateSignedPostPolicyV2OptionsCopyWith(_GenerateSignedPostPolicyV2Options value, $Res Function(_GenerateSignedPostPolicyV2Options) _then) = __$GenerateSignedPostPolicyV2OptionsCopyWithImpl;
+@override @useResult
+$Res call({
+ DateTime expires, List<List<String>>? equals, List<List<String>>? startsWith, String? acl, String? successRedirect, String? successStatus, ContentLengthRange? contentLengthRange, Uri? signingEndpoint
+});
+
+
+@override $ContentLengthRangeCopyWith<$Res>? get contentLengthRange;
+
+}
+/// @nodoc
+class __$GenerateSignedPostPolicyV2OptionsCopyWithImpl<$Res>
+    implements _$GenerateSignedPostPolicyV2OptionsCopyWith<$Res> {
+  __$GenerateSignedPostPolicyV2OptionsCopyWithImpl(this._self, this._then);
+
+  final _GenerateSignedPostPolicyV2Options _self;
+  final $Res Function(_GenerateSignedPostPolicyV2Options) _then;
+
+/// Create a copy of GenerateSignedPostPolicyV2Options
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? expires = null,Object? equals = freezed,Object? startsWith = freezed,Object? acl = freezed,Object? successRedirect = freezed,Object? successStatus = freezed,Object? contentLengthRange = freezed,Object? signingEndpoint = freezed,}) {
+  return _then(_GenerateSignedPostPolicyV2Options(
+expires: null == expires ? _self.expires : expires // ignore: cast_nullable_to_non_nullable
+as DateTime,equals: freezed == equals ? _self._equals : equals // ignore: cast_nullable_to_non_nullable
+as List<List<String>>?,startsWith: freezed == startsWith ? _self._startsWith : startsWith // ignore: cast_nullable_to_non_nullable
+as List<List<String>>?,acl: freezed == acl ? _self.acl : acl // ignore: cast_nullable_to_non_nullable
+as String?,successRedirect: freezed == successRedirect ? _self.successRedirect : successRedirect // ignore: cast_nullable_to_non_nullable
+as String?,successStatus: freezed == successStatus ? _self.successStatus : successStatus // ignore: cast_nullable_to_non_nullable
+as String?,contentLengthRange: freezed == contentLengthRange ? _self.contentLengthRange : contentLengthRange // ignore: cast_nullable_to_non_nullable
+as ContentLengthRange?,signingEndpoint: freezed == signingEndpoint ? _self.signingEndpoint : signingEndpoint // ignore: cast_nullable_to_non_nullable
+as Uri?,
+  ));
+}
+
+/// Create a copy of GenerateSignedPostPolicyV2Options
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ContentLengthRangeCopyWith<$Res>? get contentLengthRange {
+    if (_self.contentLengthRange == null) {
+    return null;
+  }
+
+  return $ContentLengthRangeCopyWith<$Res>(_self.contentLengthRange!, (value) {
+    return _then(_self.copyWith(contentLengthRange: value));
+  });
+}
+}
+
+/// @nodoc
+mixin _$GenerateSignedPostPolicyV4Options {
+
+/// Expiration time for the policy (max 7 days from now).
+ DateTime get expires;/// Custom bucket-bound hostname (e.g., 'https://cdn.example.com').
+///
+/// If provided, the returned URL will use this hostname.
+ String? get bucketBoundHostname;/// Use virtual hosted-style URLs.
+///
+/// If `true`, URLs will be like `https://bucket.storage.googleapis.com/`
+/// instead of `https://storage.googleapis.com/bucket/`.
+ bool get virtualHostedStyle;/// Additional policy conditions.
+///
+/// Can include arrays like `['starts-with', '\$key', 'uploads/']`
+/// or objects like `{acl: 'public-read'}`.
+ List<Object>? get conditions;/// Form fields to include in the signed policy.
+///
+/// Fields prefixed with 'x-ignore-' are included in the returned fields
+/// but excluded from the policy signature.
+ Map<String, String>? get fields;/// Custom signing endpoint for the IAM signBlob API.
+ Uri? get signingEndpoint;
+/// Create a copy of GenerateSignedPostPolicyV4Options
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GenerateSignedPostPolicyV4OptionsCopyWith<GenerateSignedPostPolicyV4Options> get copyWith => _$GenerateSignedPostPolicyV4OptionsCopyWithImpl<GenerateSignedPostPolicyV4Options>(this as GenerateSignedPostPolicyV4Options, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GenerateSignedPostPolicyV4Options&&(identical(other.expires, expires) || other.expires == expires)&&(identical(other.bucketBoundHostname, bucketBoundHostname) || other.bucketBoundHostname == bucketBoundHostname)&&(identical(other.virtualHostedStyle, virtualHostedStyle) || other.virtualHostedStyle == virtualHostedStyle)&&const DeepCollectionEquality().equals(other.conditions, conditions)&&const DeepCollectionEquality().equals(other.fields, fields)&&(identical(other.signingEndpoint, signingEndpoint) || other.signingEndpoint == signingEndpoint));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,expires,bucketBoundHostname,virtualHostedStyle,const DeepCollectionEquality().hash(conditions),const DeepCollectionEquality().hash(fields),signingEndpoint);
+
+@override
+String toString() {
+  return 'GenerateSignedPostPolicyV4Options(expires: $expires, bucketBoundHostname: $bucketBoundHostname, virtualHostedStyle: $virtualHostedStyle, conditions: $conditions, fields: $fields, signingEndpoint: $signingEndpoint)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GenerateSignedPostPolicyV4OptionsCopyWith<$Res>  {
+  factory $GenerateSignedPostPolicyV4OptionsCopyWith(GenerateSignedPostPolicyV4Options value, $Res Function(GenerateSignedPostPolicyV4Options) _then) = _$GenerateSignedPostPolicyV4OptionsCopyWithImpl;
+@useResult
+$Res call({
+ DateTime expires, String? bucketBoundHostname, bool virtualHostedStyle, List<Object>? conditions, Map<String, String>? fields, Uri? signingEndpoint
+});
+
+
+
+
+}
+/// @nodoc
+class _$GenerateSignedPostPolicyV4OptionsCopyWithImpl<$Res>
+    implements $GenerateSignedPostPolicyV4OptionsCopyWith<$Res> {
+  _$GenerateSignedPostPolicyV4OptionsCopyWithImpl(this._self, this._then);
+
+  final GenerateSignedPostPolicyV4Options _self;
+  final $Res Function(GenerateSignedPostPolicyV4Options) _then;
+
+/// Create a copy of GenerateSignedPostPolicyV4Options
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? expires = null,Object? bucketBoundHostname = freezed,Object? virtualHostedStyle = null,Object? conditions = freezed,Object? fields = freezed,Object? signingEndpoint = freezed,}) {
+  return _then(_self.copyWith(
+expires: null == expires ? _self.expires : expires // ignore: cast_nullable_to_non_nullable
+as DateTime,bucketBoundHostname: freezed == bucketBoundHostname ? _self.bucketBoundHostname : bucketBoundHostname // ignore: cast_nullable_to_non_nullable
+as String?,virtualHostedStyle: null == virtualHostedStyle ? _self.virtualHostedStyle : virtualHostedStyle // ignore: cast_nullable_to_non_nullable
+as bool,conditions: freezed == conditions ? _self.conditions : conditions // ignore: cast_nullable_to_non_nullable
+as List<Object>?,fields: freezed == fields ? _self.fields : fields // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,signingEndpoint: freezed == signingEndpoint ? _self.signingEndpoint : signingEndpoint // ignore: cast_nullable_to_non_nullable
+as Uri?,
+  ));
+}
+
+}
+
+
+
+/// @nodoc
+
+
+class _GenerateSignedPostPolicyV4Options implements GenerateSignedPostPolicyV4Options {
+  const _GenerateSignedPostPolicyV4Options({required this.expires, this.bucketBoundHostname, this.virtualHostedStyle = false, final  List<Object>? conditions, final  Map<String, String>? fields, this.signingEndpoint}): _conditions = conditions,_fields = fields;
+  
+
+/// Expiration time for the policy (max 7 days from now).
+@override final  DateTime expires;
+/// Custom bucket-bound hostname (e.g., 'https://cdn.example.com').
+///
+/// If provided, the returned URL will use this hostname.
+@override final  String? bucketBoundHostname;
+/// Use virtual hosted-style URLs.
+///
+/// If `true`, URLs will be like `https://bucket.storage.googleapis.com/`
+/// instead of `https://storage.googleapis.com/bucket/`.
+@override@JsonKey() final  bool virtualHostedStyle;
+/// Additional policy conditions.
+///
+/// Can include arrays like `['starts-with', '\$key', 'uploads/']`
+/// or objects like `{acl: 'public-read'}`.
+ final  List<Object>? _conditions;
+/// Additional policy conditions.
+///
+/// Can include arrays like `['starts-with', '\$key', 'uploads/']`
+/// or objects like `{acl: 'public-read'}`.
+@override List<Object>? get conditions {
+  final value = _conditions;
+  if (value == null) return null;
+  if (_conditions is EqualUnmodifiableListView) return _conditions;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
+/// Form fields to include in the signed policy.
+///
+/// Fields prefixed with 'x-ignore-' are included in the returned fields
+/// but excluded from the policy signature.
+ final  Map<String, String>? _fields;
+/// Form fields to include in the signed policy.
+///
+/// Fields prefixed with 'x-ignore-' are included in the returned fields
+/// but excluded from the policy signature.
+@override Map<String, String>? get fields {
+  final value = _fields;
+  if (value == null) return null;
+  if (_fields is EqualUnmodifiableMapView) return _fields;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
+/// Custom signing endpoint for the IAM signBlob API.
+@override final  Uri? signingEndpoint;
+
+/// Create a copy of GenerateSignedPostPolicyV4Options
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$GenerateSignedPostPolicyV4OptionsCopyWith<_GenerateSignedPostPolicyV4Options> get copyWith => __$GenerateSignedPostPolicyV4OptionsCopyWithImpl<_GenerateSignedPostPolicyV4Options>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GenerateSignedPostPolicyV4Options&&(identical(other.expires, expires) || other.expires == expires)&&(identical(other.bucketBoundHostname, bucketBoundHostname) || other.bucketBoundHostname == bucketBoundHostname)&&(identical(other.virtualHostedStyle, virtualHostedStyle) || other.virtualHostedStyle == virtualHostedStyle)&&const DeepCollectionEquality().equals(other._conditions, _conditions)&&const DeepCollectionEquality().equals(other._fields, _fields)&&(identical(other.signingEndpoint, signingEndpoint) || other.signingEndpoint == signingEndpoint));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,expires,bucketBoundHostname,virtualHostedStyle,const DeepCollectionEquality().hash(_conditions),const DeepCollectionEquality().hash(_fields),signingEndpoint);
+
+@override
+String toString() {
+  return 'GenerateSignedPostPolicyV4Options(expires: $expires, bucketBoundHostname: $bucketBoundHostname, virtualHostedStyle: $virtualHostedStyle, conditions: $conditions, fields: $fields, signingEndpoint: $signingEndpoint)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$GenerateSignedPostPolicyV4OptionsCopyWith<$Res> implements $GenerateSignedPostPolicyV4OptionsCopyWith<$Res> {
+  factory _$GenerateSignedPostPolicyV4OptionsCopyWith(_GenerateSignedPostPolicyV4Options value, $Res Function(_GenerateSignedPostPolicyV4Options) _then) = __$GenerateSignedPostPolicyV4OptionsCopyWithImpl;
+@override @useResult
+$Res call({
+ DateTime expires, String? bucketBoundHostname, bool virtualHostedStyle, List<Object>? conditions, Map<String, String>? fields, Uri? signingEndpoint
+});
+
+
+
+
+}
+/// @nodoc
+class __$GenerateSignedPostPolicyV4OptionsCopyWithImpl<$Res>
+    implements _$GenerateSignedPostPolicyV4OptionsCopyWith<$Res> {
+  __$GenerateSignedPostPolicyV4OptionsCopyWithImpl(this._self, this._then);
+
+  final _GenerateSignedPostPolicyV4Options _self;
+  final $Res Function(_GenerateSignedPostPolicyV4Options) _then;
+
+/// Create a copy of GenerateSignedPostPolicyV4Options
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? expires = null,Object? bucketBoundHostname = freezed,Object? virtualHostedStyle = null,Object? conditions = freezed,Object? fields = freezed,Object? signingEndpoint = freezed,}) {
+  return _then(_GenerateSignedPostPolicyV4Options(
+expires: null == expires ? _self.expires : expires // ignore: cast_nullable_to_non_nullable
+as DateTime,bucketBoundHostname: freezed == bucketBoundHostname ? _self.bucketBoundHostname : bucketBoundHostname // ignore: cast_nullable_to_non_nullable
+as String?,virtualHostedStyle: null == virtualHostedStyle ? _self.virtualHostedStyle : virtualHostedStyle // ignore: cast_nullable_to_non_nullable
+as bool,conditions: freezed == conditions ? _self._conditions : conditions // ignore: cast_nullable_to_non_nullable
+as List<Object>?,fields: freezed == fields ? _self._fields : fields // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,signingEndpoint: freezed == signingEndpoint ? _self.signingEndpoint : signingEndpoint // ignore: cast_nullable_to_non_nullable
+as Uri?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$PolicyDocument {
+
+/// The policy document as plain text JSON.
+ String get string;/// The policy document base64-encoded.
+ String get base64;/// The base64-encoded signature.
+ String get signature;
+/// Create a copy of PolicyDocument
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PolicyDocumentCopyWith<PolicyDocument> get copyWith => _$PolicyDocumentCopyWithImpl<PolicyDocument>(this as PolicyDocument, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PolicyDocument&&(identical(other.string, string) || other.string == string)&&(identical(other.base64, base64) || other.base64 == base64)&&(identical(other.signature, signature) || other.signature == signature));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,string,base64,signature);
+
+@override
+String toString() {
+  return 'PolicyDocument(string: $string, base64: $base64, signature: $signature)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PolicyDocumentCopyWith<$Res>  {
+  factory $PolicyDocumentCopyWith(PolicyDocument value, $Res Function(PolicyDocument) _then) = _$PolicyDocumentCopyWithImpl;
+@useResult
+$Res call({
+ String string, String base64, String signature
+});
+
+
+
+
+}
+/// @nodoc
+class _$PolicyDocumentCopyWithImpl<$Res>
+    implements $PolicyDocumentCopyWith<$Res> {
+  _$PolicyDocumentCopyWithImpl(this._self, this._then);
+
+  final PolicyDocument _self;
+  final $Res Function(PolicyDocument) _then;
+
+/// Create a copy of PolicyDocument
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? string = null,Object? base64 = null,Object? signature = null,}) {
+  return _then(_self.copyWith(
+string: null == string ? _self.string : string // ignore: cast_nullable_to_non_nullable
+as String,base64: null == base64 ? _self.base64 : base64 // ignore: cast_nullable_to_non_nullable
+as String,signature: null == signature ? _self.signature : signature // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+
+/// @nodoc
+
+
+class _PolicyDocument implements PolicyDocument {
+  const _PolicyDocument({required this.string, required this.base64, required this.signature});
+  
+
+/// The policy document as plain text JSON.
+@override final  String string;
+/// The policy document base64-encoded.
+@override final  String base64;
+/// The base64-encoded signature.
+@override final  String signature;
+
+/// Create a copy of PolicyDocument
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$PolicyDocumentCopyWith<_PolicyDocument> get copyWith => __$PolicyDocumentCopyWithImpl<_PolicyDocument>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PolicyDocument&&(identical(other.string, string) || other.string == string)&&(identical(other.base64, base64) || other.base64 == base64)&&(identical(other.signature, signature) || other.signature == signature));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,string,base64,signature);
+
+@override
+String toString() {
+  return 'PolicyDocument(string: $string, base64: $base64, signature: $signature)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$PolicyDocumentCopyWith<$Res> implements $PolicyDocumentCopyWith<$Res> {
+  factory _$PolicyDocumentCopyWith(_PolicyDocument value, $Res Function(_PolicyDocument) _then) = __$PolicyDocumentCopyWithImpl;
+@override @useResult
+$Res call({
+ String string, String base64, String signature
+});
+
+
+
+
+}
+/// @nodoc
+class __$PolicyDocumentCopyWithImpl<$Res>
+    implements _$PolicyDocumentCopyWith<$Res> {
+  __$PolicyDocumentCopyWithImpl(this._self, this._then);
+
+  final _PolicyDocument _self;
+  final $Res Function(_PolicyDocument) _then;
+
+/// Create a copy of PolicyDocument
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? string = null,Object? base64 = null,Object? signature = null,}) {
+  return _then(_PolicyDocument(
+string: null == string ? _self.string : string // ignore: cast_nullable_to_non_nullable
+as String,base64: null == base64 ? _self.base64 : base64 // ignore: cast_nullable_to_non_nullable
+as String,signature: null == signature ? _self.signature : signature // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$SignedPostPolicyV4Output {
+
+/// The POST request URL.
+ String get url;/// Form fields to include in the POST request.
+///
+/// Includes the `policy` and `x-goog-signature` fields along with
+/// any user-provided fields.
+ Map<String, String> get fields;
+/// Create a copy of SignedPostPolicyV4Output
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SignedPostPolicyV4OutputCopyWith<SignedPostPolicyV4Output> get copyWith => _$SignedPostPolicyV4OutputCopyWithImpl<SignedPostPolicyV4Output>(this as SignedPostPolicyV4Output, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SignedPostPolicyV4Output&&(identical(other.url, url) || other.url == url)&&const DeepCollectionEquality().equals(other.fields, fields));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,url,const DeepCollectionEquality().hash(fields));
+
+@override
+String toString() {
+  return 'SignedPostPolicyV4Output(url: $url, fields: $fields)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SignedPostPolicyV4OutputCopyWith<$Res>  {
+  factory $SignedPostPolicyV4OutputCopyWith(SignedPostPolicyV4Output value, $Res Function(SignedPostPolicyV4Output) _then) = _$SignedPostPolicyV4OutputCopyWithImpl;
+@useResult
+$Res call({
+ String url, Map<String, String> fields
+});
+
+
+
+
+}
+/// @nodoc
+class _$SignedPostPolicyV4OutputCopyWithImpl<$Res>
+    implements $SignedPostPolicyV4OutputCopyWith<$Res> {
+  _$SignedPostPolicyV4OutputCopyWithImpl(this._self, this._then);
+
+  final SignedPostPolicyV4Output _self;
+  final $Res Function(SignedPostPolicyV4Output) _then;
+
+/// Create a copy of SignedPostPolicyV4Output
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? fields = null,}) {
+  return _then(_self.copyWith(
+url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String,fields: null == fields ? _self.fields : fields // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
+  ));
+}
+
+}
+
+
+
+/// @nodoc
+
+
+class _SignedPostPolicyV4Output implements SignedPostPolicyV4Output {
+  const _SignedPostPolicyV4Output({required this.url, required final  Map<String, String> fields}): _fields = fields;
+  
+
+/// The POST request URL.
+@override final  String url;
+/// Form fields to include in the POST request.
+///
+/// Includes the `policy` and `x-goog-signature` fields along with
+/// any user-provided fields.
+ final  Map<String, String> _fields;
+/// Form fields to include in the POST request.
+///
+/// Includes the `policy` and `x-goog-signature` fields along with
+/// any user-provided fields.
+@override Map<String, String> get fields {
+  if (_fields is EqualUnmodifiableMapView) return _fields;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_fields);
+}
+
+
+/// Create a copy of SignedPostPolicyV4Output
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SignedPostPolicyV4OutputCopyWith<_SignedPostPolicyV4Output> get copyWith => __$SignedPostPolicyV4OutputCopyWithImpl<_SignedPostPolicyV4Output>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SignedPostPolicyV4Output&&(identical(other.url, url) || other.url == url)&&const DeepCollectionEquality().equals(other._fields, _fields));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,url,const DeepCollectionEquality().hash(_fields));
+
+@override
+String toString() {
+  return 'SignedPostPolicyV4Output(url: $url, fields: $fields)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SignedPostPolicyV4OutputCopyWith<$Res> implements $SignedPostPolicyV4OutputCopyWith<$Res> {
+  factory _$SignedPostPolicyV4OutputCopyWith(_SignedPostPolicyV4Output value, $Res Function(_SignedPostPolicyV4Output) _then) = __$SignedPostPolicyV4OutputCopyWithImpl;
+@override @useResult
+$Res call({
+ String url, Map<String, String> fields
+});
+
+
+
+
+}
+/// @nodoc
+class __$SignedPostPolicyV4OutputCopyWithImpl<$Res>
+    implements _$SignedPostPolicyV4OutputCopyWith<$Res> {
+  __$SignedPostPolicyV4OutputCopyWithImpl(this._self, this._then);
+
+  final _SignedPostPolicyV4Output _self;
+  final $Res Function(_SignedPostPolicyV4Output) _then;
+
+/// Create a copy of SignedPostPolicyV4Output
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? fields = null,}) {
+  return _then(_SignedPostPolicyV4Output(
+url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String,fields: null == fields ? _self._fields : fields // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
+  ));
+}
+
+
+}
+
 // dart format on
