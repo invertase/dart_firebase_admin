@@ -26,6 +26,7 @@ import 'src/internal/service_object.dart';
 import 'src/internal/streaming.dart';
 import 'src/internal/limit.dart';
 import 'src/internal/xml_multipart_helper.dart';
+import 'src/internal/nullable_string_map.dart';
 import 'version.g.dart';
 import 'src/types.dart';
 

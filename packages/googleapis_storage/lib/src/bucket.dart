@@ -439,7 +439,7 @@ class Bucket extends ServiceObject<BucketMetadata>
   ]) async {
     const maxParallelLimit = 10;
     const maxQueueSize = 1000;
-    final exceptions = <Error>[];
+    final exceptions = <Object>[];
 
     // Convert DeleteFileOptions to PreconditionOptions for file.delete
     final preconditionOptions = options != null
@@ -456,7 +456,7 @@ class Bucket extends ServiceObject<BucketMetadata>
         await file.delete(options: preconditionOptions);
       } catch (e) {
         if (options?.force == true) {
-          exceptions.add(e as Error);
+          exceptions.add(e);
         } else {
           rethrow;
         }
@@ -602,13 +602,16 @@ class Bucket extends ServiceObject<BucketMetadata>
       labelsToDelete = labels;
     }
 
+    // Build the null label map for deletion.
+    // GCS API requires null values to delete labels, but Dart's
+    // Map<String, String>? type doesn't allow nulls. We use _NullableStringMap
+    // to bypass this type constraint while maintaining googleapis compatibility.
     final nullLabelMap = <String, dynamic>{};
     for (final labelKey in labelsToDelete) {
       nullLabelMap[labelKey] = null;
     }
 
-    final update = BucketMetadata()
-      ..labels = (nullLabelMap as dynamic) as Map<String, String>?;
+    final update = BucketMetadata()..labels = NullableStringMap(nullLabelMap);
 
     if (options?.ifMetagenerationMatch != null) {
       return setMetadata(update, options: options);
