@@ -1139,30 +1139,17 @@ class BucketFile extends ServiceObject<FileMetadata>
   /// Format date as UTC ISO string for policy expiration.
   /// Returns format like '2024-01-15T10:30:00Z' with delimiters.
   String _formatPolicyExpiration(DateTime date) {
-    final utc = date.toUtc();
-    return '${utc.year.toString().padLeft(4, '0')}-'
-        '${utc.month.toString().padLeft(2, '0')}-'
-        '${utc.day.toString().padLeft(2, '0')}T'
-        '${utc.hour.toString().padLeft(2, '0')}:'
-        '${utc.minute.toString().padLeft(2, '0')}:'
-        '${utc.second.toString().padLeft(2, '0')}Z';
+    return DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(date.toUtc());
   }
 
   /// Format date as YYYYMMDD for credential scope.
   String _formatDateStamp(DateTime date) {
-    final utc = date.toUtc();
-    return '${utc.year}${utc.month.toString().padLeft(2, '0')}'
-        '${utc.day.toString().padLeft(2, '0')}';
+    return DateFormat('yyyyMMdd').format(date.toUtc());
   }
 
   /// Format date as YYYYMMDDTHHmmssZ for x-goog-date.
   String _formatDateISO(DateTime date) {
-    final utc = date.toUtc();
-    return '${utc.year}${utc.month.toString().padLeft(2, '0')}'
-        '${utc.day.toString().padLeft(2, '0')}T'
-        '${utc.hour.toString().padLeft(2, '0')}'
-        '${utc.minute.toString().padLeft(2, '0')}'
-        '${utc.second.toString().padLeft(2, '0')}Z';
+    return DateFormat("yyyyMMdd'T'HHmmss'Z'").format(date.toUtc());
   }
 
   /// JSON stringify with unicode escaping for non-ASCII characters.
