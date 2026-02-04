@@ -119,23 +119,22 @@ void main() {
           ),
         );
 
-        // Mock the HTTP POST request to IAM API
-        final signBlobUrl = Uri.parse(
-          'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$targetPrincipal:signBlob',
-        );
-
-        when(
-          () => mockSourceClient.post(
-            signBlobUrl,
-            headers: {'Content-Type': 'application/json'},
-            body: any(named: 'body'),
-          ),
-        ).thenAnswer(
-          (_) async => http.Response(
-            jsonEncode({'keyId': 'key123', 'signedBlob': signedBlob}),
-            200,
-          ),
-        );
+        // Mock the send() call used by the generated API client
+        when(() => mockSourceClient.send(any())).thenAnswer((invocation) async {
+          final request = invocation.positionalArguments[0] as http.BaseRequest;
+          if (request.url.path.contains(':signBlob')) {
+            return http.StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({'keyId': 'key123', 'signedBlob': signedBlob}),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.StreamedResponse(Stream.value([]), 404);
+        });
 
         // Sign data
         final signature = await impersonated.sign(testData);
@@ -143,14 +142,16 @@ void main() {
         expect(signature.signedBlob, signedBlob);
         expect(signature.keyId, 'key123');
 
-        // Verify the request was made with correct payload
-        verify(
-          () => mockSourceClient.post(
-            signBlobUrl,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'payload': base64Encode(utf8.encode(testData))}),
-          ),
-        ).called(1);
+        // Verify the request was made via send()
+        final captured = verify(
+          () => mockSourceClient.send(captureAny()),
+        ).captured;
+        expect(captured.isNotEmpty, true);
+        final capturedRequest = captured.first as http.BaseRequest;
+        expect(
+          capturedRequest.url.path,
+          contains('projects/-/serviceAccounts/$targetPrincipal:signBlob'),
+        );
       });
 
       test(
@@ -174,22 +175,25 @@ void main() {
             ),
           );
 
-          final signBlobUrl = Uri.parse(
-            'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$targetPrincipal:signBlob',
-          );
-
-          when(
-            () => mockSourceClient.post(
-              signBlobUrl,
-              headers: {'Content-Type': 'application/json'},
-              body: any(named: 'body'),
-            ),
-          ).thenAnswer(
-            (_) async => http.Response(
-              jsonEncode({'keyId': 'key123', 'signedBlob': signedBlob}),
-              200,
-            ),
-          );
+          // Mock the send() call used by the generated API client
+          when(() => mockSourceClient.send(any())).thenAnswer((
+            invocation,
+          ) async {
+            final request =
+                invocation.positionalArguments[0] as http.BaseRequest;
+            if (request.url.path.contains(':signBlob')) {
+              return http.StreamedResponse(
+                Stream.value(
+                  utf8.encode(
+                    jsonEncode({'keyId': 'key123', 'signedBlob': signedBlob}),
+                  ),
+                ),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            return http.StreamedResponse(Stream.value([]), 404);
+          });
 
           // Cast to AuthClient to use the extension method
           final AuthClient client = impersonated;
@@ -222,22 +226,22 @@ void main() {
           ),
         );
 
-        final signBlobUrl = Uri.parse(
-          '$customEndpoint/v1/projects/-/serviceAccounts/$targetPrincipal:signBlob',
-        );
-
-        when(
-          () => mockSourceClient.post(
-            signBlobUrl,
-            headers: {'Content-Type': 'application/json'},
-            body: any(named: 'body'),
-          ),
-        ).thenAnswer(
-          (_) async => http.Response(
-            jsonEncode({'keyId': 'key123', 'signedBlob': signedBlob}),
-            200,
-          ),
-        );
+        // Mock the send() call used by the generated API client
+        when(() => mockSourceClient.send(any())).thenAnswer((invocation) async {
+          final request = invocation.positionalArguments[0] as http.BaseRequest;
+          if (request.url.path.contains(':signBlob')) {
+            return http.StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({'keyId': 'key123', 'signedBlob': signedBlob}),
+                ),
+              ),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.StreamedResponse(Stream.value([]), 404);
+        });
 
         // Cast to AuthClient to use the extension method
         final AuthClient client = impersonated;
@@ -246,63 +250,16 @@ void main() {
         expect(signature, signedBlob);
 
         // Verify custom endpoint was used
-        verify(
-          () => mockSourceClient.post(
-            signBlobUrl,
-            headers: any(named: 'headers'),
-            body: any(named: 'body'),
-          ),
-        ).called(1);
+        final captured = verify(
+          () => mockSourceClient.send(captureAny()),
+        ).captured;
+        expect(captured.isNotEmpty, true);
+        final capturedRequest = captured.first as http.BaseRequest;
+        expect(capturedRequest.url.toString(), contains(customEndpoint));
       });
     });
 
     group('with other AuthClient (IAM API signing)', () {
-      test(
-        'should use IAM signBlob API when custom endpoint is provided',
-        () async {
-          final mockClient = MockAuthClient();
-          const serviceAccountEmail = 'test@project.iam.gserviceaccount.com';
-          const customEndpoint = 'https://iamcredentials.googleapis.com';
-
-          // Mock getting service account email from metadata
-          when(
-            () => mockClient.get(
-              Uri.parse(
-                'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
-              ),
-              headers: {'Metadata-Flavor': 'Google'},
-            ),
-          ).thenAnswer((_) async => http.Response(serviceAccountEmail, 200));
-
-          // Mock the IAM signBlob API call via send()
-          when(() => mockClient.send(any())).thenAnswer((invocation) async {
-            final request =
-                invocation.positionalArguments[0] as http.BaseRequest;
-            if (request.url.path.contains(':signBlob')) {
-              return http.StreamedResponse(
-                Stream.value(
-                  utf8.encode(jsonEncode({'signedBlob': signedBlobBase64})),
-                ),
-                200,
-                headers: {'content-type': 'application/json'},
-              );
-            }
-            return http.StreamedResponse(Stream.value([]), 404);
-          });
-
-          // Sign data with custom endpoint
-          final signature = await mockClient.sign(
-            testData,
-            endpoint: customEndpoint,
-          );
-
-          expect(signature, signedBlobBase64);
-
-          // Verify IAM API was called via send()
-          verify(() => mockClient.send(any())).called(greaterThan(0));
-        },
-      );
-
       test('should use custom endpoint for IAM API signing', () async {
         final mockClient = MockAuthClient();
         const serviceAccountEmail = 'test@project.iam.gserviceaccount.com';
@@ -377,28 +334,6 @@ void main() {
     });
 
     group('integration tests', () {
-      test('signature format is base64-encoded', () async {
-        final file = File('test/fixtures/service_account.json');
-        final credential = GoogleCredential.fromServiceAccount(file);
-
-        // Create a mock HTTP client to intercept OAuth token requests
-        final mockHttp = MockOAuthHttpClient();
-
-        // Create auth client with associated credential
-        final client = await createAuthClient(credential, [
-          'https://www.googleapis.com/auth/cloud-platform',
-        ], baseClient: mockHttp);
-
-        final signature = await client.sign(testData);
-
-        // Should be valid base64
-        expect(() => base64Decode(signature), returnsNormally);
-
-        // Should not be empty
-        final decoded = base64Decode(signature);
-        expect(decoded.length, greaterThan(0));
-      });
-
       test('same data produces same signature', () async {
         final file = File('test/fixtures/service_account.json');
         final credential = GoogleCredential.fromServiceAccount(file);

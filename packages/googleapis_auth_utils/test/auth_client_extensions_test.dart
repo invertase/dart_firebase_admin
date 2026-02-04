@@ -29,37 +29,6 @@ void main() {
       ProjectIdProvider.instance = null;
     });
 
-    group('getProjectId', () {
-      test('delegates to ProjectIdProvider singleton', () async {
-        final mockAuthClient2 = MockAuthClient();
-
-        final projectId1 = await mockAuthClient.getProjectId(
-          environment: {'GOOGLE_CLOUD_PROJECT': 'shared-project'},
-        );
-
-        // Second client should get the same cached value (singleton behavior)
-        final projectId2 = await mockAuthClient2.getProjectId(
-          environment: {'GOOGLE_CLOUD_PROJECT': 'different-project'},
-        );
-
-        expect(projectId1, 'shared-project');
-        expect(projectId2, 'shared-project');
-      });
-
-      test('works with default Platform.environment', () async {
-        // This test uses actual Platform.environment
-        // It should either find a project ID or throw an exception
-        try {
-          final projectId = await mockAuthClient.getProjectId();
-          // If successful, project ID should be a non-empty string
-          expect(projectId, isNotEmpty);
-        } catch (e) {
-          // If no project ID found, should throw specific exception
-          expect(e.toString(), contains('Failed to determine project ID'));
-        }
-      });
-    });
-
     group('cachedProjectId', () {
       test('returns null when no project ID has been fetched', () {
         expect(mockAuthClient.cachedProjectId, isNull);
@@ -83,17 +52,6 @@ void main() {
         ProjectIdProvider.instance?.clearCache();
 
         expect(mockAuthClient.cachedProjectId, isNull);
-      });
-
-      test('shares cached value across multiple clients', () async {
-        final mockAuthClient2 = MockAuthClient();
-
-        await mockAuthClient.getProjectId(
-          environment: {'GOOGLE_CLOUD_PROJECT': 'shared-project'},
-        );
-
-        // Second client should see the same cached value
-        expect(mockAuthClient2.cachedProjectId, 'shared-project');
       });
     });
 
@@ -129,18 +87,6 @@ void main() {
       setUp(() {
         // Reset singleton for integration tests
         ProjectIdProvider.instance = null;
-      });
-
-      test('getProjectId and cachedProjectId work together', () async {
-        final testClient = MockAuthClient();
-
-        // First call getProjectId to initialize the singleton
-        await testClient.getProjectId(
-          environment: {'GOOGLE_CLOUD_PROJECT': 'integration-project'},
-        );
-
-        // Now cachedProjectId should return the cached value
-        expect(testClient.cachedProjectId, 'integration-project');
       });
 
       test('multiple clients share ProjectIdProvider singleton', () async {

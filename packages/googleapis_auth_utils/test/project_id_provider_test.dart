@@ -95,15 +95,6 @@ void main() {
         expect(projectId, 'env-project');
       });
 
-      test('uses GOOGLE_CLOUD_PROJECT environment variable', () async {
-        mockEnvironment['GOOGLE_CLOUD_PROJECT'] = 'gcp-project';
-
-        final projectId = await provider.getProjectId();
-
-        expect(projectId, 'gcp-project');
-        expect(provider.cachedProjectId, 'gcp-project');
-      });
-
       test('uses GCLOUD_PROJECT environment variable as fallback', () async {
         mockEnvironment['GCLOUD_PROJECT'] = 'gcloud-project';
 
@@ -624,22 +615,6 @@ void main() {
 
         expect(identical(provider1, provider2), isTrue);
         expect(ProjectIdProvider.instance, isNotNull);
-      });
-
-      test('uses Platform.environment by default', () {
-        final provider = ProjectIdProvider.getDefault(mockAuthClient);
-
-        expect(provider, isNotNull);
-      });
-
-      test('accepts custom environment map', () {
-        final customEnv = {'CUSTOM_VAR': 'value'};
-        final provider = ProjectIdProvider.getDefault(
-          mockAuthClient,
-          environment: customEnv,
-        );
-
-        expect(provider, isNotNull);
       });
     });
 

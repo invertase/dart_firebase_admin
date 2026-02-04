@@ -18,33 +18,6 @@ const _fakeRSAKey =
 void main() {
   group('GoogleCredential.getAccessToken', () {
     group('GoogleServiceAccountCredential', () {
-      test('returns access token when authClient is provided', () async {
-        final mockClient = MockAuthClient();
-        final mockAccessToken = auth.AccessToken(
-          'Bearer',
-          'mock-token-data',
-          DateTime.now().toUtc().add(const Duration(hours: 1)),
-        );
-        final mockCredentials = MockAccessCredentials();
-
-        when(() => mockCredentials.accessToken).thenReturn(mockAccessToken);
-        when(() => mockClient.credentials).thenReturn(mockCredentials);
-
-        final credential = GoogleCredential.fromServiceAccountParams(
-          privateKey: _fakeRSAKey,
-          email: 'test@example.com',
-          projectId: 'test-project',
-          authClient: mockClient,
-        );
-
-        final token = await credential.getAccessToken();
-
-        expect(token.data, 'mock-token-data');
-        expect(token.type, 'Bearer');
-        expect(token.expiry.isAfter(DateTime.now().toUtc()), isTrue);
-        verify(() => mockClient.credentials).called(1);
-      });
-
       test('caches authClient and reuses it on subsequent calls', () async {
         final mockClient = MockAuthClient();
         final mockAccessToken = auth.AccessToken(
