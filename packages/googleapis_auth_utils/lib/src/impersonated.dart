@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:googleapis/iamcredentials/v1.dart' as iam_credentials_v1;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
 
@@ -81,29 +82,25 @@ class ImpersonatedAuthClient implements AuthClient {
   ///
   /// Returns a [SignBlobResponse] containing the keyID and signedBlob in base64 string.
   Future<SignBlobResponse> sign(String blobToSign) async {
-    final name = 'projects/-/serviceAccounts/${options.targetPrincipal}';
-    final url = Uri.parse('$_endpoint/v1/$name:signBlob');
+    final api = _endpoint != 'https://iamcredentials.googleapis.com'
+        ? iam_credentials_v1.IAMCredentialsApi(
+            sourceClient,
+            rootUrl: _endpoint.endsWith('/') ? _endpoint : '$_endpoint/',
+          )
+        : iam_credentials_v1.IAMCredentialsApi(sourceClient);
 
-    final body = {
-      if (options.delegates.isNotEmpty) 'delegates': options.delegates,
-      'payload': base64Encode(utf8.encode(blobToSign)),
-    };
-
-    final response = await sourceClient.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
+    final response = await api.projects.serviceAccounts.signBlob(
+      iam_credentials_v1.SignBlobRequest(
+        delegates: options.delegates.isNotEmpty ? options.delegates : null,
+        payload: base64Encode(utf8.encode(blobToSign)),
+      ),
+      'projects/-/serviceAccounts/${options.targetPrincipal}',
     );
 
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to sign blob via impersonation. '
-        'Status: ${response.statusCode}, Body: ${response.body}',
-      );
-    }
-
-    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-    return SignBlobResponse.fromJson(responseData);
+    return SignBlobResponse(
+      keyId: response.keyId ?? '',
+      signedBlob: response.signedBlob ?? '',
+    );
   }
 
   /// Generates an access token for the impersonated service account.
