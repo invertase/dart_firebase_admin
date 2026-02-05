@@ -6,7 +6,7 @@ set -e
 # Uncomment these to run prod tests locally, CI doesn't have service-account-key.json
 # (service account credentials) only application default credentials and uses gcloud auth login.
 # export FIRESTORE_EMULATOR_HOST=localhost:8080
-export GOOGLE_APPLICATION_CREDENTIALS=service-account-key.json
+# export GOOGLE_APPLICATION_CREDENTIALS=service-account-key.json
 
 # Get the script's directory and the package directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
