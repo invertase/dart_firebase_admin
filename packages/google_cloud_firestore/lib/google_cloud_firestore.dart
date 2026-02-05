@@ -69,7 +69,34 @@ export 'src/firestore.dart'
         WriteResult,
         average,
         count,
-        sum;
+        sum,
+        // Pipeline classes
+        Pipeline,
+        PipelineSource,
+        PipelineSnapshot,
+        PipelineResult,
+        ExplainStats,
+        // Expression classes
+        Expression,
+        Field,
+        Constant,
+        FunctionExpression,
+        BooleanExpression,
+        // Aggregate classes
+        AggregateFunction,
+        CountAggregate,
+        CountAllAggregate,
+        CountDistinctAggregate,
+        CountIfAggregate,
+        SumAggregate,
+        AverageAggregate,
+        MinimumAggregate,
+        MaximumAggregate,
+        // Supporting classes
+        Ordering,
+        AliasedExpression,
+        AliasedAggregate,
+        Selectable;
 export 'src/firestore_exception.dart'
     show FirestoreClientErrorCode, FirestoreException;
 export 'src/status_code.dart' show StatusCode;

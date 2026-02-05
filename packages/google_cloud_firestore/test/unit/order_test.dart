@@ -105,11 +105,11 @@ void main() {
       test('compares reference values', () {
         final left = firestore_v1.Value(
           referenceValue:
-              'projects/test/databases/(default)/documents/coll/doc1',
+              'projects/test/databases/kDefaultDatabase/documents/coll/doc1',
         );
         final right = firestore_v1.Value(
           referenceValue:
-              'projects/test/databases/(default)/documents/coll/doc2',
+              'projects/test/databases/kDefaultDatabase/documents/coll/doc2',
         );
 
         expect(compare(left, right), lessThan(0));
@@ -285,14 +285,14 @@ void main() {
       test('compares nested arrays', () {
         final partition1 = [
           firestore_v1.Value(
-            arrayValue: firestore_v1.ArrayValue(
+          arrayValue: firestore_v1.ArrayValue(
               values: [firestore_v1.Value(integerValue: 1)],
             ),
           ),
         ];
         final partition2 = [
           firestore_v1.Value(
-            arrayValue: firestore_v1.ArrayValue(
+          arrayValue: firestore_v1.ArrayValue(
               values: [firestore_v1.Value(integerValue: 2)],
             ),
           ),

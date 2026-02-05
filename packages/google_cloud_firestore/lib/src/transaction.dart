@@ -289,6 +289,30 @@ class Transaction {
     _writeBatch.delete(documentRef, precondition: precondition);
   }
 
+  /// Executes a pipeline within the transaction context.
+  ///
+  /// Example:
+  /// ```dart
+  /// firestore.runTransaction((transaction) async {
+  ///   final pipeline = firestore
+  ///       .pipeline()
+  ///       .collection('books')
+  ///       .where(greaterThan(field('rating'), constant(4.5)));
+  ///
+  ///   final snapshot = await transaction.execute(pipeline);
+  ///   // Process results...
+  /// });
+  /// ```
+  Future<PipelineSnapshot> execute(Pipeline pipeline) async {
+    if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
+      throw FirestoreException(
+        FirestoreClientErrorCode.failedPrecondition,
+        readAfterWriteErrorMsg,
+      );
+    }
+    return _withLazyStartedTransaction(pipeline, resultFn: _executePipelineFn);
+  }
+
   Future<void> _commit() async {
     if (_writeBatch == null) {
       throw FirestoreException(
@@ -497,6 +521,7 @@ class Transaction {
     );
   }
 
+<<<<<<< HEAD:packages/google_cloud_firestore/lib/src/transaction.dart
   Future<_TransactionResult<AggregateQuerySnapshot>> _getAggregateQueryFn(
     AggregateQuery aggregateQuery, {
     String? transactionId,
@@ -516,6 +541,79 @@ class Transaction {
     return _TransactionResult(
       transaction: result.transaction,
       result: result.result,
+    );
+  }
+
+  Future<_TransactionResult<PipelineSnapshot>> _executePipelineFn(
+    Pipeline pipeline, {
+    String? transactionId,
+    Timestamp? readTime,
+    firestore_v1.TransactionOptions? transactionOptions,
+    List<FieldPath>? fieldMask,
+  }) async {
+    final request = firestore_v1.ExecutePipelineRequest(
+      structuredPipeline: firestore_v1.StructuredPipeline(
+        pipeline: pipeline._toProto(),
+      ),
+      transaction: transactionId,
+      readTime: readTime != null
+          ? _toGoogleDateTime(
+              seconds: readTime.seconds,
+              nanoseconds: readTime.nanoseconds,
+            )
+          : null,
+      newTransaction: transactionOptions,
+    );
+
+    final response = await _firestore._firestoreClient.v1((api, projectId) {
+      return api.projects.databases.documents.executePipeline(
+        request,
+        _firestore._formattedDatabaseName,
+      );
+    });
+
+    // Parse the response
+    final results = <PipelineResult>[];
+    if (response.results != null) {
+      for (final resultDoc in response.results!) {
+        final fields = resultDoc.fields;
+        final data = fields != null
+            ? <String, Object?>{
+                for (final prop in fields.entries)
+                  prop.key: _firestore._serializer.decodeValue(prop.value),
+              }
+            : <String, Object?>{};
+
+        results.add(
+          PipelineResult._(
+            ref: resultDoc.name != null
+                ? _firestore.doc(resultDoc.name!)
+                : null,
+            id: resultDoc.name?.split('/').last,
+            createTime: resultDoc.createTime != null
+                ? Timestamp._fromString(resultDoc.createTime!)
+                : null,
+            updateTime: resultDoc.updateTime != null
+                ? Timestamp._fromString(resultDoc.updateTime!)
+                : null,
+            data: data,
+          ),
+        );
+      }
+    }
+
+    final snapshot = PipelineSnapshot._(
+      pipeline: pipeline,
+      results: results,
+      executionTime: Timestamp.now(),
+      explainStats: response.explainStats != null
+          ? ExplainStats._fromProto(response.explainStats!)
+          : null,
+    );
+
+    return _TransactionResult(
+      transaction: response.transaction,
+      result: snapshot,
     );
   }
 

@@ -22,7 +22,7 @@ import 'package:test/test.dart';
 
 const testBundleId = 'test-bundle';
 const testBundleVersion = 1;
-const databaseRoot = 'projects/test-project/databases/(default)';
+const databaseRoot = 'projects/test-project/databases/$kDefaultDatabase';
 
 /// Helper function to parse a length-prefixed bundle buffer into elements.
 List<Map<String, dynamic>> bundleToElementArray(Uint8List buffer) {
