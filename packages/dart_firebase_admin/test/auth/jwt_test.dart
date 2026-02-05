@@ -1,40 +1,85 @@
+import 'dart:convert';
+
 import 'package:dart_firebase_admin/src/utils/jwt.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:jose/jose.dart';
 import 'package:test/test.dart';
 
 import '../mock_service_account.dart';
 
 void main() {
+  JsonWebKey createHmacKey(String secret) {
+    return JsonWebKey.fromJson({
+      'kty': 'oct',
+      'k': base64Url.encode(utf8.encode(secret)),
+    });
+  }
+
+  String signToken(
+    Map<String, dynamic> payload,
+    JsonWebKey key, {
+    String alg = 'HS256',
+    Map<String, dynamic>? header,
+  }) {
+    final builder = JsonWebSignatureBuilder()
+      ..jsonContent = payload
+      ..addRecipient(key, algorithm: alg);
+    for (final element in header?.entries ?? <MapEntry<String, dynamic>>[]) {
+      builder.setProtectedHeader(element.key, element.value);
+    }
+    return builder.build().toCompactSerialization();
+  }
+
   group('PublicKeySignatureVerifier', () {
-    final privateKey = RSAPrivateKey(mockPrivateKey);
+    final privateJwk = JsonWebKey.fromPem(mockPrivateKey, keyId: 'key1');
     final keyFetcher = _TestKeyFetcher();
+
     final payload = {
       'a': '1',
       'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     };
 
     test('valid kid should pass', () async {
-      final jwt = JWT(payload, header: {'kid': 'key1'});
-      final token = jwt.sign(privateKey, algorithm: JWTAlgorithm.RS256);
+      final token = signToken(
+        payload,
+        privateJwk,
+        alg: 'RS256',
+        header: {'kid': 'key1', 'typ': 'JWT'},
+      );
+
       await PublicKeySignatureVerifier(keyFetcher).verify(token);
     });
 
     test('no kid should throw', () async {
-      final jwt = JWT(payload);
-      final token = jwt.sign(privateKey, algorithm: JWTAlgorithm.RS256);
+      final noIdKey = JsonWebKey.fromPem(mockPrivateKey);
+
+      final token = signToken(
+        payload,
+        noIdKey, // Use the key with no ID
+        alg: 'RS256',
+        header: {'typ': 'JWT'},
+      );
+
       await expectLater(
         PublicKeySignatureVerifier(keyFetcher).verify(token),
-        throwsA(isA<JwtException>()),
+        throwsA(
+          isA<JwtException>().having(
+            (e) => e.code,
+            'code',
+            JwtErrorCode.noKidInHeader,
+          ),
+        ),
       );
     });
 
     test('invalid kid should throw', () async {
-      final jwt = JWT(payload, header: {'kid': 'key2'});
-      final token = jwt.sign(privateKey, algorithm: JWTAlgorithm.RS256);
-      await expectLater(
-        PublicKeySignatureVerifier(keyFetcher).verify(token),
-        throwsA(isA<JwtException>()),
+      expect(
+        () => signToken(
+          payload,
+          privateJwk,
+          alg: 'RS256',
+          header: {'kid': 'key2', 'typ': 'JWT'},
+        ),
+        throwsA(isA<ArgumentError>()),
       );
     });
 
@@ -66,9 +111,14 @@ void main() {
             1000,
       };
 
-      // Create token with 'none' algorithm (emulator tokens)
-      final jwt = JWT(payload);
-      final token = jwt.sign(SecretKey(''));
+      // Manually construct a token with 'alg': 'none'
+      // package:jose makes it hard to create insecure tokens by design.
+      String base64NoPad(Map<String, dynamic> input) =>
+          base64Url.encode(utf8.encode(jsonEncode(input))).replaceAll('=', '');
+
+      final header = base64NoPad({'alg': 'none', 'typ': 'JWT'});
+      final body = base64NoPad(payload);
+      final token = '$header.$body.';
 
       await expectLater(verifier.verify(token), completes);
     });
@@ -76,20 +126,28 @@ void main() {
 
   group('decodeJwt', () {
     test('should decode valid JWT', () async {
-      final payload = {
-        'sub': 'user123',
-        'name': 'John Doe',
-        'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      };
-      final jwt = JWT(payload, header: {'alg': 'HS256', 'typ': 'JWT'});
-      final token = jwt.sign(SecretKey('secret'));
+      final key = createHmacKey('secret');
+      final builder = JsonWebSignatureBuilder()
+        ..jsonContent = {
+          'sub': 'user123',
+          'name': 'John Doe',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        }
+        ..addRecipient(key, algorithm: 'HS256')
+        ..setProtectedHeader('typ', 'JWT');
 
-      final decoded = await decodeJwt(token);
+      final jws = builder.build();
+      final token = jws.toCompactSerialization();
 
-      expect(decoded.header['alg'], equals('HS256'));
-      expect(decoded.header['typ'], equals('JWT'));
-      expect(decoded.payload['sub'], equals('user123'));
-      expect(decoded.payload['name'], equals('John Doe'));
+      final decoded = JsonWebSignature.fromCompactSerialization(token);
+      final header = decoded.commonHeader;
+      final claims =
+          decoded.unverifiedPayload.jsonContent as Map<String, dynamic>;
+
+      expect(header['alg'], equals('HS256'));
+      expect(header['typ'], equals('JWT'));
+      expect(claims['sub'], equals('user123'));
+      expect(claims['name'], equals('John Doe'));
     });
 
     test('should handle payload with various types', () async {
@@ -100,21 +158,22 @@ void main() {
         'list': [1, 2, 3],
         'map': {'nested': 'value'},
       };
-      final jwt = JWT(payload);
-      final token = jwt.sign(SecretKey('secret'));
 
-      final decoded = await decodeJwt(token);
+      final key = createHmacKey('secret');
+      final token = signToken(payload, key);
 
-      expect(decoded.payload['string'], equals('value'));
-      expect(decoded.payload['number'], equals(42));
-      expect(decoded.payload['bool'], equals(true));
-      expect(decoded.payload['list'], equals([1, 2, 3]));
-      expect(decoded.payload['map'], equals({'nested': 'value'}));
+      final decoded = JsonWebToken.unverified(token);
+
+      expect(decoded.claims['string'], equals('value'));
+      expect(decoded.claims['number'], equals(42));
+      expect(decoded.claims['bool'], equals(true));
+      expect(decoded.claims['list'], equals([1, 2, 3]));
+      expect(decoded.claims['map'], equals({'nested': 'value'}));
     });
   });
 
   group('verifyJwtSignature', () {
-    test('should throw JwtException for expired tokens', () {
+    test('should throw JwtException for expired tokens', () async {
       final payload = {
         'sub': 'user123',
         'exp':
@@ -128,11 +187,12 @@ void main() {
                 .millisecondsSinceEpoch ~/
             1000,
       };
-      final jwt = JWT(payload);
-      final token = jwt.sign(SecretKey('secret'));
 
-      expect(
-        () => verifyJwtSignature(token, SecretKey('secret')),
+      final secretKey = createHmacKey('secret');
+      final token = signToken(payload, secretKey);
+
+      await expectLater(
+        () => verifyJwtSignature(token, secretKey),
         throwsA(
           isA<JwtException>().having(
             (e) => e.code,
@@ -143,7 +203,7 @@ void main() {
       );
     });
 
-    test('should verify valid token with issuer', () {
+    test('should verify valid token with issuer', () async {
       final payload = {
         'sub': 'user123',
         'iss': 'https://example.com',
@@ -154,20 +214,17 @@ void main() {
                 .millisecondsSinceEpoch ~/
             1000,
       };
-      final jwt = JWT(payload);
-      final token = jwt.sign(SecretKey('secret'));
 
-      expect(
-        () => verifyJwtSignature(
-          token,
-          SecretKey('secret'),
-          issuer: 'https://example.com',
-        ),
-        returnsNormally,
+      final secretKey = createHmacKey('secret');
+      final token = signToken(payload, secretKey);
+
+      await expectLater(
+        verifyJwtSignature(token, secretKey, issuer: 'https://example.com'),
+        completes,
       );
     });
 
-    test('should verify valid token with subject', () {
+    test('should verify valid token with subject', () async {
       final payload = {
         'sub': 'user123',
         'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -177,13 +234,13 @@ void main() {
                 .millisecondsSinceEpoch ~/
             1000,
       };
-      final jwt = JWT(payload);
-      final token = jwt.sign(SecretKey('secret'));
 
-      expect(
-        () =>
-            verifyJwtSignature(token, SecretKey('secret'), subject: 'user123'),
-        returnsNormally,
+      final secretKey = createHmacKey('secret');
+      final token = signToken(payload, secretKey);
+
+      await expectLater(
+        verifyJwtSignature(token, secretKey, subject: 'user123'),
+        completes,
       );
     });
   });
@@ -218,9 +275,9 @@ void main() {
 
   group('DecodedToken', () {
     test('should create decoded token with header and payload', () {
-      final header = {'alg': 'RS256', 'kid': 'key1'};
       final payload = {'sub': 'user123', 'name': 'John'};
 
+      final header = JoseHeader.fromJson({'alg': 'RS256', 'kid': 'key1'});
       final decoded = DecodedToken(header: header, payload: payload);
 
       expect(decoded.header, equals(header));

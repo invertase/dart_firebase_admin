@@ -106,29 +106,28 @@ class FirebaseTokenVerifier {
     );
 
     await _verifySignature(token, isEmulator: isEmulator);
-    return DecodedToken(
-      header: decodedToken.header ?? {},
-      payload: Map.from(decodedToken.payload as Map),
-    );
+
+    return decodedToken;
   }
 
-  Future<dart_jsonwebtoken.JWT> _safeDecode(String jtwToken) async {
+  Future<DecodedToken> _safeDecode(String token) async {
     try {
-      return dart_jsonwebtoken.JWT.decode(jtwToken);
-    } catch (error, stackTrace) {
-      // JWT.decode() throws JWTUndefinedException for invalid tokens
-      // Convert to FirebaseAuthAdminException with auth/argument-error
-      final verifyJwtTokenDocsMessage =
-          ' See ${tokenInfo.url} '
-          'for details on how to retrieve $_shortNameArticle ${tokenInfo.shortName}.';
-      final errorMessage =
-          '${tokenInfo.jwtName} has invalid format.$verifyJwtTokenDocsMessage';
-      Error.throwWithStackTrace(
-        FirebaseAuthAdminException(
-          AuthClientErrorCode.invalidArgument,
-          errorMessage,
-        ),
-        stackTrace,
+      final jws = JsonWebSignature.fromCompactSerialization(token);
+      final header = jws.commonHeader;
+      final payload = jws.unverifiedPayload.jsonContent;
+
+      if (payload is! Map<String, dynamic>) {
+        throw JwtException(
+          JwtErrorCode.invalidArgument,
+          'Invalid payload format',
+        );
+      }
+
+      return DecodedToken(header: header, payload: payload);
+    } catch (e) {
+      throw JwtException(
+        JwtErrorCode.invalidArgument,
+        'Failed to decode token: $e',
       );
     }
   }
@@ -149,7 +148,7 @@ class FirebaseTokenVerifier {
   }
 
   void _verifyContent(
-    dart_jsonwebtoken.JWT fullDecodedToken, {
+    DecodedToken fullDecodedToken, {
     required String projectId,
     required bool isEmulator,
     String? audience,
@@ -161,8 +160,8 @@ class FirebaseTokenVerifier {
       );
     }
 
-    final header = fullDecodedToken.header ?? <String, dynamic>{};
-    final payload = fullDecodedToken.payload as Map;
+    final header = fullDecodedToken.header;
+    final payload = fullDecodedToken.payload;
 
     final projectIdMatchMessage =
         ' Make sure the ${tokenInfo.shortName} comes from the same '
@@ -174,7 +173,7 @@ class FirebaseTokenVerifier {
     late final alg = header['alg'];
     late final sub = payload['sub'];
 
-    if (!isEmulator && !header.containsKey('kid')) {
+    if (!isEmulator && header.keyId == null) {
       final isCustomToken = (payload['aud'] == _firebaseAudience);
 
       late final d = payload['d'];

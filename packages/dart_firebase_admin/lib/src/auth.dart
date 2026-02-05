@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:collection/collection.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart' as dart_jsonwebtoken;
 import 'package:googleapis/identitytoolkit/v1.dart' as auth1;
 import 'package:googleapis/identitytoolkit/v1.dart' as v1;
 import 'package:googleapis/identitytoolkit/v2.dart' as auth2;
@@ -11,6 +10,7 @@ import 'package:googleapis/identitytoolkit/v3.dart' as auth3;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:http/http.dart' as http;
+import 'package:jose/jose.dart';
 import 'package:meta/meta.dart';
 
 import 'app.dart';

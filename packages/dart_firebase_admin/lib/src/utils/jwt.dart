@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:jose/jose.dart';
 import 'package:meta/meta.dart';
@@ -12,17 +11,21 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
   @override
   Future<void> verify(String token) async {
     // Signature checks skipped for emulator; no need to fetch public keys.
-
     try {
-      verifyJwtSignature(token, SecretKey(''));
-    } on JWTInvalidException catch (e) {
-      // Emulator tokens may have "alg": "none"
-      if (e.message == 'unknown algorithm') return;
-      if (e.message == 'invalid signature') return;
+      // Create a dummy key for the empty secret check
+      final emptyKey = JsonWebKey.fromJson({'kty': 'oct', 'k': ''});
+
+      await verifyJwtSignature(token, emptyKey);
+    } on JoseException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('algorithm') ||
+          msg.contains('signature') ||
+          msg.contains('invalid')) {
+        return;
+      }
       rethrow;
     } catch (e) {
-      // Emulator tokens may use RS256 with test keys, causing assertion
-      // errors when verifying with SecretKey. Skip verification.
+      // Catch-all for other verification assertions typical in test environments
       return;
     }
   }
@@ -32,7 +35,7 @@ class EmulatorSignatureVerifier implements SignatureVerifier {
 class DecodedToken {
   DecodedToken({required this.header, required this.payload});
 
-  final Map<String, dynamic> header;
+  final JoseHeader header;
   final Map<String, dynamic> payload;
 }
 
@@ -128,14 +131,14 @@ class JwksFetcher implements KeyFetcher {
     }
 
     final jwks = jsonDecode(response.body) as Map<String, dynamic>;
-    final keys = JsonWebKeySet.fromJson(jwks).keys;
+    final keySet = JsonWebKeySet.fromJson(jwks);
 
     // Reset expire time
     _publicKeysExpireAt = 0;
 
     // Extract signing keys
     final store = _publicKeys = JsonWebKeyStore();
-    keys.forEach(store.addKey);
+    keySet.keys.forEach(store.addKey);
 
     // Set new expiration time
     _publicKeysExpireAt =
@@ -165,8 +168,9 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
   @override
   Future<void> verify(String token) async {
     try {
-      final jwt = JWT.decode(token);
-      final kid = jwt.header?['kid'] as String?;
+      // 1. Decode generic JWS to inspect the header for 'kid'
+      final jws = JsonWebSignature.fromCompactSerialization(token);
+      final kid = jws.commonHeader['kid'] as String?;
 
       if (kid == null) {
         throw JwtException(
@@ -178,6 +182,8 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       final store = await keyFetcher.fetchPublicKeys();
 
       try {
+        // 2. Use decodeAndVerify to handle cryptographic verification
+        // This will throw JoseException if signature is invalid or token expired
         await JsonWebToken.decodeAndVerify(token, store);
       } catch (e, stackTrace) {
         Error.throwWithStackTrace(
@@ -188,14 +194,10 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
           stackTrace,
         );
       }
-
       // At this point most JWTException's should have been caught in
       // verifyJwtSignature, but we could still get some from JWT.decode above
-    } on JWTException catch (e) {
-      throw JwtException(
-        JwtErrorCode.unknown,
-        e is JWTUndefinedException ? e.message : '${e.runtimeType}: e.message',
-      );
+    } on JoseException catch (e) {
+      throw JwtException(JwtErrorCode.unknown, '${e.runtimeType}: e.message');
     }
   }
 }
@@ -208,43 +210,96 @@ sealed class SecretOrPublicKey {}
 ///
 /// Returns a decoded token containing the header and payload.
 Future<DecodedToken> decodeJwt(String jwtToken) async {
-  final fullDecodedToken = JWT.decode(jwtToken);
+  final jws = JsonWebSignature.fromCompactSerialization(jwtToken);
 
   return DecodedToken(
-    header: fullDecodedToken.header ?? {},
-    payload: Map.from(fullDecodedToken.payload as Map),
+    header: jws.commonHeader,
+    payload: jws.unverifiedPayload.jsonContent as Map<String, dynamic>,
   );
 }
 
 @internal
-void verifyJwtSignature(
+Future<void> verifyJwtSignature(
   String token,
-  JWTKey key, {
+  JsonWebKey key, {
   Duration? issueAt,
-  Audience? audience,
+  List<String>? audience,
   String? subject,
   String? issuer,
   String? jwtId,
-}) {
+}) async {
+  final keyStore = JsonWebKeyStore()..addKey(key);
+
   try {
-    JWT.verify(
-      token,
-      key,
-      issueAt: issueAt,
-      audience: audience,
-      subject: subject,
-      issuer: issuer,
-      jwtId: jwtId,
-    );
-  } on JWTExpiredException catch (e, stackTrace) {
-    Error.throwWithStackTrace(
-      JwtException(
-        JwtErrorCode.tokenExpired,
-        'The provided token has expired. Get a fresh token from your '
-        'client app and try again.',
-      ),
-      stackTrace,
-    );
+    final decoded = await JsonWebToken.decodeAndVerify(token, keyStore);
+    final claims = decoded.claims;
+
+    if (claims.expiry case final DateTime expiry) {
+      if (expiry.isBefore(DateTime.now())) {
+        throw JwtException(
+          JwtErrorCode.tokenExpired,
+          'The provided token has expired.',
+        );
+      }
+    }
+
+    if (issuer case final String tokenIssuer) {
+      if (tokenIssuer != issuer) {
+        throw JwtException(
+          JwtErrorCode.invalidSignature,
+          'Issuer does not match. Expected `$issuer`, was `${claims.issuer}`',
+        );
+      }
+    }
+
+    if (subject case final String tokenSubject) {
+      if (tokenSubject != subject) {
+        throw JwtException(
+          JwtErrorCode.invalidSignature,
+          'Subject does not match. Expected `$subject`, was `${claims.subject}`',
+        );
+      }
+    }
+
+    if (audience != null) {
+      final tokenAud = claims.audience ?? [];
+      final hasMatch = tokenAud.any((a) => audience.contains(a));
+      if (!hasMatch) {
+        throw JwtException(
+          JwtErrorCode.invalidSignature,
+          'Audience does not contain clientId `$audience`.',
+        );
+      }
+    }
+
+    if (jwtId case final String tokenJwtId) {
+      if (tokenJwtId != jwtId) {
+        throw JwtException(
+          JwtErrorCode.invalidSignature,
+          'JWT ID does not match. Expected `$jwtId`, was `${claims.jwtId}`',
+        );
+      }
+    }
+  } on JoseException catch (e, stackTrace) {
+    if (e.message.toLowerCase().contains('expired')) {
+      Error.throwWithStackTrace(
+        JwtException(
+          JwtErrorCode.tokenExpired,
+          'The provided token has expired. Get a fresh token from your '
+          'client app and try again.',
+        ),
+        stackTrace,
+      );
+    } else {
+      Error.throwWithStackTrace(
+        JwtException(
+          JwtErrorCode.invalidSignature,
+          'The provided token is invalid. Get a fresh token from your '
+          'client app and try again.',
+        ),
+        stackTrace,
+      );
+    }
   }
 }
 
