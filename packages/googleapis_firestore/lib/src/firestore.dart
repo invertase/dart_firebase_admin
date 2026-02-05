@@ -57,6 +57,16 @@ part 'types.dart';
 part 'util.dart';
 part 'validate.dart';
 part 'write_batch.dart';
+part 'pipelines/expression.dart';
+part 'pipelines/aggregate_function.dart';
+part 'pipelines/ordering.dart';
+part 'pipelines/aliased.dart';
+part 'pipelines/explain_stats.dart';
+part 'pipelines/pipeline_snapshot.dart';
+part 'pipelines/pipelines.dart';
+part 'pipelines/stage_options.dart';
+
+const kDefaultDatabase = '(default)';
 
 /// Plain credentials object for service account authentication.
 ///
@@ -120,7 +130,7 @@ class Settings {
   /// Creates Firestore settings.
   const Settings({
     this.projectId,
-    this.databaseId,
+    this.databaseId = kDefaultDatabase,
     this.host,
     this.ssl = true,
     this.credentials,
@@ -140,7 +150,7 @@ class Settings {
   /// The database name. If omitted, the default database will be used.
   ///
   /// Defaults to '(default)'.
-  final String? databaseId;
+  final String databaseId;
 
   /// The hostname to connect to.
   ///
@@ -405,7 +415,7 @@ class Firestore {
   }
 
   /// Returns the Database ID for this Firestore instance.
-  String get databaseId => _settings.databaseId ?? '(default)';
+  String get databaseId => _settings.databaseId;
 
   /// Returns the root path of the database.
   ///
@@ -533,6 +543,26 @@ class Firestore {
     );
 
     return rootDocument.listCollections();
+  }
+
+  /// Returns a [PipelineSource] to create and execute Firestore Pipelines.
+  ///
+  /// Pipelines provide a flexible framework for building complex data
+  /// transformations and queries. Note: Execution is not yet supported
+  /// pending googleapis package updates.
+  ///
+  /// Example:
+  /// ```dart
+  /// final pipeline = firestore
+  ///   .pipeline()
+  ///   .collection('books')
+  ///   .where(greaterThan(field('rating'), constant(4.5)))
+  ///   .select('title', 'author');
+  ///
+  /// // execute() will throw UnimplementedError until googleapis support exists
+  /// ```
+  PipelineSource pipeline() {
+    return PipelineSource._(firestore: this);
   }
 
   /// Creates a write batch, used for performing multiple writes as a single

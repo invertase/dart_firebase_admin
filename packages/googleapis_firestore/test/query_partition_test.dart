@@ -137,7 +137,7 @@ void main() {
                 values: [
                   firestore_v1.Value(
                     referenceValue:
-                        'projects/test-project/databases/(default)/documents/coll/doc1',
+                        'projects/test-project/databases/kDefaultDatabase/documents/coll/doc1',
                   ),
                 ],
               ),
@@ -145,7 +145,7 @@ void main() {
                 values: [
                   firestore_v1.Value(
                     referenceValue:
-                        'projects/test-project/databases/(default)/documents/coll/doc2',
+                        'projects/test-project/databases/kDefaultDatabase/documents/coll/doc2',
                   ),
                 ],
               ),
@@ -182,7 +182,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc1',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc1',
                     ),
                   ],
                 ),
@@ -190,7 +190,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc2',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc2',
                     ),
                   ],
                 ),
@@ -205,7 +205,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc3',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc3',
                     ),
                   ],
                 ),
@@ -213,7 +213,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc4',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc4',
                     ),
                   ],
                 ),
@@ -228,7 +228,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc5',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc5',
                     ),
                   ],
                 ),
@@ -261,7 +261,7 @@ void main() {
                 values: [
                   firestore_v1.Value(
                     referenceValue:
-                        'projects/test-project/databases/(default)/documents/coll/doc1',
+                        'projects/test-project/databases/kDefaultDatabase/documents/coll/doc1',
                   ),
                 ],
               ),
@@ -309,7 +309,7 @@ void main() {
                 values: [
                   firestore_v1.Value(
                     referenceValue:
-                        'projects/test-project/databases/(default)/documents/coll/doc1',
+                        'projects/test-project/databases/kDefaultDatabase/documents/coll/doc1',
                   ),
                 ],
               ),
@@ -344,7 +344,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc3',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc3',
                     ),
                   ],
                 ),
@@ -352,7 +352,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc1',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc1',
                     ),
                   ],
                 ),
@@ -367,7 +367,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc4',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc4',
                     ),
                   ],
                 ),
@@ -375,7 +375,7 @@ void main() {
                   values: [
                     firestore_v1.Value(
                       referenceValue:
-                          'projects/test-project/databases/(default)/documents/coll/doc2',
+                          'projects/test-project/databases/kDefaultDatabase/documents/coll/doc2',
                     ),
                   ],
                 ),

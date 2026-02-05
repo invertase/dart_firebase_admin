@@ -81,11 +81,11 @@ void main() {
       test('compares reference values', () {
         final left = firestore_v1.Value(
           referenceValue:
-              'projects/test/databases/(default)/documents/coll/doc1',
+              'projects/test/databases/kDefaultDatabase/documents/coll/doc1',
         );
         final right = firestore_v1.Value(
           referenceValue:
-              'projects/test/databases/(default)/documents/coll/doc2',
+              'projects/test/databases/kDefaultDatabase/documents/coll/doc2',
         );
 
         expect(compare(left, right), lessThan(0));
@@ -191,7 +191,7 @@ void main() {
         final blobValue = firestore_v1.Value(bytesValue: 'YWJj');
         final refValue = firestore_v1.Value(
           referenceValue:
-              'projects/test/databases/(default)/documents/coll/doc1',
+              'projects/test/databases/kDefaultDatabase/documents/coll/doc1',
         );
         final geoValue = firestore_v1.Value(
           geoPointValue: firestore_v1.LatLng(latitude: 0, longitude: 0),
@@ -246,13 +246,13 @@ void main() {
         final partition1 = [
           firestore_v1.Value(
             referenceValue:
-                'projects/test/databases/(default)/documents/coll/doc1',
+                'projects/test/databases/kDefaultDatabase/documents/coll/doc1',
           ),
         ];
         final partition2 = [
           firestore_v1.Value(
             referenceValue:
-                'projects/test/databases/(default)/documents/coll/doc2',
+                'projects/test/databases/kDefaultDatabase/documents/coll/doc2',
           ),
         ];
 

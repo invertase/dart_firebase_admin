@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
-import 'package:googleapis_firestore/googleapis_firestore.dart';
+import 'package:googleapis_firestore/src/firestore.dart';
 import 'package:test/test.dart';
 
 const testBundleId = 'test-bundle';
 const testBundleVersion = 1;
-const databaseRoot = 'projects/test-project/databases/(default)';
+const databaseRoot = 'projects/test-project/databases/$kDefaultDatabase';
 
 /// Helper function to parse a length-prefixed bundle buffer into elements.
 List<Map<String, dynamic>> bundleToElementArray(Uint8List buffer) {
