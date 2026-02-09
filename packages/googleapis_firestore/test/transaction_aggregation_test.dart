@@ -123,7 +123,9 @@ void main() {
       await collection.add({'value': 20});
       final results = await firestore.runTransaction((transaction) async {
         final agg1 = await transaction.getAggregateQuery(collection.count());
-        final agg2 = await transaction.getAggregateQuery(collection.sum('value'));
+        final agg2 = await transaction.getAggregateQuery(
+          collection.sum('value'),
+        );
 
         return {
           'count': agg1.count,
@@ -182,7 +184,9 @@ void main() {
       await collection.add({'value': 30, 'category': 'A'});
 
       final results = await firestore.runTransaction((transaction) async {
-        final totalCount = await transaction.getAggregateQuery(collection.count());
+        final totalCount = await transaction.getAggregateQuery(
+          collection.count(),
+        );
         final categoryA = await transaction.getAggregateQuery(
           collection.where('category', WhereFilter.equal, 'A').count(),
         );
@@ -222,7 +226,7 @@ void main() {
 
       expect(result['averageScore'], 90.0);
       expect(result['firstTwoDocs'], 2);
-      expect((result['names'] as List).length, 2);
+      expect((result['names']! as List).length, 2);
     });
 
     test('getAggregateQuery() with empty results', () async {
