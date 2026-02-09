@@ -221,13 +221,3 @@ class ImpersonatedAuthClient implements AuthClient {
     // Don't close the source client - it's managed externally
   }
 }
-
-/// Helper to check if an AuthClient is an ImpersonatedAuthClient.
-bool isImpersonatedClient(AuthClient client) {
-  return client is ImpersonatedAuthClient;
-}
-
-/// Helper to cast an AuthClient to ImpersonatedAuthClient if possible.
-ImpersonatedAuthClient? asImpersonatedClient(AuthClient client) {
-  return client is ImpersonatedAuthClient ? client : null;
-}
