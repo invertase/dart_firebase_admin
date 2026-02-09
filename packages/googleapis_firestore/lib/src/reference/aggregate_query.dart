@@ -124,27 +124,14 @@ class AggregateQuery {
   Future<AggregateQuerySnapshot> get() async {
     final firestore = query.firestore;
 
-    final aggregationQuery = firestore_v1.RunAggregationQueryRequest(
-      structuredAggregationQuery: firestore_v1.StructuredAggregationQuery(
-        structuredQuery: query._toStructuredQuery(),
-        aggregations: [
-          for (final field in aggregations)
-            firestore_v1.Aggregation(
-              alias: field.alias,
-              count: field.aggregation.count,
-              sum: field.aggregation.sum,
-              avg: field.aggregation.avg,
-            ),
-        ],
-      ),
-    );
+    final request = _toProto(transactionId: null, readTime: null);
 
     final response = await firestore._firestoreClient.v1((
       api,
       projectId,
     ) async {
       return api.projects.databases.documents.runAggregationQuery(
-        aggregationQuery,
+        request,
         query._buildProtoParentPath(),
       );
     });
@@ -176,6 +163,54 @@ class AggregateQuery {
       readTime: readTime,
       data: results,
     );
+  }
+
+  /// Converts this aggregation query to a proto representation.
+  ///
+  /// Supports transaction parameters for executing within a transaction.
+  firestore_v1.RunAggregationQueryRequest _toProto({
+    required String? transactionId,
+    required Timestamp? readTime,
+    firestore_v1.TransactionOptions? transactionOptions,
+  }) {
+    // Validate mutual exclusivity of transaction parameters
+    final providedParams = [
+      transactionId,
+      readTime,
+      transactionOptions,
+    ].nonNulls.length;
+
+    if (providedParams > 1) {
+      throw ArgumentError(
+        'Only one of transactionId, readTime, or transactionOptions can be specified. '
+        'Got: transactionId=$transactionId, readTime=$readTime, transactionOptions=$transactionOptions',
+      );
+    }
+
+    final request = firestore_v1.RunAggregationQueryRequest(
+      structuredAggregationQuery: firestore_v1.StructuredAggregationQuery(
+        structuredQuery: query._toStructuredQuery(),
+        aggregations: [
+          for (final field in aggregations)
+            firestore_v1.Aggregation(
+              alias: field.alias,
+              count: field.aggregation.count,
+              sum: field.aggregation.sum,
+              avg: field.aggregation.avg,
+            ),
+        ],
+      ),
+    );
+
+    if (transactionId != null) {
+      request.transaction = transactionId;
+    } else if (readTime != null) {
+      request.readTime = readTime._toProto().timestampValue;
+    } else if (transactionOptions != null) {
+      request.newTransaction = transactionOptions;
+    }
+
+    return request;
   }
 
   @override

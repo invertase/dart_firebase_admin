@@ -20,6 +20,7 @@ part 'bulk_writer.dart';
 part 'bundle.dart';
 part 'collection_group.dart';
 part 'convert.dart';
+part 'aggregation_reader.dart';
 part 'document.dart';
 part 'document_change.dart';
 part 'document_reader.dart';

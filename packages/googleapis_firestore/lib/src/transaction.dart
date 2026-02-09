@@ -133,6 +133,42 @@ class Transaction {
     );
   }
 
+  /// Executes an aggregation query and returns the results as part of this
+  /// transaction. The aggregation is executed at the transaction's snapshot.
+  ///
+  /// ```dart
+  /// firestore.runTransaction((transaction) async {
+  ///   final query = firestore.collection('products')
+  ///       .where('category', WhereFilter.equal, 'electronics');
+  ///
+  ///   final aggregation = query.aggregate(
+  ///     const count(),
+  ///     const sum('price'),
+  ///     const average('price'),
+  ///   );
+  ///
+  ///   final snapshot = await transaction.getAggregateQuery(aggregation);
+  ///
+  ///   print('Total products: ${snapshot.count}');
+  ///   print('Total value: \$${snapshot.getSum('price')}');
+  ///   print('Average price: \$${snapshot.getAverage('price')}');
+  /// });
+  /// ```
+  Future<AggregateQuerySnapshot> getAggregateQuery(
+    AggregateQuery aggregateQuery,
+  ) async {
+    if (_writeBatch != null && _writeBatch._operations.isNotEmpty) {
+      throw FirestoreException(
+        FirestoreClientErrorCode.failedPrecondition,
+        readAfterWriteErrorMsg,
+      );
+    }
+    return _withLazyStartedTransaction<AggregateQuery, AggregateQuerySnapshot>(
+      aggregateQuery,
+      resultFn: _getAggregateQueryFn,
+    );
+  }
+
   /// Retrieve multiple documents from the database by the provided
   /// [documentsRefs]. Holds a pessimistic lock on all returned documents.
   /// If any of the documents do not exist, the operation throws a
@@ -431,6 +467,28 @@ class Transaction {
   }) async {
     final reader = _QueryReader(
       query: query,
+      transactionId: transactionId,
+      readTime: readTime,
+      transactionOptions: transactionOptions,
+    );
+
+    final result = await reader._get();
+    return _TransactionResult(
+      transaction: result.transaction,
+      result: result.result,
+    );
+  }
+
+  Future<_TransactionResult<AggregateQuerySnapshot>> _getAggregateQueryFn(
+    AggregateQuery aggregateQuery, {
+    String? transactionId,
+    Timestamp? readTime,
+    firestore_v1.TransactionOptions? transactionOptions,
+    List<FieldPath>?
+    fieldMask, // Unused for aggregations, but required by signature
+  }) async {
+    final reader = _AggregationReader(
+      aggregateQuery: aggregateQuery,
       transactionId: transactionId,
       readTime: readTime,
       transactionOptions: transactionOptions,
