@@ -129,13 +129,18 @@ final class CollectionReference<T> extends Query<T> {
 
   @override
   CollectionReference<U> withConverter<U>({
-    required FromFirestore<U> fromFirestore,
-    required ToFirestore<U> toFirestore,
+    FromFirestore<U>? fromFirestore,
+    ToFirestore<U>? toFirestore,
   }) {
+    // If null, use the default JSON converter
+    final converter = (fromFirestore == null || toFirestore == null)
+        ? _jsonConverter as _FirestoreDataConverter<U>
+        : (fromFirestore: fromFirestore, toFirestore: toFirestore);
+
     return CollectionReference<U>._(
       firestore: firestore,
       path: _queryOptions.parentPath._append(id),
-      converter: (fromFirestore: fromFirestore, toFirestore: toFirestore),
+      converter: converter,
     );
   }
 

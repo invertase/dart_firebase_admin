@@ -38,17 +38,22 @@ base class Query<T> {
   ///
   /// Using the converter allows you to specify generic type arguments when
   /// storing and retrieving objects from Firestore.
+  ///
+  /// Passing `null` for both parameters removes the current converter and
+  /// returns an untyped `Query<DocumentData>`.
   @mustBeOverridden
   Query<U> withConverter<U>({
-    required FromFirestore<U> fromFirestore,
-    required ToFirestore<U> toFirestore,
+    FromFirestore<U>? fromFirestore,
+    ToFirestore<U>? toFirestore,
   }) {
+    // If null, use the default JSON converter
+    final converter = (fromFirestore == null || toFirestore == null)
+        ? _jsonConverter as _FirestoreDataConverter<U>
+        : (fromFirestore: fromFirestore, toFirestore: toFirestore);
+
     return Query<U>._(
       firestore: firestore,
-      queryOptions: _queryOptions.withConverter((
-        fromFirestore: fromFirestore,
-        toFirestore: toFirestore,
-      )),
+      queryOptions: _queryOptions.withConverter(converter),
     );
   }
 
