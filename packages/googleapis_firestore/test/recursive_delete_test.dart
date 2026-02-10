@@ -6,7 +6,7 @@ import 'package:googleapis_firestore/src/firestore_http_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../helpers.dart';
+import 'helpers.dart';
 
 // Mock classes
 class MockFirestoreHttpClient extends Mock implements FirestoreHttpClient {}
