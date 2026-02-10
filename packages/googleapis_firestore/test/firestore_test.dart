@@ -25,8 +25,10 @@ void main() {
       late CollectionReference<DocumentData> randomCol;
 
       // Declare both functions first for mutual recursion
-      late final Future<int> Function(DocumentReference<Object?>) countDocumentChildren;
-      late final Future<int> Function(CollectionReference<Object?>) countCollectionChildren;
+      late final Future<int> Function(DocumentReference<Object?>)
+      countDocumentChildren;
+      late final Future<int> Function(CollectionReference<Object?>)
+      countCollectionChildren;
 
       // Now define them
       countDocumentChildren = (ref) async {
