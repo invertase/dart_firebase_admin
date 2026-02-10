@@ -72,6 +72,27 @@ class _QueryOptions<T> {
     );
   }
 
+  /// Returns query options for querying all descendants of the specified reference.
+  /// Used by recursiveDelete.
+  /// @private
+  /// @internal
+  factory _QueryOptions.forKindlessAllDescendants(
+    _ResourcePath parentPath,
+    String collectionId, {
+    required bool requireConsistency,
+  }) {
+    return _QueryOptions(
+      parentPath: parentPath,
+      collectionId: collectionId,
+      converter: _jsonConverter as _FirestoreDataConverter<T>,
+      allDescendants: true,
+      filters: const [],
+      fieldOrders: const [],
+      kindless: true,
+      requireConsistency: requireConsistency,
+    );
+  }
+
   final _ResourcePath parentPath;
   final String collectionId;
   final _FirestoreDataConverter<T> converter;
