@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:googleapis/storage/v1.dart';
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:google_cloud/google_cloud.dart' as google_cloud;
 import 'package:googleapis_storage/googleapis_storage.dart';
 
 /// Decide if an error should be retried, roughly mirroring Node's
@@ -194,7 +194,7 @@ class ApiExecutor {
 
   /// Execute an operation with retry logic and projectId resolution.
   ///
-  /// Resolves projectId using: [projectIdOverride] ?? storage.options.projectId ?? authClient.getProjectId()
+  /// Resolves projectId using: [projectIdOverride] ?? storage.options.projectId ?? computeProjectId()
   /// This matches Node.js behavior: `const projectId = query.projectId || this.projectId;`
   ///
   /// Throws [ArgumentError] if projectId cannot be resolved.
@@ -204,14 +204,10 @@ class ApiExecutor {
   }) async {
     return _executeWithRetry(() async {
       final storageClient = await storage.storageClient;
-      final authClient = await storage.authClient;
 
-      // Resolve projectId: use override if provided, otherwise use storage.options.projectId,
-      // or try to get from authClient. This matches Node.js behavior:
-      // `const projectId = query.projectId || this.projectId;`
-      final resolvedProjectId = await authClient.getProjectId(
-        projectIdOverride: projectIdOverride ?? storage.options.projectId,
-      );
+      final explicitProjectId = projectIdOverride ?? storage.options.projectId;
+      final resolvedProjectId =
+          explicitProjectId ?? await google_cloud.computeProjectId();
 
       return operation(storageClient, resolvedProjectId);
     });

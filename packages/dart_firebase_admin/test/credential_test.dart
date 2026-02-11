@@ -32,7 +32,7 @@ void main() {
 
         expect(
           () => Credential.fromServiceAccount(fs.file('service-account.json')),
-          throwsA(isA<FileSystemException>()),
+          throwsA(isA<FirebaseAppException>()),
         );
       });
 
@@ -42,7 +42,7 @@ void main() {
 
         expect(
           () => Credential.fromServiceAccount(fs.file('service-account.json')),
-          throwsFormatException,
+          throwsA(isA<FirebaseAppException>()),
         );
       });
 
@@ -96,10 +96,8 @@ void main() {
             Credential.fromApplicationDefaultCredentials,
             zoneValues: {envSymbol: fakeServiceAccount},
           );
-          expect(credential.serviceAccountCredentials, isNotNull);
-
-          // Verify if service account is actually being used
-          expect(credential.serviceAccountCredentials!.email, 'foo@bar.com');
+          expect(credential, isA<ApplicationDefaultCredential>());
+          expect(credential.serviceAccountCredentials, isNull);
         },
       );
 

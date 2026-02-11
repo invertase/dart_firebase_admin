@@ -17,12 +17,10 @@ void main() {
       const fileName = 'test-file.txt';
 
       setUp(() {
-        final credentials = GoogleCredential.fromServiceAccount(
-          File(credPath!),
-        );
+        final credentials = Credential.fromServiceAccount(File(credPath!));
 
         runZoned(() {
-          storage = Storage(StorageOptions(credentials: credentials));
+          storage = Storage(StorageOptions(credential: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 

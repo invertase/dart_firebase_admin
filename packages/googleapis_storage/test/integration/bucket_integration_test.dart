@@ -18,12 +18,10 @@ void main() {
       const bucketName = 'dart-firebase-admin.firebasestorage.app';
 
       setUp(() {
-        final credentials = GoogleCredential.fromServiceAccount(
-          File(credPath!),
-        );
+        final credentials = Credential.fromServiceAccount(File(credPath!));
 
         runZoned(() {
-          storage = Storage(StorageOptions(credentials: credentials));
+          storage = Storage(StorageOptions(credential: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 
@@ -118,12 +116,10 @@ void main() {
       const testFile2 = 'e2e-bucket-list-test-2.txt';
 
       setUp(() {
-        final credentials = GoogleCredential.fromServiceAccount(
-          File(credPath!),
-        );
+        final credentials = Credential.fromServiceAccount(File(credPath!));
 
         runZoned(() {
-          storage = Storage(StorageOptions(credentials: credentials));
+          storage = Storage(StorageOptions(credential: credentials));
         }, zoneValues: {envSymbol: testEnv});
       });
 

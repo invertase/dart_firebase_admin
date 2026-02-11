@@ -31,10 +31,7 @@ class FirebaseMessagingHttpClient {
     Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) async {
     final client = await app.client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
+    final projectId = await app.getProjectId();
     return _fmcGuard(() => fn(client, projectId));
   }
 

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart' as auth_io;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart' as auth_utils;
 import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:http/http.dart' as http;
 import 'emulator_client.dart';
@@ -95,19 +94,34 @@ abstract class Service<T extends ServiceOptions> {
       return _authClient = await options.authClient!;
     }
 
-    auth_utils.GoogleCredential? googleCredential;
-    if (options is StorageOptions) {
-      final storageOpts = options as StorageOptions;
-      googleCredential =
-          storageOpts.credentials ??
-          auth_utils.GoogleCredential.fromApplicationDefaultCredentials();
-    }
-
-    return _authClient = await auth_utils.createAuthClient(googleCredential, [
+    final scopes = [
       'https://www.googleapis.com/auth/iam',
       'https://www.googleapis.com/auth/cloud-platform',
       'https://www.googleapis.com/auth/devstorage.full_control',
-    ], baseClient: StorageHttpClient.create(config.apiEndpoint));
+    ];
+
+    final baseClient = StorageHttpClient.create(config.apiEndpoint);
+
+    Credential? credential;
+    if (options is StorageOptions) {
+      credential = (options as StorageOptions).credential;
+    }
+
+    if (credential != null) {
+      final serviceAccountCreds = credential.serviceAccountCredentials;
+      if (serviceAccountCreds != null) {
+        return _authClient = await auth_io.clientViaServiceAccount(
+          serviceAccountCreds,
+          scopes,
+          baseClient: baseClient,
+        );
+      }
+    }
+
+    return _authClient = await auth_io.clientViaApplicationDefaultCredentials(
+      scopes: scopes,
+      baseClient: baseClient,
+    );
   }
 
   Future<storage_v1.StorageApi> _createStorageClient() async {

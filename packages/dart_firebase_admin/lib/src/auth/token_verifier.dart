@@ -77,11 +77,7 @@ class FirebaseTokenVerifier {
     String jwtToken, {
     bool isEmulator = false,
   }) async {
-    final client = await app.client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
+    final projectId = await app.getProjectId();
     final decoded = await _decodeAndVerify(
       jwtToken,
       projectId: projectId,

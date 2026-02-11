@@ -180,21 +180,27 @@ void main() {
       });
 
       test('should detect different credentials', () {
-        const settings1 = gfs.Settings(
+        final settings1 = gfs.Settings(
           projectId: 'test-project',
-          credentials: gfs.Credentials(
-            clientEmail: 'test1@example.com',
+          credential: gfs.Credential.fromServiceAccountParams(
+            email: 'test1@example.com',
             privateKey: mockPrivateKey,
+            projectId: 'test-project',
           ),
-          environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
+          environmentOverride: const {
+            'FIRESTORE_EMULATOR_HOST': 'localhost:8080',
+          },
         );
-        const settings2 = gfs.Settings(
+        final settings2 = gfs.Settings(
           projectId: 'test-project',
-          credentials: gfs.Credentials(
-            clientEmail: 'test2@example.com', // Different email
+          credential: gfs.Credential.fromServiceAccountParams(
+            email: 'test2@example.com',
             privateKey: mockPrivateKey,
+            projectId: 'test-project',
           ),
-          environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
+          environmentOverride: const {
+            'FIRESTORE_EMULATOR_HOST': 'localhost:8080',
+          },
         );
 
         firestoreService.initializeDatabase('db-diff-2', settings1);
@@ -212,13 +218,16 @@ void main() {
       });
 
       test('should allow same settings (including null)', () {
-        const settings = gfs.Settings(
+        final settings = gfs.Settings(
           projectId: 'test-project',
-          credentials: gfs.Credentials(
-            clientEmail: mockClientEmail,
+          credential: gfs.Credential.fromServiceAccountParams(
+            email: mockClientEmail,
             privateKey: mockPrivateKey,
+            projectId: 'test-project',
           ),
-          environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
+          environmentOverride: const {
+            'FIRESTORE_EMULATOR_HOST': 'localhost:8080',
+          },
         );
 
         final db1 = firestoreService.initializeDatabase('db-same-1', settings);

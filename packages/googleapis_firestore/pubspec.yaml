@@ -9,9 +9,9 @@ environment:
 
 dependencies:
   collection: ^1.18.0
+  google_cloud: ^0.2.1-beta.1
   googleapis: ^15.0.0
   googleapis_auth: ^2.0.0
-  googleapis_auth_utils: ^0.1.0
   http: ^1.0.0
   intl: ^0.20.0
   meta: ^1.9.1

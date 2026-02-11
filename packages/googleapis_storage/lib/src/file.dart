@@ -995,19 +995,20 @@ class BucketFile extends ServiceObject<FileMetadata>
 
     // Encode policy
     final policyString = jsonEncode(policy);
-    final policyBase64 = base64Encode(utf8.encode(policyString));
+    final policyStringBytes = utf8.encode(policyString);
+    final policyStringBase64 = base64Encode(policyStringBytes);
 
     // Sign the policy
     try {
       final authClient = await storage.authClient;
       final signature = await authClient.sign(
-        policyBase64,
+        policyStringBytes,
         endpoint: options.signingEndpoint?.toString(),
       );
 
       return PolicyDocument(
         string: policyString,
-        base64: policyBase64,
+        base64: policyStringBase64,
         signature: signature,
       );
     } catch (e) {
@@ -1055,17 +1056,7 @@ class BucketFile extends ServiceObject<FileMetadata>
 
     // Get auth client and credentials
     final authClient = await storage.authClient;
-    final credential = authClient.credential;
-    final clientEmail =
-        credential?.serviceAccountCredentials?.email ??
-        await authClient.getServiceAccountEmail();
-
-    if (clientEmail == null) {
-      throw StateError(
-        'Unable to determine service account email for signing. '
-        'Ensure you are running with service account credentials.',
-      );
-    }
+    final clientEmail = await authClient.getServiceAccountEmail;
 
     // Build credential string
     final todayISO = _formatDateStamp(now);
@@ -1100,12 +1091,13 @@ class BucketFile extends ServiceObject<FileMetadata>
     };
 
     final policyString = _unicodeJSONStringify(policy);
-    final policyBase64 = base64Encode(utf8.encode(policyString));
+    final policyStringBytes = utf8.encode(policyString);
+    final policyStringBase64 = base64Encode(policyStringBytes);
 
     // Sign and convert to hex
     try {
       final signature = await authClient.sign(
-        policyBase64,
+        policyStringBytes,
         endpoint: options.signingEndpoint?.toString(),
       );
 
@@ -1115,7 +1107,7 @@ class BucketFile extends ServiceObject<FileMetadata>
           .join();
 
       // Add policy and signature to fields
-      fields['policy'] = policyBase64;
+      fields['policy'] = policyStringBase64;
       fields['x-goog-signature'] = signatureHex;
 
       // Build URL

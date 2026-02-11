@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:googleapis/cloudtasks/v2.dart' as tasks2;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:meta/meta.dart';
 
 import '../app.dart';
+import '../utils/auth_extension.dart';
 import '../utils/validator.dart';
 
 part 'functions_api.dart';

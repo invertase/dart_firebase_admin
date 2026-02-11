@@ -452,10 +452,7 @@ class AuthHttpClient {
     return _authGuard(() async {
       // Use the cached client (created once based on emulator configuration)
       final client = await _client;
-      final projectId = await client.getProjectId(
-        projectIdOverride: app.options.projectId,
-        environment: Zone.current[envSymbol] as Map<String, String>?,
-      );
+      final projectId = await app.getProjectId();
       return fn(client, projectId);
     });
   }

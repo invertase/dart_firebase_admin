@@ -38,6 +38,10 @@ class EmulatorClient extends BaseClient implements googleapis_auth.AuthClient {
       throw UnimplementedError('EmulatorClient does not provide credentials');
 
   @override
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
+      null;
+
+  @override
   Future<StreamedResponse> send(BaseRequest request) async {
     final modifiedRequest = _RequestImpl(
       request.method,
