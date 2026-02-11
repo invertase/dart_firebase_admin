@@ -151,6 +151,37 @@ final class Timestamp implements _Serializable {
   final int seconds;
   final int nanoseconds;
 
+  /// Converts this Timestamp to a Dart DateTime object.
+  ///
+  /// Returns a DateTime representing the same point in time as this Timestamp,
+  /// with millisecond precision. Nanoseconds are rounded to the nearest
+  /// millisecond.
+  ///
+  /// Example:
+  /// ```dart
+  /// final timestamp = Timestamp(seconds: 1234567890, nanoseconds: 123456789);
+  /// final date = timestamp.toDate();
+  /// print(date); // 2009-02-13 23:31:30.123Z
+  /// ```
+  DateTime toDate() {
+    final milliseconds = seconds * 1000 + (nanoseconds / _msToNanos).round();
+    return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
+  }
+
+  /// Returns the number of milliseconds since Unix epoch 1970-01-01T00:00:00Z.
+  ///
+  /// The nanosecond component is floored to millisecond precision.
+  ///
+  /// Example:
+  /// ```dart
+  /// final timestamp = Timestamp(seconds: 1234567890, nanoseconds: 123456789);
+  /// final millis = timestamp.toMillis();
+  /// print(millis); // 1234567890123
+  /// ```
+  int toMillis() {
+    return seconds * 1000 + (nanoseconds / _msToNanos).floor();
+  }
+
   @override
   firestore_v1.Value _toProto() {
     return firestore_v1.Value(

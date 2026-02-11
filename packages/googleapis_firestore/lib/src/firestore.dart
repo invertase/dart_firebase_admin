@@ -816,6 +816,21 @@ class Firestore {
     }
   }
 
+  /// Returns a JSON-serializable representation of this Firestore instance.
+  ///
+  /// Returns a Map containing the projectId if it has been determined.
+  ///
+  /// Example:
+  /// ```dart
+  /// final firestore = Firestore(Settings(projectId: 'my-project'));
+  /// print(firestore.toJSON()); // {projectId: my-project}
+  /// ```
+  Map<String, String?> toJSON() {
+    return {
+      'projectId': _firestoreClient.cachedProjectId ?? _settings.projectId,
+    };
+  }
+
   /// Terminates the Firestore client and closes all open connections.
   ///
   /// After calling terminate, the Firestore instance is no longer usable.
