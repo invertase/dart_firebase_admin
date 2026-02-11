@@ -1,5 +1,6 @@
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
 import 'package:googleapis_firestore/googleapis_firestore.dart';
+import 'package:googleapis_firestore/src/firestore.dart' show FieldMask;
 import 'package:googleapis_firestore/src/firestore_http_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -194,6 +195,96 @@ void main() {
       expect(results[0].id, 'doc1');
       expect(results[1].id, 'doc2');
       expect(results[2].id, 'doc3');
+    });
+
+    test('accepts same document multiple times', () async {
+      when(
+        () => mockClient
+            .v1<List<firestore_v1.BatchGetDocumentsResponseElement>>(any()),
+      ).thenAnswer((_) async {
+        // Only returns unique documents
+        return [
+          createFoundResponse(
+            documentPath: 'col/a',
+            fields: {'val': 'a'},
+            firestore: firestore,
+          ),
+          createFoundResponse(
+            documentPath: 'col/b',
+            fields: {'val': 'b'},
+            firestore: firestore,
+          ),
+        ];
+      });
+
+      final docA = firestore.doc('col/a');
+      final docB = firestore.doc('col/b');
+
+      // Request same doc multiple times
+      final results = await firestore.getAll([docA, docA, docB, docA]);
+
+      // Results should include duplicates in request order
+      expect(results, hasLength(4));
+      expect(results[0].id, 'a');
+      expect(results[1].id, 'a');
+      expect(results[2].id, 'b');
+      expect(results[3].id, 'a');
+    });
+
+    test('applies field mask with FieldPath', () async {
+      when(
+        () => mockClient
+            .v1<List<firestore_v1.BatchGetDocumentsResponseElement>>(any()),
+      ).thenAnswer((_) async {
+        return [
+          createFoundResponse(
+            documentPath: 'col/doc',
+            fields: {'foo': 'included'},
+            firestore: firestore,
+          ),
+        ];
+      });
+
+      final doc = firestore.doc('col/doc');
+      final results = await firestore.getAll(
+        [doc],
+        ReadOptions(
+          fieldMask: [
+            FieldMask.fieldPath(FieldPath(const ['foo', 'bar'])),
+          ],
+        ),
+      );
+
+      // Should return successfully with field mask
+      expect(results, hasLength(1));
+      expect(results[0].exists, isTrue);
+    });
+
+    test('applies field mask with strings', () async {
+      when(
+        () => mockClient
+            .v1<List<firestore_v1.BatchGetDocumentsResponseElement>>(any()),
+      ).thenAnswer((_) async {
+        return [
+          createFoundResponse(
+            documentPath: 'col/doc',
+            fields: {'foo': 'bar'},
+            firestore: firestore,
+          ),
+        ];
+      });
+
+      final doc = firestore.doc('col/doc');
+      final results = await firestore.getAll(
+        [doc],
+        ReadOptions(
+          fieldMask: [FieldMask.field('foo'), FieldMask.field('bar.baz')],
+        ),
+      );
+
+      // Should return successfully with field mask
+      expect(results, hasLength(1));
+      expect(results[0].get('foo')?.value, 'bar');
     });
   });
 }
