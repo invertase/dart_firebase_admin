@@ -7,8 +7,11 @@ abstract base class _Serializable {
   firestore_v1.Value _toProto();
 }
 
-class _Serializer {
-  _Serializer(this.firestore);
+class Serializer {
+  Serializer._(this.firestore);
+
+  @internal
+  factory Serializer.internal(Firestore firestore) => Serializer._(firestore);
 
   final Firestore firestore;
 

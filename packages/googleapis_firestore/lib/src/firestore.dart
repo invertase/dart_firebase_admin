@@ -386,7 +386,10 @@ class Firestore {
 
   /// The serializer to use for the Protobuf transformation.
   /// @internal
-  late final _Serializer _serializer = _Serializer(this);
+  late final Serializer _serializer = Serializer._(this);
+
+  @visibleForTesting
+  Serializer get serializer => _serializer;
 
   /// Returns the project ID for this Firestore instance.
   ///
