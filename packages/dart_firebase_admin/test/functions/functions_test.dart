@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:dart_firebase_admin/functions.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:http/http.dart';
 import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
@@ -68,8 +67,8 @@ MockClient createMockHttpClient({
 
 /// Creates an AuthClient with service account credentials for testing.
 ///
-/// This creates a real AuthClient properly associated with a GoogleCredential,
-/// so extension methods like `credential` and `getServiceAccountEmail()` work.
+/// This creates a real AuthClient with service account credentials,
+/// so extension methods like `getServiceAccountEmail()` and `sign()` work.
 Future<auth.AuthClient> createTestAuthClient({
   required String email,
   String? idToken,
@@ -80,16 +79,17 @@ Future<auth.AuthClient> createTestAuthClient({
     apiHandler: apiHandler,
   );
 
-  // Create real credential from service account parameters
-  final credential = GoogleCredential.fromServiceAccountParams(
-    privateKey: mockPrivateKey,
-    email: email,
-    clientId: 'test-client-id',
-    projectId: projectId,
-  );
+  // Create service account credentials from parameters
+  final credentials = auth.ServiceAccountCredentials.fromJson({
+    'type': 'service_account',
+    'project_id': projectId,
+    'private_key': mockPrivateKey,
+    'client_email': email,
+    'client_id': 'test-client-id',
+  });
 
-  // Create real auth client (properly associated with credential via Expando)
-  return createAuthClient(credential, [
+  // Create auth client with service account credentials
+  return auth.clientViaServiceAccount(credentials, [
     'https://www.googleapis.com/auth/cloud-platform',
   ], baseClient: baseClient);
 }

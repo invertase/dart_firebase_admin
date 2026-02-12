@@ -8,4 +8,4 @@ export FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199
 export GOOGLE_CLOUD_PROJECT=dart-firebase-admin
 
 # Run the example
-dart run lib/main.dart
+firebase emulators:exec --only auth,firestore,functions,tasks,storage "dart run lib/main.dart"

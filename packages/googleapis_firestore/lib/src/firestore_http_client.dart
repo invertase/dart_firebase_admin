@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:google_cloud/google_cloud.dart' as google_cloud;
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
-import 'package:googleapis_auth/googleapis_auth.dart' as googleapis_auth;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
@@ -46,6 +46,10 @@ class EmulatorClient extends BaseClient implements googleapis_auth.AuthClient {
       throw UnimplementedError();
 
   @override
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
+      null;
+
+  @override
   Future<StreamedResponse> send(BaseRequest request) async {
     final modifiedRequest = _RequestImpl(
       request.method,
@@ -69,7 +73,7 @@ class FirestoreHttpClient {
   FirestoreHttpClient({required this.credential, required Settings settings})
     : _settings = settings;
 
-  final GoogleCredential credential;
+  final Credential credential;
   final Settings _settings;
 
   String? _cachedProjectId;
@@ -104,9 +108,17 @@ class FirestoreHttpClient {
     }
 
     // Production: Create authenticated client
-    return createAuthClient(credential, [
-      firestore_v1.FirestoreApi.cloudPlatformScope,
-    ]);
+    final serviceAccountCreds = credential.serviceAccountCredentials;
+    if (serviceAccountCreds != null) {
+      return googleapis_auth.clientViaServiceAccount(serviceAccountCreds, [
+        firestore_v1.FirestoreApi.cloudPlatformScope,
+      ]);
+    }
+
+    // Fall back to Application Default Credentials
+    return googleapis_auth.clientViaApplicationDefaultCredentials(
+      scopes: [firestore_v1.FirestoreApi.cloudPlatformScope],
+    );
   }
 
   Future<R> _run<R>(
@@ -114,12 +126,25 @@ class FirestoreHttpClient {
   ) async {
     final client = await _client;
 
-    // Get project ID from settings or discover it
-    final projectId = _settings.projectId ?? await client.getProjectId();
+    String? projectId;
+
+    final env = _settings.environmentOverride;
+    if (env != null) {
+      for (final envKey in google_cloud.gcpProjectIdEnvironmentVariables) {
+        final value = env[envKey];
+        if (value != null) {
+          projectId = value;
+          break;
+        }
+      }
+    }
+
+    projectId ??= _settings.projectId;
+    projectId ??= await google_cloud.computeProjectId();
 
     _cachedProjectId = projectId;
 
-    return firestoreGuard(() => fn(client, projectId));
+    return firestoreGuard(() => fn(client, projectId!));
   }
 
   /// Executes a Firestore v1 API operation with automatic projectId injection.

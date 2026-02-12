@@ -2,12 +2,10 @@ import 'dart:async';
 
 import 'package:googleapis/firebaseappcheck/v1.dart' as appcheck1;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1_beta;
 import 'package:meta/meta.dart';
 
 import '../app.dart';
-import '../utils/crypto_signer.dart';
 import '../utils/jwt.dart';
 import 'app_check_api.dart';
 import 'token_generator.dart';
@@ -43,8 +41,7 @@ class AppCheck implements FirebaseService {
     AppCheckTokenGenerator? tokenGenerator,
     AppCheckTokenVerifier? tokenVerifier,
   }) : _requestHandler = requestHandler ?? AppCheckRequestHandler(app),
-       _tokenGenerator =
-           tokenGenerator ?? AppCheckTokenGenerator(app.createCryptoSigner()),
+       _tokenGenerator = tokenGenerator ?? AppCheckTokenGenerator(app),
        _appCheckTokenVerifier = tokenVerifier ?? AppCheckTokenVerifier(app);
 
   @override

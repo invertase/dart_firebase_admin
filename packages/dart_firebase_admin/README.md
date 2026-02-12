@@ -233,7 +233,6 @@ The Firebase Admin Dart SDK currently supports the following Firebase services:
 
 Alongside the Firebase Admin Dart SDK, this repository contains additional workspace/pub.dev packages to accomodate the SDK:
 
-- [googleapis_auth_utils](/packages/googleapis_auth_utils/): Additional functionality extending the [googleapis_auth](https://pub.dev/packages/googleapis_auth) package.
 - [googleapis_firestore](/packages/googleapis_firestore/): Standalone Google APIs Firestore SDK, which the Firebase SDK extends.
 - [googleapis_storage](/packages/googleapis_storage/): Standalone Google APIs Storage SDK, which the Firebase SDK extends.
 

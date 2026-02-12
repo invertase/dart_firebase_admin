@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'dart:convert' show jsonEncode, utf8;
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
 
 import 'backoff.dart';
+import 'credential.dart';
 import 'firestore_exception.dart';
 import 'firestore_http_client.dart';
 import 'status_code.dart';
@@ -60,57 +59,28 @@ part 'util.dart';
 part 'validate.dart';
 part 'write_batch.dart';
 
-/// Plain credentials object for service account authentication.
-///
-/// Example:
-/// ```dart
-/// final credentials = Credentials(
-///   clientEmail: 'my-sa@my-project.iam.gserviceaccount.com',
-///   privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
-/// );
-/// ```
-@immutable
-class Credentials {
-  /// Creates service account credentials.
-  const Credentials({required this.clientEmail, required this.privateKey});
-
-  /// The service account email address.
-  final String clientEmail;
-
-  /// The service account private key in PEM format.
-  final String privateKey;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Credentials &&
-          runtimeType == other.runtimeType &&
-          clientEmail == other.clientEmail &&
-          privateKey == other.privateKey;
-
-  @override
-  int get hashCode => Object.hash(clientEmail, privateKey);
-}
-
 /// Settings used to configure a Firestore instance.
 ///
 /// Example:
 /// ```dart
-/// // Option 1: With explicit credentials
+/// // Option 1: With service account file
 /// final firestore = Firestore(
 ///   settings: Settings(
-///     projectId: 'my-project',
-///     credentials: Credentials(
-///       clientEmail: 'xxx@xxx.iam.gserviceaccount.com',
-///       privateKey: '-----BEGIN PRIVATE KEY-----...',
+///     credential: Credential.fromServiceAccount(
+///       File('/path/to/service-account.json'),
 ///     ),
 ///   ),
 /// );
 ///
-/// // Option 2: With key file
+/// // Option 2: With explicit parameters
 /// final firestore = Firestore(
 ///   settings: Settings(
-///     keyFilename: '/path/to/service-account.json',
+///     projectId: 'my-project',
+///     credential: Credential.fromServiceAccountParams(
+///       email: 'xxx@xxx.iam.gserviceaccount.com',
+///       privateKey: '-----BEGIN PRIVATE KEY-----...',
+///       projectId: 'my-project',
+///     ),
 ///   ),
 /// );
 ///
@@ -125,8 +95,7 @@ class Settings {
     this.databaseId,
     this.host,
     this.ssl = true,
-    this.credentials,
-    this.keyFilename,
+    this.credential,
     this.ignoreUndefinedProperties = false,
     this.useBigInt = false,
     this.environmentOverride,
@@ -155,34 +124,17 @@ class Settings {
   /// Defaults to true. Set to false when using the emulator.
   final bool ssl;
 
-  /// The client_email and private_key properties of the service account
-  /// to use with your Firestore project.
+  /// The credential to use for authentication.
   ///
-  /// Can be omitted in environments that support Application Default Credentials.
-  /// If your credentials are stored in a JSON file, you can specify a
-  /// [keyFilename] instead.
+  /// Can be omitted to use Application Default Credentials.
   ///
   /// Example:
   /// ```dart
-  /// credentials: Credentials(
-  ///   clientEmail: 'my-sa@my-project.iam.gserviceaccount.com',
-  ///   privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
+  /// credential: Credential.fromServiceAccount(
+  ///   File('/path/to/service-account.json'),
   /// )
   /// ```
-  final Credentials? credentials;
-
-  /// Local file containing the Service Account credentials as downloaded from
-  /// the Google Developers Console.
-  ///
-  /// Can be omitted in environments that support Application Default Credentials.
-  /// To configure Firestore with custom credentials, use the [credentials]
-  /// property instead.
-  ///
-  /// Example:
-  /// ```dart
-  /// keyFilename: '/path/to/service-account.json'
-  /// ```
-  final String? keyFilename;
+  final Credential? credential;
 
   /// Whether to skip nested properties that are set to `null` during
   /// object serialization.
@@ -215,37 +167,13 @@ class Settings {
   /// ```
   final Map<String, String>? environmentOverride;
 
-  /// Converts these settings to a GoogleCredential for internal use.
-  ///
-  /// Priority: credentials > keyFilename > Application Default Credentials
-  GoogleCredential _toGoogleCredential() {
-    // Priority 1: Explicit credentials object
-    if (credentials != null) {
-      return GoogleCredential.fromServiceAccountParams(
-        privateKey: credentials!.privateKey,
-        email: credentials!.clientEmail,
-        projectId: projectId,
-      );
-    }
-
-    // Priority 2: Key file path
-    if (keyFilename != null) {
-      return GoogleCredential.fromServiceAccount(File(keyFilename!));
-    }
-
-    // Priority 3: Application Default Credentials
-    // This will read GOOGLE_APPLICATION_CREDENTIALS env var
-    return GoogleCredential.fromApplicationDefaultCredentials();
-  }
-
   /// Creates a copy of this Settings with the given fields replaced.
   Settings copyWith({
     String? projectId,
     String? databaseId,
     String? host,
     bool? ssl,
-    Credentials? credentials,
-    String? keyFilename,
+    Credential? credential,
     bool? ignoreUndefinedProperties,
     bool? useBigInt,
     Map<String, String>? environmentOverride,
@@ -255,8 +183,7 @@ class Settings {
       databaseId: databaseId ?? this.databaseId,
       host: host ?? this.host,
       ssl: ssl ?? this.ssl,
-      credentials: credentials ?? this.credentials,
-      keyFilename: keyFilename ?? this.keyFilename,
+      credential: credential ?? this.credential,
       ignoreUndefinedProperties:
           ignoreUndefinedProperties ?? this.ignoreUndefinedProperties,
       useBigInt: useBigInt ?? this.useBigInt,
@@ -273,8 +200,7 @@ class Settings {
           databaseId == other.databaseId &&
           host == other.host &&
           ssl == other.ssl &&
-          credentials == other.credentials &&
-          keyFilename == other.keyFilename &&
+          credential == other.credential &&
           ignoreUndefinedProperties == other.ignoreUndefinedProperties &&
           useBigInt == other.useBigInt;
 
@@ -284,8 +210,7 @@ class Settings {
     databaseId,
     host,
     ssl,
-    credentials,
-    keyFilename,
+    credential,
     ignoreUndefinedProperties,
     useBigInt,
   );
@@ -374,14 +299,14 @@ class Firestore {
 
   Firestore._({Settings? settings, FirestoreHttpClient? client})
     : _settings = settings ?? const Settings() {
-    _credential = _settings._toGoogleCredential();
+    final credential =
+        _settings.credential ?? Credential.fromApplicationDefaultCredentials();
     _firestoreClient =
         client ??
-        FirestoreHttpClient(credential: _credential, settings: _settings);
+        FirestoreHttpClient(credential: credential, settings: _settings);
   }
 
   final Settings _settings;
-  late final GoogleCredential _credential;
   late final FirestoreHttpClient _firestoreClient;
 
   /// The serializer to use for the Protobuf transformation.

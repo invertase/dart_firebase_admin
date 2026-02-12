@@ -253,15 +253,11 @@ class FunctionsRequestHandler {
       return;
     }
 
-    // Get the credential associated with the auth client
-    final credential = authClient.credential;
-
     // Check if running as an extension with ComputeEngine credentials.
     // ComputeEngine credentials are used when running on GCE/Cloud Run without
     // a service account JSON file - indicated by credentials without local
     // service account credentials (i.e., using metadata server).
-    final isComputeEngine =
-        credential != null && credential.serviceAccountCredentials == null;
+    final isComputeEngine = authClient.serviceAccountCredentials == null;
 
     if (extensionId != null && extensionId.isNotEmpty && isComputeEngine) {
       // Running as extension with ComputeEngine - use ID token with Authorization header.
@@ -280,10 +276,9 @@ class FunctionsRequestHandler {
 
     // Default: Use OIDC token with service account email.
     // Try to get service account email from credential first, then from metadata service.
-    var serviceAccountEmail = credential?.serviceAccountId;
-    serviceAccountEmail ??= await authClient.getServiceAccountEmail();
+    final serviceAccountEmail = await authClient.getServiceAccountEmail;
 
-    if (serviceAccountEmail == null || serviceAccountEmail.isEmpty) {
+    if (serviceAccountEmail.isEmpty) {
       throw FirebaseFunctionsAdminException(
         FunctionsClientErrorCode.invalidCredential,
         'Failed to determine service account email. Initialize the SDK with '

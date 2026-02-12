@@ -1,8 +1,10 @@
 import 'dart:convert';
 
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:meta/meta.dart';
 
+import '../../dart_firebase_admin.dart';
+import '../utils/auth_extension.dart';
 import 'app_check.dart';
 import 'app_check_api.dart';
 
@@ -15,9 +17,9 @@ const oneMinuteInSeconds = 60;
 /// Class for generating Firebase App Check tokens.
 @internal
 class AppCheckTokenGenerator {
-  AppCheckTokenGenerator(this.signer);
+  AppCheckTokenGenerator(this.app);
 
-  final CryptoSigner signer;
+  final FirebaseApp app;
 
   /// Creates a new custom token that can be exchanged to an App Check token.
   ///
@@ -30,9 +32,10 @@ class AppCheckTokenGenerator {
     AppCheckTokenOptions? options,
   ]) async {
     try {
-      final account = await signer.getAccountId();
+      final authClient = await app.client;
+      final account = authClient.getServiceAccountEmail;
 
-      final header = {'alg': signer.algorithm, 'typ': 'JWT'};
+      final header = {'alg': 'RS256', 'typ': 'JWT'};
       final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
       final body = {
         'iss': account,
@@ -45,11 +48,14 @@ class AppCheckTokenGenerator {
 
       final token = '${_encodeSegment(header)}.${_encodeSegment(body)}';
 
-      final signature = await signer.sign(utf8.encode(token));
+      final signature = await authClient.signBlob(utf8.encode(token));
 
-      return '$token.${_encodeSegmentBuffer(signature)}';
-    } on CryptoSignerException catch (err) {
-      throw _appCheckErrorFromCryptoSignerError(err);
+      return '$token.$signature';
+    } on googleapis_auth.ServerRequestFailedException catch (err) {
+      throw FirebaseAppCheckException(
+        AppCheckErrorCode.invalidCredential,
+        err.message,
+      );
     }
   }
 
@@ -66,20 +72,4 @@ class AppCheckTokenGenerator {
   String _toWebSafeBase64(List<int> data) {
     return base64Encode(data).replaceAll('/', '_').replaceAll('+', '-');
   }
-}
-
-/// Creates a new `FirebaseAppCheckError` by extracting the error code, message and other relevant
-/// details from a `CryptoSignerError`.
-///
-/// [err] - The Error to convert into a [FirebaseAppCheckException] error
-/// Returns a Firebase App Check error that can be returned to the user.
-FirebaseAppCheckException _appCheckErrorFromCryptoSignerError(
-  CryptoSignerException err,
-) {
-  // TODO handle CryptoSignerException.cause
-
-  return FirebaseAppCheckException(
-    AppCheckErrorCode.from(err.code),
-    err.message,
-  );
 }

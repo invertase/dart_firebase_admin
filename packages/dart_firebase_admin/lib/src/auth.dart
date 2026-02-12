@@ -9,13 +9,12 @@ import 'package:googleapis/identitytoolkit/v2.dart' as auth2;
 import 'package:googleapis/identitytoolkit/v2.dart' as v2;
 import 'package:googleapis/identitytoolkit/v3.dart' as auth3;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
 import 'app.dart';
 import 'object_utils.dart';
-import 'utils/crypto_signer.dart';
+import 'utils/auth_extension.dart';
 import 'utils/jwt.dart';
 import 'utils/utils.dart';
 import 'utils/validator.dart';

@@ -27,21 +27,6 @@ void main() {
       );
       expect(AppCheckErrorCode.unknownError.code, equals('unknown-error'));
     });
-
-    test('from should map crypto signer error codes', () {
-      expect(
-        AppCheckErrorCode.from('invalid-credential'),
-        equals(AppCheckErrorCode.invalidCredential),
-      );
-      expect(
-        AppCheckErrorCode.from('invalid-argument'),
-        equals(AppCheckErrorCode.invalidArgument),
-      );
-      expect(
-        AppCheckErrorCode.from('unknown-code'),
-        equals(AppCheckErrorCode.internalError),
-      );
-    });
   });
 
   group('FirebaseAppCheckException', () {

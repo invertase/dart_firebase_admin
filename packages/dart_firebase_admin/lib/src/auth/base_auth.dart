@@ -5,12 +5,15 @@ _FirebaseTokenGenerator _createFirebaseTokenGenerator(
   String? tenantId,
 }) {
   try {
-    final signer = Environment.isAuthEmulatorEnabled()
-        ? _EmulatedSigner()
-        : app.createCryptoSigner();
-    return _FirebaseTokenGenerator(signer, tenantId: tenantId);
-  } on CryptoSignerException catch (err, stackTrace) {
-    Error.throwWithStackTrace(_handleCryptoSignerError(err), stackTrace);
+    return _FirebaseTokenGenerator(app, tenantId: tenantId);
+  } on googleapis_auth.ServerRequestFailedException catch (err, stackTrace) {
+    Error.throwWithStackTrace(
+      FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidCredential,
+        err.message,
+      ),
+      stackTrace,
+    );
   }
 }
 

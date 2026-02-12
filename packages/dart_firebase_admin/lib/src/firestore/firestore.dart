@@ -106,23 +106,23 @@ class Firestore implements FirebaseService {
     final projectId = app.projectId;
     final appCredential = app.options.credential;
 
-    // Start with user settings or empty settings
     var settings = userSettings ?? const googleapis_firestore.Settings();
 
-    // Extract credentials from app (if not provided by user)
-    if (settings.credentials == null && settings.keyFilename == null) {
+    if (settings.credential == null) {
       if (appCredential is ServiceAccountCredential) {
-        // Extract service account credentials
         settings = settings.copyWith(
-          credentials: googleapis_firestore.Credentials(
-            clientEmail: appCredential.clientEmail,
+          credential: googleapis_firestore.Credential.fromServiceAccountParams(
+            email: appCredential.clientEmail,
             privateKey: appCredential.privateKey,
+            projectId: appCredential.projectId,
           ),
         );
       } else if (appCredential is ApplicationDefaultCredential) {
-        // Let googleapis_firestore discover ADC automatically
+        settings = settings.copyWith(
+          credential: googleapis_firestore
+              .Credential.fromApplicationDefaultCredentials(),
+        );
       } else if (appCredential != null) {
-        // Unsupported credential type
         throw FirebaseAppException(
           AppErrorCode.invalidCredential,
           'Firestore requires ServiceAccountCredential or '
@@ -131,10 +131,8 @@ class Firestore implements FirebaseService {
       }
     }
 
-    // Set database ID
     settings = settings.copyWith(databaseId: databaseId);
 
-    // Set project ID if available and not already set
     if (projectId != null && settings.projectId == null) {
       settings = settings.copyWith(projectId: projectId);
     }
@@ -157,25 +155,14 @@ class Firestore implements FirebaseService {
     if (a == null && b == null) return true;
     if (a == null || b == null) return false;
 
-    // Compare basic fields
     if (a.projectId != b.projectId ||
         a.databaseId != b.databaseId ||
         a.host != b.host ||
-        a.ssl != b.ssl ||
-        a.keyFilename != b.keyFilename) {
+        a.ssl != b.ssl) {
       return false;
     }
 
-    // Compare credentials
-    final credsA = a.credentials;
-    final credsB = b.credentials;
-
-    if (credsA == null && credsB == null) return true;
-    if (credsA == null || credsB == null) return false;
-
-    // Compare credential fields
-    return credsA.clientEmail == credsB.clientEmail &&
-        credsA.privateKey == credsB.privateKey;
+    return a.credential == b.credential;
   }
 
   @override
