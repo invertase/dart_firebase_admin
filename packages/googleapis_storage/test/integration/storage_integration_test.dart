@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
+
 import 'package:googleapis_storage/googleapis_storage.dart';
 import 'package:test/test.dart';
 
@@ -15,49 +15,34 @@ void main() {
     'Storage credential integration tests',
     () {
       test('should create Storage with explicit credentials', () async {
-        final credentials = GoogleCredential.fromServiceAccount(
-          File(credPath!),
-        );
+        final credentials = Credential.fromServiceAccount(File(credPath!));
 
-        final storage = Storage(StorageOptions(credentials: credentials));
+        final storage = Storage(StorageOptions(credential: credentials));
 
         final client = await storage.authClient;
         expect(client, isA<auth.AuthClient>());
-
-        final pid = await client.getProjectId();
-        expect(pid, isNotEmpty);
 
         client.close();
       });
 
       test('should create Storage with keyFilename', () async {
-        final credentials = GoogleCredential.fromServiceAccount(
-          File(credPath!),
-        );
+        final credentials = Credential.fromServiceAccount(File(credPath!));
 
-        final storage = Storage(StorageOptions(credentials: credentials));
+        final storage = Storage(StorageOptions(credential: credentials));
 
         final client = await storage.authClient;
         expect(client, isA<auth.AuthClient>());
-
-        final pid = await client.getProjectId();
-        expect(pid, isNotEmpty);
 
         client.close();
       });
 
       test('should prioritize credentials over keyFilename', () async {
-        final credentials = GoogleCredential.fromServiceAccount(
-          File(credPath!),
-        );
+        final credentials = Credential.fromServiceAccount(File(credPath!));
 
-        final storage = Storage(StorageOptions(credentials: credentials));
+        final storage = Storage(StorageOptions(credential: credentials));
 
         final client = await storage.authClient;
         expect(client, isA<auth.AuthClient>());
-
-        final pid = await client.getProjectId();
-        expect(pid, isNotEmpty);
 
         client.close();
       });
@@ -68,16 +53,11 @@ void main() {
         final client = await storage.authClient;
         expect(client, isA<auth.AuthClient>());
 
-        final pid = await client.getProjectId();
-        expect(pid, isNotEmpty);
-
         client.close();
       });
 
       test('should respect explicit authClient over credentials', () async {
-        final credentials = GoogleCredential.fromServiceAccount(
-          File(credPath!),
-        );
+        final credentials = Credential.fromServiceAccount(File(credPath!));
 
         final explicitClient = await auth
             .clientViaApplicationDefaultCredentials(
@@ -90,17 +70,11 @@ void main() {
 
         await runZoned(() async {
           final storage = Storage(
-            StorageOptions(
-              authClient: explicitClient,
-              credentials: credentials,
-            ),
+            StorageOptions(authClient: explicitClient, credential: credentials),
           );
 
           final client = await storage.authClient;
           expect(client, same(explicitClient));
-
-          final pid = await client.getProjectId();
-          expect(pid, isNotEmpty);
 
           client.close();
         }, zoneValues: {envSymbol: testEnv});
@@ -108,11 +82,9 @@ void main() {
 
       test('should create working Storage instance with credentials', () async {
         await runZoned(() async {
-          final credentials = GoogleCredential.fromServiceAccount(
-            File(credPath!),
-          );
+          final credentials = Credential.fromServiceAccount(File(credPath!));
 
-          final storage = Storage(StorageOptions(credentials: credentials));
+          final storage = Storage(StorageOptions(credential: credentials));
 
           final serviceAccount = await storage.getServiceAccount();
 

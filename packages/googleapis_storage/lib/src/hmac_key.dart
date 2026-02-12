@@ -33,7 +33,7 @@ class HmacKey extends ServiceObject<HmacKeyMetadata>
 
     await api.executeWithProjectId<void>((client, projectId) async {
       await client.projects.hmacKeys.delete(projectId, _accessId);
-    });
+    }, projectIdOverride: metadata.projectId);
   }
 
   /// Retrieve and populate this HMAC key's metadata, and return this [HmacKey]
@@ -69,6 +69,7 @@ class HmacKey extends ServiceObject<HmacKeyMetadata>
         _accessId,
         userProject: userProject,
       ),
+      projectIdOverride: this.metadata.projectId,
     );
 
     setInstanceMetadata(metadata);
@@ -122,6 +123,7 @@ class HmacKey extends ServiceObject<HmacKeyMetadata>
     final metadata = await api.executeWithProjectId<HmacKeyMetadata>(
       (client, projectId) async =>
           await client.projects.hmacKeys.update(request, projectId, _accessId),
+      projectIdOverride: this.metadata.projectId,
     );
     setInstanceMetadata(metadata);
     return metadata;

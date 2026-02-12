@@ -103,13 +103,25 @@ class FirebaseApp {
       auth3.IdentityToolkitApi.firebaseScope,
     ];
 
-    // Get or create credential
-    final credential = options.credential?.googleCredential;
+    // Get credential
+    final credential = options.credential;
 
-    // Create authenticated client using googleapis_auth_utils
-    // This associates the credential with the client via Expando,
-    // enabling features like local signing when service account keys are available
-    return googleapis_auth_utils.createAuthClient(credential, scopes);
+    // Create authenticated client based on credential type
+    if (credential != null) {
+      final serviceAccountCreds = credential.serviceAccountCredentials;
+      if (serviceAccountCreds != null) {
+        // Use service account credentials
+        return googleapis_auth.clientViaServiceAccount(
+          serviceAccountCreds,
+          scopes,
+        );
+      }
+    }
+
+    // Fall back to Application Default Credentials
+    return googleapis_auth.clientViaApplicationDefaultCredentials(
+      scopes: scopes,
+    );
   }
 
   /// Returns the HTTP client for this app.
@@ -119,6 +131,25 @@ class FirebaseApp {
     return _httpClient ??= options.httpClient != null
         ? Future.value(options.httpClient!)
         : _createDefaultClient();
+  }
+
+  @internal
+  Future<String> getProjectId({
+    String? projectIdOverride,
+    Map<String, String>? environment,
+  }) async {
+    final env = environment ?? Zone.current[envSymbol] as Map<String, String>?;
+    if (env != null) {
+      for (final envKey in google_cloud.gcpProjectIdEnvironmentVariables) {
+        final value = env[envKey];
+        if (value != null) return value;
+      }
+    }
+
+    final explicitProjectId = projectIdOverride ?? options.projectId;
+    if (explicitProjectId != null) return explicitProjectId;
+
+    return google_cloud.computeProjectId();
   }
 
   /// Returns the explicitly configured project ID, if available.

@@ -84,10 +84,7 @@ class FunctionsHttpClient {
     Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
   ) async {
     final authClient = await client;
-    final projectId = await authClient.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
+    final projectId = await app.getProjectId();
     return _functionsGuard(() => fn(authClient, projectId));
   }
 

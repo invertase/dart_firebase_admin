@@ -5,7 +5,7 @@ class StorageOptions extends ServiceOptions {
     this.apiEndpoint,
     this.crc32cGenerator,
     this.retryOptions,
-    this.credentials,
+    this.credential,
     super.authClient,
     super.useAuthWithCustomEndpoint,
     super.universeDomain,
@@ -16,19 +16,13 @@ class StorageOptions extends ServiceOptions {
   final Crc32Generator? crc32cGenerator;
   final RetryOptions? retryOptions;
 
-  /// A credential used to authenticate the Admin SDK.
-  ///
-  /// Use one of:
-  /// - [Credential.fromServiceAccount] - For service account JSON files
-  /// - [Credential.fromServiceAccountParams] - For individual service account parameters
-  /// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
-  final auth_utils.GoogleCredential? credentials;
+  final Credential? credential;
 
   StorageOptions copyWith({
     String? apiEndpoint,
     Crc32Generator? crc32cGenerator,
     RetryOptions? retryOptions,
-    auth_utils.GoogleCredential? credentials,
+    Credential? credential,
     FutureOr<AuthClient>? authClient,
     bool? useAuthWithCustomEndpoint,
     String? universeDomain,
@@ -38,7 +32,7 @@ class StorageOptions extends ServiceOptions {
       apiEndpoint: apiEndpoint ?? this.apiEndpoint,
       crc32cGenerator: crc32cGenerator ?? this.crc32cGenerator,
       retryOptions: retryOptions ?? this.retryOptions,
-      credentials: credentials ?? this.credentials,
+      credential: credential ?? this.credential,
       authClient: authClient ?? super.authClient,
       useAuthWithCustomEndpoint:
           useAuthWithCustomEndpoint ?? super.useAuthWithCustomEndpoint,

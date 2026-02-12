@@ -9,18 +9,18 @@ import 'package:crypto/crypto.dart' as crypto;
 
 import 'package:googleapis/storage/v1.dart' as storage_v1;
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart' as auth_utils;
 import 'package:googleapis_storage/src/internal/api_error.dart';
 import 'package:googleapis_storage/src/internal/api.dart';
 import 'package:googleapis_storage/src/internal/service.dart';
+import 'package:googleapis_storage/src/utils/auth_extension.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
 import 'package:mime/mime.dart';
 
-export 'package:googleapis_auth_utils/googleapis_auth_utils.dart'
-    show GoogleCredential;
+export 'src/credential.dart' show Credential;
 
+import 'src/credential.dart';
 import 'src/environment.dart';
 import 'src/internal/service_object.dart';
 import 'src/internal/streaming.dart';

@@ -24,17 +24,6 @@ enum AppCheckErrorCode {
 
   const AppCheckErrorCode(this.code);
 
-  static AppCheckErrorCode from(String code) {
-    switch (code) {
-      case CryptoSignerErrorCode.invalidCredential:
-        return AppCheckErrorCode.invalidCredential;
-      case CryptoSignerErrorCode.invalidArgument:
-        return AppCheckErrorCode.invalidArgument;
-      default:
-        return AppCheckErrorCode.internalError;
-    }
-  }
-
   final String code;
 }
 

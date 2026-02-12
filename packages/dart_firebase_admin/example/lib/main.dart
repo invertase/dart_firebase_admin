@@ -2,31 +2,31 @@ import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/functions.dart';
 import 'package:dart_firebase_admin/messaging.dart';
-import 'storage_example.dart';
+import 'firestore_example.dart';
 
 Future<void> main() async {
   final admin = FirebaseApp.initializeApp();
 
   // Uncomment to run auth example
-  // await authExample(admin);
+  await authExample(admin);
 
   // Uncomment to run firestore example
-  // await firestoreExample(admin);
+  await firestoreExample(admin);
 
   // Uncomment to run project config example
   // await projectConfigExample(admin);
 
   // Uncomment to run tenant example (requires Identity Platform upgrade)
-  // await tenantExample(admin);
+  await tenantExample(admin);
 
   // Uncomment to run messaging example (requires valid fcm token)
   // await messagingExample(admin);
 
   // Uncomment to run functions example
-  // await functionsExample(admin);
+  await functionsExample(admin);
 
   // Uncomment to run storage example
-  await storageExample(admin);
+  // await storageExample(admin);
 
   await admin.close();
 }

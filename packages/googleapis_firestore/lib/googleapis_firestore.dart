@@ -6,11 +6,11 @@ library;
 
 import 'package:meta/meta.dart';
 
+export 'src/credential.dart' show Credential;
 export 'src/firestore.dart'
     show
         Firestore,
         Settings,
-        Credentials,
         CollectionReference,
         DocumentReference,
         DocumentSnapshot,

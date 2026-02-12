@@ -134,9 +134,6 @@ jobs:
       - name: Run googleapis_firestore tests with coverage
         run: ${{ github.workspace }}/scripts/firestore-coverage.sh
 
-      - name: Run googleapis_auth_utils tests with coverage
-        run: ${{ github.workspace }}/scripts/auth-utils-coverage.sh
-
       - name: Run googleapis_storage tests with coverage
         run: ${{ github.workspace }}/scripts/storage-coverage.sh
 
@@ -145,7 +142,6 @@ jobs:
           # Save individual package coverage files before merging
           cp coverage.lcov coverage_admin.lcov
           cp ../googleapis_firestore/coverage.lcov coverage_firestore.lcov
-          cp ../googleapis_auth_utils/coverage.lcov coverage_auth_utils.lcov
           cp ../googleapis_storage/coverage.lcov coverage_storage.lcov
           
           # Merge coverage reports from all packages (relative to packages/dart_firebase_admin)
@@ -153,7 +149,6 @@ jobs:
           COVERAGE_FILES=""
           [ -f coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES coverage.lcov"
           [ -f ../googleapis_firestore/coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES ../googleapis_firestore/coverage.lcov"
-          [ -f ../googleapis_auth_utils/coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES ../googleapis_auth_utils/coverage.lcov"
           [ -f ../googleapis_storage/coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES ../googleapis_storage/coverage.lcov"
           
           if [ -n "$COVERAGE_FILES" ]; then
@@ -188,7 +183,6 @@ jobs:
           # Get individual package coverage from saved copies
           ADMIN_COV=$(calculate_coverage "coverage_admin.lcov")
           FIRESTORE_COV=$(calculate_coverage "coverage_firestore.lcov")
-          AUTH_UTILS_COV=$(calculate_coverage "coverage_auth_utils.lcov")
           STORAGE_COV=$(calculate_coverage "coverage_storage.lcov")
 
           ADMIN_PCT=$(echo $ADMIN_COV | cut -d'|' -f1)
@@ -198,10 +192,6 @@ jobs:
           FIRESTORE_PCT=$(echo $FIRESTORE_COV | cut -d'|' -f1)
           FIRESTORE_HIT=$(echo $FIRESTORE_COV | cut -d'|' -f2)
           FIRESTORE_TOTAL=$(echo $FIRESTORE_COV | cut -d'|' -f3)
-
-          AUTH_UTILS_PCT=$(echo $AUTH_UTILS_COV | cut -d'|' -f1)
-          AUTH_UTILS_HIT=$(echo $AUTH_UTILS_COV | cut -d'|' -f2)
-          AUTH_UTILS_TOTAL=$(echo $AUTH_UTILS_COV | cut -d'|' -f3)
 
           STORAGE_PCT=$(echo $STORAGE_COV | cut -d'|' -f1)
           STORAGE_HIT=$(echo $STORAGE_COV | cut -d'|' -f2)
@@ -224,14 +214,12 @@ jobs:
           
           echo "admin_coverage=${ADMIN_PCT}" >> $GITHUB_OUTPUT
           echo "firestore_coverage=${FIRESTORE_PCT}" >> $GITHUB_OUTPUT
-          echo "auth_utils_coverage=${AUTH_UTILS_PCT}" >> $GITHUB_OUTPUT
           echo "storage_coverage=${STORAGE_PCT}" >> $GITHUB_OUTPUT
 
           # Console output
           echo "=== Coverage Report ==="
           echo "dart_firebase_admin: ${ADMIN_PCT}% (${ADMIN_HIT}/${ADMIN_TOTAL} lines)"
           echo "googleapis_firestore: ${FIRESTORE_PCT}% (${FIRESTORE_HIT}/${FIRESTORE_TOTAL} lines)"
-          echo "googleapis_auth_utils: ${AUTH_UTILS_PCT}% (${AUTH_UTILS_HIT}/${AUTH_UTILS_TOTAL} lines)"
           echo "googleapis_storage: ${STORAGE_PCT}% (${STORAGE_HIT}/${STORAGE_TOTAL} lines)"
           echo "----------------------"
           echo "Total: ${COVERAGE_PCT}% (${HIT_LINES}/${TOTAL_LINES} lines)"
@@ -255,7 +243,6 @@ jobs:
             const totalLines = '${{ steps.coverage.outputs.total_lines }}';
             const adminCov = '${{ steps.coverage.outputs.admin_coverage }}';
             const firestoreCov = '${{ steps.coverage.outputs.firestore_coverage }}';
-            const authUtilsCov = '${{ steps.coverage.outputs.auth_utils_coverage }}';
             const storageCov = '${{ steps.coverage.outputs.storage_coverage }}';
 
             const body = `## Coverage Report
@@ -270,7 +257,6 @@ jobs:
             |---------|----------|
             | dart_firebase_admin | ${adminCov}% |
             | googleapis_firestore | ${firestoreCov}% |
-            | googleapis_auth_utils | ${authUtilsCov}% |
             | googleapis_storage | ${storageCov}% |
 
             _Minimum threshold: 40%_`;

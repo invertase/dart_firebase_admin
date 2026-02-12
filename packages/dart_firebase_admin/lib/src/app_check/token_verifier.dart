@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:googleapis_auth_utils/googleapis_auth_utils.dart';
 import 'package:meta/meta.dart';
 
 import '../app.dart';
@@ -24,11 +23,7 @@ class AppCheckTokenVerifier {
   );
 
   Future<DecodedAppCheckToken> verifyToken(String token) async {
-    final client = await app.client;
-    final projectId = await client.getProjectId(
-      projectIdOverride: app.options.projectId,
-      environment: Zone.current[envSymbol] as Map<String, String>?,
-    );
+    final projectId = await app.getProjectId();
     final decoded = await _decodeAndVerify(token, projectId);
 
     return DecodedAppCheckToken.fromMap(decoded.payload);

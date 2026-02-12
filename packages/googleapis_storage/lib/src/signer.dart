@@ -134,22 +134,11 @@ class URLSigner {
 
     final authClient = await bucket.storage.authClient;
     final signature = await authClient.sign(
-      blobToSign,
+      utf8.encode(blobToSign),
       endpoint: config.signedConfig.signingEndpoint?.toString(),
     );
 
-    // Get credentials to get client email
-    final credential = authClient.credential;
-    final clientEmail =
-        credential?.serviceAccountCredentials?.email ??
-        await authClient.getServiceAccountEmail();
-
-    if (clientEmail == null) {
-      throw StateError(
-        'Unable to determine service account email for signing. '
-        'Ensure you are running with service account credentials.',
-      );
-    }
+    final clientEmail = await authClient.getServiceAccountEmail;
 
     return {
       'GoogleAccessId': clientEmail,
@@ -213,18 +202,7 @@ class URLSigner {
 
     final authClient = await bucket.storage.authClient;
 
-    // Get credentials to get client email
-    final credential = authClient.credential;
-    final clientEmail =
-        credential?.serviceAccountCredentials?.email ??
-        await authClient.getServiceAccountEmail();
-
-    if (clientEmail == null) {
-      throw StateError(
-        'Unable to determine service account email for signing. '
-        'Ensure you are running with service account credentials.',
-      );
-    }
+    final clientEmail = await authClient.getServiceAccountEmail;
 
     final credentialString = '$clientEmail/$credentialScope';
     final dateISO = _formatAsUTCISO(config.accessibleAt, includeTime: true);
@@ -260,7 +238,7 @@ class URLSigner {
     ].join('\n');
 
     final signature = await authClient.sign(
-      blobToSign,
+      utf8.encode(blobToSign),
       endpoint: config.signedConfig.signingEndpoint?.toString(),
     );
 
