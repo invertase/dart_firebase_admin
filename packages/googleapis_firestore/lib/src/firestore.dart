@@ -557,7 +557,6 @@ class Firestore {
   ///
   /// await batch.commit();
   /// ```
-  // ignore: use_to_and_as_if_applicable
   WriteBatch batch() {
     return WriteBatch._(this);
   }
@@ -696,7 +695,6 @@ class Firestore {
   /// // Wait for all writes to complete
   /// await bulkWriter.close();
   /// ```
-  // ignore: use_to_and_as_if_applicable
   BulkWriter bulkWriter([BulkWriterOptions? options]) {
     return BulkWriter._(this, options);
   }
