@@ -1,7 +1,7 @@
 name: dart_firebase_admin
 description: A Firebase Admin SDK implementation for Dart.
 resolution: workspace
-version: 0.4.1
+version: 1.0.0-beta.1
 homepage: "https://github.com/invertase/dart_firebase_admin"
 repository: "https://github.com/invertase/dart_firebase_admin"
 publish_to: none
