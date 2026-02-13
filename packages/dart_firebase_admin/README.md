@@ -12,6 +12,7 @@
    - [Functions](#functions)
    - [Messaging](#messaging)
    - [Storage](#storage)
+   - [Security Rules](#security-rules)
  - [Supported Services](#supported-services)
  - [Additional Packages](#additional-packages)
  - [Contributing](#contributing)
@@ -49,7 +50,6 @@ To initalize the Firebase Admin SDK, call the `initializeApp` method on the `Fir
 class:
 
 ```dart
-// TODO: Is it Firebase, FirebaseApp, FirebaseAdmin?
 final app = FirebaseApp.initializeApp();
 ```
 
@@ -71,6 +71,12 @@ final app = FirebaseApp.initializeApp(
 );
 ```
 
+The following `Credential` constructors are available:
+
+- `Credential.fromApplicationDefaultCredentials({String? serviceAccountId})` — Uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) (recommended for Google environments). Optionally accepts a `serviceAccountId` to override the service account email.
+- `Credential.fromServiceAccount(File)` — Loads credentials from a service account JSON file downloaded from the Firebase Console.
+- `Credential.fromServiceAccountParams({required String privateKey, required String email, required String projectId, String? clientId})` — Builds credentials from individual service account fields directly.
+
 ## Usage
 
 Once you have initialized an app instance with a credential, you can use any of the [supported services](#supported-services) to interact with Firebase.
@@ -78,77 +84,198 @@ Once you have initialized an app instance with a credential, you can use any of 
 ### Authentication
 
 ```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/auth.dart';
+
 final app = FirebaseApp.initializeApp();
+final auth = app.auth();
+```
 
-// Getting a user by id
-final user = await app.auth().getUser("<user-id>");
+#### getUser / getUserByEmail
 
-// Deleting a user by id
-await app.auth().deleteUser("<user-id>");
+```dart
+// Get user by UID
+final userById = await auth.getUser('<user-id>');
+print(userById.displayName);
 
-// Listing users
-final result = await app.auth().listUsers(maxResults: 10, pageToken: null);
+// Get user by email
+final userByEmail = await auth.getUserByEmail('user@example.com');
+print(userByEmail.displayName);
+```
+
+#### createUser
+
+```dart
+final user = await auth.createUser(
+  CreateRequest(
+    email: 'user@example.com',
+    password: 'password123',
+    displayName: 'John Doe',
+  ),
+);
+print(user.uid);
+```
+
+#### updateUser
+
+```dart
+final updatedUser = await auth.updateUser(
+  '<user-id>',
+  UpdateRequest(
+    displayName: 'Jane Doe',
+    disabled: false,
+  ),
+);
+print(updatedUser.displayName);
+```
+
+#### deleteUser / listUsers
+
+```dart
+// Delete a user
+await auth.deleteUser('<user-id>');
+
+// List users (max 1000 per page)
+final result = await auth.listUsers(maxResults: 100);
 final users = result.users;
 final nextPageToken = result.pageToken;
+```
 
-// Verifying an ID token (e.g. from request headers) from a client application
+#### verifyIdToken
+
+```dart
+// Verify an ID token from a client application (e.g. from request headers)
 final idToken = req.headers['Authorization'].split(' ')[1];
-final decodedToken = await app.auth().verifyIdToken(idToken, checkRevoked: true);
-final userId = decodedToken.uid;
+final decodedToken = await auth.verifyIdToken(idToken, checkRevoked: true);
+print(decodedToken.uid);
+```
+
+#### createCustomToken
+
+```dart
+final customToken = await auth.createCustomToken(
+  '<user-id>',
+  developerClaims: {'role': 'admin'},
+);
+```
+
+#### setCustomUserClaims
+
+```dart
+await auth.setCustomUserClaims('<user-id>', customUserClaims: {'role': 'admin'});
 ```
 
 ### App Check
 
 ```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+
 final app = FirebaseApp.initializeApp();
+```
 
-// Verifying an app check token
-final response = await app.appCheck().verifyToken("<appCheckToken>");
-print("App ID: ${response.appId}");
+#### verifyToken
 
-// Creating a new app check token
-final result = await app.appCheck().createToken("<app-id>");
-print("Token: ${result.token}");
+```dart
+final response = await app.appCheck().verifyToken('<app-check-token>');
+print('App ID: ${response.appId}');
+```
+
+#### createToken
+
+```dart
+final result = await app.appCheck().createToken('<app-id>');
+print('Token: ${result.token}');
 ```
 
 ### Firestore
 
 ```dart
+import 'dart:async';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:googleapis_firestore/googleapis_firestore.dart';
 
 final app = FirebaseApp.initializeApp();
+final firestore = app.firestore();
+```
 
-// Getting a document
-final snapshot = await app.firestore().collection("users").doc("<user-id>").get();
+#### set / update / delete
+
+```dart
+final ref = firestore.collection('users').doc('<user-id>');
+
+// Set a document (creates or overwrites)
+await ref.set({'name': 'John Doe', 'age': 27});
+
+// Update specific fields
+await ref.update({'age': 28});
+
+// Delete a document
+await ref.delete();
+```
+
+#### get / query
+
+```dart
+// Get a single document
+final snapshot = await firestore.collection('users').doc('<user-id>').get();
 print(snapshot.data());
 
-// Querying a collection
-final querySnapshot = await app.firestore().collection("users")
-  .where('age', WhereFilter.greaterThan, 18)
-  .orderBy('age', descending: true)
-  .get();
+// Query a collection
+final querySnapshot = await firestore
+    .collection('users')
+    .where('age', WhereFilter.greaterThan, 18)
+    .orderBy('age', descending: true)
+    .get();
 print(querySnapshot.docs);
+```
 
-// Running a transaction (e.g. adding credits to a balance)
-final balance = await app.firestore().runTransaction((tsx) async {
-  // Get a reference to a user document
-  final ref = app.firestore().collection("users").doc("<user-id>");
+#### getAll
 
-  // Get the document data
+```dart
+// Fetch multiple documents at once
+final snapshots = await firestore.getAll([
+  firestore.collection('users').doc('user-1'),
+  firestore.collection('users').doc('user-2'),
+]);
+for (final snap in snapshots) {
+  print(snap.data());
+}
+```
+
+#### batch
+
+```dart
+final batch = firestore.batch();
+batch.set(firestore.collection('users').doc('user-1'), {'name': 'Alice'});
+batch.update(firestore.collection('users').doc('user-2'), {FieldPath(const ['age']): 30});
+batch.delete(firestore.collection('users').doc('user-3'));
+await batch.commit();
+```
+
+#### bulkWriter
+
+```dart
+final bulkWriter = firestore.bulkWriter();
+for (var i = 0; i < 10; i++) {
+  unawaited(
+    bulkWriter.set(
+      firestore.collection('items').doc('item-$i'),
+      {'index': i},
+    ),
+  );
+}
+await bulkWriter.close();
+```
+
+#### runTransaction
+
+```dart
+final balance = await firestore.runTransaction((tsx) async {
+  final ref = firestore.collection('users').doc('<user-id>');
   final snapshot = await tsx.get(ref);
-
-  // Get the users current balance (or 0 if it doesn't exist)
   final currentBalance = snapshot.exists ? snapshot.data()?['balance'] ?? 0 : 0;
-
-  // Add 10 credits to the users balance
   final newBalance = currentBalance + 10;
-
-  // Update the document within the transaction
-  tsx.update(ref, {
-    'balance': newBalance,
-  });
-
+  tsx.update(ref, {'balance': newBalance});
   return newBalance;
 });
 ```
@@ -156,51 +283,234 @@ final balance = await app.firestore().runTransaction((tsx) async {
 ### Functions
 
 ```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/functions.dart';
+
 final app = FirebaseApp.initializeApp();
+final queue = app.functions().taskQueue('<task-name>');
+```
 
-// Get a task queue by name
-final queue = app.functions().taskQueue("<task-name>");
+#### enqueue
 
-// Add data to the queue
-await queue.enqueue({ "hello": "world" });
+```dart
+await queue.enqueue({'userId': 'user-123', 'action': 'sendWelcomeEmail'});
+```
+
+#### enqueue with TaskOptions
+
+```dart
+// Delay delivery by 1 hour
+await queue.enqueue(
+  {'action': 'cleanupTempFiles'},
+  TaskOptions(schedule: DelayDelivery(3600)),
+);
+
+// Schedule at a specific time
+await queue.enqueue(
+  {'action': 'sendReport'},
+  TaskOptions(schedule: AbsoluteDelivery(DateTime.now().add(Duration(hours: 1)))),
+);
+
+// Use a custom ID for deduplication
+await queue.enqueue(
+  {'orderId': 'order-456', 'action': 'processPayment'},
+  TaskOptions(id: 'payment-order-456'),
+);
+```
+
+#### delete
+
+```dart
+await queue.delete('payment-order-456');
 ```
 
 ### Messaging
 
 ```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/messaging.dart';
+
 final app = FirebaseApp.initializeApp();
+final messaging = app.messaging();
+```
 
-// Send a message to a specific device
-await app.messaging().send(
+#### send
+
+```dart
+// Send to a specific device
+await messaging.send(
   TokenMessage(
-    token: "<device-token>",
-    data: { "hello": "world" },
-    notification: Notification(title: "Hello", body: "World!"),
-  )
+    token: '<device-token>',
+    notification: Notification(title: 'Hello', body: 'World!'),
+    data: {'key': 'value'},
+  ),
 );
 
-// Send a message to a topic
-await app.messaging().send(
+// Send to a topic
+await messaging.send(
   TopicMessage(
-    topic: "<topic-name>",
-    data: { "hello": "world" },
-    notification: Notification(title: "Hello", body: "World!"),
-  )
+    topic: '<topic-name>',
+    notification: Notification(title: 'Hello', body: 'World!'),
+  ),
 );
 
-// Send a message to a conditional statement
-await app.messaging().send(
+// Send to a condition
+await messaging.send(
   ConditionMessage(
-    condition: "\'stock-GOOG\' in topics || \'industry-tech\' in topics",
-    data: { "hello": "world" },
-    notification: Notification(title: "Hello", body: "World!"),
-  )
+    condition: "'stock-GOOG' in topics || 'industry-tech' in topics",
+    notification: Notification(title: 'Hello', body: 'World!'),
+  ),
 );
+```
+
+#### sendEach
+
+```dart
+// Send up to 500 messages in a single call
+final response = await messaging.sendEach([
+  TopicMessage(topic: 'topic-1', notification: Notification(title: 'Message 1')),
+  TopicMessage(topic: 'topic-2', notification: Notification(title: 'Message 2')),
+]);
+print('Sent: ${response.successCount}, Failed: ${response.failureCount}');
+```
+
+#### sendEachForMulticast
+
+```dart
+// Send one message to multiple device tokens
+final response = await messaging.sendEachForMulticast(
+  MulticastMessage(
+    tokens: ['<token-1>', '<token-2>', '<token-3>'],
+    notification: Notification(title: 'Hello', body: 'World!'),
+  ),
+);
+print('Sent: ${response.successCount}, Failed: ${response.failureCount}');
+```
+
+#### subscribeToTopic / unsubscribeFromTopic
+
+```dart
+// Subscribe tokens to a topic
+await messaging.subscribeToTopic(['<token-1>', '<token-2>'], 'news');
+
+// Unsubscribe tokens from a topic
+await messaging.unsubscribeFromTopic(['<token-1>', '<token-2>'], 'news');
 ```
 
 ### Storage
 
-TODO
+```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:googleapis_storage/googleapis_storage.dart' hide Storage;
+
+final app = FirebaseApp.initializeApp();
+final bucket = app.storage().bucket('<bucket-name>');
+```
+
+#### save (upload)
+
+```dart
+final file = bucket.file('path/to/file.txt');
+await file.save('Hello, world!');
+```
+
+#### delete
+
+```dart
+await bucket.file('path/to/file.txt').delete();
+```
+
+#### getMetadata
+
+```dart
+final metadata = await bucket.file('path/to/file.txt').getMetadata();
+print('Size: ${metadata.size} bytes');
+print('Created: ${metadata.timeCreated}');
+```
+
+#### getSignedUrl
+
+```dart
+final url = await bucket.file('path/to/file.txt').getSignedUrl(
+  GetFileSignedUrlOptions(
+    action: 'read',
+    expires: DateTime.now().add(Duration(hours: 1)),
+  ),
+);
+print('Signed URL: $url');
+```
+
+### Security Rules
+
+```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+
+final app = FirebaseApp.initializeApp();
+final securityRules = app.securityRules();
+```
+
+#### getFirestoreRuleset
+
+```dart
+final ruleset = await securityRules.getFirestoreRuleset();
+print(ruleset.name);
+```
+
+#### releaseFirestoreRulesetFromSource
+
+```dart
+final source = '''
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+''';
+
+final ruleset = await securityRules.releaseFirestoreRulesetFromSource(source);
+print('Applied ruleset: ${ruleset.name}');
+```
+
+#### getStorageRuleset
+
+```dart
+final ruleset = await securityRules.getStorageRuleset();
+print(ruleset.name);
+```
+
+#### releaseStorageRulesetFromSource
+
+```dart
+final source = '''
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+''';
+
+final ruleset = await securityRules.releaseStorageRulesetFromSource(source);
+print('Applied ruleset: ${ruleset.name}');
+```
+
+#### createRuleset / deleteRuleset
+
+```dart
+// Create a ruleset without applying it
+const source = "rules_version = '2'; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }";
+final rulesFile = RulesFile(name: 'firestore.rules', content: source);
+final ruleset = await securityRules.createRuleset(rulesFile);
+print('Created ruleset: ${ruleset.name}');
+
+// Delete a ruleset by name
+await securityRules.deleteRuleset(ruleset.name);
+```
 
 ## Supported Services
 
