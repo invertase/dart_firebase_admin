@@ -79,15 +79,23 @@ final class DocumentReference<T> implements _Serializable {
 
   /// Changes the de/serializing mechanism for this [DocumentReference].
   ///
+  /// Passing `null` for both parameters removes the current converter and
+  /// returns an untyped `DocumentReference<DocumentData>`.
+  ///
   /// This changes the return value of [DocumentSnapshot.data].
   DocumentReference<R> withConverter<R>({
-    required FromFirestore<R> fromFirestore,
-    required ToFirestore<R> toFirestore,
+    FromFirestore<R>? fromFirestore,
+    ToFirestore<R>? toFirestore,
   }) {
+    // If null, use the default JSON converter
+    final converter = (fromFirestore == null || toFirestore == null)
+        ? _jsonConverter as _FirestoreDataConverter<R>
+        : (fromFirestore: fromFirestore, toFirestore: toFirestore);
+
     return DocumentReference<R>._(
       firestore: firestore,
       path: _path,
-      converter: (fromFirestore: fromFirestore, toFirestore: toFirestore),
+      converter: converter,
     );
   }
 

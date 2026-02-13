@@ -18,63 +18,56 @@ void main() {
       late Firestore firestore;
 
       setUp(() async {
-        // Use runZoned with empty env to ensure we connect to production
-        // This clears any emulator env vars set by firebase emulators:exec
-        runZoned(
-          () {
-            firestore = Firestore(
-              settings: const Settings(projectId: 'dart-firebase-admin'),
-            );
-          },
-          zoneValues: {
-            envSymbol: <String, String>{}, // Empty = use Platform.environment
-          },
+        firestore = Firestore(
+          settings: const Settings(projectId: 'dart-firebase-admin'),
         );
       });
 
       group('vector search with nested fields', () {
         test('supports findNearest on vector nested in a map', () async {
-          // Use fixed collection name for production (requires pre-configured index)
-          final collection = firestore.collection('nested-vector-test-prod');
-          final testId = 'test-${DateTime.now().millisecondsSinceEpoch}';
+          await runZoned(() async {
+            // Use fixed collection name for production (requires pre-configured index)
+            final collection = firestore.collection('nested-vector-test-prod');
+            final testId = 'test-${DateTime.now().millisecondsSinceEpoch}';
 
-          try {
-            await Future.wait([
-              collection.add({
-                'testId': testId,
-                'nested': {
-                  'embedding': FieldValue.vector([1.0, 1.0]),
-                },
-              }),
-              collection.add({
-                'testId': testId,
-                'nested': {
-                  'embedding': FieldValue.vector([10.0, 10.0]),
-                },
-              }),
-            ]);
+            try {
+              await Future.wait([
+                collection.add({
+                  'testId': testId,
+                  'nested': {
+                    'embedding': FieldValue.vector([1.0, 1.0]),
+                  },
+                }),
+                collection.add({
+                  'testId': testId,
+                  'nested': {
+                    'embedding': FieldValue.vector([10.0, 10.0]),
+                  },
+                }),
+              ]);
 
-            // Query with testId filter for test isolation
-            final vectorQuery = collection
-                .where('testId', WhereFilter.equal, testId)
-                .findNearest(
-                  vectorField: 'nested.embedding',
-                  queryVector: [1.0, 1.0],
-                  limit: 2,
-                  distanceMeasure: DistanceMeasure.euclidean,
-                );
+              // Query with testId filter for test isolation
+              final vectorQuery = collection
+                  .where('testId', WhereFilter.equal, testId)
+                  .findNearest(
+                    vectorField: 'nested.embedding',
+                    queryVector: [1.0, 1.0],
+                    limit: 2,
+                    distanceMeasure: DistanceMeasure.euclidean,
+                  );
 
-            final res = await vectorQuery.get();
-            expect(res.size, 2);
-          } finally {
-            // Clean up: delete test documents
-            final docs = await collection
-                .where('testId', WhereFilter.equal, testId)
-                .get();
-            for (final doc in docs.docs) {
-              await doc.ref.delete();
+              final res = await vectorQuery.get();
+              expect(res.size, 2);
+            } finally {
+              // Clean up: delete test documents
+              final docs = await collection
+                  .where('testId', WhereFilter.equal, testId)
+                  .get();
+              for (final doc in docs.docs) {
+                await doc.ref.delete();
+              }
             }
-          }
+          }, zoneValues: {envSymbol: <String, String>{}});
         });
       });
     },

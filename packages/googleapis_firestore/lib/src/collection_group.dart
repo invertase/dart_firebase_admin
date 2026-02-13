@@ -151,13 +151,18 @@ final class CollectionGroup<T> extends Query<T> {
 
   @override
   CollectionGroup<U> withConverter<U>({
-    required FromFirestore<U> fromFirestore,
-    required ToFirestore<U> toFirestore,
+    FromFirestore<U>? fromFirestore,
+    ToFirestore<U>? toFirestore,
   }) {
+    // If null, use the default JSON converter
+    final converter = (fromFirestore == null || toFirestore == null)
+        ? _jsonConverter as _FirestoreDataConverter<U>
+        : (fromFirestore: fromFirestore, toFirestore: toFirestore);
+
     return CollectionGroup._(
       _queryOptions.collectionId,
       firestore: firestore,
-      converter: (fromFirestore: fromFirestore, toFirestore: toFirestore),
+      converter: converter,
     );
   }
 

@@ -11,7 +11,7 @@ class _FieldFilterInternal extends _FilterInternal {
   final FieldPath field;
   final WhereFilter op;
   final Object? value;
-  final _Serializer serializer;
+  final Serializer serializer;
 
   @override
   List<_FieldFilterInternal> get flattenedFilters => [this];

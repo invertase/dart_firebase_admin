@@ -25,7 +25,7 @@ class VectorValue {
   }
 
   /// Converts this VectorValue to its Firestore protobuf representation.
-  firestore_v1.Value _toProto(_Serializer serializer) {
+  firestore_v1.Value _toProto(Serializer serializer) {
     return serializer.encodeVector(_values);
   }
 
@@ -169,7 +169,7 @@ abstract class _FieldTransform implements FieldValue {
 
   /// The proto representation for this field transform.
   firestore_v1.FieldTransform _toProto(
-    _Serializer serializer,
+    Serializer serializer,
     FieldPath fieldPath,
   );
 }
@@ -197,7 +197,7 @@ class _DeleteTransform implements _FieldTransform {
 
   @override
   firestore_v1.FieldTransform _toProto(
-    _Serializer serializer,
+    Serializer serializer,
     FieldPath fieldPath,
   ) {
     throw UnsupportedError(
@@ -236,7 +236,7 @@ class _NumericIncrementTransform implements _FieldTransform {
 
   @override
   firestore_v1.FieldTransform _toProto(
-    _Serializer serializer,
+    Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore_v1.FieldTransform(
@@ -277,7 +277,7 @@ class _ArrayUnionTransform implements _FieldTransform {
 
   @override
   firestore_v1.FieldTransform _toProto(
-    _Serializer serializer,
+    Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore_v1.FieldTransform(
@@ -319,7 +319,7 @@ class _ArrayRemoveTransform implements _FieldTransform {
 
   @override
   firestore_v1.FieldTransform _toProto(
-    _Serializer serializer,
+    Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore_v1.FieldTransform(
@@ -355,7 +355,7 @@ class _ServerTimestampTransform implements _FieldTransform {
 
   @override
   firestore_v1.FieldTransform _toProto(
-    _Serializer serializer,
+    Serializer serializer,
     FieldPath fieldPath,
   ) {
     return firestore_v1.FieldTransform(

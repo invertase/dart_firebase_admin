@@ -15,17 +15,8 @@ void main() {
       final collectionsToCleanup = <String>[];
 
       setUp(() async {
-        // Use runZoned with empty env to ensure we connect to production
-        // This clears any emulator env vars set by firebase emulators:exec
-        runZoned(
-          () {
-            firestore = Firestore(
-              settings: const Settings(projectId: 'dart-firebase-admin'),
-            );
-          },
-          zoneValues: {
-            envSymbol: <String, String>{}, // Empty = use Platform.environment
-          },
+        firestore = Firestore(
+          settings: const Settings(projectId: 'dart-firebase-admin'),
         );
       });
 
@@ -42,158 +33,168 @@ void main() {
       });
 
       test('can plan a query without executing', () async {
-        final collectionId =
-            'explain-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'explain-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await Future.wait([
-          collection.add({'foo': 'bar', 'value': 1}),
-          collection.add({'foo': 'bar', 'value': 2}),
-          collection.add({'foo': 'baz', 'value': 3}),
-        ]);
+          await Future.wait([
+            collection.add({'foo': 'bar', 'value': 1}),
+            collection.add({'foo': 'bar', 'value': 2}),
+            collection.add({'foo': 'baz', 'value': 3}),
+          ]);
 
-        final query = collection.where('foo', WhereFilter.equal, 'bar');
-        final explainResults = await query.explain(
-          const ExplainOptions(analyze: false),
-        );
+          final query = collection.where('foo', WhereFilter.equal, 'bar');
+          final explainResults = await query.explain(
+            const ExplainOptions(analyze: false),
+          );
 
-        // Should have metrics
-        expect(explainResults.metrics, isNotNull);
-        expect(explainResults.metrics.planSummary, isNotNull);
-        expect(
-          explainResults.metrics.planSummary.indexesUsed,
-          isA<List<Map<String, Object?>>>(),
-        );
+          // Should have metrics
+          expect(explainResults.metrics, isNotNull);
+          expect(explainResults.metrics.planSummary, isNotNull);
+          expect(
+            explainResults.metrics.planSummary.indexesUsed,
+            isA<List<Map<String, Object?>>>(),
+          );
 
-        // Should NOT have execution stats or snapshot
-        expect(explainResults.metrics.executionStats, isNull);
-        expect(explainResults.snapshot, isNull);
+          // Should NOT have execution stats or snapshot
+          expect(explainResults.metrics.executionStats, isNull);
+          expect(explainResults.snapshot, isNull);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('can execute and explain a query', () async {
-        final collectionId =
-            'explain-execute-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'explain-execute-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await Future.wait([
-          collection.add({'foo': 'bar', 'value': 1}),
-          collection.add({'foo': 'bar', 'value': 2}),
-          collection.add({'foo': 'baz', 'value': 3}),
-        ]);
+          await Future.wait([
+            collection.add({'foo': 'bar', 'value': 1}),
+            collection.add({'foo': 'bar', 'value': 2}),
+            collection.add({'foo': 'baz', 'value': 3}),
+          ]);
 
-        final query = collection.where('foo', WhereFilter.equal, 'bar');
-        final explainResults = await query.explain(
-          const ExplainOptions(analyze: true),
-        );
+          final query = collection.where('foo', WhereFilter.equal, 'bar');
+          final explainResults = await query.explain(
+            const ExplainOptions(analyze: true),
+          );
 
-        // Should have metrics
-        expect(explainResults.metrics, isNotNull);
-        expect(explainResults.metrics.planSummary, isNotNull);
+          // Should have metrics
+          expect(explainResults.metrics, isNotNull);
+          expect(explainResults.metrics.planSummary, isNotNull);
 
-        // Should have execution stats
-        expect(explainResults.metrics.executionStats, isNotNull);
-        expect(explainResults.metrics.executionStats!.resultsReturned, 2);
-        expect(
-          explainResults.metrics.executionStats!.readOperations,
-          greaterThan(0),
-        );
-        expect(
-          explainResults.metrics.executionStats!.executionDuration,
-          isNotEmpty,
-        );
-        expect(
-          explainResults.metrics.executionStats!.debugStats,
-          isA<Map<String, Object?>>(),
-        );
+          // Should have execution stats
+          expect(explainResults.metrics.executionStats, isNotNull);
+          expect(explainResults.metrics.executionStats!.resultsReturned, 2);
+          expect(
+            explainResults.metrics.executionStats!.readOperations,
+            greaterThan(0),
+          );
+          expect(
+            explainResults.metrics.executionStats!.executionDuration,
+            isNotEmpty,
+          );
+          expect(
+            explainResults.metrics.executionStats!.debugStats,
+            isA<Map<String, Object?>>(),
+          );
 
-        // Should have snapshot with results
-        expect(explainResults.snapshot, isNotNull);
-        expect(explainResults.snapshot!.docs.length, 2);
-        expect(explainResults.snapshot!.docs[0].get('foo')?.value, 'bar');
+          // Should have snapshot with results
+          expect(explainResults.snapshot, isNotNull);
+          expect(explainResults.snapshot!.docs.length, 2);
+          expect(explainResults.snapshot!.docs[0].get('foo')?.value, 'bar');
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('explain works with vector queries', () async {
-        // Use fixed collection name for production (requires pre-configured index)
-        // Index can be created with:
-        // gcloud firestore indexes composite create --project=dart-firebase-admin \
-        //   --collection-group=vector-explain-test-prod --query-scope=COLLECTION \
-        //   --field-config=vector-config='{"dimension":"3","flat": "{}"}',field-path=embedding
-        collectionsToCleanup.add('vector-explain-test-prod');
-        final collection = firestore.collection('vector-explain-test-prod');
+        await runZoned(() async {
+          // Use fixed collection name for production (requires pre-configured index)
+          // Index can be created with:
+          // gcloud firestore indexes composite create --project=dart-firebase-admin \
+          //   --collection-group=vector-explain-test-prod --query-scope=COLLECTION \
+          //   --field-config=vector-config='{"dimension":"3","flat": "{}"}',field-path=embedding
+          collectionsToCleanup.add('vector-explain-test-prod');
+          final collection = firestore.collection('vector-explain-test-prod');
 
-        await Future.wait([
-          collection.add({
-            'embedding': FieldValue.vector([1.0, 2.0, 3.0]),
-            'name': 'doc1',
-          }),
-          collection.add({
-            'embedding': FieldValue.vector([4.0, 5.0, 6.0]),
-            'name': 'doc2',
-          }),
-        ]);
+          await Future.wait([
+            collection.add({
+              'embedding': FieldValue.vector([1.0, 2.0, 3.0]),
+              'name': 'doc1',
+            }),
+            collection.add({
+              'embedding': FieldValue.vector([4.0, 5.0, 6.0]),
+              'name': 'doc2',
+            }),
+          ]);
 
-        final vectorQuery = collection.findNearest(
-          vectorField: 'embedding',
-          queryVector: [1.0, 2.0, 3.0],
-          limit: 2,
-          distanceMeasure: DistanceMeasure.euclidean,
-        );
+          final vectorQuery = collection.findNearest(
+            vectorField: 'embedding',
+            queryVector: [1.0, 2.0, 3.0],
+            limit: 2,
+            distanceMeasure: DistanceMeasure.euclidean,
+          );
 
-        final explainResults = await vectorQuery.explain(
-          const ExplainOptions(analyze: true),
-        );
+          final explainResults = await vectorQuery.explain(
+            const ExplainOptions(analyze: true),
+          );
 
-        expect(explainResults.metrics, isNotNull);
-        expect(explainResults.metrics.planSummary, isNotNull);
-        expect(explainResults.metrics.executionStats, isNotNull);
-        expect(explainResults.snapshot, isNotNull);
-        expect(explainResults.snapshot!.docs.length, 2);
+          expect(explainResults.metrics, isNotNull);
+          expect(explainResults.metrics.planSummary, isNotNull);
+          expect(explainResults.metrics.executionStats, isNotNull);
+          expect(explainResults.snapshot, isNotNull);
+          expect(explainResults.snapshot!.docs.length, 2);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('explain works with orderBy and limit', () async {
-        final collectionId =
-            'ordered-explain-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'ordered-explain-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await Future.wait([
-          collection.add({'value': 3}),
-          collection.add({'value': 1}),
-          collection.add({'value': 2}),
-        ]);
+          await Future.wait([
+            collection.add({'value': 3}),
+            collection.add({'value': 1}),
+            collection.add({'value': 2}),
+          ]);
 
-        final query = collection.orderBy('value').limit(2);
-        final explainResults = await query.explain(
-          const ExplainOptions(analyze: true),
-        );
+          final query = collection.orderBy('value').limit(2);
+          final explainResults = await query.explain(
+            const ExplainOptions(analyze: true),
+          );
 
-        expect(explainResults.metrics, isNotNull);
-        expect(explainResults.snapshot, isNotNull);
-        expect(explainResults.snapshot!.docs.length, 2);
-        expect(explainResults.snapshot!.docs[0].get('value')?.value, 1);
-        expect(explainResults.snapshot!.docs[1].get('value')?.value, 2);
+          expect(explainResults.metrics, isNotNull);
+          expect(explainResults.snapshot, isNotNull);
+          expect(explainResults.snapshot!.docs.length, 2);
+          expect(explainResults.snapshot!.docs[0].get('value')?.value, 1);
+          expect(explainResults.snapshot!.docs[1].get('value')?.value, 2);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('explain without options defaults to planning only', () async {
-        final collectionId =
-            'explain-default-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'explain-default-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await collection.add({'foo': 'bar'});
+          await collection.add({'foo': 'bar'});
 
-        final query = collection.where('foo', WhereFilter.equal, 'bar');
-        final explainResults = await query.explain();
+          final query = collection.where('foo', WhereFilter.equal, 'bar');
+          final explainResults = await query.explain();
 
-        // Should have metrics with plan summary
-        expect(explainResults.metrics, isNotNull);
-        expect(explainResults.metrics.planSummary, isNotNull);
+          // Should have metrics with plan summary
+          expect(explainResults.metrics, isNotNull);
+          expect(explainResults.metrics.planSummary, isNotNull);
 
-        // Should NOT have execution stats or snapshot (defaults to analyze: false)
-        expect(explainResults.metrics.executionStats, isNull);
-        expect(explainResults.snapshot, isNull);
+          // Should NOT have execution stats or snapshot (defaults to analyze: false)
+          expect(explainResults.metrics.executionStats, isNull);
+          expect(explainResults.snapshot, isNull);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
     },
     skip: hasGoogleEnv
@@ -208,17 +209,8 @@ void main() {
       final collectionsToCleanup = <String>[];
 
       setUp(() async {
-        // Use runZoned with empty env to ensure we connect to production
-        // This clears any emulator env vars set by firebase emulators:exec
-        runZoned(
-          () {
-            firestore = Firestore(
-              settings: const Settings(projectId: 'dart-firebase-admin'),
-            );
-          },
-          zoneValues: {
-            envSymbol: <String, String>{}, // Empty = use Platform.environment
-          },
+        firestore = Firestore(
+          settings: const Settings(projectId: 'dart-firebase-admin'),
         );
       });
 
@@ -234,135 +226,147 @@ void main() {
       });
 
       test('can plan aggregate query without execution', () async {
-        final collectionId =
-            'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        final aggregateQuery = collection
-            .where('age', WhereFilter.greaterThan, 20)
-            .count();
+          final aggregateQuery = collection
+              .where('age', WhereFilter.greaterThan, 20)
+              .count();
 
-        final result = await aggregateQuery.explain(const ExplainOptions());
+          final result = await aggregateQuery.explain(const ExplainOptions());
 
-        expect(result.metrics, isNotNull);
-        expect(result.metrics.planSummary, isNotNull);
-        expect(result.snapshot, isNull);
+          expect(result.metrics, isNotNull);
+          expect(result.metrics.planSummary, isNotNull);
+          expect(result.snapshot, isNull);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('can analyze aggregate query with execution', () async {
-        final collectionId =
-            'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await Future.wait([
-          collection.add({'name': 'Alice', 'age': 30}),
-          collection.add({'name': 'Bob', 'age': 25}),
-        ]);
+          await Future.wait([
+            collection.add({'name': 'Alice', 'age': 30}),
+            collection.add({'name': 'Bob', 'age': 25}),
+          ]);
 
-        final aggregateQuery = collection.count();
-        final result = await aggregateQuery.explain(
-          const ExplainOptions(analyze: true),
-        );
+          final aggregateQuery = collection.count();
+          final result = await aggregateQuery.explain(
+            const ExplainOptions(analyze: true),
+          );
 
-        expect(result.metrics, isNotNull);
-        expect(result.metrics.planSummary, isNotNull);
-        expect(result.metrics.executionStats, isNotNull);
-        expect(result.snapshot, isNotNull);
-        expect(result.snapshot!.count, 2);
+          expect(result.metrics, isNotNull);
+          expect(result.metrics.planSummary, isNotNull);
+          expect(result.metrics.executionStats, isNotNull);
+          expect(result.snapshot, isNotNull);
+          expect(result.snapshot!.count, 2);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('can analyze sum aggregation', () async {
-        final collectionId =
-            'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await Future.wait([
-          collection.add({'price': 10.5}),
-          collection.add({'price': 20.0}),
-        ]);
+          await Future.wait([
+            collection.add({'price': 10.5}),
+            collection.add({'price': 20.0}),
+          ]);
 
-        final aggregateQuery = collection.sum('price');
-        final result = await aggregateQuery.explain(
-          const ExplainOptions(analyze: true),
-        );
+          final aggregateQuery = collection.sum('price');
+          final result = await aggregateQuery.explain(
+            const ExplainOptions(analyze: true),
+          );
 
-        expect(result.metrics, isNotNull);
-        expect(result.snapshot, isNotNull);
-        expect(result.snapshot!.getSum('price'), 30.5);
+          expect(result.metrics, isNotNull);
+          expect(result.snapshot, isNotNull);
+          expect(result.snapshot!.getSum('price'), 30.5);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('can analyze average aggregation', () async {
-        final collectionId =
-            'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await Future.wait([
-          collection.add({'score': 80}),
-          collection.add({'score': 90}),
-          collection.add({'score': 100}),
-        ]);
+          await Future.wait([
+            collection.add({'score': 80}),
+            collection.add({'score': 90}),
+            collection.add({'score': 100}),
+          ]);
 
-        final aggregateQuery = collection.average('score');
-        final result = await aggregateQuery.explain(
-          const ExplainOptions(analyze: true),
-        );
+          final aggregateQuery = collection.average('score');
+          final result = await aggregateQuery.explain(
+            const ExplainOptions(analyze: true),
+          );
 
-        expect(result.metrics, isNotNull);
-        expect(result.snapshot, isNotNull);
-        expect(result.snapshot!.getAverage('score'), 90.0);
+          expect(result.metrics, isNotNull);
+          expect(result.snapshot, isNotNull);
+          expect(result.snapshot!.getAverage('score'), 90.0);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('can analyze multiple aggregations', () async {
-        final collectionId =
-            'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'agg-explain-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await Future.wait([
-          collection.add({'value': 10}),
-          collection.add({'value': 20}),
-          collection.add({'value': 30}),
-        ]);
+          await Future.wait([
+            collection.add({'value': 10}),
+            collection.add({'value': 20}),
+            collection.add({'value': 30}),
+          ]);
 
-        final aggregateQuery = collection.aggregate(
-          const count(),
-          const sum('value'),
-          const average('value'),
-        );
+          final aggregateQuery = collection.aggregate(
+            const count(),
+            const sum('value'),
+            const average('value'),
+          );
 
-        final result = await aggregateQuery.explain(
-          const ExplainOptions(analyze: true),
-        );
+          final result = await aggregateQuery.explain(
+            const ExplainOptions(analyze: true),
+          );
 
-        expect(result.metrics, isNotNull);
-        expect(result.snapshot, isNotNull);
-        expect(result.snapshot!.count, 3);
-        expect(result.snapshot!.getSum('value'), 60);
-        expect(result.snapshot!.getAverage('value'), 20.0);
+          expect(result.metrics, isNotNull);
+          expect(result.snapshot, isNotNull);
+          expect(result.snapshot!.count, 3);
+          expect(result.snapshot!.getSum('value'), 60);
+          expect(result.snapshot!.getAverage('value'), 20.0);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
 
       test('explain without options defaults to planning only', () async {
-        final collectionId =
-            'agg-explain-default-test-${DateTime.now().millisecondsSinceEpoch}';
-        collectionsToCleanup.add(collectionId);
-        final collection = firestore.collection(collectionId);
+        await runZoned(() async {
+          final collectionId =
+              'agg-explain-default-test-${DateTime.now().millisecondsSinceEpoch}';
+          collectionsToCleanup.add(collectionId);
+          final collection = firestore.collection(collectionId);
 
-        await collection.add({'value': 10});
+          await collection.add({'value': 10});
 
-        final aggregateQuery = collection.count();
-        final result = await aggregateQuery.explain();
+          final aggregateQuery = collection.count();
+          final result = await aggregateQuery.explain();
 
-        // Should have metrics with plan summary
-        expect(result.metrics, isNotNull);
-        expect(result.metrics.planSummary, isNotNull);
+          // Should have metrics with plan summary
+          expect(result.metrics, isNotNull);
+          expect(result.metrics.planSummary, isNotNull);
 
-        // Should NOT have execution stats or snapshot (defaults to analyze: false)
-        expect(result.metrics.executionStats, isNull);
-        expect(result.snapshot, isNull);
+          // Should NOT have execution stats or snapshot (defaults to analyze: false)
+          expect(result.metrics.executionStats, isNull);
+          expect(result.snapshot, isNull);
+        }, zoneValues: {envSymbol: <String, String>{}});
       });
     },
     skip: hasGoogleEnv

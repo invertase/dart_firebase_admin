@@ -24,6 +24,7 @@ part 'document.dart';
 part 'document_change.dart';
 part 'document_reader.dart';
 part 'field_value.dart';
+part 'recursive_delete.dart';
 part 'filter.dart';
 part 'geo_point.dart';
 part 'order.dart';
@@ -310,7 +311,10 @@ class Firestore {
 
   /// The serializer to use for the Protobuf transformation.
   /// @internal
-  late final _Serializer _serializer = _Serializer(this);
+  late final Serializer _serializer = Serializer._(this);
+
+  @visibleForTesting
+  Serializer get serializer => _serializer;
 
   /// Returns the project ID for this Firestore instance.
   ///
@@ -478,7 +482,6 @@ class Firestore {
   ///
   /// await batch.commit();
   /// ```
-  // ignore: use_to_and_as_if_applicable
   WriteBatch batch() {
     return WriteBatch._(this);
   }
@@ -617,7 +620,6 @@ class Firestore {
   /// // Wait for all writes to complete
   /// await bulkWriter.close();
   /// ```
-  // ignore: use_to_and_as_if_applicable
   BulkWriter bulkWriter([BulkWriterOptions? options]) {
     return BulkWriter._(this, options);
   }
@@ -687,7 +689,73 @@ class Firestore {
     return reader.get();
   }
 
-  // TODO: Implement recursiveDelete() method
+  /// Recursively deletes all documents and subcollections at and under the
+  /// specified reference.
+  ///
+  /// If any delete fails, the Future is rejected with an error message
+  /// containing the number of failed deletes and the stack trace of the last
+  /// failed delete. The provided reference is deleted regardless of whether
+  /// all deletes succeeded.
+  ///
+  /// `recursiveDelete()` uses a [BulkWriter] instance with default settings to
+  /// perform the deletes. To customize throttling rates or add success/error
+  /// callbacks, pass in a custom [BulkWriter] instance.
+  ///
+  /// [ref] The reference of a document or collection to delete.
+  /// [bulkWriter] A custom BulkWriter instance used to perform the deletes.
+  ///
+  /// Returns a Future that resolves when all deletes have been performed.
+  /// The Future is rejected if any of the deletes fail.
+  ///
+  /// Example:
+  /// ```dart
+  /// // Recursively delete a reference and log the references of failures.
+  /// final bulkWriter = firestore.bulkWriter();
+  /// bulkWriter.onWriteError((error) {
+  ///   if (error.failedAttempts < maxRetryAttempts) {
+  ///     return true;
+  ///   } else {
+  ///     print('Failed write at document: ${error.documentRef.path}');
+  ///     return false;
+  ///   }
+  /// });
+  /// await firestore.recursiveDelete(docRef, bulkWriter);
+  /// ```
+  Future<void> recursiveDelete(Object ref, [BulkWriter? bulkWriter]) async {
+    if (ref is! DocumentReference && ref is! CollectionReference) {
+      throw ArgumentError(
+        'Value for argument "ref" must be a DocumentReference or '
+        'CollectionReference, but was ${ref.runtimeType}.',
+      );
+    }
+
+    final writer = bulkWriter ?? this.bulkWriter();
+    final deleter = _RecursiveDelete(firestore: this, writer: writer, ref: ref);
+
+    try {
+      await deleter.run();
+    } finally {
+      // Close the writer only if we created it
+      if (bulkWriter == null) {
+        await writer.close();
+      }
+    }
+  }
+
+  /// Returns a JSON-serializable representation of this Firestore instance.
+  ///
+  /// Returns a Map containing the projectId if it has been determined.
+  ///
+  /// Example:
+  /// ```dart
+  /// final firestore = Firestore(Settings(projectId: 'my-project'));
+  /// print(firestore.toJSON()); // {projectId: my-project}
+  /// ```
+  Map<String, String?> toJSON() {
+    return {
+      'projectId': _firestoreClient.cachedProjectId ?? _settings.projectId,
+    };
+  }
 
   /// Terminates the Firestore client and closes all open connections.
   ///
