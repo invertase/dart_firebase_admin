@@ -21,6 +21,7 @@ import '../functions.dart';
 import '../messaging.dart';
 import '../security_rules.dart';
 import '../storage.dart';
+import '../version.g.dart';
 
 part 'app/app_exception.dart';
 part 'app/app_options.dart';
@@ -30,4 +31,5 @@ part 'app/emulator_client.dart';
 part 'app/environment.dart';
 part 'app/exception.dart';
 part 'app/firebase_app.dart';
+part 'app/firebase_user_agent_client.dart';
 part 'app/firebase_service.dart';

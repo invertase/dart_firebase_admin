@@ -6,6 +6,7 @@ export 'src/app.dart'
         AppRegistry,
         EmulatorClient,
         Environment,
+        FirebaseUserAgentClient,
         FirebaseServiceType,
         FirebaseService,
         CloudTasksEmulatorClient;

@@ -1,10 +1,6 @@
 part of 'messaging.dart';
 
-final _legacyFirebaseMessagingHeaders = {
-  // TODO send version
-  'X-Firebase-Client': 'fire-admin-node/12.0.0',
-  'access_token_auth': 'true',
-};
+final _legacyFirebaseMessagingHeaders = {'access_token_auth': 'true'};
 
 /// HTTP client for Firebase Cloud Messaging API operations.
 ///

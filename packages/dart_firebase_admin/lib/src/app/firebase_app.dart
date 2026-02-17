@@ -107,21 +107,18 @@ class FirebaseApp {
     final credential = options.credential;
 
     // Create authenticated client based on credential type
-    if (credential != null) {
-      final serviceAccountCreds = credential.serviceAccountCredentials;
-      if (serviceAccountCreds != null) {
-        // Use service account credentials
-        return googleapis_auth.clientViaServiceAccount(
-          serviceAccountCreds,
+    final client = switch (credential) {
+      Credential(:final serviceAccountCredentials?) =>
+        googleapis_auth.clientViaServiceAccount(
+          serviceAccountCredentials,
           scopes,
-        );
-      }
-    }
+        ),
+      _ => googleapis_auth.clientViaApplicationDefaultCredentials(
+        scopes: scopes,
+      ),
+    };
 
-    // Fall back to Application Default Credentials
-    return googleapis_auth.clientViaApplicationDefaultCredentials(
-      scopes: scopes,
-    );
+    return FirebaseUserAgentClient(await client);
   }
 
   /// Returns the HTTP client for this app.
