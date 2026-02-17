@@ -103,7 +103,7 @@ class _FirebaseTokenGenerator {
   String _encodeSegment(Object? segment) {
     final buffer =
         segment is Uint8List ? segment : utf8.encode(jsonEncode(segment));
-    return base64Encode(buffer).replaceFirst(RegExp(r'=+$'), '');
+    return base64Url.encode(buffer).replaceAll('=', '');
   }
 }
 
