@@ -1,25 +1,3 @@
-// Firebase App Production Tests
-//
-// Covers code paths in FirebaseApp that require real Google credentials:
-//   - _createDefaultClient() ADC path      (lines 122-124)
-//   - _createDefaultClient() SA path       (lines 110-118)
-//   - close() SDK-client shutdown          (line 270)
-//   - getProjectId() → computeProjectId() (line 152)
-//
-// Tests are skipped automatically when GOOGLE_APPLICATION_CREDENTIALS is not
-// set. They can run alongside emulator tests because each test builds a
-// prodEnv zone that strips emulator environment variables.
-//
-// Run standalone:
-//   GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json \
-//   dart test test/app/firebase_app_prod_test.dart
-//
-// Run as part of the full suite:
-//   FIRESTORE_EMULATOR_HOST=localhost:8080 \
-//   FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 \
-//   GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json \
-//   dart test
-
 import 'dart:async';
 import 'dart:io';
 
@@ -119,11 +97,6 @@ void main() {
       test(
         'falls back to computeProjectId() when no projectId source is configured',
         () {
-          // envSymbol is set to null so Zone.current[envSymbol] == null inside
-          // getProjectId(), causing env == null and skipping the env-var loop.
-          // With no projectIdOverride and no options.projectId the method must
-          // call computeProjectId(), which reads GCP project env vars from
-          // Platform.environment (e.g. GOOGLE_CLOUD_PROJECT).
           return runZoned(() async {
             final app = FirebaseApp.initializeApp(
               name: 'compute-project-${DateTime.now().microsecondsSinceEpoch}',

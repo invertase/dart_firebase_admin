@@ -1,21 +1,3 @@
-// Firebase App Integration Tests
-//
-// Tests real runtime behaviour of FirebaseApp against actual services.
-// These tests are separate from the unit tests and require either
-// running emulators or real credentials to execute.
-//
-// Run with Firestore emulator:
-//   FIRESTORE_EMULATOR_HOST=localhost:8080 \
-//   dart test test/app/firebase_app_integration_test.dart
-//
-// Run with Auth emulator:
-//   FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 \
-//   dart test test/app/firebase_app_integration_test.dart
-//
-// Run the client-creation test (requires GOOGLE_APPLICATION_CREDENTIALS):
-//   GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json \
-//   dart test test/app/firebase_app_integration_test.dart
-
 import 'dart:async';
 import 'dart:io';
 

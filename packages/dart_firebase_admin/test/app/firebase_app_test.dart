@@ -16,8 +16,6 @@ import '../helpers.dart';
 import '../mock.dart';
 import '../mock_service_account.dart';
 
-// TODO(demolaf): check if we have sufficient tests for firebase app initialization
-//  logic
 void main() {
   group('FirebaseApp', () {
     group('initializeApp', () {
@@ -420,27 +418,6 @@ void main() {
 
         await FirebaseApp.deleteApp(app);
       });
-
-      // TODO(demolaf): this test would need to be an e2e test.
-      // test('creates authenticated client when service account provided',
-      //     () async {
-      //   final credential = Credential.fromServiceAccountParams(
-      //     privateKey: mockPrivateKey,
-      //     email: mockClientEmail,
-      //     projectId: mockProjectId,
-      //   );
-      //   final app = FirebaseApp.initializeApp(
-      //     options: AppOptions(
-      //       projectId: mockProjectId,
-      //       credential: credential,
-      //     ),
-      //   );
-      //
-      //   final client = await app.client;
-      //   expect(client, isA<http.Client>());
-      //
-      //   await FirebaseApp.deleteApp(app);
-      // });
 
       test('reuses same client on subsequent calls', () {
         runZoned(() async {
