@@ -327,15 +327,19 @@ void main() {
     });
 
     group('e2e', () {
+      Map<String, String> prodEnv() {
+        final env = Map<String, String>.from(Platform.environment);
+        env.remove(Environment.firebaseAuthEmulatorHost);
+        env.remove(Environment.firestoreEmulatorHost);
+        env.remove(Environment.firebaseStorageEmulatorHost);
+        env.remove(Environment.cloudTasksEmulatorHost);
+        return env;
+      }
+
       test(
         skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should create and verify token',
         () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          // App Check doesn't have emulator yet, but keep pattern consistent
-          // prodEnv.remove(Environment.appCheckEmulatorHost);
-
           return runZoned(() async {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
@@ -358,7 +362,7 @@ void main() {
             } finally {
               await app.close();
             }
-          }, zoneValues: {envSymbol: prodEnv});
+          }, zoneValues: {envSymbol: prodEnv()});
         },
       );
 
@@ -366,11 +370,6 @@ void main() {
         skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should create token with custom ttl',
         () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          // App Check doesn't have emulator yet, but keep pattern consistent
-          // prodEnv.remove(Environment.appCheckEmulatorHost);
-
           return runZoned(() async {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
@@ -384,12 +383,11 @@ void main() {
               );
 
               expect(token.token, isNotEmpty);
-              // TTL might not be exactly what we requested, but should be reasonable
               expect(token.ttlMillis, greaterThan(0));
             } finally {
               await app.close();
             }
-          }, zoneValues: {envSymbol: prodEnv});
+          }, zoneValues: {envSymbol: prodEnv()});
         },
       );
 
@@ -397,11 +395,6 @@ void main() {
         skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should verify token with consume option',
         () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          // App Check doesn't have emulator yet, but keep pattern consistent
-          // prodEnv.remove(Environment.appCheckEmulatorHost);
-
           return runZoned(() async {
             final appName =
                 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
@@ -432,7 +425,7 @@ void main() {
             } finally {
               await app.close();
             }
-          }, zoneValues: {envSymbol: prodEnv});
+          }, zoneValues: {envSymbol: prodEnv()});
         },
       );
     });

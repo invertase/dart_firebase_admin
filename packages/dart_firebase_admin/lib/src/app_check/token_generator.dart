@@ -33,7 +33,7 @@ class AppCheckTokenGenerator {
   ]) async {
     try {
       final authClient = await app.client;
-      final account = authClient.getServiceAccountEmail;
+      final account = await authClient.getServiceAccountEmail;
 
       final header = {'alg': 'RS256', 'typ': 'JWT'};
       final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();

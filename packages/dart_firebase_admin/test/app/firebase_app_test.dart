@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:dart_firebase_admin/functions.dart';
 import 'package:dart_firebase_admin/messaging.dart';
 import 'package:dart_firebase_admin/security_rules.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
 import 'package:dart_firebase_admin/src/auth.dart';
+import 'package:dart_firebase_admin/storage.dart';
 import 'package:googleapis_firestore/googleapis_firestore.dart'
     as googleapis_firestore;
 import 'package:mocktail/mocktail.dart';
@@ -223,6 +225,15 @@ void main() {
         FirebaseApp.deleteApp(appWithoutProject);
       });
 
+      test('projectId returns the configured value', () {
+        final app = FirebaseApp.initializeApp(
+          options: const AppOptions(projectId: mockProjectId),
+          name: 'configured-project-app',
+        );
+
+        expect(app.projectId, mockProjectId);
+      });
+
       test('isDeleted returns false for active app', () {
         final app = FirebaseApp.initializeApp(
           options: const AppOptions(projectId: mockProjectId),
@@ -231,6 +242,170 @@ void main() {
 
         expect(app.isDeleted, isFalse);
       });
+    });
+
+    group('getProjectId', () {
+      late FirebaseApp app;
+
+      setUp(() {
+        app = FirebaseApp.initializeApp(
+          name: 'get-project-id-${DateTime.now().microsecondsSinceEpoch}',
+          options: const AppOptions(),
+        );
+      });
+
+      tearDown(() async {
+        if (!app.isDeleted) await app.close();
+      });
+
+      test(
+        'returns project ID from explicit environment map – GOOGLE_CLOUD_PROJECT',
+        () async {
+          final resolved = await app.getProjectId(
+            environment: {'GOOGLE_CLOUD_PROJECT': 'from-google-cloud-project'},
+          );
+          expect(resolved, 'from-google-cloud-project');
+        },
+      );
+
+      test(
+        'returns project ID from explicit environment map – GCLOUD_PROJECT',
+        () async {
+          final resolved = await app.getProjectId(
+            environment: {'GCLOUD_PROJECT': 'from-gcloud-project'},
+          );
+          expect(resolved, 'from-gcloud-project');
+        },
+      );
+
+      test(
+        'returns project ID from explicit environment map – GCP_PROJECT',
+        () async {
+          final resolved = await app.getProjectId(
+            environment: {'GCP_PROJECT': 'from-gcp-project'},
+          );
+          expect(resolved, 'from-gcp-project');
+        },
+      );
+
+      test(
+        'returns project ID from explicit environment map – CLOUDSDK_CORE_PROJECT',
+        () async {
+          final resolved = await app.getProjectId(
+            environment: {
+              'CLOUDSDK_CORE_PROJECT': 'from-cloudsdk-core-project',
+            },
+          );
+          expect(resolved, 'from-cloudsdk-core-project');
+        },
+      );
+
+      test('returns project ID from zone-injected environment', () async {
+        await runZoned(
+          zoneValues: {
+            envSymbol: {'GOOGLE_CLOUD_PROJECT': 'zone-project'},
+          },
+          () async {
+            final resolved = await app.getProjectId();
+            expect(resolved, 'zone-project');
+          },
+        );
+      });
+
+      test(
+        'explicit environment map takes precedence over projectIdOverride',
+        () async {
+          final resolved = await app.getProjectId(
+            projectIdOverride: 'override-project',
+            environment: {'GOOGLE_CLOUD_PROJECT': 'env-wins'},
+          );
+          expect(resolved, 'env-wins');
+        },
+      );
+
+      test(
+        'zone environment takes precedence over projectIdOverride',
+        () async {
+          await runZoned(
+            zoneValues: {
+              envSymbol: {'GOOGLE_CLOUD_PROJECT': 'zone-wins'},
+            },
+            () async {
+              final resolved = await app.getProjectId(
+                projectIdOverride: 'override-loses',
+              );
+              expect(resolved, 'zone-wins');
+            },
+          );
+        },
+      );
+
+      test(
+        'explicit environment map takes precedence over options.projectId',
+        () async {
+          final appWithProject = FirebaseApp.initializeApp(
+            name: 'env-over-options-${DateTime.now().microsecondsSinceEpoch}',
+            options: const AppOptions(projectId: 'options-project'),
+          );
+          addTearDown(() async {
+            if (!appWithProject.isDeleted) await appWithProject.close();
+          });
+
+          final resolved = await appWithProject.getProjectId(
+            environment: {'GOOGLE_CLOUD_PROJECT': 'env-wins-over-options'},
+          );
+          expect(resolved, 'env-wins-over-options');
+        },
+      );
+
+      test(
+        'projectIdOverride takes precedence over options.projectId',
+        () async {
+          final appWithProject = FirebaseApp.initializeApp(
+            name:
+                'override-over-options-${DateTime.now().microsecondsSinceEpoch}',
+            options: const AppOptions(projectId: 'options-project'),
+          );
+          addTearDown(() async {
+            if (!appWithProject.isDeleted) await appWithProject.close();
+          });
+
+          final resolved = await appWithProject.getProjectId(
+            projectIdOverride: 'override-wins',
+            environment: <String, String>{},
+          );
+          expect(resolved, 'override-wins');
+        },
+      );
+
+      test(
+        'returns projectIdOverride when no environment variables are set',
+        () async {
+          final resolved = await app.getProjectId(
+            projectIdOverride: 'only-override',
+            environment: <String, String>{},
+          );
+          expect(resolved, 'only-override');
+        },
+      );
+
+      test(
+        'returns options.projectId when no env vars and no override',
+        () async {
+          final appWithProject = FirebaseApp.initializeApp(
+            name: 'options-fallback-${DateTime.now().microsecondsSinceEpoch}',
+            options: const AppOptions(projectId: 'configured-project'),
+          );
+          addTearDown(() async {
+            if (!appWithProject.isDeleted) await appWithProject.close();
+          });
+
+          final resolved = await appWithProject.getProjectId(
+            environment: <String, String>{},
+          );
+          expect(resolved, 'configured-project');
+        },
+      );
     });
 
     group('client', () {
@@ -409,6 +584,32 @@ void main() {
         expect(identical(securityRules1, securityRules2), isTrue);
       });
 
+      test('functions returns Functions instance', () {
+        final functions = app.functions();
+        expect(functions, isA<Functions>());
+        expect(identical(functions.app, app), isTrue);
+      });
+
+      test('functions returns cached instance', () {
+        final functions1 = app.functions();
+        final functions2 = app.functions();
+        expect(identical(functions1, functions2), isTrue);
+        expect(identical(functions1, Functions.internal(app)), isTrue);
+      });
+
+      test('storage returns Storage instance', () {
+        final storage = app.storage();
+        expect(storage, isA<Storage>());
+        expect(identical(storage.app, app), isTrue);
+      });
+
+      test('storage returns cached instance', () {
+        final storage1 = app.storage();
+        final storage2 = app.storage();
+        expect(identical(storage1, storage2), isTrue);
+        expect(identical(storage1, Storage.internal(app)), isTrue);
+      });
+
       test('throws when accessing services after deletion', () async {
         await app.close();
 
@@ -424,6 +625,81 @@ void main() {
         );
         expect(
           () => app.firestore(settings: mockFirestoreSettings),
+          throwsA(
+            isA<FirebaseAppException>().having(
+              (e) => e.code,
+              'code',
+              'app/app-deleted',
+            ),
+          ),
+        );
+      });
+
+      test('appCheck throws when accessing after deletion', () async {
+        await app.close();
+
+        expect(
+          () => app.appCheck(),
+          throwsA(
+            isA<FirebaseAppException>().having(
+              (e) => e.code,
+              'code',
+              'app/app-deleted',
+            ),
+          ),
+        );
+      });
+
+      test('messaging throws when accessing after deletion', () async {
+        await app.close();
+
+        expect(
+          () => app.messaging(),
+          throwsA(
+            isA<FirebaseAppException>().having(
+              (e) => e.code,
+              'code',
+              'app/app-deleted',
+            ),
+          ),
+        );
+      });
+
+      test('securityRules throws when accessing after deletion', () async {
+        await app.close();
+
+        expect(
+          () => app.securityRules(),
+          throwsA(
+            isA<FirebaseAppException>().having(
+              (e) => e.code,
+              'code',
+              'app/app-deleted',
+            ),
+          ),
+        );
+      });
+
+      test('functions throws when accessing after deletion', () async {
+        await app.close();
+
+        expect(
+          () => app.functions(),
+          throwsA(
+            isA<FirebaseAppException>().having(
+              (e) => e.code,
+              'code',
+              'app/app-deleted',
+            ),
+          ),
+        );
+      });
+
+      test('storage throws when accessing after deletion', () async {
+        await app.close();
+
+        expect(
+          () => app.storage(),
           throwsA(
             isA<FirebaseAppException>().having(
               (e) => e.code,
