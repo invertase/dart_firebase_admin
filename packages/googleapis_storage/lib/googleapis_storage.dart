@@ -12,7 +12,6 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis_storage/src/internal/api_error.dart';
 import 'package:googleapis_storage/src/internal/api.dart';
 import 'package:googleapis_storage/src/internal/service.dart';
-import 'package:googleapis_storage/src/utils/auth_extension.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';

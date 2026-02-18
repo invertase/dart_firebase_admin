@@ -4,7 +4,7 @@ import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:meta/meta.dart';
 
 import '../../dart_firebase_admin.dart';
-import '../utils/auth_extension.dart';
+import '../utils/app_extension.dart';
 import 'app_check.dart';
 import 'app_check_api.dart';
 
@@ -32,8 +32,7 @@ class AppCheckTokenGenerator {
     AppCheckTokenOptions? options,
   ]) async {
     try {
-      final authClient = await app.client;
-      final account = await authClient.getServiceAccountEmail;
+      final account = await app.serviceAccountEmail;
 
       final header = {'alg': 'RS256', 'typ': 'JWT'};
       final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
@@ -48,7 +47,7 @@ class AppCheckTokenGenerator {
 
       final token = '${_encodeSegment(header)}.${_encodeSegment(body)}';
 
-      final signature = await authClient.signBlob(utf8.encode(token));
+      final signature = await app.sign(utf8.encode(token));
 
       return '$token.$signature';
     } on googleapis_auth.ServerRequestFailedException catch (err) {

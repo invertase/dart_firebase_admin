@@ -137,7 +137,7 @@ class FirebaseApp {
   }) async {
     final env = environment ?? Zone.current[envSymbol] as Map<String, String>?;
     if (env != null) {
-      for (final envKey in google_cloud.gcpProjectIdEnvironmentVariables) {
+      for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
         final value = env[envKey];
         if (value != null) return value;
       }

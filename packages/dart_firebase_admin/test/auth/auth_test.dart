@@ -9,12 +9,19 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 import '../helpers.dart';
 import '../mock.dart';
+import '../mock_service_account.dart';
 
 void main() {
   late Auth auth;
 
   setUp(() {
-    final sdk = createApp();
+    final sdk = createApp(
+      credential: Credential.fromServiceAccountParams(
+        privateKey: mockPrivateKey,
+        email: mockClientEmail,
+        projectId: projectId,
+      ),
+    );
     auth = Auth.internal(sdk);
   });
 

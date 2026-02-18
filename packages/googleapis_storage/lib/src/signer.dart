@@ -135,10 +135,14 @@ class URLSigner {
     final authClient = await bucket.storage.authClient;
     final signature = await authClient.sign(
       utf8.encode(blobToSign),
+      serviceAccountCredentials:
+          bucket.storage.options.credential?.serviceAccountCredentials,
       endpoint: config.signedConfig.signingEndpoint?.toString(),
     );
 
-    final clientEmail = await authClient.getServiceAccountEmail;
+    final clientEmail =
+        bucket.storage.options.credential?.serviceAccountCredentials?.email ??
+        await authClient.getServiceAccountEmail();
 
     return {
       'GoogleAccessId': clientEmail,
@@ -202,7 +206,9 @@ class URLSigner {
 
     final authClient = await bucket.storage.authClient;
 
-    final clientEmail = await authClient.getServiceAccountEmail;
+    final clientEmail =
+        bucket.storage.options.credential?.serviceAccountCredentials?.email ??
+        await authClient.getServiceAccountEmail();
 
     final credentialString = '$clientEmail/$credentialScope';
     final dateISO = _formatAsUTCISO(config.accessibleAt, includeTime: true);
@@ -239,6 +245,8 @@ class URLSigner {
 
     final signature = await authClient.sign(
       utf8.encode(blobToSign),
+      serviceAccountCredentials:
+          bucket.storage.options.credential?.serviceAccountCredentials,
       endpoint: config.signedConfig.signingEndpoint?.toString(),
     );
 

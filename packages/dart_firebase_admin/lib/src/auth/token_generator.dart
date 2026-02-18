@@ -70,8 +70,7 @@ class _FirebaseTokenGenerator {
     }
 
     try {
-      final authClient = await _app.client;
-      final account = await authClient.getServiceAccountEmail;
+      final account = await _app.serviceAccountEmail;
 
       final header = {'alg': 'RS256', 'typ': 'JWT'};
       final iat = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -87,7 +86,7 @@ class _FirebaseTokenGenerator {
       };
 
       final token = '${_encodeSegment(header)}.${_encodeSegment(body)}';
-      final signature = await authClient.signBlob(utf8.encode(token));
+      final signature = await _app.sign(utf8.encode(token));
 
       return '$token.$signature';
     } on googleapis_auth.ServerRequestFailedException catch (err, stack) {

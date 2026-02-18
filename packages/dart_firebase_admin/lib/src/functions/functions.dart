@@ -5,7 +5,7 @@ import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:meta/meta.dart';
 
 import '../app.dart';
-import '../utils/auth_extension.dart';
+import '../utils/app_extension.dart';
 import '../utils/validator.dart';
 
 part 'functions_api.dart';

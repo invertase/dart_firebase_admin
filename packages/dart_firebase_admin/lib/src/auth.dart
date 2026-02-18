@@ -14,7 +14,7 @@ import 'package:meta/meta.dart';
 
 import 'app.dart';
 import 'object_utils.dart';
-import 'utils/auth_extension.dart';
+import 'utils/app_extension.dart';
 import 'utils/jwt.dart';
 import 'utils/utils.dart';
 import 'utils/validator.dart';

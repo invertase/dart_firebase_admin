@@ -1003,6 +1003,8 @@ class BucketFile extends ServiceObject<FileMetadata>
       final authClient = await storage.authClient;
       final signature = await authClient.sign(
         policyStringBytes,
+        serviceAccountCredentials:
+            bucket.storage.options.credential?.serviceAccountCredentials,
         endpoint: options.signingEndpoint?.toString(),
       );
 
@@ -1056,7 +1058,9 @@ class BucketFile extends ServiceObject<FileMetadata>
 
     // Get auth client and credentials
     final authClient = await storage.authClient;
-    final clientEmail = await authClient.getServiceAccountEmail;
+    final clientEmail =
+        bucket.storage.options.credential?.serviceAccountCredentials?.email ??
+        await authClient.getServiceAccountEmail();
 
     // Build credential string
     final todayISO = _formatDateStamp(now);
@@ -1098,6 +1102,8 @@ class BucketFile extends ServiceObject<FileMetadata>
     try {
       final signature = await authClient.sign(
         policyStringBytes,
+        serviceAccountCredentials:
+            bucket.storage.options.credential?.serviceAccountCredentials,
         endpoint: options.signingEndpoint?.toString(),
       );
 

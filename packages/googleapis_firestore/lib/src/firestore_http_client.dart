@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:google_cloud/constants.dart' as google_cloud;
 import 'package:google_cloud/google_cloud.dart' as google_cloud;
 import 'package:googleapis/firestore/v1.dart' as firestore_v1;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
@@ -44,10 +45,6 @@ class EmulatorClient extends BaseClient implements googleapis_auth.AuthClient {
   @override
   googleapis_auth.AccessCredentials get credentials =>
       throw UnimplementedError();
-
-  @override
-  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
-      null;
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
@@ -130,7 +127,7 @@ class FirestoreHttpClient {
 
     final env = _settings.environmentOverride;
     if (env != null) {
-      for (final envKey in google_cloud.gcpProjectIdEnvironmentVariables) {
+      for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
         final value = env[envKey];
         if (value != null) {
           projectId = value;
