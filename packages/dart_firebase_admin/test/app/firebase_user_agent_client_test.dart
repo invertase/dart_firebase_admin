@@ -96,13 +96,6 @@ void main() {
       // credentials throws UnimplementedError on our stub — same as EmulatorClient.
       expect(() => client.credentials, throwsUnimplementedError);
     });
-
-    test('delegates serviceAccountCredentials getter to the inner client', () {
-      final inner = _CapturingAuthClient([]);
-      final client = FirebaseUserAgentClient(inner);
-
-      expect(client.serviceAccountCredentials, isNull);
-    });
   });
 }
 
@@ -119,10 +112,6 @@ class _CapturingAuthClient extends BaseClient
   @override
   googleapis_auth.AccessCredentials get credentials =>
       throw UnimplementedError();
-
-  @override
-  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
-      null;
 
   @override
   Future<StreamedResponse> send(BaseRequest request) async {

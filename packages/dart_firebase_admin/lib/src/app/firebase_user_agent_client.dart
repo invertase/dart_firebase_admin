@@ -15,10 +15,6 @@ class FirebaseUserAgentClient extends BaseClient
   googleapis_auth.AccessCredentials get credentials => _client.credentials;
 
   @override
-  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
-      _client.serviceAccountCredentials;
-
-  @override
   Future<StreamedResponse> send(BaseRequest request) {
     request.headers['X-Firebase-Client'] = 'fire-admin-dart/$packageVersion';
     return _client.send(request);
