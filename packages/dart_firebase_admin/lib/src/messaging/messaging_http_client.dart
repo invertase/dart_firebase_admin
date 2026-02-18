@@ -1,7 +1,5 @@
 part of 'messaging.dart';
 
-final _legacyFirebaseMessagingHeaders = {'access_token_auth': 'true'};
-
 /// HTTP client for Firebase Cloud Messaging API operations.
 ///
 /// Handles HTTP client management, googleapis API client creation,
@@ -53,7 +51,7 @@ class FirebaseMessagingHttpClient {
         Uri.https(host, path),
         body: jsonEncode(requestData),
         headers: {
-          ..._legacyFirebaseMessagingHeaders,
+          'access_token_auth': 'true',
           'content-type': 'application/json',
         },
       );
