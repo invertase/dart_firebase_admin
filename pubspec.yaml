@@ -10,7 +10,10 @@ dev_dependencies:
 
 dependency_overrides:
   googleapis_auth:
-    path: ../googleapis.dart/googleapis_auth
+    git:
+      url: https://github.com/google/googleapis.dart.git
+      ref: drop_signer_class
+      path: googleapis_auth
 
 workspace:
   - packages/dart_firebase_admin
