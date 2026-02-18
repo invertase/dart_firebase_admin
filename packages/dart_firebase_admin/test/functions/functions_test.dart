@@ -26,6 +26,7 @@ class FakeBaseRequest extends Fake implements BaseRequest {}
 /// Creates a mock HTTP client that handles OAuth token requests and
 /// optionally Cloud Tasks API requests.
 MockClient createMockHttpClient({
+  String? email,
   String? idToken,
   Response Function(Request)? apiHandler,
 }) {
@@ -60,6 +61,15 @@ MockClient createMockHttpClient({
       );
     }
 
+    // Handle Metadata Server requests for service account email
+    if (request.url.host == 'metadata.google.internal' &&
+        request.url.path.contains('/service-accounts/default/email')) {
+      if (email != null) {
+        return Response(email, 200, headers: {'Metadata-Flavor': 'Google'});
+      }
+      return Response('Not Found', 404);
+    }
+
     // Default response
     return Response('{}', 200);
   });
@@ -75,6 +85,7 @@ Future<auth.AuthClient> createTestAuthClient({
   Response Function(Request)? apiHandler,
 }) async {
   final baseClient = createMockHttpClient(
+    email: email,
     idToken: idToken,
     apiHandler: apiHandler,
   );

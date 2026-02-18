@@ -138,7 +138,7 @@ class URLSigner {
       endpoint: config.signedConfig.signingEndpoint?.toString(),
     );
 
-    final clientEmail = await authClient.getServiceAccountEmail;
+    final clientEmail = await authClient.getServiceAccountEmail();
 
     return {
       'GoogleAccessId': clientEmail,
@@ -202,7 +202,7 @@ class URLSigner {
 
     final authClient = await bucket.storage.authClient;
 
-    final clientEmail = await authClient.getServiceAccountEmail;
+    final clientEmail = await authClient.getServiceAccountEmail();
 
     final credentialString = '$clientEmail/$credentialScope';
     final dateISO = _formatAsUTCISO(config.accessibleAt, includeTime: true);
