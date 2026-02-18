@@ -26,7 +26,29 @@ class AppCheckHttpClient {
   ) async {
     final client = await app.client;
     final projectId = await app.getProjectId();
-    return fn(client, projectId);
+    try {
+      return await fn(client, projectId);
+    } on FirebaseAppCheckException {
+      rethrow;
+    } on appcheck1.DetailedApiRequestError catch (e, stack) {
+      switch (e.jsonResponse) {
+        case {'error': {'status': final String status}}:
+          final code = appCheckErrorCodeMapping[status];
+          if (code != null) {
+            Error.throwWithStackTrace(
+              FirebaseAppCheckException(code, e.message),
+              stack,
+            );
+          }
+      }
+      Error.throwWithStackTrace(
+        FirebaseAppCheckException(
+          AppCheckErrorCode.unknownError,
+          'Unexpected error: $e',
+        ),
+        stack,
+      );
+    }
   }
 
   /// Executes an App Check v1 API operation with automatic projectId injection.
