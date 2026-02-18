@@ -39,10 +39,15 @@ FirebaseApp createApp({
   FutureOr<void> Function()? tearDown,
   googleapis_auth.AuthClient? client,
   String? name,
+  Credential? credential,
 }) {
   final app = FirebaseApp.initializeApp(
     name: name,
-    options: AppOptions(projectId: projectId, httpClient: client),
+    options: AppOptions(
+      projectId: projectId,
+      httpClient: client,
+      credential: credential,
+    ),
   );
 
   addTearDown(() async {

@@ -100,9 +100,7 @@ class AppRegistry {
 
     final config = env['FIREBASE_CONFIG'];
     if (config == null || config.isEmpty) {
-      return AppOptions(
-        credential: Credential.fromApplicationDefaultCredentials(),
-      );
+      return AppOptions(credential: _credentialFromEnv(env));
     }
 
     try {
@@ -118,7 +116,7 @@ class AppRegistry {
       final json = jsonDecode(contents) as Map<String, dynamic>;
 
       return AppOptions(
-        credential: Credential.fromApplicationDefaultCredentials(),
+        credential: _credentialFromEnv(env),
         projectId: json['projectId'] as String?,
         databaseURL: json['databaseURL'] as String?,
         storageBucket: json['storageBucket'] as String?,
@@ -185,5 +183,18 @@ class AppRegistry {
         'Invalid Firebase app name "$name" provided. App name must be a non-empty string.',
       );
     }
+  }
+
+  Credential _credentialFromEnv(Map<String, String> env) {
+    final googleCredPath = env['GOOGLE_APPLICATION_CREDENTIALS'];
+    if (googleCredPath != null) {
+      try {
+        return Credential.fromServiceAccount(File(googleCredPath));
+      } catch (_) {
+        // File missing, not a service account JSON, or missing project_id –
+        // fall through to ADC.
+      }
+    }
+    return Credential.fromApplicationDefaultCredentials();
   }
 }
