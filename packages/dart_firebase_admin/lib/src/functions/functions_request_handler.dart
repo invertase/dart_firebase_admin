@@ -253,11 +253,9 @@ class FunctionsRequestHandler {
       return;
     }
 
-    // Check if running as an extension with ComputeEngine credentials.
-    // ComputeEngine credentials are used when running on GCE/Cloud Run without
-    // a service account JSON file - indicated by credentials without local
-    // service account credentials (i.e., using metadata server).
-    final isComputeEngine = authClient.serviceAccountCredentials == null;
+    // Service credentials via `FirebaseApp.options`.
+    final isComputeEngine =
+        _httpClient.app.options.credential?.serviceAccountCredentials == null;
 
     if (extensionId != null && extensionId.isNotEmpty && isComputeEngine) {
       // Running as extension with ComputeEngine - use ID token with Authorization header.
@@ -276,7 +274,7 @@ class FunctionsRequestHandler {
 
     // Default: Use OIDC token with service account email.
     // Try to get service account email from credential first, then from metadata service.
-    final serviceAccountEmail = await authClient.getServiceAccountEmail;
+    final serviceAccountEmail = await authClient.getServiceAccountEmail();
 
     if (serviceAccountEmail.isEmpty) {
       throw FirebaseFunctionsAdminException(

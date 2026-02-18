@@ -36,10 +36,6 @@ class EmulatorClient extends BaseClient implements googleapis_auth.AuthClient {
       throw UnimplementedError();
 
   @override
-  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
-      null;
-
-  @override
   Future<StreamedResponse> send(BaseRequest request) async {
     final modifiedRequest = _RequestImpl(
       request.method,
@@ -75,10 +71,6 @@ class CloudTasksEmulatorClient implements googleapis_auth.AuthClient {
   @override
   googleapis_auth.AccessCredentials get credentials =>
       throw UnimplementedError();
-
-  @override
-  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
-      null;
 
   /// Rewrites the URL to remove `/v2/` prefix and route to emulator host.
   Uri _rewriteUrl(Uri url) {

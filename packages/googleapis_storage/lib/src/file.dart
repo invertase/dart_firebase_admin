@@ -1056,7 +1056,7 @@ class BucketFile extends ServiceObject<FileMetadata>
 
     // Get auth client and credentials
     final authClient = await storage.authClient;
-    final clientEmail = await authClient.getServiceAccountEmail;
+    final clientEmail = await authClient.getServiceAccountEmail();
 
     // Build credential string
     final todayISO = _formatDateStamp(now);

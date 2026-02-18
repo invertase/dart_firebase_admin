@@ -8,6 +8,10 @@ dev_dependencies:
   melos: ^7.3.0
   test: ^1.26.3
 
+dependency_overrides:
+  googleapis_auth:
+    path: ../googleapis.dart/googleapis_auth
+
 workspace:
   - packages/dart_firebase_admin
   - packages/googleapis_firestore
