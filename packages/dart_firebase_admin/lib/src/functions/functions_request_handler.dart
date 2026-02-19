@@ -274,7 +274,7 @@ class FunctionsRequestHandler {
 
     // Default: Use OIDC token with service account email.
     // Try to get service account email from credential first, then from metadata service.
-    final serviceAccountEmail = await authClient.getServiceAccountEmail();
+    final serviceAccountEmail = await _httpClient.app.serviceAccountEmail;
 
     if (serviceAccountEmail.isEmpty) {
       throw FirebaseFunctionsAdminException(
