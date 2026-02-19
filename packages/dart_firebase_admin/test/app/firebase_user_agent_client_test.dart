@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_firebase_admin/src/app.dart';
+import 'package:dart_firebase_admin/src/utils/utils.dart';
 import 'package:dart_firebase_admin/version.g.dart';
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:http/http.dart';
@@ -32,6 +33,36 @@ void main() {
       expect(value.split('/').last, packageVersion);
     });
 
+    test('adds X-Goog-Api-Client header to every request', () async {
+      final captured = <BaseRequest>[];
+      final client = FirebaseUserAgentClient(_CapturingAuthClient(captured));
+
+      await client.send(Request('GET', Uri.parse('https://example.com/')));
+
+      expect(captured.length, 1);
+      expect(
+        captured.first.headers['X-Goog-Api-Client'],
+        'gl-dart/$dartVersion fire-admin-dart/$packageVersion',
+      );
+    });
+
+    test(
+      'X-Goog-Api-Client has correct format gl-dart/<version> fire-admin-dart/<version>',
+      () async {
+        final captured = <BaseRequest>[];
+        final client = FirebaseUserAgentClient(_CapturingAuthClient(captured));
+
+        await client.send(Request('GET', Uri.parse('https://example.com/')));
+
+        final value = captured.first.headers['X-Goog-Api-Client']!;
+        final parts = value.split(' ');
+        expect(parts.length, 2);
+        expect(parts[0], startsWith('gl-dart/'));
+        expect(parts[1], startsWith('fire-admin-dart/'));
+        expect(parts[1].split('/').last, packageVersion);
+      },
+    );
+
     test('preserves other headers on the request', () async {
       final captured = <BaseRequest>[];
       final client = FirebaseUserAgentClient(_CapturingAuthClient(captured));
@@ -61,7 +92,21 @@ void main() {
       );
     });
 
-    test('injects header on every individual request', () async {
+    test('overwrites any pre-existing X-Goog-Api-Client header', () async {
+      final captured = <BaseRequest>[];
+      final client = FirebaseUserAgentClient(_CapturingAuthClient(captured));
+
+      final request = Request('POST', Uri.parse('https://example.com/'));
+      request.headers['X-Goog-Api-Client'] = 'gl-node/18.0.0 fire-admin/12.0.0';
+      await client.send(request);
+
+      expect(
+        captured.first.headers['X-Goog-Api-Client'],
+        'gl-dart/$dartVersion fire-admin-dart/$packageVersion',
+      );
+    });
+
+    test('injects both headers on every individual request', () async {
       final captured = <BaseRequest>[];
       final client = FirebaseUserAgentClient(_CapturingAuthClient(captured));
 
@@ -74,6 +119,10 @@ void main() {
         expect(
           req.headers['X-Firebase-Client'],
           'fire-admin-dart/$packageVersion',
+        );
+        expect(
+          req.headers['X-Goog-Api-Client'],
+          'gl-dart/$dartVersion fire-admin-dart/$packageVersion',
         );
       }
     });

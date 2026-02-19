@@ -23,6 +23,7 @@ import '../messaging.dart';
 import '../security_rules.dart';
 import '../storage.dart';
 import '../version.g.dart';
+import 'utils/utils.dart';
 
 part 'app/app_exception.dart';
 part 'app/app_options.dart';

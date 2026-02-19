@@ -1,8 +1,10 @@
 part of '../app.dart';
 
-/// HTTP client wrapper that adds the `X-Firebase-Client` header for usage tracking.
+/// HTTP client wrapper that adds Firebase and Google API client headers for usage tracking.
 ///
-/// Wraps another HTTP client and injects `X-Firebase-Client: fire-admin-dart/{version}`
+/// Wraps another HTTP client and injects:
+/// - `X-Firebase-Client: fire-admin-dart/{version}`
+/// - `X-Goog-Api-Client: gl-dart/{dartVersion} fire-admin-dart/{version}`
 /// into every outgoing request so Firebase backend services can identify the SDK.
 @internal
 class FirebaseUserAgentClient extends BaseClient
@@ -17,6 +19,8 @@ class FirebaseUserAgentClient extends BaseClient
   @override
   Future<StreamedResponse> send(BaseRequest request) {
     request.headers['X-Firebase-Client'] = 'fire-admin-dart/$packageVersion';
+    request.headers['X-Goog-Api-Client'] =
+        'gl-dart/$dartVersion fire-admin-dart/$packageVersion';
     return _client.send(request);
   }
 
