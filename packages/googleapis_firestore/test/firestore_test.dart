@@ -168,20 +168,11 @@ void main() {
         expect(batch, isA<WriteBatch>());
       });
 
-      // Regression test for https://github.com/invertase/dart_firebase_admin/issues/83
-      //
-      // Firestore allows '/' characters inside map *keys* (e.g. document
-      // reference paths stored as map keys). The SDK was incorrectly routing
-      // map keys through field-path validation, which rejects '/', causing an
-      // ArgumentError before any network call was made.
-      group('map keys with "/" characters (issue #83)', () {
-        late Firestore firestore;
-
-        setUp(() {
-          firestore = Firestore(settings: const Settings(projectId: 'test'));
-        });
-
-        test('set() should not throw for a map key containing "/"', () {
+      group('set() with map keys containing "/"', () {
+        test('accepts a top-level map value with "/" in key', () {
+          final firestore = Firestore(
+            settings: const Settings(projectId: 'test'),
+          );
           final batch = firestore.batch();
           final docRef = firestore.doc('activities/new-activity');
 
@@ -194,7 +185,10 @@ void main() {
           );
         });
 
-        test('set() should not throw for nested maps with "/" in keys', () {
+        test('accepts nested maps with "/" in keys', () {
+          final firestore = Firestore(
+            settings: const Settings(projectId: 'test'),
+          );
           final batch = firestore.batch();
           final docRef = firestore.doc('col/doc');
 

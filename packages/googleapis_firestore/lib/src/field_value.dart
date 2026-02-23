@@ -426,11 +426,6 @@ void _validateUserInput(
 
     case Map<Object?, Object?>():
       for (final entry in value.entries) {
-        // FieldPath keys (from UpdateMap) are already validated field paths
-        // and must be used as-is to preserve multi-segment paths.
-        // String keys are literal Firestore map keys and must NOT be routed
-        // through _StringFieldMask, which rejects valid key characters such
-        // as '/'. Construct a single-segment FieldPath directly instead.
         final keyPath = switch (entry.key) {
           final FieldPath fp => fp,
           final String s => FieldPath([s]),
