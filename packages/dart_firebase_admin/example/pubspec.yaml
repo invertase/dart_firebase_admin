@@ -7,13 +7,24 @@ environment:
 dependencies:
   dart_firebase_admin: ^0.1.0
   google_cloud_firestore: ^0.1.0
-  googleapis_storage: ^0.1.0
+  google_cloud_storage:
+    git:
+      url: https://github.com/googleapis/google-cloud-dart.git
+      ref: main
+      path: packages/google_cloud_storage
 
 dependency_overrides:
   dart_firebase_admin:
     path: ../../dart_firebase_admin
   google_cloud_firestore:
     path: ../../google_cloud_firestore
-  googleapis_storage:
-    path: ../../googleapis_storage
-
+  google_cloud_protobuf:
+    git:
+      url: https://github.com/googleapis/google-cloud-dart.git
+      ref: main
+      path: generated/google_cloud_protobuf
+  google_cloud_rpc:
+    git:
+      url: https://github.com/googleapis/google-cloud-dart.git
+      ref: main
+      path: generated/google_cloud_rpc

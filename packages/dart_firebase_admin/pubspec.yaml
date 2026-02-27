@@ -16,10 +16,14 @@ dependencies:
   equatable: ^2.0.7
   google_cloud: ^0.3.0
   google_cloud_firestore: ^0.1.0
+  google_cloud_storage:
+    git:
+      url: https://github.com/googleapis/google-cloud-dart.git
+      ref: main
+      path: packages/google_cloud_storage
   googleapis: ^15.0.0
   googleapis_auth: ^2.1.0
   googleapis_beta: ^9.0.0
-  googleapis_storage: ^0.1.0
   http: ^1.0.0
   intl: ^0.20.0
   jose: ^0.3.4
@@ -34,6 +38,18 @@ dev_dependencies:
   path: ^1.9.1
   test: ^1.24.4
   uuid: ^4.0.0
+
+dependency_overrides:
+  google_cloud_protobuf:
+    git:
+      url: https://github.com/googleapis/google-cloud-dart.git
+      ref: main
+      path: generated/google_cloud_protobuf
+  google_cloud_rpc:
+    git:
+      url: https://github.com/googleapis/google-cloud-dart.git
+      ref: main
+      path: generated/google_cloud_rpc
 
 false_secrets:
  - /test/auth/jwt_test.dart

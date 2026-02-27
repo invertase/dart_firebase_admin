@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_storage/googleapis_storage.dart' hide Storage;
 
 Future<void> storageExample(FirebaseApp admin) async {
   print('\n### Storage Example ###\n');
 
-  // await basicExample(admin);
+  await basicExample(admin);
 
-  await signedUrlExample(admin);
+  // signedUrlExample is not yet supported by the google_cloud_storage package.
+  // await signedUrlExample(admin);
 }
 
 Future<void> basicExample(FirebaseApp admin) async {
@@ -17,18 +17,34 @@ Future<void> basicExample(FirebaseApp admin) async {
     final storage = admin.storage();
 
     final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
-    print('> Using bucket: ${bucket.id}\n');
+    print('> Using bucket: ${bucket.name}\n');
 
-    final file = bucket.file('foo.txt');
-    print('> File: ${file.name}\n');
-
+    const objectName = 'foo.txt';
     const fileContent = 'Hello from basicExample() in storage_example.dart';
-    print('> Uploading file "${file.name}" to Storage...\n');
-    await file.save(fileContent);
+
+    print('> Uploading "$objectName" to Storage...\n');
+    await bucket.storage.insertObject(
+      bucket.name,
+      objectName,
+      utf8.encode(fileContent),
+    );
     print('> ✓ File uploaded successfully!\n');
 
-    print('> Deleting file "${file.name}"...\n');
-    await file.delete();
+    final metadata = await bucket.storage.objectMetadata(
+      bucket.name,
+      objectName,
+    );
+    print('> File size: ${metadata.size} bytes\n');
+    print('> Content type: ${metadata.contentType}\n');
+
+    final downloaded = await bucket.storage.downloadObject(
+      bucket.name,
+      objectName,
+    );
+    print('> Downloaded content: ${utf8.decode(downloaded)}\n');
+
+    print('> Deleting "$objectName"...\n');
+    await bucket.storage.deleteObject(bucket.name, objectName);
     print('> ✓ File deleted successfully!\n');
   } catch (e, stackTrace) {
     print('> ✗ Error: $e\n');
@@ -36,58 +52,8 @@ Future<void> basicExample(FirebaseApp admin) async {
   }
 }
 
-Future<void> signedUrlExample(FirebaseApp admin) async {
-  print('> Signed URL Storage usage...\n');
-
-  String? url;
-  try {
-    final storage = admin.storage();
-
-    final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
-    print('> Using bucket: ${bucket.id}\n');
-
-    final file = bucket.file('signed-url-example.txt');
-
-    const fileContent = 'Hello from signed url example!';
-    print('> Uploading file "${file.name}" to Storage...\n');
-    await file.save(utf8.encode(fileContent));
-    print('> ✓ File uploaded successfully!\n');
-
-    // Verify the file exists by getting its metadata with retry logic
-    // (handles eventual consistency - file might not be immediately queryable)
-    FileMetadata? metadata;
-    for (var i = 0; i < 3; i++) {
-      try {
-        metadata = await file.getMetadata();
-        break;
-      } catch (e) {
-        if (i < 2) {
-          print('> Retrying metadata fetch (${i + 1}/3)...\n');
-          await Future<void>.delayed(const Duration(milliseconds: 300));
-        } else {
-          rethrow;
-        }
-      }
-    }
-
-    if (metadata != null) {
-      print('> ✓ File verified in bucket: ${metadata.bucket}\n');
-      print('> File size: ${metadata.size} bytes\n');
-      print('> File created: ${metadata.timeCreated}\n');
-    }
-
-    final expires = DateTime.now().add(const Duration(minutes: 30));
-    url = await file.getSignedUrl(
-      GetFileSignedUrlOptions(action: 'read', expires: expires),
-    );
-    print('> ✓ Signed URL generated for ${file.name}\n');
-  } catch (e, stackTrace) {
-    print('> ✗ Error: $e\n');
-    print('> Stack trace: $stackTrace\n');
-  }
-
-  print('Signed URL: $url\n');
-  if (url != null) {
-    print('You can access the file at the URL above for 30 minutes.\n');
-  }
-}
+// TODO: Implement signed URL support once the google_cloud_storage package
+// adds signing capability, or implement manually using app.sign() and
+// app.serviceAccountEmail with the GCS V4 signing spec.
+//
+// Future<void> signedUrlExample(FirebaseApp admin) async { ... }
