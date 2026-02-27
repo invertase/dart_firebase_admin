@@ -7,8 +7,8 @@ import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
 import 'package:dart_firebase_admin/src/auth.dart';
 import 'package:dart_firebase_admin/storage.dart';
-import 'package:googleapis_firestore/googleapis_firestore.dart'
-    as googleapis_firestore;
+import 'package:google_cloud_firestore/google_cloud_firestore.dart'
+    as google_cloud_firestore;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -487,7 +487,7 @@ void main() {
 
       test('firestore returns Firestore instance', () {
         final firestore = app.firestore(settings: mockFirestoreSettings);
-        expect(firestore, isA<googleapis_firestore.Firestore>());
+        expect(firestore, isA<google_cloud_firestore.Firestore>());
         // Verify we can use Firestore methods
         expect(firestore.collection('test'), isNotNull);
       });
@@ -516,7 +516,7 @@ void main() {
       test('firestore throws when reinitializing with different settings', () {
         // Initialize with first settings
         app.firestore(
-          settings: const googleapis_firestore.Settings(
+          settings: const google_cloud_firestore.Settings(
             host: 'localhost:8080',
             environmentOverride: {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
           ),
@@ -525,7 +525,7 @@ void main() {
         // Try to initialize again with different settings - should throw
         expect(
           () => app.firestore(
-            settings: const googleapis_firestore.Settings(
+            settings: const google_cloud_firestore.Settings(
               host: 'different:9090',
               environmentOverride: {
                 'FIRESTORE_EMULATOR_HOST': 'localhost:8080',

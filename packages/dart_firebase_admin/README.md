@@ -192,7 +192,7 @@ print('Token: ${result.token}');
 ```dart
 import 'dart:async';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_firestore/googleapis_firestore.dart';
+import 'package:google_cloud_firestore/google_cloud_firestore.dart';
 
 final app = FirebaseApp.initializeApp();
 final firestore = app.firestore();
@@ -543,7 +543,7 @@ The Firebase Admin Dart SDK currently supports the following Firebase services:
 
 Alongside the Firebase Admin Dart SDK, this repository contains additional workspace/pub.dev packages to accomodate the SDK:
 
-- [googleapis_firestore](/packages/googleapis_firestore/): Standalone Google APIs Firestore SDK, which the Firebase SDK extends.
+- [google_cloud_firestore](/packages/google_cloud_firestore/): Standalone Google APIs Firestore SDK, which the Firebase SDK extends.
 - [googleapis_storage](/packages/googleapis_storage/): Standalone Google APIs Storage SDK, which the Firebase SDK extends.
 
 # Contributing

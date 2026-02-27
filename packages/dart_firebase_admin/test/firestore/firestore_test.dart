@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/src/firestore/firestore.dart';
+import 'package:google_cloud_firestore/google_cloud_firestore.dart' as gfs;
 import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:googleapis_firestore/googleapis_firestore.dart' as gfs;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 

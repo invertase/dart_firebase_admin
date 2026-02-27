@@ -193,8 +193,8 @@ class FirebaseApp {
   ///
   /// For multi-database support, use [databaseId] to specify a named database.
   /// Default is '(default)'.
-  googleapis_firestore.Firestore firestore({
-    googleapis_firestore.Settings? settings,
+  google_cloud_firestore.Firestore firestore({
+    google_cloud_firestore.Settings? settings,
     String databaseId = kDefaultDatabaseId,
   }) {
     final service = Firestore.internal(this);
