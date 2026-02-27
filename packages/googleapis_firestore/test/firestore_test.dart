@@ -167,6 +167,39 @@ void main() {
         final batch = firestore.batch();
         expect(batch, isA<WriteBatch>());
       });
+
+      group('set() with map keys containing "/"', () {
+        test('accepts a top-level map value with "/" in key', () {
+          final firestore = Firestore(
+            settings: const Settings(projectId: 'test'),
+          );
+          final batch = firestore.batch();
+          final docRef = firestore.doc('activities/new-activity');
+
+          expect(
+            () => batch.set(docRef, {
+              'activityType': 'activityA',
+              'agents': {'products/product-a': 5.0},
+            }),
+            returnsNormally,
+          );
+        });
+
+        test('accepts nested maps with "/" in keys', () {
+          final firestore = Firestore(
+            settings: const Settings(projectId: 'test'),
+          );
+          final batch = firestore.batch();
+          final docRef = firestore.doc('col/doc');
+
+          expect(
+            () => batch.set(docRef, {
+              'refs': {'users/alice': true, 'users/bob': false},
+            }),
+            returnsNormally,
+          );
+        });
+      });
     });
 
     group('bulkWriter()', () {
