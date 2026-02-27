@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:dart_firebase_admin/src/app.dart';
-import 'package:googleapis_storage/googleapis_storage.dart' as gcs;
+import 'package:google_cloud_storage/google_cloud_storage.dart' as gcs;
 import 'package:test/test.dart';
 
 import '../helpers.dart';

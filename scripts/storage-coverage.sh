@@ -10,7 +10,7 @@ set -e
 
 # Get the script's directory and the package directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PACKAGE_DIR="$SCRIPT_DIR/../packages/googleapis_storage"
+PACKAGE_DIR="$SCRIPT_DIR/../packages/google_cloud_storage"
 
 # Change to package directory
 cd "$PACKAGE_DIR"

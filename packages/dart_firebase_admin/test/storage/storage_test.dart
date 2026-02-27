@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/storage/storage.dart';
+import 'package:google_cloud_storage/google_cloud_storage.dart' as gcs;
 import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:googleapis_storage/googleapis_storage.dart' as gcs;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -358,14 +358,14 @@ void main() {
     });
 
     group('Integration with underlying Storage library', () {
-      test('should pass through to googleapis_storage correctly', () {
+      test('should pass through to google_cloud_storage correctly', () {
         final storage = Storage.internal(appWithBucket);
         final bucket = storage.bucket('integration-test-bucket');
 
         expect(bucket, isA<gcs.Bucket>());
         expect(bucket.name, 'integration-test-bucket');
 
-        // The bucket should be a valid googleapis_storage.Bucket instance
+        // The bucket should be a valid google_cloud_storage.Bucket instance
         expect(bucket.storage, isNotNull);
       });
 

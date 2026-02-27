@@ -11,7 +11,7 @@ dev_dependencies:
 workspace:
   - packages/dart_firebase_admin
   - packages/googleapis_firestore
-  - packages/googleapis_storage
+  - packages/google_cloud_storage
 
 melos:
   scripts:

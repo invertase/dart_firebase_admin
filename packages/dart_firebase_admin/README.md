@@ -401,7 +401,7 @@ await messaging.unsubscribeFromTopic(['<token-1>', '<token-2>'], 'news');
 
 ```dart
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_storage/googleapis_storage.dart' hide Storage;
+import 'package:google_cloud_storage/google_cloud_storage.dart' hide Storage;
 
 final app = FirebaseApp.initializeApp();
 final bucket = app.storage().bucket('<bucket-name>');
@@ -544,7 +544,7 @@ The Firebase Admin Dart SDK currently supports the following Firebase services:
 Alongside the Firebase Admin Dart SDK, this repository contains additional workspace/pub.dev packages to accomodate the SDK:
 
 - [googleapis_firestore](/packages/googleapis_firestore/): Standalone Google APIs Firestore SDK, which the Firebase SDK extends.
-- [googleapis_storage](/packages/googleapis_storage/): Standalone Google APIs Storage SDK, which the Firebase SDK extends.
+- [google_cloud_storage](/packages/google_cloud_storage/): Standalone Google APIs Storage SDK, which the Firebase SDK extends.
 
 # Contributing
 

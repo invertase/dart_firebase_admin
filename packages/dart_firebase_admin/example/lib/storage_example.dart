@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_storage/googleapis_storage.dart' hide Storage;
+import 'package:google_cloud_storage/google_cloud_storage.dart' hide Storage;
 
 Future<void> storageExample(FirebaseApp admin) async {
   print('\n### Storage Example ###\n');

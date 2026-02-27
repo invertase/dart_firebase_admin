@@ -134,7 +134,7 @@ jobs:
       - name: Run googleapis_firestore tests with coverage
         run: ${{ github.workspace }}/scripts/firestore-coverage.sh
 
-      - name: Run googleapis_storage tests with coverage
+      - name: Run google_cloud_storage tests with coverage
         run: ${{ github.workspace }}/scripts/storage-coverage.sh
 
       - name: Merge coverage reports
@@ -142,14 +142,14 @@ jobs:
           # Save individual package coverage files before merging
           cp coverage.lcov coverage_admin.lcov
           cp ../googleapis_firestore/coverage.lcov coverage_firestore.lcov
-          cp ../googleapis_storage/coverage.lcov coverage_storage.lcov
+          cp ../google_cloud_storage/coverage.lcov coverage_storage.lcov
           
           # Merge coverage reports from all packages (relative to packages/dart_firebase_admin)
           # Only merge files that exist
           COVERAGE_FILES=""
           [ -f coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES coverage.lcov"
           [ -f ../googleapis_firestore/coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES ../googleapis_firestore/coverage.lcov"
-          [ -f ../googleapis_storage/coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES ../googleapis_storage/coverage.lcov"
+          [ -f ../google_cloud_storage/coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES ../google_cloud_storage/coverage.lcov"
           
           if [ -n "$COVERAGE_FILES" ]; then
             cat $COVERAGE_FILES > merged_coverage.lcov
@@ -220,7 +220,7 @@ jobs:
           echo "=== Coverage Report ==="
           echo "dart_firebase_admin: ${ADMIN_PCT}% (${ADMIN_HIT}/${ADMIN_TOTAL} lines)"
           echo "googleapis_firestore: ${FIRESTORE_PCT}% (${FIRESTORE_HIT}/${FIRESTORE_TOTAL} lines)"
-          echo "googleapis_storage: ${STORAGE_PCT}% (${STORAGE_HIT}/${STORAGE_TOTAL} lines)"
+          echo "google_cloud_storage: ${STORAGE_PCT}% (${STORAGE_HIT}/${STORAGE_TOTAL} lines)"
           echo "----------------------"
           echo "Total: ${COVERAGE_PCT}% (${HIT_LINES}/${TOTAL_LINES} lines)"
 
@@ -257,7 +257,7 @@ jobs:
             |---------|----------|
             | dart_firebase_admin | ${adminCov}% |
             | googleapis_firestore | ${firestoreCov}% |
-            | googleapis_storage | ${storageCov}% |
+            | google_cloud_storage | ${storageCov}% |
 
             _Minimum threshold: 40%_`;
 

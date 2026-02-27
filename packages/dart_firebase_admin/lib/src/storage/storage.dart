@@ -1,5 +1,5 @@
-import 'package:googleapis_storage/googleapis_storage.dart'
-    as googleapis_storage;
+import 'package:google_cloud_storage/google_cloud_storage.dart'
+    as google_cloud_storage;
 import 'package:meta/meta.dart';
 import '../app.dart';
 
@@ -21,8 +21,8 @@ class Storage implements FirebaseService {
       apiEndpoint = 'http://$emulatorHost';
     }
 
-    _delegate = googleapis_storage.Storage(
-      googleapis_storage.StorageOptions(
+    _delegate = google_cloud_storage.Storage(
+      google_cloud_storage.StorageOptions(
         authClient: isEmulator ? null : app.client,
         apiEndpoint: apiEndpoint,
         useAuthWithCustomEndpoint: false,
@@ -39,9 +39,9 @@ class Storage implements FirebaseService {
   @override
   final FirebaseApp app;
 
-  late final googleapis_storage.Storage _delegate;
+  late final google_cloud_storage.Storage _delegate;
 
-  googleapis_storage.Bucket bucket(String? name) {
+  google_cloud_storage.Bucket bucket(String? name) {
     final bucketName = name ?? app.options.storageBucket;
     if (bucketName == null || bucketName.isEmpty) {
       throw FirebaseAppException(
