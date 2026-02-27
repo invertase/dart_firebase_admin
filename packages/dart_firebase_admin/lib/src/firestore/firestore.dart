@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:googleapis_firestore/googleapis_firestore.dart'
-    as googleapis_firestore;
+import 'package:google_cloud_firestore/google_cloud_firestore.dart'
+    as google_cloud_firestore;
 import 'package:meta/meta.dart';
 
 import '../app.dart';
@@ -27,17 +27,17 @@ class Firestore implements FirebaseService {
   final FirebaseApp app;
 
   // Maps database IDs to Firestore delegate instances
-  final Map<String, googleapis_firestore.Firestore> _databases = {};
+  final Map<String, google_cloud_firestore.Firestore> _databases = {};
 
   // Maps database IDs to their settings
-  final Map<String, googleapis_firestore.Settings?> _settings = {};
+  final Map<String, google_cloud_firestore.Settings?> _settings = {};
 
   /// Gets the settings used to initialize a specific database.
   /// Returns null if the database hasn't been initialized yet.
   ///
   /// This is exposed for testing purposes to verify credential extraction.
   @visibleForTesting
-  googleapis_firestore.Settings? getSettingsForDatabase(String databaseId) {
+  google_cloud_firestore.Settings? getSettingsForDatabase(String databaseId) {
     return _settings[databaseId];
   }
 
@@ -46,16 +46,16 @@ class Firestore implements FirebaseService {
   ///
   /// This is exposed for testing purposes to verify settings construction.
   @visibleForTesting
-  googleapis_firestore.Settings buildSettingsForTesting(
+  google_cloud_firestore.Settings buildSettingsForTesting(
     String databaseId,
-    googleapis_firestore.Settings? userSettings,
+    google_cloud_firestore.Settings? userSettings,
   ) {
     return _buildSettings(databaseId, userSettings);
   }
 
   /// Gets or creates a Firestore instance for the specified database.
   @internal
-  googleapis_firestore.Firestore getDatabase([
+  google_cloud_firestore.Firestore getDatabase([
     String databaseId = kDefaultDatabaseId,
   ]) {
     var database = _databases[databaseId];
@@ -70,9 +70,9 @@ class Firestore implements FirebaseService {
   /// Initializes a Firestore instance with specific settings.
   /// Throws if the database was already initialized with different settings.
   @internal
-  googleapis_firestore.Firestore initializeDatabase(
+  google_cloud_firestore.Firestore initializeDatabase(
     String databaseId,
-    googleapis_firestore.Settings? settings,
+    google_cloud_firestore.Settings? settings,
   ) {
     final existingInstance = _databases[databaseId];
     if (existingInstance != null) {
@@ -99,27 +99,28 @@ class Firestore implements FirebaseService {
   }
 
   /// Creates Firestore settings from the Firebase app configuration
-  googleapis_firestore.Settings _buildSettings(
+  google_cloud_firestore.Settings _buildSettings(
     String databaseId,
-    googleapis_firestore.Settings? userSettings,
+    google_cloud_firestore.Settings? userSettings,
   ) {
     final projectId = app.projectId;
     final appCredential = app.options.credential;
 
-    var settings = userSettings ?? const googleapis_firestore.Settings();
+    var settings = userSettings ?? const google_cloud_firestore.Settings();
 
     if (settings.credential == null) {
       if (appCredential is ServiceAccountCredential) {
         settings = settings.copyWith(
-          credential: googleapis_firestore.Credential.fromServiceAccountParams(
-            email: appCredential.clientEmail,
-            privateKey: appCredential.privateKey,
-            projectId: appCredential.projectId,
-          ),
+          credential:
+              google_cloud_firestore.Credential.fromServiceAccountParams(
+                email: appCredential.clientEmail,
+                privateKey: appCredential.privateKey,
+                projectId: appCredential.projectId,
+              ),
         );
       } else if (appCredential is ApplicationDefaultCredential) {
         settings = settings.copyWith(
-          credential: googleapis_firestore
+          credential: google_cloud_firestore
               .Credential.fromApplicationDefaultCredentials(),
         );
       } else if (appCredential != null) {
@@ -140,17 +141,17 @@ class Firestore implements FirebaseService {
     return settings;
   }
 
-  googleapis_firestore.Firestore _initFirestore(
+  google_cloud_firestore.Firestore _initFirestore(
     String databaseId,
-    googleapis_firestore.Settings? settings,
+    google_cloud_firestore.Settings? settings,
   ) {
     final firestoreSettings = _buildSettings(databaseId, settings);
-    return googleapis_firestore.Firestore(settings: firestoreSettings);
+    return google_cloud_firestore.Firestore(settings: firestoreSettings);
   }
 
   bool _areSettingsEqual(
-    googleapis_firestore.Settings? a,
-    googleapis_firestore.Settings? b,
+    google_cloud_firestore.Settings? a,
+    google_cloud_firestore.Settings? b,
   ) {
     if (a == null && b == null) return true;
     if (a == null || b == null) return false;
