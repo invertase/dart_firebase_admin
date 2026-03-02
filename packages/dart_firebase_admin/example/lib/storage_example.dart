@@ -5,9 +5,6 @@ Future<void> storageExample(FirebaseApp admin) async {
   print('\n### Storage Example ###\n');
 
   await basicExample(admin);
-
-  // signedUrlExample is not yet supported by the google_cloud_storage package.
-  // await signedUrlExample(admin);
 }
 
 Future<void> basicExample(FirebaseApp admin) async {
@@ -51,9 +48,3 @@ Future<void> basicExample(FirebaseApp admin) async {
     print('> Stack trace: $stackTrace\n');
   }
 }
-
-// TODO: Implement signed URL support once the google_cloud_storage package
-// adds signing capability, or implement manually using app.sign() and
-// app.serviceAccountEmail with the GCS V4 signing spec.
-//
-// Future<void> signedUrlExample(FirebaseApp admin) async { ... }
