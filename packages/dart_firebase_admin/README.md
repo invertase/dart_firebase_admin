@@ -400,44 +400,54 @@ await messaging.unsubscribeFromTopic(['<token-1>', '<token-2>'], 'news');
 ### Storage
 
 ```dart
+import 'dart:typed_data';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_storage/googleapis_storage.dart' hide Storage;
+import 'package:google_cloud_storage/google_cloud_storage.dart' as gcs;
 
 final app = FirebaseApp.initializeApp();
-final bucket = app.storage().bucket('<bucket-name>');
+final storage = app.storage();
+final bucket = storage.bucket('<bucket-name>');
 ```
 
-#### save (upload)
+#### insertObject (upload)
 
 ```dart
-final file = bucket.file('path/to/file.txt');
-await file.save('Hello, world!');
-```
-
-#### delete
-
-```dart
-await bucket.file('path/to/file.txt').delete();
-```
-
-#### getMetadata
-
-```dart
-final metadata = await bucket.file('path/to/file.txt').getMetadata();
-print('Size: ${metadata.size} bytes');
-print('Created: ${metadata.timeCreated}');
-```
-
-#### getSignedUrl
-
-```dart
-final url = await bucket.file('path/to/file.txt').getSignedUrl(
-  GetFileSignedUrlOptions(
-    action: 'read',
-    expires: DateTime.now().add(Duration(hours: 1)),
-  ),
+await bucket.storage.insertObject(
+  bucket.name,
+  'path/to/file.txt',
+  Uint8List.fromList('Hello, world!'.codeUnits),
+  metadata: gcs.ObjectMetadata(contentType: 'text/plain'),
 );
-print('Signed URL: $url');
+```
+
+#### downloadObject
+
+```dart
+final bytes = await bucket.storage.downloadObject(bucket.name, 'path/to/file.txt');
+print(String.fromCharCodes(bytes));
+```
+
+#### objectMetadata
+
+```dart
+final metadata = await bucket.storage.objectMetadata(bucket.name, 'path/to/file.txt');
+print('Size: ${metadata.size} bytes');
+print('Content type: ${metadata.contentType}');
+```
+
+#### deleteObject
+
+```dart
+await bucket.storage.deleteObject(bucket.name, 'path/to/file.txt');
+```
+
+#### getDownloadURL
+
+Returns a long-lived public download URL backed by a Firebase download token, suitable for sharing with end-users.
+
+```dart
+final url = await storage.getDownloadURL(bucket, 'path/to/file.txt');
+print('Download URL: $url');
 ```
 
 ### Security Rules
@@ -544,7 +554,7 @@ The Firebase Admin Dart SDK currently supports the following Firebase services:
 Alongside the Firebase Admin Dart SDK, this repository contains additional workspace/pub.dev packages to accomodate the SDK:
 
 - [google_cloud_firestore](/packages/google_cloud_firestore/): Standalone Google APIs Firestore SDK, which the Firebase SDK extends.
-- [googleapis_storage](/packages/googleapis_storage/): Standalone Google APIs Storage SDK, which the Firebase SDK extends.
+- [google_cloud_storage](https://github.com/googleapis/google-cloud-dart/tree/main/packages/google_cloud_storage): Standalone Google Cloud Storage SDK, which the Firebase SDK extends.
 
 # Contributing
 
