@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_firebase_admin/src/app.dart';
-import 'package:dart_firebase_admin/src/storage/storage.dart';
 import 'package:google_cloud_storage/google_cloud_storage.dart' as gcs;
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
