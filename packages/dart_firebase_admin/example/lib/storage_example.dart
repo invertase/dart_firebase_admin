@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/storage.dart';
 
 Future<void> storageExample(FirebaseApp admin) async {
   print('\n### Storage Example ###\n');
 
   await basicExample(admin);
+  await getDownloadURLExample(admin);
 }
 
 Future<void> basicExample(FirebaseApp admin) async {
@@ -46,5 +48,36 @@ Future<void> basicExample(FirebaseApp admin) async {
   } catch (e, stackTrace) {
     print('> ✗ Error: $e\n');
     print('> Stack trace: $stackTrace\n');
+  }
+}
+
+Future<void> getDownloadURLExample(FirebaseApp admin) async {
+  print('> getDownloadURL usage...\n');
+
+  final storage = admin.storage();
+  final bucket = storage.bucket('dart-firebase-admin.firebasestorage.app');
+  const objectName = 'download-url-example.txt';
+
+  try {
+    await bucket.storage.insertObject(
+      bucket.name,
+      objectName,
+      utf8.encode('Hello from getDownloadURLExample()!'),
+    );
+    print('> ✓ File uploaded\n');
+
+    final url = await storage.getDownloadURL(bucket, objectName);
+    print('> Download URL: $url\n');
+  } on FirebaseStorageAdminException catch (e) {
+    if (e.errorCode == StorageClientErrorCode.noDownloadToken) {
+      print(
+        '> No download token available. Create one in the Firebase Console.\n',
+      );
+    } else {
+      print('> ✗ Error: $e\n');
+    }
+  } finally {
+    await bucket.storage.deleteObject(bucket.name, objectName);
+    print('> ✓ File cleaned up\n');
   }
 }
