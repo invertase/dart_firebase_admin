@@ -7,15 +7,6 @@ import 'package:test/test.dart';
 import '../helpers.dart';
 
 void main() {
-  Map<String, String> prodEnv() {
-    final env = Map<String, String>.from(Platform.environment);
-    env.remove(Environment.firebaseAuthEmulatorHost);
-    env.remove(Environment.firestoreEmulatorHost);
-    env.remove(Environment.firebaseStorageEmulatorHost);
-    env.remove(Environment.cloudTasksEmulatorHost);
-    return env;
-  }
-
   group('FirebaseApp (Production)', () {
     group('_createDefaultClient – ADC path', () {
       test(

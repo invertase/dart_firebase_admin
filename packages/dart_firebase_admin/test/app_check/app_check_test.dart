@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:dart_firebase_admin/app_check.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
@@ -327,15 +326,6 @@ void main() {
     });
 
     group('e2e', () {
-      Map<String, String> prodEnv() {
-        final env = Map<String, String>.from(Platform.environment);
-        env.remove(Environment.firebaseAuthEmulatorHost);
-        env.remove(Environment.firestoreEmulatorHost);
-        env.remove(Environment.firebaseStorageEmulatorHost);
-        env.remove(Environment.cloudTasksEmulatorHost);
-        return env;
-      }
-
       test(
         skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should create and verify token',

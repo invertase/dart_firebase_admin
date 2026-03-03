@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_firebase_admin/src/app.dart';
@@ -10,15 +9,6 @@ import 'package:test/test.dart';
 import '../helpers.dart';
 
 void main() {
-  Map<String, String> prodEnv() {
-    final env = Map<String, String>.from(Platform.environment);
-    env.remove(Environment.firebaseAuthEmulatorHost);
-    env.remove(Environment.firestoreEmulatorHost);
-    env.remove(Environment.firebaseStorageEmulatorHost);
-    env.remove(Environment.cloudTasksEmulatorHost);
-    return env;
-  }
-
   const testBucketName = 'dart-firebase-admin.firebasestorage.app';
   const productionEndpoint = 'https://firebasestorage.googleapis.com/v0';
 
