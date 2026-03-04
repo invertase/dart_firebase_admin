@@ -263,6 +263,68 @@ void main() {
           throwsA(isA<StateError>()),
         );
       });
+
+      test(
+        'throws ArgumentError when a field and its ancestor are both set',
+        () {
+          // e.g. setting 'a' and 'a.b' at the same time is ambiguous
+          final batch = firestore.batch();
+          final docRef = testCollection.doc();
+
+          expect(
+            () => batch.update(docRef, {
+              FieldPath(const ['a']): 1,
+              FieldPath(const ['a', 'b']): 2,
+            }),
+            throwsA(
+              isA<ArgumentError>().having(
+                (e) => e.message,
+                'message',
+                contains('was specified multiple times'),
+              ),
+            ),
+          );
+        },
+      );
+    });
+
+    group('reset()', () {
+      test('allows adding operations after a committed batch', () async {
+        final docRef1 = testCollection.doc('reset-doc-1');
+        final docRef2 = testCollection.doc('reset-doc-2');
+
+        final batch = firestore.batch();
+        batch.create(docRef1, {'value': 1});
+        await batch.commit();
+
+        // After reset, the batch should accept new operations
+        batch.reset();
+        batch.create(docRef2, {'value': 2});
+        await batch.commit();
+
+        expect((await docRef2.get()).data(), {'value': 2});
+      });
+
+      test('clears pending operations', () async {
+        final docRef = testCollection.doc();
+
+        final batch = firestore.batch();
+        batch.create(docRef, {'value': 1});
+
+        batch.reset(); // Clears the pending create
+
+        // Committing an empty batch after reset should succeed with no writes
+        final results = await batch.commit();
+        expect(results, isEmpty);
+      });
+    });
+
+    group('commit()', () {
+      test('committing an empty batch returns empty results', () async {
+        final batch = firestore.batch();
+        final results = await batch.commit();
+        expect(results, isEmpty);
+      });
     });
   });
 }
