@@ -68,6 +68,7 @@ class ExponentialBackoff {
     _currentBaseMs = _currentBaseMs.clamp(initialDelayMs, maxDelayMs);
     _retryCount += 1;
 
+    _awaitingBackoffCompletion = true;
     await Future<void>.delayed(Duration(milliseconds: delayWithJitterMs));
     _awaitingBackoffCompletion = false;
   }
