@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+// import 'package:google_cloud_storage/google_cloud_storage.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/messaging.dart';
 import 'package:shelf/shelf.dart';
@@ -17,6 +18,7 @@ void main() async {
   print('Firebase Admin SDK initialized');
 
   final router = Router()
+    ..get('/storage', (Request req) => storageHandler(req, app))
     ..get('/health', healthHandler)
     ..post('/send-message', (Request req) => sendMessageHandler(req, app))
     ..post(
@@ -31,6 +33,12 @@ void main() async {
 
   final server = await shelf_io.serve(handler, '0.0.0.0', port);
   print('Server running on port ${server.port}');
+}
+
+Future<Response> storageHandler(Request req, FirebaseApp app) async {
+  final bucket = app.storage().bucket('test');
+  await bucket.object('test').upload(utf8.encode('Hello World'));
+  return Response.ok('done');
 }
 
 Response healthHandler(Request req) => Response.ok(
@@ -58,7 +66,7 @@ Future<Response> sendMessageHandler(Request request, FirebaseApp app) async {
       );
     }
 
-    final messageId = await app.messaging.send(
+    final messageId = await app.messaging().send(
       TokenMessage(
         token: token,
         notification: Notification(title: title, body: bodyText),
@@ -97,7 +105,7 @@ Future<Response> subscribeToTopicHandler(
       );
     }
 
-    final response = await app.messaging.subscribeToTopic(tokens, topic);
+    final response = await app.messaging().subscribeToTopic(tokens, topic);
 
     return Response.ok(
       jsonEncode({
@@ -132,7 +140,7 @@ Future<Response> verifyTokenHandler(Request request, FirebaseApp app) async {
       );
     }
 
-    final decodedToken = await app.auth.verifyIdToken(idToken);
+    final decodedToken = await app.auth().verifyIdToken(idToken);
 
     return Response.ok(
       jsonEncode({

@@ -1,5 +1,5 @@
-import 'package:googleapis_storage/googleapis_storage.dart'
-    as googleapis_storage;
+import 'package:google_cloud_storage/google_cloud_storage.dart'
+    as google_cloud_storage;
 import 'package:meta/meta.dart';
 import '../app.dart';
 
@@ -8,9 +8,10 @@ class Storage implements FirebaseService {
   Storage._(this.app) {
     String? apiEndpoint;
     final isEmulator = Environment.isStorageEmulatorEnabled();
-
+    print('isEmulator: $isEmulator');
     if (isEmulator) {
       final emulatorHost = Environment.getStorageEmulatorHost()!;
+      print('emulatorHost: $emulatorHost');
 
       if (RegExp('https?://').hasMatch(emulatorHost)) {
         throw FirebaseAppException(
@@ -21,12 +22,10 @@ class Storage implements FirebaseService {
       apiEndpoint = 'http://$emulatorHost';
     }
 
-    _delegate = googleapis_storage.Storage(
-      googleapis_storage.StorageOptions(
-        authClient: isEmulator ? null : app.client,
-        apiEndpoint: apiEndpoint,
-        useAuthWithCustomEndpoint: false,
-      ),
+    _delegate = google_cloud_storage.Storage(
+      client: isEmulator ? null : app.client,
+      apiEndpoint: apiEndpoint,
+      useAuthWithCustomEndpoint: false,
     );
   }
 
@@ -39,9 +38,9 @@ class Storage implements FirebaseService {
   @override
   final FirebaseApp app;
 
-  late final googleapis_storage.Storage _delegate;
+  late final google_cloud_storage.Storage _delegate;
 
-  googleapis_storage.Bucket bucket(String? name) {
+  google_cloud_storage.Bucket bucket([String? name]) {
     final bucketName = name ?? app.options.storageBucket;
     if (bucketName == null || bucketName.isEmpty) {
       throw FirebaseAppException(
@@ -57,6 +56,6 @@ class Storage implements FirebaseService {
 
   @override
   Future<void> delete() async {
-    await _delegate.terminate();
+    _delegate.close();
   }
 }
