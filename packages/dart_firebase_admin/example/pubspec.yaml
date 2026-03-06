@@ -14,13 +14,3 @@ dependency_overrides:
     path: ../../dart_firebase_admin
   google_cloud_firestore:
     path: ../../google_cloud_firestore
-  google_cloud_protobuf:
-    git:
-      url: https://github.com/googleapis/google-cloud-dart.git
-      ref: main
-      path: generated/google_cloud_protobuf
-  google_cloud_rpc:
-    git:
-      url: https://github.com/googleapis/google-cloud-dart.git
-      ref: main
-      path: generated/google_cloud_rpc

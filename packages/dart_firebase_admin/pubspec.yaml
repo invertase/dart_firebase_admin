@@ -35,18 +35,6 @@ dev_dependencies:
   test: ^1.24.4
   uuid: ^4.0.0
 
-dependency_overrides:
-  google_cloud_protobuf:
-    git:
-      url: https://github.com/googleapis/google-cloud-dart.git
-      ref: main
-      path: generated/google_cloud_protobuf
-  google_cloud_rpc:
-    git:
-      url: https://github.com/googleapis/google-cloud-dart.git
-      ref: main
-      path: generated/google_cloud_rpc
-
 false_secrets:
  - /test/auth/jwt_test.dart
  - /test/client/get_id_token.js
