@@ -8,10 +8,8 @@ class Storage implements FirebaseService {
   Storage._(this.app) {
     String? apiEndpoint;
     final isEmulator = Environment.isStorageEmulatorEnabled();
-    print('isEmulator: $isEmulator');
     if (isEmulator) {
       final emulatorHost = Environment.getStorageEmulatorHost()!;
-      print('emulatorHost: $emulatorHost');
 
       if (RegExp('https?://').hasMatch(emulatorHost)) {
         throw FirebaseAppException(
