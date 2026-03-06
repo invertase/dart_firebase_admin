@@ -16,10 +16,10 @@ dependencies:
   equatable: ^2.0.7
   google_cloud: ^0.3.0
   google_cloud_firestore: ^0.1.0
+  google_cloud_storage: ^0.5.1
   googleapis: ^15.0.0
   googleapis_auth: ^2.1.0
   googleapis_beta: ^9.0.0
-  googleapis_storage: ^0.1.0
   http: ^1.0.0
   intl: ^0.20.0
   jose: ^0.3.4

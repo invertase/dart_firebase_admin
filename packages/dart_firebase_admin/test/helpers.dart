@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:google_cloud_firestore/google_cloud_firestore.dart'
     as google_cloud_firestore;
 import 'package:googleapis_auth/googleapis_auth.dart' as googleapis_auth;
@@ -29,6 +29,18 @@ google_cloud_firestore.Settings mockFirestoreSettingsWithDb(
 /// Used to skip tests that require production Firebase access.
 final hasGoogleEnv =
     Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
+
+/// Returns a copy of [Platform.environment] with all emulator host variables
+/// removed, so tests can connect to production Firebase even when emulators
+/// are configured in the outer environment.
+Map<String, String> prodEnv() {
+  final env = Map<String, String>.from(Platform.environment);
+  env.remove(Environment.firebaseAuthEmulatorHost);
+  env.remove(Environment.firestoreEmulatorHost);
+  env.remove(Environment.firebaseStorageEmulatorHost);
+  env.remove(Environment.cloudTasksEmulatorHost);
+  return env;
+}
 
 /// Creates a FirebaseApp for testing.
 ///
