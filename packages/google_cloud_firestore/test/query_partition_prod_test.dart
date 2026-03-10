@@ -458,7 +458,7 @@ void main() {
         },
       );
     },
-    skip: hasGoogleEnv
+    skip: hasProdEnv
         ? false
         : 'Partition queries require production Firestore (not supported in emulator)',
   );

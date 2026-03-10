@@ -71,7 +71,7 @@ void main() {
         });
       });
     },
-    skip: hasGoogleEnv
+    skip: hasProdEnv
         ? false
         : 'Vector search and embedding require production Firestore '
               '(not supported in emulator',

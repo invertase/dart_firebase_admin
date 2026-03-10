@@ -36,7 +36,7 @@ void main() {
           },
         );
       },
-      skip: !hasGoogleEnv
+      skip: !hasProdEnv
           ? 'Skipping client creation tests. '
                 'Set GOOGLE_APPLICATION_CREDENTIALS to run these tests.'
           : false,

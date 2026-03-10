@@ -28,7 +28,7 @@ void main() {
 
   // Save original config before running update tests
   setUpAll(() async {
-    if (!hasGoogleEnv) return;
+    if (!hasProdEnv) return;
 
     // Remove emulator env var from the zone environment
     final prodEnv = Map<String, String>.from(Platform.environment);
@@ -54,7 +54,7 @@ void main() {
 
   // Restore original config after all tests complete
   tearDownAll(() async {
-    if (!hasGoogleEnv || originalConfig == null) return;
+    if (!hasProdEnv || originalConfig == null) return;
 
     // Remove emulator env var from the zone environment
     final prodEnv = Map<String, String>.from(Platform.environment);
@@ -127,7 +127,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -189,7 +189,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -243,7 +243,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -306,7 +306,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -358,7 +358,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -407,7 +407,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires reCAPTCHA Enterprise configuration',
       );
@@ -470,7 +470,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );

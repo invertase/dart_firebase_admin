@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:test/test.dart';
 
@@ -26,7 +27,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
@@ -47,7 +48,7 @@ void main() {
             expect(app.isDeleted, isTrue);
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
@@ -77,7 +78,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
@@ -102,10 +103,82 @@ void main() {
             }
           }, zoneValues: {envSymbol: null});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
+      );
+    });
+
+    group('Workload Identity Federation tests', () {
+      late FirebaseApp app;
+
+      setUpAll(() async {
+        // Initialize via WIF (ADC)
+        app = FirebaseApp.initializeApp(
+          options: AppOptions(
+            credential: Credential.fromApplicationDefaultCredentials(
+              serviceAccountId:
+                  'firebase-adminsdk-fbsvc@dart-firebase-admin.iam.gserviceaccount.com',
+            ),
+            projectId: 'dart-firebase-admin',
+          ),
+        );
+      });
+
+      test(
+        'should initializeApp via WIF (ADC)',
+        () {
+          expect(app, isNotNull);
+        },
+        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+      );
+
+      test(
+        'should test Auth (getUsers)',
+        () async {
+          final auth = app.auth();
+          expect(auth, isNotNull);
+
+          final listUsersResult = await auth.listUsers(maxResults: 1);
+          expect(listUsersResult.users, isA<List<UserRecord>>());
+        },
+        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+      );
+
+      test(
+        'should test Firestore (write + read)',
+        () async {
+          final db = app.firestore();
+          expect(db, isNotNull);
+
+          final docRef = db.collection('wif-demo').doc('test-connection');
+          const testMessage = 'Hello from GitHub Actions WIF!';
+
+          await docRef.set({
+            'timestamp': DateTime.now().toIso8601String(),
+            'message': testMessage,
+          });
+
+          final doc = await docRef.get();
+          expect(doc.exists, isTrue);
+          expect(doc.data()?['message'], equals(testMessage));
+          expect(doc.data()?['timestamp'], isNotNull);
+        },
+        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+      );
+
+      test(
+        'should test signed tokens (createCustomToken)',
+        () async {
+          final auth = app.auth();
+          const uid = 'wif-demo-user-123';
+
+          final customToken = await auth.createCustomToken(uid);
+          expect(customToken, isNotNull);
+          expect(customToken, isA<String>());
+        },
+        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
     });
   });

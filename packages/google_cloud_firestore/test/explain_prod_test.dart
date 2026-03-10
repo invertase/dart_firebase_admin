@@ -197,7 +197,7 @@ void main() {
         }, zoneValues: {envSymbol: <String, String>{}});
       });
     },
-    skip: hasGoogleEnv
+    skip: hasProdEnv
         ? false
         : 'Explain APIs require production Firestore (not supported in emulator)',
   );
@@ -369,7 +369,7 @@ void main() {
         }, zoneValues: {envSymbol: <String, String>{}});
       });
     },
-    skip: hasGoogleEnv
+    skip: hasProdEnv
         ? false
         : 'Explain APIs require production Firestore (not supported in emulator)',
   );

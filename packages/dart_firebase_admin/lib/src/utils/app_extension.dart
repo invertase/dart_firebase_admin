@@ -4,7 +4,7 @@ import '../app.dart';
 
 extension AppExtension on FirebaseApp {
   Future<String> get serviceAccountEmail async =>
-      options.credential?.serviceAccountCredentials?.email ??
+      options.credential?.serviceAccountId ??
       (await client).getServiceAccountEmail();
 
   /// Signs the given data using the IAM Credentials API or local credentials.
@@ -18,6 +18,7 @@ extension AppExtension on FirebaseApp {
           data,
           serviceAccountCredentials:
               options.credential?.serviceAccountCredentials,
+          serviceAccountEmail: options.credential?.serviceAccountId,
           endpoint: endpoint,
         );
 }

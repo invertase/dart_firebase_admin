@@ -50,7 +50,7 @@ void main() {
             expect(response.body, uploadedContent);
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         timeout: const Timeout(Duration(seconds: 30)),
       );
 
@@ -89,7 +89,7 @@ void main() {
             expect(response.body, uploadedContent);
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         timeout: const Timeout(Duration(seconds: 30)),
       );
     });
