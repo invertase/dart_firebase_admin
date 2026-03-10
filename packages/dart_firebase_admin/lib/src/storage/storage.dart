@@ -2,6 +2,7 @@ import 'package:google_cloud_storage/google_cloud_storage.dart'
     as google_cloud_storage;
 import 'package:meta/meta.dart';
 import '../app.dart';
+import '../utils/native_environment.dart';
 
 class Storage implements FirebaseService {
   /// Internal constructor
@@ -18,13 +19,10 @@ class Storage implements FirebaseService {
         );
       }
       apiEndpoint = 'http://$emulatorHost';
+      setNativeEnvironmentVariable('STORAGE_EMULATOR_HOST', emulatorHost);
     }
 
-    _delegate = google_cloud_storage.Storage(
-      client: isEmulator ? null : app.client,
-      apiEndpoint: apiEndpoint,
-      useAuthWithCustomEndpoint: false,
-    );
+    _delegate = google_cloud_storage.Storage();
   }
 
   /// Factory constructor that ensures singleton per app.
