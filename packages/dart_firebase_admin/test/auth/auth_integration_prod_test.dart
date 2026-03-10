@@ -66,7 +66,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'Requires production to verify custom claims clearing',
     );
@@ -138,7 +138,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'Session cookies require GCIP (not available in emulator)',
     );
@@ -225,7 +225,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'Session cookies require GCIP (not available in emulator)',
     );
@@ -293,7 +293,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'Session cookies require GCIP (not available in emulator)',
     );
@@ -326,7 +326,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'Session cookies require GCIP (not available in emulator)',
     );
@@ -380,7 +380,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'getUsers not fully supported in Firebase Auth Emulator',
     );
@@ -418,7 +418,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'getUsers not fully supported in Firebase Auth Emulator',
     );
@@ -468,7 +468,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'Provider configs require GCIP (not available in emulator)',
     );
@@ -515,7 +515,7 @@ void main() {
           }
         }, zoneValues: {envSymbol: prodEnv});
       },
-      skip: hasGoogleEnv
+      skip: hasProdEnv
           ? false
           : 'Provider configs require GCIP (not available in emulator)',
     );

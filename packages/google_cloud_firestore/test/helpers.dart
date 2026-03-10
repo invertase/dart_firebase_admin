@@ -6,10 +6,10 @@ import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
 
-/// Whether Google Application Default Credentials are available.
-/// Used to skip tests that require production Firebase access.
-final hasGoogleEnv =
-    Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
+/// Whether quota-heavy production tests should run.
+/// Never set in CI — opt in locally by exporting RUN_PROD_TESTS=true alongside
+/// a service-account credential in GOOGLE_APPLICATION_CREDENTIALS.
+final hasProdEnv = Platform.environment['RUN_PROD_TESTS'] == 'true';
 
 /// Whether the Firestore emulator is enabled.
 bool isFirestoreEmulatorEnabled() {

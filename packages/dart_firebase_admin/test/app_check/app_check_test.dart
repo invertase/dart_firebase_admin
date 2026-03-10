@@ -327,7 +327,7 @@ void main() {
 
     group('e2e', () {
       test(
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should create and verify token',
         () {
           return runZoned(() async {
@@ -357,7 +357,7 @@ void main() {
       );
 
       test(
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should create token with custom ttl',
         () {
           return runZoned(() async {
@@ -382,7 +382,7 @@ void main() {
       );
 
       test(
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
         'should verify token with consume option',
         () {
           return runZoned(() async {

@@ -135,7 +135,7 @@ void main() {
         () {
           // This test requires GOOGLE_APPLICATION_CREDENTIALS to be set
           // or running in a GCP environment
-          if (!hasGoogleEnv) {
+          if (!hasProdEnv) {
             return;
           }
 
