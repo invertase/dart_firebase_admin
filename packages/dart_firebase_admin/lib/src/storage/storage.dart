@@ -7,7 +7,6 @@ import '../utils/native_environment.dart';
 class Storage implements FirebaseService {
   /// Internal constructor
   Storage._(this.app) {
-    String? apiEndpoint;
     final isEmulator = Environment.isStorageEmulatorEnabled();
     if (isEmulator) {
       final emulatorHost = Environment.getStorageEmulatorHost()!;
@@ -18,7 +17,6 @@ class Storage implements FirebaseService {
           'FIREBASE_STORAGE_EMULATOR_HOST should not contain a protocol (http or https).',
         );
       }
-      apiEndpoint = 'http://$emulatorHost';
       setNativeEnvironmentVariable('STORAGE_EMULATOR_HOST', emulatorHost);
     }
 
