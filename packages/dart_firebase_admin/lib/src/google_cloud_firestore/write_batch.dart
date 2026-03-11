@@ -112,12 +112,43 @@ class WriteBatch {
       writes: _operations.map((op) => op.op()).toList(),
     );
 
-    return firestore._client.v1((client) async {
-      return client.projects.databases.documents.commit(
-        request,
-        firestore._formattedDatabaseName,
-      );
-    });
+    if (transactionId != null) {
+      return firestore._client.v1((client) async {
+        return client.projects.databases.documents.commit(
+          request,
+          firestore._formattedDatabaseName,
+        );
+      });
+    }
+
+    const retryCodes = [
+      StatusCode.aborted,
+      ...StatusCode.commitRetryCodes,
+    ];
+
+    final backoff = ExponentialBackoff();
+    FirebaseFirestoreAdminException? lastError;
+
+    for (var attempt = 0;
+        attempt <= ExponentialBackoff.maxRetryAttempts;
+        attempt++) {
+      try {
+        await _maybeBackoff(backoff, lastError);
+        return await firestore._client.v1((client) async {
+          return client.projects.databases.documents.commit(
+            request,
+            firestore._formattedDatabaseName,
+          );
+        });
+      } on FirebaseFirestoreAdminException catch (e) {
+        lastError = e;
+        if (!retryCodes.contains(e.errorCode.statusCode)) {
+          rethrow;
+        }
+      }
+    }
+
+    throw lastError!;
   }
 
   ///Resets the WriteBatch and dequeues all pending operations.
