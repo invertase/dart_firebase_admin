@@ -530,24 +530,24 @@ The Firebase Admin Dart SDK currently supports the following Firebase services:
 🟡 - Partially supported / Work in progress <br />
 🔴 - Not supported
 
-| Service               | Status  | Notes                              |
-|-----------------------|---------|-------------------------------------|
-| App                   | 🟢      |                                     |
-| App Check             | 🟢      |                                     |
-| Authentication        | 🟢      |                                     |
-| Data Connect          | 🔴      |                                     |
-| Realtime Database     | 🔴      |                                     |
-| Event Arc             | 🔴      |                                     |
-| Extensions            | 🔴      |                                     |
-| Firestore             | 🟢      | Excludes realtime capabilities      |
-| Functions             | 🟢      |                                     |
-| Installations         | 🔴      |                                     |
-| Machine Learning      | 🔴      |                                     |
-| Messaging             | 🟢      |                                     |
-| Project Management    | 🔴      |                                     |
-| Remote Config         | 🔴      |                                     |
-| Security Rules        | 🟢      |                                     |
-| Storage               | 🟡      | Work in progress                    |
+| Service               | Status  | Notes                          |
+|-----------------------|---------|--------------------------------|
+| App                   | 🟢      |                                |
+| App Check             | 🟢      |                                |
+| Authentication        | 🟢      |                                |
+| Data Connect          | 🔴      |                                |
+| Realtime Database     | 🔴      |                                |
+| Event Arc             | 🔴      |                                |
+| Extensions            | 🔴      |                                |
+| Firestore             | 🟢      | Excludes realtime capabilities |
+| Functions             | 🟢      |                                |
+| Installations         | 🔴      |                                |
+| Machine Learning      | 🔴      |                                |
+| Messaging             | 🟢      |                                |
+| Project Management    | 🔴      |                                |
+| Remote Config         | 🔴      |                                |
+| Security Rules        | 🟢      |                                |
+| Storage               | 🟢      |                                |
 
 ## Additional Packages
 
