@@ -10,52 +10,53 @@
 ### New Features
 
 **App**
-- Added multi-app support: `initializeApp(options, name: 'secondary')` and `FirebaseApp.getApp('name')` (#106)
-- Added `app.serviceAccountEmail()` and `app.sign()` extension methods on `FirebaseApp` (#171)
-- All outgoing SDK requests now include an `X-Firebase-Client: fire-admin-dart/<version>` usage tracking header (#169)
+- Added multi-app support: `initializeApp(options, name: 'secondary')` and `FirebaseApp.getApp('name')`
+- Added `app.serviceAccountEmail()` and `app.sign()` extension methods on `FirebaseApp`
+- All outgoing SDK requests now include an `X-Firebase-Client: fire-admin-dart/<version>` usage tracking header
 
 **Auth**
-- Added tenant support: `app.auth().tenantManager()` returns a `TenantManager`; use `tenantManager.authForTenant(tenantId)` for tenant-scoped auth operations (#103)
-- Added `ProjectConfigManager` for managing project-level auth configuration (email privacy, SMS regions, password policies, MFA, reCAPTCHA, mobile links) via `app.auth().projectConfigManager()` (#111)
-- Added TOTP multi-factor authentication support (#114)
-- Added `SessionCookieOptions` type for `createSessionCookie` (#114)
-- Added `linkDomain` to `ActionCodeSettings` (#111)
-- Added `Credential.getAccessToken()` to retrieve an OAuth2 access token (#110)
-- Added reCAPTCHA managed rules, key types, and toll fraud protection configuration in tenant settings (#114)
+- Added tenant support: `app.auth().tenantManager()` returns a `TenantManager`; use `tenantManager.authForTenant(tenantId)` for tenant-scoped auth operations
+- Added `ProjectConfigManager` for managing project-level auth configuration (email privacy, SMS regions, password policies, MFA, reCAPTCHA, mobile links) via `app.auth().projectConfigManager()`
+- Added TOTP multi-factor authentication support
+- Added `SessionCookieOptions` type for `createSessionCookie`
+- Added `linkDomain` to `ActionCodeSettings`
+- Added `Credential.getAccessToken()` to retrieve an OAuth2 access token
+- Added reCAPTCHA managed rules, key types, and toll fraud protection configuration in tenant settings
 
 **Firestore**
-- Added multi-database support: `app.firestore(databaseId: 'analytics-db')` (#121)
-- Added `Transaction.getQuery()` to execute queries within a transaction (#113)
-- Added `Transaction.getAggregateQuery()` to execute aggregation queries within a transaction (#127)
-- Added `BulkWriter` for high-throughput writes with automatic batching (20 ops/batch) and rate limiting using the 500/50/5 rule (#123)
-- Added `SetOptions` for merge operations, available on `WriteBatch`, `Transaction`, `BulkWriter`, and `DocumentReference` (#123)
-- Added Vector Search support: `FieldValue.vector()`, `VectorValue`, `query.findNearest()`, `VectorQuery`, `VectorQuerySnapshot` (#125)
-- Added Query Explain API: `query.explain()` and `vectorQuery.explain()` (#125)
-- Added query partitioning: `CollectionGroup.getPartitions(desiredPartitionCount)` returns a list of `QueryPartition` objects; call `partition.toQuery()` to execute each chunk in parallel (#126)
-- Added `Firestore.recursiveDelete(ref, bulkWriter)` for bulk deletion of documents and collections (#164)
-- `withConverter()` now accepts `null` to reset a typed reference back to `DocumentData` (#164)
+- Added multi-database support: `app.firestore(databaseId: 'analytics-db')`
+- Added `Transaction.getQuery()` to execute queries within a transaction
+- Added `Transaction.getAggregateQuery()` to execute aggregation queries within a transaction
+- Added `BulkWriter` for high-throughput writes with automatic batching (20 ops/batch) and rate limiting using the 500/50/5 rule
+- Added `SetOptions` for merge operations, available on `WriteBatch`, `Transaction`, `BulkWriter`, and `DocumentReference`
+- Added Vector Search support: `FieldValue.vector()`, `VectorValue`, `query.findNearest()`, `VectorQuery`, `VectorQuerySnapshot`
+- Added Query Explain API: `query.explain()` and `vectorQuery.explain()`
+- Added query partitioning: `CollectionGroup.getPartitions(desiredPartitionCount)` returns a list of `QueryPartition` objects; call `partition.toQuery()` to execute each chunk in parallel
+- Added `Firestore.recursiveDelete(ref, bulkWriter)` for bulk deletion of documents and collections
+- `withConverter()` now accepts `null` to reset a typed reference back to `DocumentData`
 
 **Storage** _(new service)_
-- Added `app.storage()` with full `FirebaseApp` lifecycle integration (#129)
-- Added emulator support via `FIREBASE_STORAGE_EMULATOR_HOST` (#129)
-- Added `file.getDownloadURL()` for retrieving a permanent download URL (#182)
+- Added `app.storage()` with full `FirebaseApp` lifecycle integration
+- Added emulator support via `FIREBASE_STORAGE_EMULATOR_HOST`
+- Added `file.getSignedUrl()` for V2/V4 signed URL generation
+- Added `file.getDownloadURL()` for retrieving a permanent download URL
 
 **Messaging**
-- Added `messaging.subscribeToTopic(tokens, topic)` and `messaging.unsubscribeFromTopic(tokens, topic)` (#115)
+- Added `messaging.subscribeToTopic(tokens, topic)` and `messaging.unsubscribeFromTopic(tokens, topic)`
 
 **Functions** _(new service)_
-- Added `app.functions()` for Cloud Functions admin operations (#116)
-- Added Task Queue API: `functions.taskQueue(functionName)` with `enqueue()` and `delete()`, supporting scheduling, deadlines, custom headers, and custom task IDs (#116)
-- Added Cloud Tasks emulator support via `CLOUD_TASKS_EMULATOR_HOST` (#116)
+- Added `app.functions()` for Cloud Functions admin operations
+- Added Task Queue API: `functions.taskQueue(functionName)` with `enqueue()` and `delete()`, supporting scheduling, deadlines, custom headers, and custom task IDs
+- Added Cloud Tasks emulator support via `CLOUD_TASKS_EMULATOR_HOST`
 
 ### Bug Fixes
 
-- Fixed exceptions being silently swallowed instead of rethrown across all services (#131)
-- Fixed `Messaging.sendEach()` incorrectly returning `internalError` for invalid registration tokens; now correctly returns `invalidArgument` (#115)
-- Fixed JWT decode exceptions and integer division issues in `verifySessionCookie` (#114)
-- Fixed missing `INVALID_ARGUMENT` error code mapping in `SecurityRules` (#119)
-- Fixed `ExponentialBackoff` in Firestore not correctly tracking backoff completion state (#183)
-- Fixed Auth using `invalidProviderUid` instead of `invalidUid` in `getAccountInfoByFederatedUid` (#114)
+- Fixed exceptions being silently swallowed instead of rethrown across all services
+- Fixed `Messaging.sendEach()` incorrectly returning `internalError` for invalid registration tokens; now correctly returns `invalidArgument`
+- Fixed JWT decode exceptions and integer division issues in `verifySessionCookie`
+- Fixed missing `INVALID_ARGUMENT` error code mapping in `SecurityRules`
+- Fixed `ExponentialBackoff` in Firestore not correctly tracking backoff completion state
+- Fixed Auth using `invalidProviderUid` instead of `invalidUid` in `getAccountInfoByFederatedUid`
 
 ## 0.4.1 - 2025-03-21
 
