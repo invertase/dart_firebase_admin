@@ -1,3 +1,7 @@
+## Unreleased minor
+
+- Added retry support for `WriteBatch.commit()` on transient errors (`ABORTED`, `UNAVAILABLE`, `RESOURCE_EXHAUSTED`).
+
 ## 0.4.1 - 2025-03-21
 
 - Bump intl to `0.20.0`
