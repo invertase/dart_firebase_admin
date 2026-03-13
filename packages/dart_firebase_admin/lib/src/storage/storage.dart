@@ -8,9 +8,9 @@ import '../utils/native_environment.dart';
 part 'storage_exception.dart';
 
 class Storage implements FirebaseService {
-  /// Internal constructor
   Storage._(this.app) {
     final isEmulator = Environment.isStorageEmulatorEnabled();
+
     if (isEmulator) {
       final emulatorHost = Environment.getStorageEmulatorHost()!;
 
@@ -25,7 +25,6 @@ class Storage implements FirebaseService {
     _delegate = gcs.Storage();
   }
 
-  /// Factory constructor that ensures singleton per app.
   @internal
   factory Storage.internal(FirebaseApp app) {
     return app.getOrInitService(FirebaseServiceType.storage.name, Storage._);
