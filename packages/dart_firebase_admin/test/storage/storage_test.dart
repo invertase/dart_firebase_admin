@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/storage/storage.dart';
+import 'package:google_cloud_storage/google_cloud_storage.dart' as gcs;
 import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:googleapis_storage/googleapis_storage.dart' as gcs;
+import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -12,6 +14,10 @@ import '../helpers.dart';
 class MockAuthClient extends Mock implements auth.AuthClient {}
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(Uri());
+  });
+
   group('Storage', () {
     late FirebaseApp app;
     late FirebaseApp appWithBucket;
@@ -358,14 +364,14 @@ void main() {
     });
 
     group('Integration with underlying Storage library', () {
-      test('should pass through to googleapis_storage correctly', () {
+      test('should pass through to google_cloud_storage correctly', () {
         final storage = Storage.internal(appWithBucket);
         final bucket = storage.bucket('integration-test-bucket');
 
         expect(bucket, isA<gcs.Bucket>());
         expect(bucket.name, 'integration-test-bucket');
 
-        // The bucket should be a valid googleapis_storage.Bucket instance
+        // The bucket should be a valid google_cloud_storage.Bucket instance
         expect(bucket.storage, isNotNull);
       });
 
@@ -380,6 +386,200 @@ void main() {
         expect(bucket1.name, 'test-bucket-1');
         expect(bucket2.name, 'test-bucket-2');
         expect(bucket3.name, 'test-bucket-3');
+      });
+    });
+
+    group('getDownloadURL()', () {
+      const bucketName = 'test-bucket.appspot.com';
+      const objectName = 'path/to/file.jpg';
+      const downloadToken = 'abc-token';
+      const productionEndpoint = 'https://firebasestorage.googleapis.com/v0';
+
+      test('returns correct download URL for production endpoint', () async {
+        // Clear emulator env var so we hit the production endpoint.
+        await runZoned(zoneValues: {envSymbol: <String, String>{}}, () async {
+          final storage = Storage.internal(app);
+          final bucket = storage.bucket(bucketName);
+
+          when(() => mockClient.get(any())).thenAnswer(
+            (_) async => http.Response(
+              jsonEncode({'downloadTokens': downloadToken}),
+              200,
+            ),
+          );
+
+          final url = await storage.getDownloadURL(bucket, objectName);
+
+          expect(
+            url,
+            '$productionEndpoint/b/$bucketName/o/${Uri.encodeComponent(objectName)}?alt=media&token=$downloadToken',
+          );
+        });
+      });
+
+      test(
+        'uses only the first token when multiple tokens are present',
+        () async {
+          final storage = Storage.internal(app);
+          final bucket = storage.bucket(bucketName);
+
+          when(() => mockClient.get(any())).thenAnswer(
+            (_) async => http.Response(
+              jsonEncode({
+                'downloadTokens': 'first-token,second-token,third-token',
+              }),
+              200,
+            ),
+          );
+
+          final url = await storage.getDownloadURL(bucket, 'file.txt');
+          expect(url, contains('token=first-token'));
+          expect(url, isNot(contains('second-token')));
+        },
+      );
+
+      test(
+        'throws noDownloadToken when metadata has no downloadTokens',
+        () async {
+          final storage = Storage.internal(app);
+          final bucket = storage.bucket(bucketName);
+
+          when(() => mockClient.get(any())).thenAnswer(
+            (_) async => http.Response(jsonEncode(<String, dynamic>{}), 200),
+          );
+
+          await expectLater(
+            storage.getDownloadURL(bucket, objectName),
+            throwsA(
+              isA<FirebaseStorageAdminException>()
+                  .having(
+                    (e) => e.errorCode,
+                    'errorCode',
+                    StorageClientErrorCode.noDownloadToken,
+                  )
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    contains('No download token available'),
+                  ),
+            ),
+          );
+        },
+      );
+
+      test(
+        'throws noDownloadToken when downloadTokens is an empty string',
+        () async {
+          final storage = Storage.internal(app);
+          final bucket = storage.bucket(bucketName);
+
+          when(() => mockClient.get(any())).thenAnswer(
+            (_) async => http.Response(jsonEncode({'downloadTokens': ''}), 200),
+          );
+
+          await expectLater(
+            storage.getDownloadURL(bucket, objectName),
+            throwsA(
+              isA<FirebaseStorageAdminException>().having(
+                (e) => e.errorCode,
+                'errorCode',
+                StorageClientErrorCode.noDownloadToken,
+              ),
+            ),
+          );
+        },
+      );
+
+      test('throws internalError on a non-200 HTTP response', () async {
+        final storage = Storage.internal(app);
+        final bucket = storage.bucket(bucketName);
+
+        when(
+          () => mockClient.get(any()),
+        ).thenAnswer((_) async => http.Response('Internal Server Error', 500));
+
+        await expectLater(
+          storage.getDownloadURL(bucket, objectName),
+          throwsA(
+            isA<FirebaseStorageAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  StorageClientErrorCode.internalError,
+                )
+                .having((e) => e.message, 'message', contains('500')),
+          ),
+        );
+      });
+
+      test('URL-encodes object names with special characters', () async {
+        final storage = Storage.internal(app);
+        final bucket = storage.bucket(bucketName);
+
+        when(() => mockClient.get(any())).thenAnswer(
+          (_) async =>
+              http.Response(jsonEncode({'downloadTokens': downloadToken}), 200),
+        );
+
+        const specialName = 'my folder/my file (1).jpg';
+        final url = await storage.getDownloadURL(bucket, specialName);
+        expect(url, contains(Uri.encodeComponent(specialName)));
+      });
+
+      test(
+        'uses the emulator endpoint when FIREBASE_STORAGE_EMULATOR_HOST is set',
+        () async {
+          const emulatorHost = 'localhost:9199';
+          final testEnv = <String, String>{
+            Environment.firebaseStorageEmulatorHost: emulatorHost,
+          };
+
+          await runZoned(zoneValues: {envSymbol: testEnv}, () async {
+            final testApp = FirebaseApp.initializeApp(
+              name: 'dl-url-emulator-${DateTime.now().millisecondsSinceEpoch}',
+              options: AppOptions(projectId: projectId, httpClient: mockClient),
+            );
+            addTearDown(() async => testApp.close());
+
+            when(() => mockClient.get(any())).thenAnswer(
+              (_) async => http.Response(
+                jsonEncode({'downloadTokens': downloadToken}),
+                200,
+              ),
+            );
+
+            final storage = Storage.internal(testApp);
+            final bucket = storage.bucket(bucketName);
+            final url = await storage.getDownloadURL(bucket, 'file.txt');
+
+            expect(url, startsWith('http://$emulatorHost/v0'));
+            expect(url, contains('token=$downloadToken'));
+          });
+        },
+      );
+
+      test('hits the correct Firebase Storage REST endpoint', () async {
+        // Clear emulator env var so we hit the production endpoint.
+        await runZoned(zoneValues: {envSymbol: <String, String>{}}, () async {
+          final storage = Storage.internal(app);
+          final bucket = storage.bucket(bucketName);
+          Uri? capturedUri;
+
+          when(() => mockClient.get(any())).thenAnswer((invocation) async {
+            capturedUri = invocation.positionalArguments[0] as Uri;
+            return http.Response(
+              jsonEncode({'downloadTokens': downloadToken}),
+              200,
+            );
+          });
+
+          await storage.getDownloadURL(bucket, objectName);
+
+          expect(
+            capturedUri.toString(),
+            '$productionEndpoint/b/$bucketName/o/${Uri.encodeComponent(objectName)}',
+          );
+        });
       });
     });
   });

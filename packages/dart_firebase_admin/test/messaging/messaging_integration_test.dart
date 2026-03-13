@@ -140,7 +140,7 @@ void main() {
         );
       });
     },
-    skip: hasGoogleEnv
+    skip: hasProdEnv
         ? false
         : 'Requires Application Default Credentials (gcloud auth application-default login)',
   );
@@ -263,7 +263,7 @@ void main() {
         );
       });
     },
-    skip: hasGoogleEnv
+    skip: hasProdEnv
         ? false
         : 'Requires Application Default Credentials (gcloud auth application-default login)',
   );

@@ -104,7 +104,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires production mode but runs with emulator auto-detection',
       );
@@ -748,36 +748,24 @@ void main() {
     });
 
     group('createCustomToken', () {
-      test(
-        'creates a valid JWT token',
-        () async {
-          final token = await auth.createCustomToken('test-uid');
+      test('creates a valid JWT token', () async {
+        final token = await auth.createCustomToken('test-uid');
 
-          expect(token, isNotEmpty);
-          expect(token, isA<String>());
-          // Token should be in JWT format (3 parts separated by dots)
-          expect(token.split('.').length, equals(3));
-        },
-        skip: hasGoogleEnv
-            ? false
-            : 'Requires GOOGLE_APPLICATION_CREDENTIALS for service account',
-      );
+        expect(token, isNotEmpty);
+        expect(token, isA<String>());
+        // Token should be in JWT format (3 parts separated by dots)
+        expect(token.split('.').length, equals(3));
+      });
 
-      test(
-        'creates token with developer claims',
-        () async {
-          final token = await auth.createCustomToken(
-            'test-uid',
-            developerClaims: {'admin': true, 'level': 5},
-          );
+      test('creates token with developer claims', () async {
+        final token = await auth.createCustomToken(
+          'test-uid',
+          developerClaims: {'admin': true, 'level': 5},
+        );
 
-          expect(token, isNotEmpty);
-          expect(token, isA<String>());
-        },
-        skip: hasGoogleEnv
-            ? false
-            : 'Requires GOOGLE_APPLICATION_CREDENTIALS for service account',
-      );
+        expect(token, isNotEmpty);
+        expect(token, isA<String>());
+      });
 
       test('throws when uid is empty', () async {
         expect(

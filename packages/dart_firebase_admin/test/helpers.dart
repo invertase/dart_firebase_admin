@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:google_cloud_firestore/google_cloud_firestore.dart'
     as google_cloud_firestore;
 import 'package:googleapis_auth/googleapis_auth.dart' as googleapis_auth;
@@ -25,10 +25,27 @@ google_cloud_firestore.Settings mockFirestoreSettingsWithDb(
   environmentOverride: const {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
 );
 
-/// Whether Google Application Default Credentials are available.
-/// Used to skip tests that require production Firebase access.
-final hasGoogleEnv =
+/// Whether any Google credentials are available (including WIF/external_account).
+/// Gates WIF-specific tests that run in both CI and local environments.
+final hasWifEnv =
     Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
+
+/// Whether quota-heavy production tests should run.
+/// Never set in CI — opt in locally by exporting RUN_PROD_TESTS=true alongside
+/// a service-account credential in GOOGLE_APPLICATION_CREDENTIALS.
+final hasProdEnv = Platform.environment['RUN_PROD_TESTS'] == 'true';
+
+/// Returns a copy of [Platform.environment] with all emulator host variables
+/// removed, so tests can connect to production Firebase even when emulators
+/// are configured in the outer environment.
+Map<String, String> prodEnv() {
+  final env = Map<String, String>.from(Platform.environment);
+  env.remove(Environment.firebaseAuthEmulatorHost);
+  env.remove(Environment.firestoreEmulatorHost);
+  env.remove(Environment.firebaseStorageEmulatorHost);
+  env.remove(Environment.cloudTasksEmulatorHost);
+  return env;
+}
 
 /// Creates a FirebaseApp for testing.
 ///

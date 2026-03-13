@@ -61,7 +61,7 @@ void main() {
           ),
         );
       },
-      skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+      skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
     );
 
     test(
@@ -95,7 +95,7 @@ void main() {
         expect(metadata2.rulesets.single.name, isNot(ruleset2.name));
         expect(metadata2.rulesets.single.name, ruleset.name);
       },
-      skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+      skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
     );
 
     test(
@@ -115,7 +115,7 @@ void main() {
         final after = await securityRules.getFirestoreRuleset();
         expect(after.name, ruleset.name);
       },
-      skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+      skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
     );
 
     test(
@@ -160,7 +160,7 @@ void main() {
             ),
           );
         },
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -177,7 +177,7 @@ void main() {
             ),
           );
         },
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -199,7 +199,7 @@ void main() {
             ),
           );
         },
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -217,7 +217,7 @@ void main() {
             ),
           );
         },
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -234,7 +234,7 @@ void main() {
             ),
           );
         },
-        skip: hasGoogleEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
+        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
     });
   });

@@ -99,7 +99,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -163,7 +163,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -227,7 +227,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -298,7 +298,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Requires GCIP (Google Cloud Identity Platform)',
       );
@@ -354,7 +354,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv ? false : 'Requires production Firebase',
+        skip: hasProdEnv ? false : 'Requires production Firebase',
       );
 
       test(
@@ -425,7 +425,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv ? false : 'Requires production Firebase',
+        skip: hasProdEnv ? false : 'Requires production Firebase',
       );
     });
 
@@ -521,7 +521,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Session cookies require GCIP (not available in emulator)',
       );
@@ -635,7 +635,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Session cookies require GCIP (not available in emulator)',
       );
@@ -769,7 +769,7 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv});
         },
-        skip: hasGoogleEnv
+        skip: hasProdEnv
             ? false
             : 'Session cookies require GCIP (not available in emulator)',
       );
