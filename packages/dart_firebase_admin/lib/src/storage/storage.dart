@@ -1,8 +1,11 @@
-import 'package:google_cloud_storage/google_cloud_storage.dart'
-    as google_cloud_storage;
+import 'dart:convert';
+
+import 'package:google_cloud_storage/google_cloud_storage.dart' as gcs;
 import 'package:meta/meta.dart';
 import '../app.dart';
 import '../utils/native_environment.dart';
+
+part 'storage_exception.dart';
 
 class Storage implements FirebaseService {
   /// Internal constructor
@@ -19,8 +22,7 @@ class Storage implements FirebaseService {
       }
       setNativeEnvironmentVariable('STORAGE_EMULATOR_HOST', emulatorHost);
     }
-
-    _delegate = google_cloud_storage.Storage();
+    _delegate = gcs.Storage();
   }
 
   /// Factory constructor that ensures singleton per app.
@@ -32,9 +34,9 @@ class Storage implements FirebaseService {
   @override
   final FirebaseApp app;
 
-  late final google_cloud_storage.Storage _delegate;
+  late final gcs.Storage _delegate;
 
-  google_cloud_storage.Bucket bucket([String? name]) {
+  gcs.Bucket bucket([String? name]) {
     final bucketName = name ?? app.options.storageBucket;
     if (bucketName == null || bucketName.isEmpty) {
       throw FirebaseAppException(
@@ -46,6 +48,51 @@ class Storage implements FirebaseService {
     }
 
     return _delegate.bucket(bucketName);
+  }
+
+  /// Returns a long-lived download URL for the given object.
+  ///
+  /// The URL is signed with a download token from the Firebase Storage REST
+  /// API, making it suitable for sharing with end-users. The token must exist
+  /// on the object — if none is present, create one in the Firebase Console or
+  /// via the Firebase Storage REST API first.
+  ///
+  /// Example:
+  /// ```dart
+  /// final storage = app.storage();
+  /// final bucket = storage.bucket('my-bucket.appspot.com');
+  /// final url = await storage.getDownloadURL(bucket, 'images/photo.jpg');
+  /// ```
+  Future<String> getDownloadURL(gcs.Bucket bucket, String objectName) async {
+    final emulatorHost = Environment.getStorageEmulatorHost();
+    final endpoint = emulatorHost != null
+        ? 'http://$emulatorHost/v0'
+        : 'https://firebasestorage.googleapis.com/v0';
+
+    final encodedName = Uri.encodeComponent(objectName);
+    final uri = Uri.parse('$endpoint/b/${bucket.name}/o/$encodedName');
+
+    final client = await app.client;
+    final response = await client.get(uri);
+
+    if (response.statusCode != 200) {
+      throw FirebaseStorageAdminException(
+        StorageClientErrorCode.internalError,
+        'Failed to retrieve object metadata. Status: ${response.statusCode}.',
+      );
+    }
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final downloadTokens = json['downloadTokens'] as String?;
+
+    if (downloadTokens == null || downloadTokens.isEmpty) {
+      throw FirebaseStorageAdminException(
+        StorageClientErrorCode.noDownloadToken,
+      );
+    }
+
+    final token = downloadTokens.split(',').first;
+    return '$endpoint/b/${bucket.name}/o/$encodedName?alt=media&token=$token';
   }
 
   @override
