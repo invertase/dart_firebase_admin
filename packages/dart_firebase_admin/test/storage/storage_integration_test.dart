@@ -79,7 +79,7 @@ void main() {
           'should return a handle to the default bucket and it works',
           () async {
             final storage = appWithBucket.storage();
-            final bucket = storage.bucket(null);
+            final bucket = storage.bucket();
 
             expect(bucket, isA<gcs.Bucket>());
             expect(bucket.name, testBucketName);

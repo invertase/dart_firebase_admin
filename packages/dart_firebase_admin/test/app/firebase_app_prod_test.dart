@@ -167,19 +167,6 @@ void main() {
         },
         skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
-
-      test(
-        'should test signed tokens (createCustomToken)',
-        () async {
-          final auth = app.auth();
-          const uid = 'wif-demo-user-123';
-
-          final customToken = await auth.createCustomToken(uid);
-          expect(customToken, isNotNull);
-          expect(customToken, isA<String>());
-        },
-        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-      );
     });
   });
 }

@@ -82,7 +82,7 @@ void main() {
     group('bucket()', () {
       test('should return a bucket object when called with no arguments', () {
         final storage = Storage.internal(appWithBucket);
-        final bucket = storage.bucket(null);
+        final bucket = storage.bucket();
         expect(bucket, isA<gcs.Bucket>());
         expect(bucket.name, 'bucketName.appspot.com');
       });
@@ -100,7 +100,7 @@ void main() {
           final storage = Storage.internal(app);
 
           expect(
-            () => storage.bucket(null),
+            storage.bucket,
             throwsA(
               isA<FirebaseAppException>()
                   .having(
@@ -312,7 +312,7 @@ void main() {
 
       test('should provide access to bucket() method', () {
         final storage = testApp.storage();
-        final bucket = storage.bucket(null); // Use default bucket
+        final bucket = storage.bucket(); // Use default bucket
 
         expect(bucket, isA<gcs.Bucket>());
         expect(bucket.name, 'test-bucket.appspot.com');
