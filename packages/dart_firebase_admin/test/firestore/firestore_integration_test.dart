@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:google_cloud_firestore/google_cloud_firestore.dart' as gfs;
