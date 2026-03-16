@@ -64,9 +64,6 @@ jobs:
   test:
     name: Test (Dart ${{ matrix.dart-version }})
     runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write'
 
     strategy:
       fail-fast: false
@@ -92,12 +89,6 @@ jobs:
       - uses: subosito/flutter-action@v2.7.1
         with:
           channel: ${{ matrix.dart-version }}
-
-      - name: Authenticate to Google Cloud/Firebase
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}'
-          service_account: '${{ secrets.SERVICE_ACCOUNT }}'
 
       - name: Cache pub dependencies
         uses: actions/cache@v3
@@ -143,13 +134,13 @@ jobs:
           # Save individual package coverage files before merging
           cp coverage.lcov coverage_admin.lcov
           cp ../google_cloud_firestore/coverage.lcov coverage_firestore.lcov
-          
+
           # Merge coverage reports from all packages (relative to packages/dart_firebase_admin)
           # Only merge files that exist
           COVERAGE_FILES=""
           [ -f coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES coverage.lcov"
           [ -f ../google_cloud_firestore/coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES ../google_cloud_firestore/coverage.lcov"
-          
+
           if [ -n "$COVERAGE_FILES" ]; then
             cat $COVERAGE_FILES > merged_coverage.lcov
             mv merged_coverage.lcov coverage.lcov
@@ -210,7 +201,7 @@ jobs:
           echo "coverage=${COVERAGE_PCT}" >> $GITHUB_OUTPUT
           echo "total_lines=${TOTAL_LINES}" >> $GITHUB_OUTPUT
           echo "hit_lines=${HIT_LINES}" >> $GITHUB_OUTPUT
-          
+
           echo "admin_coverage=${ADMIN_PCT}" >> $GITHUB_OUTPUT
           echo "firestore_coverage=${FIRESTORE_PCT}" >> $GITHUB_OUTPUT
           echo "storage_coverage=${STORAGE_PCT}" >> $GITHUB_OUTPUT
@@ -297,10 +288,74 @@ jobs:
           flags: unittests
           fail_ci_if_error: false
 
+  test-integration:
+    name: Test - Integration (Dart ${{ matrix.dart-version }})
+    runs-on: ubuntu-latest
+    # Skip for fork PRs — secrets are not available
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        dart-version: [stable, beta]
+
+    defaults:
+      run:
+        working-directory: packages/dart_firebase_admin
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: subosito/flutter-action@v2.7.1
+        with:
+          channel: ${{ matrix.dart-version }}
+
+      - name: Authenticate to Google Cloud/Firebase
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}'
+          service_account: '${{ secrets.SERVICE_ACCOUNT }}'
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            pub-${{ matrix.dart-version }}-
+            pub-
+
+      - name: Add pub cache bin to PATH
+        run: |
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+          echo "PUB_CACHE=$HOME/.pub-cache" >> $GITHUB_ENV
+
+      - name: Install Melos
+        run: dart pub global activate melos
+        working-directory: .
+
+      - name: Bootstrap workspace
+        run: melos bootstrap
+        working-directory: .
+
+      - name: Run integration tests
+        run: dart test test/app/firebase_app_prod_test.dart --concurrency=1
+
   build:
     name: Build verification (Dart ${{ matrix.dart-version }})
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, test-integration]
+    # Run even if test-integration was skipped (fork PRs), but not if lint or test failed
+    if: |
+      always() &&
+      needs.lint.result == 'success' &&
+      needs.test.result == 'success' &&
+      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped')
 
     strategy:
       fail-fast: false
