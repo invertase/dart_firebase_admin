@@ -34,8 +34,9 @@ jobs:
 
       - name: Check license headers
         run: |
-          addlicense -f header_template.txt \
+          addlicense -f .github/licenses/dart.txt \
             --check \
+            -c "Google LLC" \
             --ignore "**/*.yml" \
             --ignore "**/*.yaml" \
             --ignore "**/*.xml" \
@@ -45,6 +46,22 @@ jobs:
             --ignore "**/*.js" \
             --ignore "**/*.ts" \
             --ignore "**/*.txt" \
+            --ignore "**/.dart_tool/**" \
+            --ignore "**/node_modules/**" \
+            .
+          addlicense -f .github/licenses/default.txt \
+            --check \
+            -c "Google LLC" \
+            --ignore "**/*.dart" \
+            --ignore "**/*.yml" \
+            --ignore "**/*.yaml" \
+            --ignore "**/*.xml" \
+            --ignore "**/*.html" \
+            --ignore "**/*.js" \
+            --ignore "**/*.txt" \
+            --ignore "**/*.json" \
+            --ignore "**/*.md" \
+            --ignore "**/*.lock" \
             --ignore "**/.dart_tool/**" \
             --ignore "**/node_modules/**" \
             .
