@@ -117,7 +117,10 @@ dart analyze
 
 ### License Headers
 
-All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically, using the template in `header_template.txt` at the repo root.
+All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically, with two templates in `.github/licenses/`:
+
+- `dart.txt` — `//` style, applied to Dart files
+- `default.txt` — plain text, applied to TypeScript (`/** */`) and shell (`#`) files; addlicense adds the correct comment style per file type
 
 **Install addlicense:**
 
@@ -131,10 +134,22 @@ sudo mv addlicense /usr/local/bin/
 **Add headers to new files (run from repo root):**
 
 ```bash
-addlicense -f header_template.txt \
+# Dart files
+addlicense -f .github/licenses/dart.txt -c "Google LLC" \
   --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
   --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
   --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
+  --ignore "**/.dart_tool/**" \
+  --ignore "**/node_modules/**" \
+  .
+
+# TypeScript and shell files
+addlicense -f .github/licenses/default.txt -c "Google LLC" \
+  --ignore "**/*.dart" \
+  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
+  --ignore "**/*.html" --ignore "**/*.js" \
+  --ignore "**/*.txt" --ignore "**/*.json" \
+  --ignore "**/*.md" --ignore "**/*.lock" \
   --ignore "**/.dart_tool/**" \
   --ignore "**/node_modules/**" \
   .
@@ -143,10 +158,22 @@ addlicense -f header_template.txt \
 **Check headers (dry run, same as CI):**
 
 ```bash
-addlicense -f header_template.txt --check \
+# Dart files
+addlicense -f .github/licenses/dart.txt -c "Google LLC" --check \
   --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
   --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
   --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
+  --ignore "**/.dart_tool/**" \
+  --ignore "**/node_modules/**" \
+  .
+
+# TypeScript and shell files
+addlicense -f .github/licenses/default.txt -c "Google LLC" --check \
+  --ignore "**/*.dart" \
+  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
+  --ignore "**/*.html" --ignore "**/*.js" \
+  --ignore "**/*.txt" --ignore "**/*.json" \
+  --ignore "**/*.md" --ignore "**/*.lock" \
   --ignore "**/.dart_tool/**" \
   --ignore "**/node_modules/**" \
   .
