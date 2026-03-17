@@ -119,8 +119,9 @@ dart analyze
 
 All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically, with two templates in `.github/licenses/`:
 
-- `dart.txt` — `//` style, applied to Dart files
 - `default.txt` — plain text, applied to TypeScript (`/** */`) and shell (`#`) files; addlicense adds the correct comment style per file type
+
+Dart files use the built-in `-l apache` license type instead of a custom template, which handles the `//` comment style and year substitution natively.
 
 **Install addlicense:**
 
@@ -134,49 +135,13 @@ sudo mv addlicense /usr/local/bin/
 **Add headers to new files (run from repo root):**
 
 ```bash
-# Dart files
-addlicense -f .github/licenses/dart.txt -c "Google LLC" \
-  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
-  --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
-  --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
-  --ignore "**/.dart_tool/**" \
-  --ignore "**/node_modules/**" \
-  .
-
-# TypeScript and shell files
-addlicense -f .github/licenses/default.txt -c "Google LLC" \
-  --ignore "**/*.dart" \
-  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
-  --ignore "**/*.html" --ignore "**/*.js" \
-  --ignore "**/*.txt" --ignore "**/*.json" \
-  --ignore "**/*.md" --ignore "**/*.lock" \
-  --ignore "**/.dart_tool/**" \
-  --ignore "**/node_modules/**" \
-  .
+.github/licenses/add-headers.sh
 ```
 
 **Check headers (dry run, same as CI):**
 
 ```bash
-# Dart files
-addlicense -f .github/licenses/dart.txt -c "Google LLC" --check \
-  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
-  --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
-  --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
-  --ignore "**/.dart_tool/**" \
-  --ignore "**/node_modules/**" \
-  .
-
-# TypeScript and shell files
-addlicense -f .github/licenses/default.txt -c "Google LLC" --check \
-  --ignore "**/*.dart" \
-  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
-  --ignore "**/*.html" --ignore "**/*.js" \
-  --ignore "**/*.txt" --ignore "**/*.json" \
-  --ignore "**/*.md" --ignore "**/*.lock" \
-  --ignore "**/.dart_tool/**" \
-  --ignore "**/node_modules/**" \
-  .
+.github/licenses/check-headers.sh
 ```
 
 CI will fail if any source file is missing its license header.
