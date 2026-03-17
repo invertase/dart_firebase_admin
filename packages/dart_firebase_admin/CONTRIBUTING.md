@@ -1,18 +1,59 @@
 # Contributing to Firebase Admin SDK for Dart
 
-Thank you for contributing to Firebase Admin SDK for Dart! This guide will help you get set up and familiar with the project conventions.
+Thank you for contributing to the Firebase community!
 
-## Contributor License Agreement
+- [Have a usage question?](#have-a-usage-question)
+- [Think you found a bug?](#think-you-found-a-bug)
+- [Have a feature request?](#have-a-feature-request)
+- [Want to submit a pull request?](#want-to-submit-a-pull-request)
+- [Need to get set up locally?](#need-to-get-set-up-locally)
+
+## Have a usage question?
+
+We get lots of those and we love helping you, but GitHub is not the best place for them. Issues which just ask about usage will be closed. Here are some resources to get help:
+
+- Go through the [Firebase Admin SDK setup guide](https://firebase.google.com/docs/admin/setup/)
+- Read the full [API reference](https://pub.dev/documentation/dart_firebase_admin/latest/)
+
+If the official documentation doesn't help, try asking on [Stack Overflow](https://stackoverflow.com/questions/tagged/firebase+dart).
+
+**Please avoid double posting across multiple channels!**
+
+## Think you found a bug?
+
+Search through [existing issues](https://github.com/invertase/dart_firebase_admin/issues) before opening a new one — your question may have already been answered.
+
+If your issue appears to be a bug and hasn't been reported, [open a new issue](https://github.com/invertase/dart_firebase_admin/issues/new) using the bug report template and include a minimal repro.
+
+If you are up to the challenge, [submit a pull request](#want-to-submit-a-pull-request) with a fix!
+
+## Have a feature request?
+
+Share your idea through our [feature request support channel](https://firebase.google.com/support/contact/bugs-features/).
+
+## Want to submit a pull request?
+
+Sweet, we'd love to accept your contribution! [Open a new pull request](https://github.com/invertase/dart_firebase_admin/pulls) and fill out the provided template.
+
+**If you want to implement a new feature, please open an issue with a proposal first so that we can figure out if the feature makes sense and how it will work.**
+
+### Contributor License Agreement
 
 Contributions to this project must be accompanied by a Contributor License Agreement (CLA). You (or your employer) retain the copyright to your contribution; the CLA gives us permission to use and redistribute your contributions as part of the project.
 
 Visit <https://cla.developers.google.com/> to see your current agreements on file or to sign a new one. You generally only need to submit a CLA once, so if you have already submitted one you probably don't need to do it again.
 
-## Code Reviews
+### Code Reviews
 
 All submissions, including submissions by project members, require review. We use GitHub pull requests for this purpose. Consult [GitHub Help](https://help.github.com/articles/about-pull-requests/) for more information on pull requests.
 
-## Getting Started
+### Commit Messages
+
+- Write clear, descriptive commit messages.
+- Use imperative mood (e.g., "Add App Check token verification" not "Added App Check token verification").
+- Reference issues with `#number` where applicable.
+
+## Need to get set up locally?
 
 ### Prerequisites
 
@@ -21,6 +62,7 @@ All submissions, including submissions by project members, require review. We us
 - **Node.js** (required for the Firebase Emulator and Cloud Tasks emulator)
 - **Melos** — Dart monorepo tool (`dart pub global activate melos`)
 - **Firebase CLI** (`npm install -g firebase-tools`)
+- **Google Cloud SDK** ([`gcloud`](https://cloud.google.com/sdk/downloads)) — required to authorise integration tests against a real Firebase project
 
 ### Setup
 
@@ -41,48 +83,44 @@ All submissions, including submissions by project members, require review. We us
    dart analyze
    ```
 
-## Development Workflow
+### Repo Organization
 
-### Project Structure
+This repository is a monorepo managed by [Melos](https://melos.invertase.dev/).
 
 ```
 dart_firebase_admin/             # Workspace root
 ├── packages/
-│   └── dart_firebase_admin/
-│       ├── lib/
-│       │   ├── dart_firebase_admin.dart  # Public API barrel file
-│       │   ├── auth.dart                 # Auth public exports
-│       │   ├── firestore.dart            # Firestore public exports
-│       │   ├── messaging.dart            # Messaging public exports
-│       │   ├── storage.dart              # Storage public exports
-│       │   ├── app_check.dart            # App Check public exports
-│       │   ├── security_rules.dart       # Security Rules public exports
-│       │   ├── functions.dart            # Functions public exports
-│       │   └── src/                      # Private implementation
-│       │       ├── app/                  # FirebaseApp & credential management
-│       │       ├── auth/                 # Authentication (users, tenants, tokens)
-│       │       ├── app_check/            # App Check token verification
-│       │       ├── firestore/            # Firestore wrapper
-│       │       ├── messaging/            # FCM messaging
-│       │       ├── storage/              # Cloud Storage
-│       │       ├── security_rules/       # Security Rules management
-│       │       ├── functions/            # Cloud Functions invocation
-│       │       └── utils/               # Shared utilities
-│       └── test/
-│           ├── auth/                     # Auth unit & integration tests
-│           ├── app/                      # App unit & integration tests
-│           ├── firestore/                # Firestore tests
-│           ├── messaging/                # Messaging tests
-│           ├── storage/                  # Storage tests
-│           └── helpers.dart             # Shared test utilities
+│   ├── dart_firebase_admin/     # Main Firebase Admin SDK package
+│   │   ├── lib/
+│   │   │   ├── dart_firebase_admin.dart  # Public API barrel file
+│   │   │   ├── auth.dart                 # Auth public exports
+│   │   │   ├── firestore.dart            # Firestore public exports
+│   │   │   ├── messaging.dart            # Messaging public exports
+│   │   │   ├── storage.dart              # Storage public exports
+│   │   │   ├── app_check.dart            # App Check public exports
+│   │   │   ├── security_rules.dart       # Security Rules public exports
+│   │   │   ├── functions.dart            # Functions public exports
+│   │   │   └── src/                      # Private implementation
+│   │   └── test/
+│   │       ├── auth/                     # Auth unit & integration tests
+│   │       ├── app/                      # App unit & integration tests
+│   │       ├── firestore/                # Firestore tests
+│   │       ├── messaging/                # Messaging tests
+│   │       ├── storage/                  # Storage tests
+│   │       └── helpers.dart             # Shared test utilities
+│   └── google_cloud_firestore/  # Standalone Firestore package
 └── scripts/
     ├── coverage.sh                       # Run tests with coverage
     └── firestore-coverage.sh             # Firestore package coverage
 ```
 
+## Development Workflow
+
 ### Running Tests
 
-Tests are split into unit tests (run against emulators) and integration/production tests (run against a real Firebase project).
+Tests are split into unit/emulator tests and production integration tests.
+
+#### Unit and Emulator Tests
 
 ```bash
 # From packages/dart_firebase_admin
@@ -96,11 +134,35 @@ firebase emulators:exec --project dart-firebase-admin --only auth,firestore,func
 
 # Run a specific test file
 dart test test/auth/auth_test.dart
-
-# Run production integration tests (requires real credentials)
-# Set GOOGLE_APPLICATION_CREDENTIALS and RUN_PROD_TESTS=true first
-dart test test/app/firebase_app_prod_test.dart --concurrency=1
 ```
+
+#### Integration Tests with Emulator Suite
+
+Start the emulators, then run with the relevant environment variables:
+
+```bash
+firebase emulators:start --only firestore,auth
+
+export FIRESTORE_EMULATOR_HOST=localhost:8080
+export FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
+dart test test/firestore/firestore_integration_test.dart
+```
+
+#### Production Integration Tests
+
+Requires a real Firebase project and Google application default credentials. Authorise `gcloud` first:
+
+```bash
+gcloud beta auth application-default login
+```
+
+Then run with `RUN_PROD_TESTS=true`:
+
+```bash
+RUN_PROD_TESTS=true dart test test/app/firebase_app_prod_test.dart --concurrency=1
+```
+
+See [`README.md`](README.md) for Firebase project setup details. You can create a project in the [Firebase Console](https://console.firebase.google.com) if you don't have one already.
 
 ### Code Formatting and Analysis
 
@@ -117,11 +179,10 @@ dart analyze
 
 ### License Headers
 
-All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically, with two templates in `.github/licenses/`:
+All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically, with templates in `.github/licenses/`:
 
-- `default.txt` — plain text, applied to TypeScript (`/** */`) and shell (`#`) files; addlicense adds the correct comment style per file type
-
-Dart files use the built-in `-l apache` license type instead of a custom template, which handles the `//` comment style and year substitution natively.
+- `default.txt` — plain text, applied to TypeScript (`/** */`) and shell (`#`) files
+- Dart files use the built-in `-l apache` type, which handles `//` style and year substitution natively
 
 **Install addlicense:**
 
@@ -189,30 +250,11 @@ The project uses strict analysis settings (`strict-casts`, `strict-inference`, `
 - **Unit/emulator tests** go in the appropriate subdirectory under `test/`. Use the `helpers.dart` utilities and `mocktail` for mocking where needed.
 - **Integration tests** (files named `*_integration_test.dart`) run against the Firebase Emulator in CI.
 - **Production tests** (files named `*_prod_test.dart`) require real credentials and are not run in CI by default — gate them behind `RUN_PROD_TESTS`.
-- Maintain the overall coverage above the **40% threshold** enforced by CI.
-
-## Pull Request Process
-
-1. Create a feature branch from `main`.
-2. Make your changes, including tests.
-3. Run formatting, analysis, and tests locally (see commands above).
-4. Push your branch and open a pull request.
-5. Fill in the PR description:
-   - **What** the change does and **why**.
-   - Link to any related issues.
-   - Note any breaking changes.
-6. CI will run automatically. All checks must pass before merging.
-7. A project maintainer will review and may request changes.
-
-### Commit Messages
-
-- Write clear, descriptive commit messages.
-- Use imperative mood (e.g., "Add App Check token verification" not "Added App Check token verification").
-- Reference issues with `#number` where applicable.
+- Maintain overall coverage above the **40% threshold** enforced by CI.
 
 ## CI/CD
 
-The project uses a single **build.yml** GitHub Actions workflow with four jobs:
+The project uses a single **build.yml** GitHub Actions workflow:
 
 | Job | Trigger | What it does |
 |-----|---------|--------------|
@@ -222,7 +264,7 @@ The project uses a single **build.yml** GitHub Actions workflow with four jobs:
 | `test-integration` | PRs (non-fork) & schedule | Runs production integration tests with Workload Identity Federation |
 | `build` | After all above pass | Validates `dart pub publish --dry-run` |
 
-Tests run against both `stable` and `beta` Dart SDK channels. Coverage is reported as a PR comment and uploaded to Codecov. The minimum coverage threshold is **40%**.
+Tests run against both `stable` and `beta` Dart SDK channels. Coverage is reported as a PR comment and uploaded to Codecov. The minimum threshold is **40%**.
 
 ## License
 
