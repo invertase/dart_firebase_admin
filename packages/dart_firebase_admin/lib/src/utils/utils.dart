@@ -1,3 +1,7 @@
+// Copyright 2024, the dart_firebase_admin project authors. All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
 import 'dart:io';
 
 /// The current Dart SDK version in semver format (e.g. "3.3.0").

@@ -1,3 +1,7 @@
+// Copyright 2024, the dart_firebase_admin project authors. All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
 import 'package:dart_firebase_admin/app_check.dart';
 import 'package:dart_firebase_admin/src/utils/jwt.dart';
 import 'package:test/test.dart';
