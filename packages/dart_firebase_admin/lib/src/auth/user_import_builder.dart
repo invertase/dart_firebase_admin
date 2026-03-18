@@ -205,9 +205,8 @@ class UserImportRecord {
 }
 
 /// Callback function to validate an UploadAccountUser object.
-typedef _ValidatorFunction = void Function(
-  v1.GoogleCloudIdentitytoolkitV1UserInfo data,
-);
+typedef _ValidatorFunction =
+    void Function(v1.GoogleCloudIdentitytoolkitV1UserInfo data);
 
 /// User metadata to include when importing a user.
 class UserMetadataRequest {
@@ -324,8 +323,9 @@ class _UserImportBuilder {
       case HashAlgorithmType.sha512:
         // MD5 is [0,8192] but SHA1, SHA256, and SHA512 are [1,8192]
         final rounds = options.hash.rounds;
-        final minRounds =
-            options.hash.algorithm == HashAlgorithmType.md5 ? 0 : 1;
+        final minRounds = options.hash.algorithm == HashAlgorithmType.md5
+            ? 0
+            : 1;
         if (rounds == null || rounds < minRounds || rounds > 8192) {
           throw FirebaseAuthAdminException(
             AuthClientErrorCode.invalidHashRounds,
@@ -391,9 +391,7 @@ class _UserImportBuilder {
         );
 
       case HashAlgorithmType.bcrypt:
-        return UploadAccountOptions._(
-          hashAlgorithm: options.hash.algorithm,
-        );
+        return UploadAccountOptions._(hashAlgorithm: options.hash.algorithm);
 
       case HashAlgorithmType.standardScrypt:
         final cpuMemCost = options.hash.memoryCost;
@@ -483,9 +481,7 @@ v1.GoogleCloudIdentitytoolkitV1UserInfo _populateUploadAccountUser(
   _ValidatorFunction? userValidator,
 ) {
   final mfaInfo = user.multiFactor?.enrolledFactors
-      ?.map(
-        (factor) => factor.toMfaEnrollment(),
-      )
+      ?.map((factor) => factor.toMfaEnrollment())
       .toList();
 
   final providerUserInfo = user.providerData

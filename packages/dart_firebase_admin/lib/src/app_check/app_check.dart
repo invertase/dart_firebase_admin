@@ -1,18 +1,54 @@
+import 'dart:async';
+
+import 'package:googleapis/firebaseappcheck/v1.dart' as appcheck1;
+import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
+import 'package:googleapis_beta/firebaseappcheck/v1beta.dart' as appcheck1_beta;
+import 'package:meta/meta.dart';
+
 import '../app.dart';
-import '../utils/crypto_signer.dart';
+import '../utils/jwt.dart';
 import 'app_check_api.dart';
-import 'app_check_api_internal.dart';
 import 'token_generator.dart';
 import 'token_verifier.dart';
 
-class AppCheck {
-  AppCheck(this.app);
+part 'app_check_exception.dart';
+part 'app_check_http_client.dart';
+part 'app_check_request_handler.dart';
 
-  final FirebaseAdminApp app;
-  late final _tokenGenerator =
-      AppCheckTokenGenerator(CryptoSigner.fromApp(app));
-  late final _client = AppCheckApiClient(app);
-  late final _appCheckTokenVerifier = AppCheckTokenVerifier(app);
+class AppCheck implements FirebaseService {
+  /// Creates or returns the cached AppCheck instance for the given app.
+  @internal
+  factory AppCheck.internal(
+    FirebaseApp app, {
+    AppCheckRequestHandler? requestHandler,
+    AppCheckTokenGenerator? tokenGenerator,
+    AppCheckTokenVerifier? tokenVerifier,
+  }) {
+    return app.getOrInitService(
+      FirebaseServiceType.appCheck.name,
+      (app) => AppCheck._(
+        app,
+        requestHandler: requestHandler,
+        tokenGenerator: tokenGenerator,
+        tokenVerifier: tokenVerifier,
+      ),
+    );
+  }
+
+  AppCheck._(
+    this.app, {
+    AppCheckRequestHandler? requestHandler,
+    AppCheckTokenGenerator? tokenGenerator,
+    AppCheckTokenVerifier? tokenVerifier,
+  }) : _requestHandler = requestHandler ?? AppCheckRequestHandler(app),
+       _tokenGenerator = tokenGenerator ?? AppCheckTokenGenerator(app),
+       _appCheckTokenVerifier = tokenVerifier ?? AppCheckTokenVerifier(app);
+
+  @override
+  final FirebaseApp app;
+  final AppCheckRequestHandler _requestHandler;
+  final AppCheckTokenGenerator _tokenGenerator;
+  final AppCheckTokenVerifier _appCheckTokenVerifier;
 
   /// Creates a new [AppCheckToken] that can be sent
   /// back to a client.
@@ -25,9 +61,16 @@ class AppCheck {
     String appId, [
     AppCheckTokenOptions? options,
   ]) async {
+    if (appId.isEmpty) {
+      throw FirebaseAppCheckException(
+        AppCheckErrorCode.invalidArgument,
+        '`appId` must be a non-empty string.',
+      );
+    }
+
     final customToken = await _tokenGenerator.createCustomToken(appId, options);
 
-    return _client.exchangeToken(customToken, appId);
+    return _requestHandler.exchangeToken(customToken, appId);
   }
 
   /// Verifies a Firebase App Check token (JWT). If the token is valid, the promise is
@@ -43,12 +86,21 @@ class AppCheck {
     String appCheckToken, [
     VerifyAppCheckTokenOptions? options,
   ]) async {
-    final decodedToken =
-        await _appCheckTokenVerifier.verifyToken(appCheckToken);
+    if (appCheckToken.isEmpty) {
+      throw FirebaseAppCheckException(
+        AppCheckErrorCode.invalidArgument,
+        '`appCheckToken` must be a non-empty string.',
+      );
+    }
+
+    final decodedToken = await _appCheckTokenVerifier.verifyToken(
+      appCheckToken,
+    );
 
     if (options?.consume ?? false) {
-      final alreadyConsumed =
-          await _client.verifyReplayProtection(appCheckToken);
+      final alreadyConsumed = await _requestHandler.verifyReplayProtection(
+        appCheckToken,
+      );
       return VerifyAppCheckTokenResponse(
         alreadyConsumed: alreadyConsumed,
         appId: decodedToken.appId,
@@ -61,5 +113,10 @@ class AppCheck {
       appId: decodedToken.appId,
       token: decodedToken,
     );
+  }
+
+  @override
+  Future<void> delete() async {
+    // AppCheck service cleanup if needed
   }
 }

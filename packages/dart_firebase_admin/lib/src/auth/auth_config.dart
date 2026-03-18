@@ -1,24 +1,17 @@
 part of '../auth.dart';
 
 /// The possible types for [AuthProviderConfigFilter._type].
-enum _AuthProviderConfigFilterType {
-  saml,
-  oidc,
-}
+enum _AuthProviderConfigFilterType { saml, oidc }
 
 /// The filter interface used for listing provider configurations. This is used
 /// when specifying how to list configured identity providers via
 /// [_BaseAuth.listProviderConfigs].
 class AuthProviderConfigFilter {
-  AuthProviderConfigFilter.oidc({
-    this.maxResults,
-    this.pageToken,
-  }) : _type = _AuthProviderConfigFilterType.oidc;
+  AuthProviderConfigFilter.oidc({this.maxResults, this.pageToken})
+    : _type = _AuthProviderConfigFilterType.oidc;
 
-  AuthProviderConfigFilter.saml({
-    this.maxResults,
-    this.pageToken,
-  }) : _type = _AuthProviderConfigFilterType.saml;
+  AuthProviderConfigFilter.saml({this.maxResults, this.pageToken})
+    : _type = _AuthProviderConfigFilterType.saml;
 
   /// The Auth provider configuration filter. This can be either `saml` or `oidc`.
   /// The former is used to look up SAML providers only, while the latter is used
@@ -222,6 +215,44 @@ class SAMLAuthProviderConfig extends AuthProviderConfig
     this.enableRequestSigning,
   }) : super._();
 
+  factory SAMLAuthProviderConfig.fromResponse(
+    v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig response,
+  ) {
+    final idpConfig = response.idpConfig;
+    final idpEntityId = idpConfig?.idpEntityId;
+    final ssoURL = idpConfig?.ssoUrl;
+    final spConfig = response.spConfig;
+    final spEntityId = spConfig?.spEntityId;
+    final providerId = response.name.let(
+      SAMLAuthProviderConfig.getProviderIdFromResourceName,
+    );
+
+    if (idpConfig == null ||
+        idpEntityId == null ||
+        ssoURL == null ||
+        spConfig == null ||
+        spEntityId == null ||
+        providerId == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.internalError,
+        'INTERNAL ASSERT FAILED: Invalid SAML configuration response',
+      );
+    }
+
+    return SAMLAuthProviderConfig(
+      idpEntityId: idpEntityId,
+      ssoURL: ssoURL,
+      x509Certificates: [
+        ...?idpConfig.idpCertificates?.map((c) => c.x509Certificate).nonNulls,
+      ],
+      rpEntityId: spEntityId,
+      callbackURL: spConfig.callbackUri,
+      providerId: providerId,
+      displayName: response.displayName,
+      enabled: response.enabled ?? false,
+    );
+  }
+
   /// The SAML IdP entity identifier.
   @override
   final String idpEntityId;
@@ -259,6 +290,134 @@ class SAMLAuthProviderConfig extends AuthProviderConfig
 
   @override
   final String? issuer;
+
+  static v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig?
+  _buildServerRequest(
+    _SAMLAuthProviderRequestBase options, {
+    bool ignoreMissingFields = false,
+  }) {
+    final makeRequest = options.providerId != null || ignoreMissingFields;
+    if (!makeRequest) return null;
+
+    SAMLAuthProviderConfig._validate(
+      options,
+      ignoreMissingFields: ignoreMissingFields,
+    );
+
+    return v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig(
+      enabled: options.enabled,
+      displayName: options.displayName,
+      spConfig: options.callbackURL == null && options.rpEntityId == null
+          ? null
+          : v2.GoogleCloudIdentitytoolkitAdminV2SpConfig(
+              callbackUri: options.callbackURL,
+              spEntityId: options.rpEntityId,
+            ),
+      idpConfig:
+          options.idpEntityId == null &&
+              options.ssoURL == null &&
+              options.x509Certificates == null
+          ? null
+          : v2.GoogleCloudIdentitytoolkitAdminV2IdpConfig(
+              idpEntityId: options.idpEntityId,
+              ssoUrl: options.ssoURL,
+              signRequest: options.enableRequestSigning,
+              idpCertificates: options.x509Certificates
+                  ?.map(
+                    (c) => v2.GoogleCloudIdentitytoolkitAdminV2IdpCertificate(
+                      x509Certificate: c,
+                    ),
+                  )
+                  .toList(),
+            ),
+    );
+  }
+
+  static String? getProviderIdFromResourceName(String resourceName) {
+    // name is of form projects/project1/inboundSamlConfigs/providerId1
+    final matchProviderRes = RegExp(
+      r'\/inboundSamlConfigs\/(saml\..*)$',
+    ).firstMatch(resourceName);
+    if (matchProviderRes == null || matchProviderRes.groupCount < 1) {
+      return null;
+    }
+    return matchProviderRes[1];
+  }
+
+  static bool isProviderId(String providerId) {
+    return providerId.isNotEmpty && providerId.startsWith('saml.');
+  }
+
+  static void _validate(
+    _SAMLAuthProviderRequestBase options, {
+    required bool ignoreMissingFields,
+  }) {
+    // Required fields.
+    final providerId = options.providerId;
+    if (providerId != null && providerId.isNotEmpty) {
+      if (!providerId.startsWith('saml.')) {
+        throw FirebaseAuthAdminException(
+          AuthClientErrorCode.invalidProviderId,
+          '"SAMLAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "saml.".',
+        );
+      }
+    } else if (!ignoreMissingFields) {
+      // providerId is required and not provided correctly.
+      throw FirebaseAuthAdminException(
+        providerId == null
+            ? AuthClientErrorCode.missingProviderId
+            : AuthClientErrorCode.invalidProviderId,
+        '"SAMLAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "saml.".',
+      );
+    }
+
+    final idpEntityId = options.idpEntityId;
+    if (!(ignoreMissingFields && idpEntityId == null) &&
+        !(idpEntityId != null && idpEntityId.isNotEmpty)) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.idpEntityId" must be a valid non-empty string.',
+      );
+    }
+
+    final ssoURL = options.ssoURL;
+    if (!(ignoreMissingFields && ssoURL == null) &&
+        Uri.tryParse(ssoURL ?? '') == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.ssoURL" must be a valid URL string.',
+      );
+    }
+
+    final rpEntityId = options.rpEntityId;
+    if (!(ignoreMissingFields && rpEntityId == null) &&
+        !(rpEntityId != null && rpEntityId.isNotEmpty)) {
+      throw FirebaseAuthAdminException(
+        rpEntityId == null
+            ? AuthClientErrorCode.missingSamlRelyingPartyConfig
+            : AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.rpEntityId" must be a valid non-empty string.',
+      );
+    }
+
+    final callbackURL = options.callbackURL;
+    if (!(ignoreMissingFields && callbackURL == null) &&
+        (callbackURL != null && Uri.tryParse(callbackURL) == null)) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.callbackURL" must be a valid URL string.',
+      );
+    }
+
+    final x509Certificates = options.x509Certificates;
+    if (!(ignoreMissingFields && x509Certificates == null) &&
+        x509Certificates == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidConfig,
+        '"SAMLAuthProviderConfig.x509Certificates" must be a valid array of X509 certificate strings.',
+      );
+    }
+  }
 }
 
 /// The [OIDC](https://openid.net/specs/openid-connect-core-1_0-final.html) Auth
@@ -275,6 +434,45 @@ class OIDCAuthProviderConfig extends AuthProviderConfig
     this.clientSecret,
     this.responseType,
   }) : super._();
+
+  factory OIDCAuthProviderConfig.fromResponse(
+    v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig response,
+  ) {
+    final issuer = response.issuer;
+    final clientID = response.clientId;
+    final name = response.name;
+    if (issuer == null || clientID == null || name == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidArgument,
+        'INTERNAL ASSERT FAILED: Invalid OIDC configuration response',
+      );
+    }
+
+    final providerId = OIDCAuthProviderConfig.getProviderIdFromResourceName(
+      name,
+    );
+    if (providerId == null) {
+      throw FirebaseAuthAdminException(
+        AuthClientErrorCode.internalError,
+        'INTERNAL ASSERT FAILED: Invalid OIDC configuration response',
+      );
+    }
+
+    return OIDCAuthProviderConfig(
+      providerId: providerId,
+      displayName: response.displayName,
+      enabled: response.enabled ?? false,
+      clientId: clientID,
+      issuer: issuer,
+      clientSecret: response.clientSecret,
+      responseType: response.responseType.let((responseType) {
+        return OAuthResponseType._(
+          idToken: responseType.idToken,
+          code: responseType.code,
+        );
+      }),
+    );
+  }
 
   /// This is the required client ID used to confirm the audience of an OIDC
   /// provider's
@@ -307,74 +505,8 @@ class OIDCAuthProviderConfig extends AuthProviderConfig
   /// The OIDC provider's response object for OAuth authorization flow.
   @override
   final OAuthResponseType? responseType;
-}
 
-/// The interface representing OIDC provider's response object for OAuth
-/// authorization flow.
-/// One of the following settings is required:
-/// <ul>
-/// <li>Set <code>code</code> to <code>true</code> for the code flow.</li>
-/// <li>Set <code>idToken</code> to <code>true</code> for the ID token flow.</li>
-/// </ul>
-class OAuthResponseType {
-  OAuthResponseType._({required this.idToken, required this.code});
-
-  /// Whether ID token is returned from IdP's authorization endpoint.
-  final bool? idToken;
-
-  /// Whether authorization code is returned from IdP's authorization endpoint.
-  final bool? code;
-}
-
-class _OIDCConfig extends OIDCAuthProviderConfig {
-  _OIDCConfig({
-    required super.providerId,
-    required super.displayName,
-    required super.enabled,
-    required super.clientId,
-    required super.issuer,
-    required super.clientSecret,
-    required super.responseType,
-  });
-
-  factory _OIDCConfig.fromResponse(
-    v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig response,
-  ) {
-    final issuer = response.issuer;
-    final clientID = response.clientId;
-    final name = response.name;
-    if (issuer == null || clientID == null || name == null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidArgument,
-        'INTERNAL ASSERT FAILED: Invalid OIDC configuration response',
-      );
-    }
-
-    final providerId = _OIDCConfig.getProviderIdFromResourceName(name);
-    if (providerId == null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.internalError,
-        'INTERNAL ASSERT FAILED: Invalid OIDC configuration response',
-      );
-    }
-
-    return _OIDCConfig(
-      providerId: providerId,
-      displayName: response.displayName,
-      enabled: response.enabled ?? false,
-      clientId: clientID,
-      issuer: issuer,
-      clientSecret: response.clientSecret,
-      responseType: response.responseType.let((responseType) {
-        return OAuthResponseType._(
-          idToken: responseType.idToken,
-          code: responseType.code,
-        );
-      }),
-    );
-  }
-
-  static void validate(
+  static void _validate(
     _OIDCAuthProviderRequestBase options, {
     required bool ignoreMissingFields,
   }) {
@@ -446,14 +578,18 @@ class _OIDCConfig extends OIDCAuthProviderConfig {
     }
   }
 
-  static v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig? buildServerRequest(
+  static v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig?
+  _buildServerRequest(
     _OIDCAuthProviderRequestBase options, {
     bool ignoreMissingFields = false,
   }) {
     final makeRequest = options.providerId != null || ignoreMissingFields;
     if (!makeRequest) return null;
 
-    _OIDCConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
+    OIDCAuthProviderConfig._validate(
+      options,
+      ignoreMissingFields: ignoreMissingFields,
+    );
 
     return v2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig(
       enabled: options.enabled,
@@ -473,9 +609,10 @@ class _OIDCConfig extends OIDCAuthProviderConfig {
   /// Returns the provider ID corresponding to the resource name if available.
   static String? getProviderIdFromResourceName(String resourceName) {
     // name is of form projects/project1/oauthIdpConfigs/providerId1
-    final matchProviderRes =
-        RegExp(r'\/oauthIdpConfigs\/(oidc\..*)$').firstMatch(resourceName);
-    if (matchProviderRes == null || matchProviderRes.groupCount < 2) {
+    final matchProviderRes = RegExp(
+      r'\/oauthIdpConfigs\/(oidc\..*)$',
+    ).firstMatch(resourceName);
+    if (matchProviderRes == null || matchProviderRes.groupCount < 1) {
       return null;
     }
     return matchProviderRes[1];
@@ -486,185 +623,21 @@ class _OIDCConfig extends OIDCAuthProviderConfig {
   }
 }
 
-class _SAMLConfig extends SAMLAuthProviderConfig {
-  _SAMLConfig({
-    required super.idpEntityId,
-    required super.ssoURL,
-    required super.x509Certificates,
-    required super.rpEntityId,
-    required super.callbackURL,
-    required super.providerId,
-    required super.displayName,
-    required super.enabled,
-  });
+/// The interface representing OIDC provider's response object for OAuth
+/// authorization flow.
+/// One of the following settings is required:
+/// <ul>
+/// <li>Set <code>code</code> to <code>true</code> for the code flow.</li>
+/// <li>Set <code>idToken</code> to <code>true</code> for the ID token flow.</li>
+/// </ul>
+class OAuthResponseType {
+  OAuthResponseType._({required this.idToken, required this.code});
 
-  factory _SAMLConfig.fromResponse(
-    v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig response,
-  ) {
-    final idpConfig = response.idpConfig;
-    final idpEntityId = idpConfig?.idpEntityId;
-    final ssoURL = idpConfig?.ssoUrl;
-    final spConfig = response.spConfig;
-    final spEntityId = spConfig?.spEntityId;
-    final providerId =
-        response.name.let(_SAMLConfig.getProviderIdFromResourceName);
+  /// Whether ID token is returned from IdP's authorization endpoint.
+  final bool? idToken;
 
-    if (idpConfig == null ||
-        idpEntityId == null ||
-        ssoURL == null ||
-        spConfig == null ||
-        spEntityId == null ||
-        providerId == null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.internalError,
-        'INTERNAL ASSERT FAILED: Invalid SAML configuration response',
-      );
-    }
-
-    return _SAMLConfig(
-      idpEntityId: idpEntityId,
-      ssoURL: ssoURL,
-      x509Certificates: [
-        ...?idpConfig.idpCertificates?.map((c) => c.x509Certificate).nonNulls,
-      ],
-      rpEntityId: spEntityId,
-      callbackURL: spConfig.callbackUri,
-      providerId: providerId,
-      displayName: response.displayName,
-      enabled: response.enabled ?? false,
-    );
-  }
-
-  static v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig?
-      buildServerRequest(
-    _SAMLAuthProviderRequestBase options, {
-    bool ignoreMissingFields = false,
-  }) {
-    final makeRequest = options.providerId != null || ignoreMissingFields;
-    if (!makeRequest) return null;
-
-    _SAMLConfig.validate(options, ignoreMissingFields: ignoreMissingFields);
-
-    return v2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig(
-      enabled: options.enabled,
-      displayName: options.displayName,
-      spConfig: options.callbackURL == null && options.rpEntityId == null
-          ? null
-          : v2.GoogleCloudIdentitytoolkitAdminV2SpConfig(
-              callbackUri: options.callbackURL,
-              spEntityId: options.rpEntityId,
-            ),
-      idpConfig: options.idpEntityId == null &&
-              options.ssoURL == null &&
-              options.x509Certificates == null
-          ? null
-          : v2.GoogleCloudIdentitytoolkitAdminV2IdpConfig(
-              idpEntityId: options.idpEntityId,
-              ssoUrl: options.ssoURL,
-              signRequest: options.enableRequestSigning,
-              idpCertificates: options.x509Certificates
-                  ?.map(
-                    (c) => v2.GoogleCloudIdentitytoolkitAdminV2IdpCertificate(
-                      x509Certificate: c,
-                    ),
-                  )
-                  .toList(),
-            ),
-    );
-  }
-
-  static String? getProviderIdFromResourceName(String resourceName) {
-    // name is of form projects/project1/inboundSamlConfigs/providerId1
-    final matchProviderRes =
-        RegExp(r'\/inboundSamlConfigs\/(saml\..*)$').firstMatch(resourceName);
-    if (matchProviderRes == null || matchProviderRes.groupCount < 2) {
-      return null;
-    }
-    return matchProviderRes[1];
-  }
-
-  static bool isProviderId(String providerId) {
-    return providerId.isNotEmpty && providerId.startsWith('saml.');
-  }
-
-  static void validate(
-    _SAMLAuthProviderRequestBase options, {
-    required bool ignoreMissingFields,
-  }) {
-    // Required fields.
-    final providerId = options.providerId;
-    if (providerId != null && providerId.isNotEmpty) {
-      if (providerId.startsWith('saml.')) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.invalidProviderId,
-          '"SAMLAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "saml.".',
-        );
-      }
-    } else if (!ignoreMissingFields) {
-      // providerId is required and not provided correctly.
-      throw FirebaseAuthAdminException(
-        providerId == null
-            ? AuthClientErrorCode.missingProviderId
-            : AuthClientErrorCode.invalidProviderId,
-        '"SAMLAuthProviderConfig.providerId" must be a valid non-empty string prefixed with "saml.".',
-      );
-    }
-
-    final idpEntityId = options.idpEntityId;
-    if (!(ignoreMissingFields && idpEntityId == null) &&
-        !(idpEntityId != null && idpEntityId.isNotEmpty)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidConfig,
-        '"SAMLAuthProviderConfig.idpEntityId" must be a valid non-empty string.',
-      );
-    }
-
-    final ssoURL = options.ssoURL;
-    if (!(ignoreMissingFields && ssoURL == null) &&
-        Uri.tryParse(ssoURL ?? '') == null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidConfig,
-        '"SAMLAuthProviderConfig.ssoURL" must be a valid URL string.',
-      );
-    }
-
-    final rpEntityId = options.rpEntityId;
-    if (!(ignoreMissingFields && rpEntityId == null) &&
-        !(rpEntityId != null && rpEntityId.isNotEmpty)) {
-      throw FirebaseAuthAdminException(
-        rpEntityId != null
-            ? AuthClientErrorCode.missingSamlRelyingPartyConfig
-            : AuthClientErrorCode.invalidConfig,
-        '"SAMLAuthProviderConfig.rpEntityId" must be a valid non-empty string.',
-      );
-    }
-
-    final callbackURL = options.callbackURL;
-    if (!(ignoreMissingFields && callbackURL == null) &&
-        (callbackURL != null && Uri.tryParse(callbackURL) == null)) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidConfig,
-        '"SAMLAuthProviderConfig.callbackURL" must be a valid URL string.',
-      );
-    }
-
-    final x509Certificates = options.x509Certificates;
-    if (!(ignoreMissingFields && x509Certificates == null) &&
-        x509Certificates == null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.invalidConfig,
-        '"SAMLAuthProviderConfig.x509Certificates" must be a valid array of X509 certificate strings.',
-      );
-    }
-    for (final cert in x509Certificates ?? const <String>[]) {
-      if (cert.isEmpty) {
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.invalidConfig,
-          '"SAMLAuthProviderConfig.x509Certificates" must be a valid array of X509 certificate strings.',
-        );
-      }
-    }
-  }
+  /// Whether authorization code is returned from IdP's authorization endpoint.
+  final bool? code;
 }
 
 const _sentinel = _Sentinel();
@@ -701,9 +674,9 @@ class CreateRequest extends _BaseUpdateRequest {
     this.multiFactor,
     this.uid,
   }) : assert(
-          multiFactor is! MultiFactorUpdateSettings,
-          'MultiFactorUpdateSettings is not supported for create requests.',
-        );
+         multiFactor is! MultiFactorUpdateSettings,
+         'MultiFactorUpdateSettings is not supported for create requests.',
+       );
 
   /// The user's `uid`.
   final String? uid;
@@ -798,9 +771,9 @@ class _BaseUpdateRequest {
     required this.password,
     Object? phoneNumber = _sentinel,
     Object? photoURL = _sentinel,
-  })  : displayName = _Box.unwrap(displayName),
-        phoneNumber = _Box.unwrap(phoneNumber),
-        photoURL = _Box.unwrap(photoURL);
+  }) : displayName = _Box.unwrap(displayName),
+       phoneNumber = _Box.unwrap(phoneNumber),
+       photoURL = _Box.unwrap(photoURL);
 
   /// Whether or not the user is disabled: `true` for disabled;
   /// `false` for enabled.
@@ -890,9 +863,7 @@ class MultiFactorUpdateSettings {
 
 /// The multi-factor related user settings for create operations.
 class MultiFactorCreateSettings {
-  MultiFactorCreateSettings({
-    required this.enrolledFactors,
-  });
+  MultiFactorCreateSettings({required this.enrolledFactors});
 
   /// The created user's list of enrolled second factors.
   final List<CreateMultiFactorInfoRequest> enrolledFactors;
@@ -908,30 +879,26 @@ class CreatePhoneMultiFactorInfoRequest extends CreateMultiFactorInfoRequest {
 
   /// The phone number associated with a phone second factor.
   final String phoneNumber;
-
-  @override
-  v1.GoogleCloudIdentitytoolkitV1MfaFactor
-      toGoogleCloudIdentitytoolkitV1MfaFactor() {
-    return v1.GoogleCloudIdentitytoolkitV1MfaFactor(
-      displayName: displayName,
-      // TODO param is optional, but phoneNumber is required.
-      phoneInfo: phoneNumber,
-    );
-  }
 }
 
 /// Interface representing base properties of a user-enrolled second factor for a
 /// `CreateRequest`.
 sealed class CreateMultiFactorInfoRequest {
-  CreateMultiFactorInfoRequest({
-    required this.displayName,
-  });
+  CreateMultiFactorInfoRequest({required this.displayName});
 
   /// The optional display name for an enrolled second factor.
   final String? displayName;
 
   v1.GoogleCloudIdentitytoolkitV1MfaFactor
-      toGoogleCloudIdentitytoolkitV1MfaFactor();
+  toGoogleCloudIdentitytoolkitV1MfaFactor() {
+    return switch (this) {
+      CreatePhoneMultiFactorInfoRequest(:final phoneNumber) =>
+        v1.GoogleCloudIdentitytoolkitV1MfaFactor(
+          displayName: displayName,
+          phoneInfo: phoneNumber,
+        ),
+    };
+  }
 }
 
 /// Interface representing a phone specific user-enrolled second factor
@@ -977,14 +944,13 @@ sealed class UpdateMultiFactorInfoRequest {
   final DateTime? enrollmentTime;
 
   v1.GoogleCloudIdentitytoolkitV1MfaEnrollment toMfaEnrollment() {
-    final that = this;
-    return switch (that) {
-      UpdatePhoneMultiFactorInfoRequest() =>
+    return switch (this) {
+      UpdatePhoneMultiFactorInfoRequest(:final phoneNumber) =>
         v1.GoogleCloudIdentitytoolkitV1MfaEnrollment(
           mfaEnrollmentId: uid,
           displayName: displayName,
           // Required for all phone second factors.
-          phoneInfo: that.phoneNumber,
+          phoneInfo: phoneNumber,
           enrolledAt: enrollmentTime?.toUtc().toIso8601String(),
         ),
     };

@@ -1,418 +1,565 @@
-## Dart Firebase Admin
+# Firebase Admin Dart SDK
 
-Welcome! This project is a port of [Node's Firebase Admin SDK](https://github.com/firebase/firebase-admin-node) to Dart.
+## Table of Contents
 
-⚠️ This project is still in its early stages, and some features may be missing or bugged.
-Currently, only Firestore is available, with more to come (auth next).
+ - [Overview](#overview)
+ - [Installation](#installation)
+ - [Initalization](#initalization)
+ - [Usage](#usage)
+   - [Authentication](#authentication)
+   - [App Check](#app-check)
+   - [Firestore](#firestore)
+   - [Functions](#functions)
+   - [Messaging](#messaging)
+   - [Storage](#storage)
+   - [Security Rules](#security-rules)
+ - [Supported Services](#supported-services)
+ - [Additional Packages](#additional-packages)
+ - [Contributing](#contributing)
+ - [License](#license)
 
-- [Dart Firebase Admin](#dart-firebase-admin)
-- [Getting started](#getting-started)
-  - [Connecting to the SDK](#connecting-to-the-sdk)
-    - [Connecting using the environment](#connecting-using-the-environment)
-    - [Connecting using a `service-account.json` file](#connecting-using-a-service-accountjson-file)
-- [Firestore](#firestore)
-  - [Usage](#usage)
-  - [Supported features](#supported-features)
-- [Auth](#auth)
-  - [Usage](#usage-1)
-  - [Supported features](#supported-features-1)
-- [Available features](#available-features)
-- [AppCheck](#appcheck)
-  - [Usage](#usage-2)
-  - [Supported features](#supported-features-2)
-- [Security rules](#security-rules)
-  - [Usage](#usage-3)
-  - [Supported features](#supported-features-3)
-- [Messaging](#messaging)
-  - [Usage](#usage-4)
-  - [Supported features](#supported-features-4)
+## Overview
 
-## Getting started
+[Firebase](https://firebase.google.com) provides the tools and infrastructure
+you need to develop your app, grow your user base, and earn money. The Firebase
+Admin Dart SDK enables access to Firebase services from privileged environments
+(such as servers or cloud) in Dart.
 
-### Connecting to the SDK
+For more information, visit the
+[Firebase Admin SDK setup guide](https://firebase.google.com/docs/admin/setup/).
 
-Before using Firebase, we must first authenticate.
+## Installation
 
-There are currently two options:
+The Firebase Admin Dart SDK is available on [pub.dev](https://pub.dev/) as `dart_firebase_admin`:
 
-- You can connect using environment variables
-- Alternatively, you can specify a `service-account.json` file
-
-#### Connecting using the environment
-
-To connect using environment variables, you will need to have
-the [Firebase CLI](https://firebaseopensource.com/projects/firebase/firebase-tools/) installed.
-
-Once done, you can run:
-
-```sh
-firebase login
+```bash
+$ dart pub add dart_firebase_admin
 ```
 
-And log-in to the project of your choice.
-
-From there, you can have your Dart program authenticate
-using the environment with:
+To use the SDK in your application, `import` it from any Dart file:
 
 ```dart
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-
-void main() {
-  final admin = FirebaseAdminApp.initializeApp(
-    '<your project name>',
-    // This will obtain authentication information from the environment
-    Credential.fromApplicationDefaultCredentials(),
-  );
-
-  // TODO use the Admin SDK
-  final firestore = Firestore(admin);
-  firestore.doc('hello/world').get();
-}
 ```
 
-#### Connecting using a `service-account.json` file
+## Initalization
 
-Alternatively, you can choose to use a `service-account.json` file.  
-This file can be obtained in your firebase console by going to:
+### Initialize the SDK
 
-```
-https://console.firebase.google.com/u/0/project/<your-project-name>/settings/serviceaccounts/adminsdk
-```
-
-Make sure to replace `<your-project-name>` with the name of your project.
-One there, follow the steps and download the file. Place it anywhere you want in your project.
-
-**⚠️ Note**:
-This file should be kept private. Do not commit it on public repositories.
-
-After all of that is done, you can now authenticate in your Dart program using:
+To initalize the Firebase Admin SDK, call the `initializeApp` method on the `Firebase`
+class:
 
 ```dart
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-
-Future<void> main() async {
-  final admin = FirebaseAdminApp.initializeApp(
-    '<your project name>',
-    // Log-in using the newly downloaded file.
-    Credential.fromServiceAccount(
-      File('<path to your service-account.json file>'),
-    ),
-  );
-
-  // TODO use the Admin SDK
-  final firestore = Firestore(admin);
-  firestore.doc('hello/world').get();
-
-  // Don't forget to close the Admin SDK at the end of your "main"!
-  await admin.close();
-}
+final app = FirebaseApp.initializeApp();
 ```
 
-## Firestore
+This will automatically initialize the SDK with [Google Application Default Credentials](https://cloud.google.com/docs/authentication/production#providing_credentials_to_your_application). Because default credentials lookup is fully automated in Google environments, with no need to supply environment variables or other configuration, this way of initializing the SDK is strongly recommended for applications running in Google environments such as Firebase App Hosting, Cloud Run, App Engine, and Cloud Functions for Firebase.
 
-### Usage
+### Initialize the SDK in non-Google environments
 
-First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
-You should now have an instance of a `FirebaseAdminApp` object.
+If you are working in a non-Google server environment in which default credentials lookup can't be fully automated, you can initialize the SDK with an exported service account key file.
 
-You can now use this object to create a `Firestore` object as followed:
-
-```dart
-// Obtained in the previous steps
-FirebaseAdminApp admin;
-final firestore = Firestore(admin);
-```
-
-From this point onwards, using Firestore with the admin ADK
-is roughly equivalent to using [FlutterFire](https://github.com/firebase/flutterfire).
-
-Using this `Firestore` object, you'll find your usual collection/query/document
-objects.
-
-For example you can perform a `where` query:
+The `initializeApp` method allows for creating multiple named app instances and specifying a custom credential, project ID and other options:
 
 ```dart
-// The following lists all users above 18 years old
-final collection = firestore.collection('users');
-final adults = collection.where('age', WhereFilter.greaterThan, 18);
-
-final adultsSnapshot = await adults.get();
-
-for (final adult in adultsSnapshot.docs) {
-  print(adult.data()['age']);
-}
-```
-
-Composite queries are also supported:
-
-```dart
-// List users with either John or Jack as first name.
-firestore
-  .collection('users')
-  .whereFilter(
-    Filter.or([
-      Filter.where('firstName', WhereFilter.equal, 'John'),
-      Filter.where('firstName', WhereFilter.equal, 'Jack'),
-    ]),
-  );
-```
-
-Alternatively, you can fetch a specific document too:
-
-```dart
-// Print the age of the user with ID "123"
-final user = await firestore.doc('users/123').get();
-print(user.data()?['age']);
-```
-
-### Supported features
-
-| Firestore                                        |     |
-| ------------------------------------------------ | --- |
-| firestore.listCollections()                      | ✅  |
-| reference.id                                     | ✅  |
-| reference.listCollections()                      | ✅  |
-| reference.parent                                 | ✅  |
-| reference.path                                   | ✅  |
-| reference.==                                     | ✅  |
-| reference.withConverter                          | ✅  |
-| collection.listDocuments                         | ✅  |
-| collection.add                                   | ✅  |
-| collection.get                                   | ✅  |
-| collection.create                                | ✅  |
-| collection.delete                                | ✅  |
-| collection.set                                   | ✅  |
-| collection.update                                | ✅  |
-| collection.collection                            | ✅  |
-| query.where('field', operator, value)            | ✅  |
-| query.where('field.path', operator, value)       | ✅  |
-| query.where(FieldPath('...'), operator, value)   | ✅  |
-| query.whereFilter(Filter.and(a, b))              | ✅  |
-| query.whereFilter(Filter.or(a, b))               | ✅  |
-| query.startAt                                    | ✅  |
-| query.startAtDocument                            | ✅  |
-| query.startAfter                                 | ✅  |
-| query.startAfterDocument                         | ✅  |
-| query.endAt                                      | ✅  |
-| query.endAtDocument                              | ✅  |
-| query.endAfter                                   | ✅  |
-| query.endAfterDocument                           | ✅  |
-| query.select                                     | ✅  |
-| query.orderBy                                    | ✅  |
-| query.limit                                      | ✅  |
-| query.limitToLast                                | ✅  |
-| query.offset                                     | ✅  |
-| query.count()                                    | ✅  |
-| query.sum()                                      | ✅  |
-| query.average()                                  | ✅  |
-| querySnapshot.docs                               | ✅  |
-| querySnapshot.readTime                           | ✅  |
-| documentSnapshots.data                           | ✅  |
-| documentSnapshots.readTime/createTime/updateTime | ✅  |
-| documentSnapshots.id                             | ✅  |
-| documentSnapshots.exists                         | ✅  |
-| documentSnapshots.data                           | ✅  |
-| documentSnapshots.get(fieldPath)                 | ✅  |
-| FieldValue.documentId                            | ✅  |
-| FieldValue.increment                             | ✅  |
-| FieldValue.arrayUnion                            | ✅  |
-| FieldValue.arrayRemove                           | ✅  |
-| FieldValue.delete                                | ✅  |
-| FieldValue.serverTimestamp                       | ✅  |
-| collectionGroup                                  | ✅  |
-| GeoPoint                                         | ✅  |
-| Timestamp                                        | ✅  |
-| querySnapshot.docsChange                         | ⚠️  |
-| query.onSnapshot                                 | ❌  |
-| runTransaction                                   | ✅  |
-| BundleBuilder                                    | ❌  |
-
-## Auth
-
-### Usage
-
-First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
-You should now have an instance of a `FirebaseAdminApp` object.
-
-You can now use this object to create a `Auth` object as followed:
-
-```dart
-// Obtained in the previous steps
-FirebaseAdminApp admin;
-final auth = Auth(admin);
-```
-
-You can then use this `Auth` object to perform various
-auth operations. For example, you can generate a password reset link:
-
-```dart
-final link = await auth.generatePasswordResetLink(
-  'hello@example.com',
+final app = FirebaseApp.initializeApp(
+  options: AppOptions(
+    credential: Credential.fromServiceAccount(File("path/to/credential.json")),
+    projectId: "custom-project-id",
+  ),
+  name: "CUSTOM_APP",
 );
 ```
 
-### Supported features
+The following `Credential` constructors are available:
 
-## Available features
+- `Credential.fromApplicationDefaultCredentials({String? serviceAccountId})` — Uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) (recommended for Google environments). Optionally accepts a `serviceAccountId` to override the service account email.
+- `Credential.fromServiceAccount(File)` — Loads credentials from a service account JSON file downloaded from the Firebase Console.
+- `Credential.fromServiceAccountParams({required String privateKey, required String email, required String projectId, String? clientId})` — Builds credentials from individual service account fields directly.
 
-| Auth                                  |     |
-| ------------------------------------- | --- |
-| auth.tenantManager                    | ❌  |
-| auth.projectConfigManager             | ❌  |
-| auth.generatePasswordResetLink        | ✅  |
-| auth.generateEmailVerificationLink    | ✅  |
-| auth.generateVerifyAndChangeEmailLink | ✅  |
-| auth.generateSignInWithEmailLink      | ✅  |
-| auth.listProviderConfigs              | ✅  |
-| auth.createProviderConfig             | ✅  |
-| auth.updateProviderConfig             | ✅  |
-| auth.getProviderConfig                | ✅  |
-| auth.deleteProviderConfig             | ✅  |
-| auth.createCustomToken                | ✅  |
-| auth.setCustomUserClaims              | ✅  |
-| auth.verifyIdToken                    | ✅  |
-| auth.revokeRefreshTokens              | ✅  |
-| auth.createSessionCookie              | ✅  |
-| auth.verifySessionCookie              | ✅  |
-| auth.importUsers                      | ✅  |
-| auth.listUsers                        | ✅  |
-| auth.deleteUser                       | ✅  |
-| auth.deleteUsers                      | ✅  |
-| auth.getUser                          | ✅  |
-| auth.getUserByPhoneNumber             | ✅  |
-| auth.getUserByEmail                   | ✅  |
-| auth.getUserByProviderUid             | ✅  |
-| auth.getUsers                         | ✅  |
-| auth.createUser                       | ✅  |
-| auth.updateUser                       | ✅  |
+## Usage
 
-## AppCheck
+Once you have initialized an app instance with a credential, you can use any of the [supported services](#supported-services) to interact with Firebase.
 
-### Usage
-
-First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
-You should now have an instance of a `FirebaseAdminApp` object.
-
-Then, you can create an instance of `AppCheck` as followed:
+### Authentication
 
 ```dart
-final appCheck = AppCheck();
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/auth.dart';
+
+final app = FirebaseApp.initializeApp();
+final auth = app.auth();
 ```
 
-You can then use `ApPCheck` to interact with Firebase AppCheck. For example,
-this creates/verifies a token:
+#### getUser / getUserByEmail
 
 ```dart
-final token = await appCheck
-    .createToken('<my app id>');
+// Get user by UID
+final userById = await auth.getUser('<user-id>');
+print(userById.displayName);
 
-await appCheck.verifyToken(token.token);
+// Get user by email
+final userByEmail = await auth.getUserByEmail('user@example.com');
+print(userByEmail.displayName);
 ```
 
-### Supported features
-
-| AppCheck             |     |
-| -------------------- | --- |
-| AppCheck.createToken | ✅  |
-| AppCheck.verifyToken | ✅  |
-
-## Security rules
-
-### Usage
-
-First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
-You should now have an instance of a `FirebaseAdminApp` object.
-
-Then, you can create an instance of `SecurityRules` as followed:
+#### createUser
 
 ```dart
-final securityRules = SecurityRules();
-```
-
-You can then use `SecurityRules` to interact with Firebase SecurityRules. For example,
-this creates/verifies a token:
-
-```dart
-final ruleset = await securityRules.createRuleset(
-  RulesFile(
-    name: 'firestore.rules',
-    content: '<your security rules>',
+final user = await auth.createUser(
+  CreateRequest(
+    email: 'user@example.com',
+    password: 'password123',
+    displayName: 'John Doe',
   ),
 );
-
-await securityRules.releaseFirestoreRuleset(ruleset.name);
+print(user.uid);
 ```
 
-### Supported features
-
-| SecurityRules                                   |     |
-| ----------------------------------------------- | --- |
-| SecurityRules.createRuleset                     | ✅  |
-| SecurityRules.getRuleset                        | ✅  |
-| SecurityRules.getFirestoreRuleset               | ✅  |
-| SecurityRules.getStorageRuleset                 | ✅  |
-| SecurityRules.releaseFirestoreRuleset           | ✅  |
-| SecurityRules.releaseFirestoreRulesetFromSource | ✅  |
-| SecurityRules.releaseStorageRuleset             | ✅  |
-| SecurityRules.releaseStorageRulesetFromSource   | ✅  |
-| SecurityRules.releaseStorageRuleset             | ✅  |
-| SecurityRules.deleteRuleset                     | ✅  |
-| SecurityRules.listRulesetMetadata               | ✅  |
-
-## Messaging
-
-### Usage
-
-First, make sure to follow the steps on [how to authenticate](#connecting-to-the-sdk).
-You should now have an instance of a `FirebaseAdminApp` object.
-
-Then, you can create an instance of `Messaging` as followed:
+#### updateUser
 
 ```dart
-// Obtained in the previous steps
-FirebaseAdminApp admin;
-final messaging = Messaging(messaging);
+final updatedUser = await auth.updateUser(
+  '<user-id>',
+  UpdateRequest(
+    displayName: 'Jane Doe',
+    disabled: false,
+  ),
+);
+print(updatedUser.displayName);
 ```
 
-You can then use that `Messaging` object to interact with Firebase Messaging.
-For example, if you want to send a notification to a specific device, you can do:
+#### deleteUser / listUsers
 
 ```dart
+// Delete a user
+await auth.deleteUser('<user-id>');
+
+// List users (max 1000 per page)
+final result = await auth.listUsers(maxResults: 100);
+final users = result.users;
+final nextPageToken = result.pageToken;
+```
+
+#### verifyIdToken
+
+```dart
+// Verify an ID token from a client application (e.g. from request headers)
+final idToken = req.headers['Authorization'].split(' ')[1];
+final decodedToken = await auth.verifyIdToken(idToken, checkRevoked: true);
+print(decodedToken.uid);
+```
+
+#### createCustomToken
+
+```dart
+final customToken = await auth.createCustomToken(
+  '<user-id>',
+  developerClaims: {'role': 'admin'},
+);
+```
+
+#### setCustomUserClaims
+
+```dart
+await auth.setCustomUserClaims('<user-id>', customUserClaims: {'role': 'admin'});
+```
+
+### App Check
+
+```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+
+final app = FirebaseApp.initializeApp();
+```
+
+#### verifyToken
+
+```dart
+final response = await app.appCheck().verifyToken('<app-check-token>');
+print('App ID: ${response.appId}');
+```
+
+#### createToken
+
+```dart
+final result = await app.appCheck().createToken('<app-id>');
+print('Token: ${result.token}');
+```
+
+### Firestore
+
+```dart
+import 'dart:async';
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:google_cloud_firestore/google_cloud_firestore.dart';
+
+final app = FirebaseApp.initializeApp();
+final firestore = app.firestore();
+```
+
+#### set / update / delete
+
+```dart
+final ref = firestore.collection('users').doc('<user-id>');
+
+// Set a document (creates or overwrites)
+await ref.set({'name': 'John Doe', 'age': 27});
+
+// Update specific fields
+await ref.update({'age': 28});
+
+// Delete a document
+await ref.delete();
+```
+
+#### get / query
+
+```dart
+// Get a single document
+final snapshot = await firestore.collection('users').doc('<user-id>').get();
+print(snapshot.data());
+
+// Query a collection
+final querySnapshot = await firestore
+    .collection('users')
+    .where('age', WhereFilter.greaterThan, 18)
+    .orderBy('age', descending: true)
+    .get();
+print(querySnapshot.docs);
+```
+
+#### getAll
+
+```dart
+// Fetch multiple documents at once
+final snapshots = await firestore.getAll([
+  firestore.collection('users').doc('user-1'),
+  firestore.collection('users').doc('user-2'),
+]);
+for (final snap in snapshots) {
+  print(snap.data());
+}
+```
+
+#### batch
+
+```dart
+final batch = firestore.batch();
+batch.set(firestore.collection('users').doc('user-1'), {'name': 'Alice'});
+batch.update(firestore.collection('users').doc('user-2'), {FieldPath(const ['age']): 30});
+batch.delete(firestore.collection('users').doc('user-3'));
+await batch.commit();
+```
+
+#### bulkWriter
+
+```dart
+final bulkWriter = firestore.bulkWriter();
+for (var i = 0; i < 10; i++) {
+  unawaited(
+    bulkWriter.set(
+      firestore.collection('items').doc('item-$i'),
+      {'index': i},
+    ),
+  );
+}
+await bulkWriter.close();
+```
+
+#### runTransaction
+
+```dart
+final balance = await firestore.runTransaction((tsx) async {
+  final ref = firestore.collection('users').doc('<user-id>');
+  final snapshot = await tsx.get(ref);
+  final currentBalance = snapshot.exists ? snapshot.data()?['balance'] ?? 0 : 0;
+  final newBalance = currentBalance + 10;
+  tsx.update(ref, {'balance': newBalance});
+  return newBalance;
+});
+```
+
+### Functions
+
+```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/functions.dart';
+
+final app = FirebaseApp.initializeApp();
+final queue = app.functions().taskQueue('<task-name>');
+```
+
+#### enqueue
+
+```dart
+await queue.enqueue({'userId': 'user-123', 'action': 'sendWelcomeEmail'});
+```
+
+#### enqueue with TaskOptions
+
+```dart
+// Delay delivery by 1 hour
+await queue.enqueue(
+  {'action': 'cleanupTempFiles'},
+  TaskOptions(schedule: DelayDelivery(3600)),
+);
+
+// Schedule at a specific time
+await queue.enqueue(
+  {'action': 'sendReport'},
+  TaskOptions(schedule: AbsoluteDelivery(DateTime.now().add(Duration(hours: 1)))),
+);
+
+// Use a custom ID for deduplication
+await queue.enqueue(
+  {'orderId': 'order-456', 'action': 'processPayment'},
+  TaskOptions(id: 'payment-order-456'),
+);
+```
+
+#### delete
+
+```dart
+await queue.delete('payment-order-456');
+```
+
+### Messaging
+
+```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/messaging.dart';
+
+final app = FirebaseApp.initializeApp();
+final messaging = app.messaging();
+```
+
+#### send
+
+```dart
+// Send to a specific device
 await messaging.send(
   TokenMessage(
-    // The token of the targeted device.
-    // This token can be obtain by using FlutterFire's firebase_messaging:
-    // https://pub.dev/documentation/firebase_messaging/latest/firebase_messaging/FirebaseMessaging/getToken.html
-    token: "<targeted device's token>",
-    notification: Notification(
-      // The content of the notification
-      title: 'Hello',
-      body: 'World',
-    ),
+    token: '<device-token>',
+    notification: Notification(title: 'Hello', body: 'World!'),
+    data: {'key': 'value'},
+  ),
+);
+
+// Send to a topic
+await messaging.send(
+  TopicMessage(
+    topic: '<topic-name>',
+    notification: Notification(title: 'Hello', body: 'World!'),
+  ),
+);
+
+// Send to a condition
+await messaging.send(
+  ConditionMessage(
+    condition: "'stock-GOOG' in topics || 'industry-tech' in topics",
+    notification: Notification(title: 'Hello', body: 'World!'),
   ),
 );
 ```
 
-### Supported features
+#### sendEach
 
-| Messaging                      |     |
-| ------------------------------ | --- |
-| Messaging.send                 | ✅  |
-| Messaging.sendEach             | ✅  |
-| Messaging.sendEachForMulticast | ✅  |
-| Messaging.subscribeToTopic     | ❌  |
-| Messaging.unsubscribeFromTopic | ❌  |
-| TokenMessage                   | ✅  |
-| TopicMessage                   | ✅  |
-| ConditionMessage               | ✅  |
+```dart
+// Send up to 500 messages in a single call
+final response = await messaging.sendEach([
+  TopicMessage(topic: 'topic-1', notification: Notification(title: 'Message 1')),
+  TopicMessage(topic: 'topic-2', notification: Notification(title: 'Message 2')),
+]);
+print('Sent: ${response.successCount}, Failed: ${response.failureCount}');
+```
 
----
+#### sendEachForMulticast
 
-<p align="center">
-  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">
-    <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
-  </a>
-  <p align="center">
-    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">Invertase</a>.
-  </p>
-</p>
+```dart
+// Send one message to multiple device tokens
+final response = await messaging.sendEachForMulticast(
+  MulticastMessage(
+    tokens: ['<token-1>', '<token-2>', '<token-3>'],
+    notification: Notification(title: 'Hello', body: 'World!'),
+  ),
+);
+print('Sent: ${response.successCount}, Failed: ${response.failureCount}');
+```
+
+#### subscribeToTopic / unsubscribeFromTopic
+
+```dart
+// Subscribe tokens to a topic
+await messaging.subscribeToTopic(['<token-1>', '<token-2>'], 'news');
+
+// Unsubscribe tokens from a topic
+await messaging.unsubscribeFromTopic(['<token-1>', '<token-2>'], 'news');
+```
+
+### Storage
+
+```dart
+import 'dart:typed_data';
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:google_cloud_storage/google_cloud_storage.dart' as gcs;
+
+final app = FirebaseApp.initializeApp();
+final storage = app.storage();
+final bucket = storage.bucket('<bucket-name>');
+```
+
+#### insertObject (upload)
+
+```dart
+await bucket.storage.insertObject(
+  bucket.name,
+  'path/to/file.txt',
+  Uint8List.fromList('Hello, world!'.codeUnits),
+  metadata: gcs.ObjectMetadata(contentType: 'text/plain'),
+);
+```
+
+#### downloadObject
+
+```dart
+final bytes = await bucket.storage.downloadObject(bucket.name, 'path/to/file.txt');
+print(String.fromCharCodes(bytes));
+```
+
+#### objectMetadata
+
+```dart
+final metadata = await bucket.storage.objectMetadata(bucket.name, 'path/to/file.txt');
+print('Size: ${metadata.size} bytes');
+print('Content type: ${metadata.contentType}');
+```
+
+#### deleteObject
+
+```dart
+await bucket.storage.deleteObject(bucket.name, 'path/to/file.txt');
+```
+
+#### getDownloadURL
+
+Returns a long-lived public download URL backed by a Firebase download token, suitable for sharing with end-users.
+
+```dart
+final url = await storage.getDownloadURL(bucket, 'path/to/file.txt');
+print('Download URL: $url');
+```
+
+### Security Rules
+
+```dart
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+
+final app = FirebaseApp.initializeApp();
+final securityRules = app.securityRules();
+```
+
+#### getFirestoreRuleset
+
+```dart
+final ruleset = await securityRules.getFirestoreRuleset();
+print(ruleset.name);
+```
+
+#### releaseFirestoreRulesetFromSource
+
+```dart
+final source = '''
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+''';
+
+final ruleset = await securityRules.releaseFirestoreRulesetFromSource(source);
+print('Applied ruleset: ${ruleset.name}');
+```
+
+#### getStorageRuleset
+
+```dart
+final ruleset = await securityRules.getStorageRuleset();
+print(ruleset.name);
+```
+
+#### releaseStorageRulesetFromSource
+
+```dart
+final source = '''
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+''';
+
+final ruleset = await securityRules.releaseStorageRulesetFromSource(source);
+print('Applied ruleset: ${ruleset.name}');
+```
+
+#### createRuleset / deleteRuleset
+
+```dart
+// Create a ruleset without applying it
+const source = "rules_version = '2'; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }";
+final rulesFile = RulesFile(name: 'firestore.rules', content: source);
+final ruleset = await securityRules.createRuleset(rulesFile);
+print('Created ruleset: ${ruleset.name}');
+
+// Delete a ruleset by name
+await securityRules.deleteRuleset(ruleset.name);
+```
+
+## Supported Services
+
+The Firebase Admin Dart SDK currently supports the following Firebase services:
+
+🟢 - Fully supported <br />
+🟡 - Partially supported / Work in progress <br />
+🔴 - Not supported
+
+| Service               | Status  | Notes                          |
+|-----------------------|---------|--------------------------------|
+| App                   | 🟢      |                                |
+| App Check             | 🟢      |                                |
+| Authentication        | 🟢      |                                |
+| Data Connect          | 🔴      |                                |
+| Realtime Database     | 🔴      |                                |
+| Event Arc             | 🔴      |                                |
+| Extensions            | 🔴      |                                |
+| Firestore             | 🟢      | Excludes realtime capabilities |
+| Functions             | 🟢      |                                |
+| Installations         | 🔴      |                                |
+| Machine Learning      | 🔴      |                                |
+| Messaging             | 🟢      |                                |
+| Project Management    | 🔴      |                                |
+| Remote Config         | 🔴      |                                |
+| Security Rules        | 🟢      |                                |
+| Storage               | 🟢      |                                |
+
+## Additional Packages
+
+Alongside the Firebase Admin Dart SDK, this repository contains additional workspace/pub.dev packages to accomodate the SDK:
+
+- [google_cloud_firestore](/packages/google_cloud_firestore/): Standalone Google APIs Firestore SDK, which the Firebase SDK extends.
+- [google_cloud_storage](https://github.com/googleapis/google-cloud-dart/tree/main/packages/google_cloud_storage): Standalone Google Cloud Storage SDK, which the Firebase SDK extends.
+
+# Contributing
+
+TODO
+
+# License
+
+[Apache License Version 2.0](LICENSE)

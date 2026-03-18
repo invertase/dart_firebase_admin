@@ -1,4 +1,4 @@
-part of '../messaging.dart';
+part of 'messaging.dart';
 
 abstract class _BaseMessage {
   _BaseMessage._({
@@ -36,7 +36,7 @@ sealed class Message extends _BaseMessage {
     super.fcmOptions,
   }) : super._();
 
-  fmc1.Message _toProto();
+  fmc1.Message _toRequest();
 }
 
 /// A message targeting a specific registration token.
@@ -56,14 +56,14 @@ class TokenMessage extends Message {
   final String token;
 
   @override
-  fmc1.Message _toProto() {
+  fmc1.Message _toRequest() {
     return fmc1.Message(
       data: data,
-      notification: notification?._toProto(),
-      android: android?._toProto(),
-      webpush: webpush?._toProto(),
-      apns: apns?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      android: android?._toRequest(),
+      webpush: webpush?._toRequest(),
+      apns: apns?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
       token: token,
     );
   }
@@ -86,14 +86,14 @@ class TopicMessage extends Message {
   final String topic;
 
   @override
-  fmc1.Message _toProto() {
+  fmc1.Message _toRequest() {
     return fmc1.Message(
       data: data,
-      notification: notification?._toProto(),
-      android: android?._toProto(),
-      webpush: webpush?._toProto(),
-      apns: apns?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      android: android?._toRequest(),
+      webpush: webpush?._toRequest(),
+      apns: apns?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
       topic: topic,
     );
   }
@@ -101,7 +101,7 @@ class TopicMessage extends Message {
 
 /// A message targeting a condition.
 ///
-/// See [Send messages to topics](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-topics).
+/// See [Send to topic conditions](https://firebase.google.com/docs/cloud-messaging/send-topic-messages).
 class ConditionMessage extends Message {
   ConditionMessage({
     required this.condition,
@@ -116,14 +116,14 @@ class ConditionMessage extends Message {
   final String condition;
 
   @override
-  fmc1.Message _toProto() {
+  fmc1.Message _toRequest() {
     return fmc1.Message(
       data: data,
-      notification: notification?._toProto(),
-      android: android?._toProto(),
-      webpush: webpush?._toProto(),
-      apns: apns?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      android: android?._toRequest(),
+      webpush: webpush?._toRequest(),
+      apns: apns?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
       condition: condition,
     );
   }
@@ -148,11 +148,7 @@ class MulticastMessage extends _BaseMessage {
 /// A notification that can be included in [Message].
 class Notification {
   /// A notification that can be included in [Message].
-  Notification({
-    this.title,
-    this.body,
-    this.imageUrl,
-  });
+  Notification({this.title, this.body, this.imageUrl});
 
   /// The title of the notification.
   final String? title;
@@ -163,12 +159,8 @@ class Notification {
   /// URL of an image to be displayed in the notification.
   final String? imageUrl;
 
-  fmc1.Notification _toProto() {
-    return fmc1.Notification(
-      title: title,
-      body: body,
-      image: imageUrl,
-    );
+  fmc1.Notification _toRequest() {
+    return fmc1.Notification(title: title, body: body, image: imageUrl);
   }
 }
 
@@ -180,7 +172,7 @@ class FcmOptions {
   /// The label associated with the message's analytics data.
   final String? analyticsLabel;
 
-  fmc1.FcmOptions _toProto() {
+  fmc1.FcmOptions _toRequest() {
     return fmc1.FcmOptions(analyticsLabel: analyticsLabel);
   }
 }
@@ -188,12 +180,7 @@ class FcmOptions {
 /// Represents the WebPush protocol options that can be included in a [Message].
 class WebpushConfig {
   /// Represents the WebPush protocol options that can be included in a [Message].
-  WebpushConfig({
-    this.headers,
-    this.data,
-    this.notification,
-    this.fcmOptions,
-  });
+  WebpushConfig({this.headers, this.data, this.notification, this.fcmOptions});
 
   /// A collection of WebPush headers. Header values must be strings.
   ///
@@ -210,12 +197,12 @@ class WebpushConfig {
   /// Options for features provided by the FCM SDK for Web.
   final WebpushFcmOptions? fcmOptions;
 
-  fmc1.WebpushConfig _toProto() {
+  fmc1.WebpushConfig _toRequest() {
     return fmc1.WebpushConfig(
       headers: headers,
       data: data,
-      notification: notification?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
     );
   }
 }
@@ -231,7 +218,7 @@ class WebpushFcmOptions {
   /// For all URL values, HTTPS is required.
   final String? link;
 
-  fmc1.WebpushFcmOptions _toProto() {
+  fmc1.WebpushFcmOptions _toRequest() {
     return fmc1.WebpushFcmOptions(link: link);
   }
 }
@@ -252,17 +239,13 @@ class WebpushNotificationAction {
   /// Title of the notification action.
   final String title;
 
-  Map<String, Object?> _toProto() {
-    return {
-      'action': action,
-      'icon': icon,
-      'title': title,
-    }._cleanProto();
+  Map<String, Object?> _toRequest() {
+    return {'action': action, 'icon': icon, 'title': title}.toCleanRequest();
   }
 }
 
 extension on Map<String, Object?> {
-  Map<String, Object?> _cleanProto() {
+  Map<String, Object?> toCleanRequest() {
     for (final entry in entries) {
       switch (entry.value) {
         case true:
@@ -276,11 +259,7 @@ extension on Map<String, Object?> {
   }
 }
 
-enum WebpushNotificationDirection {
-  auto,
-  ltr,
-  rtl,
-}
+enum WebpushNotificationDirection { auto, ltr, rtl }
 
 /// Represents the WebPush-specific notification options that can be included in
 /// [WebpushConfig]. This supports most of the standard
@@ -365,10 +344,10 @@ class WebpushNotification {
   /// Arbitrary key/value payload.
   final Map<String, Object?>? customData;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
       'title': title,
-      'actions': actions?.map((a) => a._toProto()).toList(),
+      'actions': actions?.map((a) => a._toRequest()).toList(),
       'badge': badge,
       'body': body,
       'data': data,
@@ -383,7 +362,7 @@ class WebpushNotification {
       'timestamp': timestamp,
       'vibrate': vibrate,
       if (customData case final customData?) ...customData,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -400,6 +379,7 @@ class ApnsConfig {
     this.headers,
     this.payload,
     this.fcmOptions,
+    this.liveActivityToken,
   });
 
   /// A collection of APNs headers. Header values must be strings.
@@ -411,11 +391,15 @@ class ApnsConfig {
   /// Options for features provided by the FCM SDK for iOS.
   final ApnsFcmOptions? fcmOptions;
 
-  fmc1.ApnsConfig _toProto() {
+  /// APN `pushToStartToken` or `pushToken` to start or update live activities.
+  final String? liveActivityToken;
+
+  fmc1.ApnsConfig _toRequest() {
     return fmc1.ApnsConfig(
       headers: headers,
-      payload: payload?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      payload: payload?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
+      liveActivityToken: liveActivityToken,
     );
   }
 }
@@ -433,11 +417,11 @@ class ApnsPayload {
   /// Arbitrary custom data.
   final Map<String, String>? customData;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
-      'aps': aps._toProto(),
+      'aps': aps._toRequest(),
       if (customData case final customData?) ...customData,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -478,16 +462,16 @@ class Aps {
   /// An app-specific identifier for grouping notifications.
   final String? threadId;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
-      if (alert != null) 'alert': alert?._toProto(),
+      if (alert != null) 'alert': alert?._toRequest(),
       if (badge != null) 'badge': badge,
-      if (sound != null) 'sound': sound?._toProto(),
+      if (sound != null) 'sound': sound?._toRequest(),
       if (contentAvailable != null) 'content-available': contentAvailable,
       if (mutableContent != null) 'mutable-content': mutableContent,
       if (category != null) 'category': category,
       if (threadId != null) 'thread-id': threadId,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -518,7 +502,7 @@ class ApsAlert {
   final String? actionLocKey;
   final String? launchImage;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
       'title': title,
       'subtitle': subtitle,
@@ -531,7 +515,7 @@ class ApsAlert {
       'subtitle-loc-args': subtitleLocArgs,
       'action-loc-key': actionLocKey,
       'launch-image': launchImage,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -552,12 +536,12 @@ class CriticalSound {
   /// (silent) and 1.0 (full volume).
   final double? volume;
 
-  Map<String, Object?> _toProto() {
+  Map<String, Object?> _toRequest() {
     return {
       'critical': critical,
       'name': name,
       'volume': volume,
-    }._cleanProto();
+    }.toCleanRequest();
   }
 }
 
@@ -572,18 +556,12 @@ class ApnsFcmOptions {
   /// URL of an image to be displayed in the notification.
   final String? imageUrl;
 
-  fmc1.ApnsFcmOptions _toProto() {
-    return fmc1.ApnsFcmOptions(
-      analyticsLabel: analyticsLabel,
-      image: imageUrl,
-    );
+  fmc1.ApnsFcmOptions _toRequest() {
+    return fmc1.ApnsFcmOptions(analyticsLabel: analyticsLabel, image: imageUrl);
   }
 }
 
-enum AndroidConfigPriority {
-  high,
-  normal,
-}
+enum AndroidConfigPriority { high, normal }
 
 /// Represents the Android-specific options that can be included in an [Message].
 class AndroidConfig {
@@ -596,6 +574,7 @@ class AndroidConfig {
     this.data,
     this.notification,
     this.fcmOptions,
+    this.directBootOk,
   });
 
   /// Collapse key for the message. Collapse key serves as an identifier for a
@@ -636,15 +615,20 @@ class AndroidConfig {
   /// Options for features provided by the FCM SDK for Android.
   final AndroidFcmOptions? fcmOptions;
 
-  fmc1.AndroidConfig _toProto() {
+  /// A boolean indicating whether messages will be allowed to be delivered to
+  /// the app while the device is in direct boot mode.
+  final bool? directBootOk;
+
+  fmc1.AndroidConfig _toRequest() {
     return fmc1.AndroidConfig(
       collapseKey: collapseKey,
       priority: priority?.toString().split('.').last,
       ttl: ttl,
       restrictedPackageName: restrictedPackageName,
       data: data,
-      notification: notification?._toProto(),
-      fcmOptions: fcmOptions?._toProto(),
+      notification: notification?._toRequest(),
+      fcmOptions: fcmOptions?._toRequest(),
+      directBootOk: directBootOk,
     );
   }
 }
@@ -661,10 +645,29 @@ enum AndroidNotificationPriority {
   final String _code;
 }
 
-enum AndroidNotificationVisibility {
-  private,
-  public,
-  secret,
+enum AndroidNotificationVisibility { private, public, secret }
+
+/// Enum representing proxy behaviors for Android notifications.
+enum AndroidNotificationProxy {
+  /// Allow notifications to be proxied to other devices.
+  allow,
+
+  /// Deny notifications from being proxied to other devices.
+  deny,
+
+  /// Proxy notifications only if priority is lowered.
+  ifPriorityLowered;
+
+  String get _code {
+    switch (this) {
+      case AndroidNotificationProxy.allow:
+        return 'allow';
+      case AndroidNotificationProxy.deny:
+        return 'deny';
+      case AndroidNotificationProxy.ifPriorityLowered:
+        return 'if_priority_lowered';
+    }
+  }
 }
 
 /// Represents the Android-specific notification options that can be included in
@@ -698,6 +701,7 @@ class AndroidNotification {
     this.defaultLightSettings,
     this.visibility,
     this.notificationCount,
+    this.proxy,
   });
 
   /// Title of the Android notification. When provided, overrides the title set via
@@ -824,7 +828,12 @@ class AndroidNotification {
   /// displayed on the long-press menu each time a new notification arrives.
   final int? notificationCount;
 
-  fmc1.AndroidNotification _toProto() {
+  /// Sets proxy option for the notification. Proxy can be `allow`, `deny`, or
+  /// `ifPriorityLowered`. This controls whether the notification can be proxied
+  /// to other devices.
+  final AndroidNotificationProxy? proxy;
+
+  fmc1.AndroidNotification _toRequest() {
     return fmc1.AndroidNotification(
       title: title,
       body: body,
@@ -847,10 +856,11 @@ class AndroidNotification {
       vibrateTimings: vibrateTimingsMillis,
       defaultVibrateTimings: defaultVibrateTimings,
       defaultSound: defaultSound,
-      lightSettings: lightSettings?._toProto(),
+      lightSettings: lightSettings?._toRequest(),
       defaultLightSettings: defaultLightSettings,
       visibility: visibility?.toString().split('.').last,
       notificationCount: notificationCount,
+      proxy: proxy?._code,
     );
   }
 }
@@ -873,7 +883,7 @@ class LightSettings {
   /// Required. Along with `light_on_duration`, defines the blink rate of LED flashes.
   final String lightOffDurationMillis;
 
-  fmc1.LightSettings _toProto() {
+  fmc1.LightSettings _toRequest() {
     return fmc1.LightSettings(
       color: fmc1.Color(
         red: color.red,
@@ -895,371 +905,9 @@ class AndroidFcmOptions {
   /// The label associated with the message's analytics data.
   final String? analyticsLabel;
 
-  fmc1.AndroidFcmOptions _toProto() {
+  fmc1.AndroidFcmOptions _toRequest() {
     return fmc1.AndroidFcmOptions(analyticsLabel: analyticsLabel);
   }
-}
-
-/// Interface representing an FCM legacy API notification message payload.
-/// Notification messages let developers send up to 4KB of predefined
-/// key-value pairs. Accepted keys are outlined below.
-///
-/// See {@link https://firebase.google.com/docs/cloud-messaging/send-message | Build send requests}
-/// for code samples and detailed documentation.
-class NotificationMessagePayload {
-  NotificationMessagePayload({
-    this.tag,
-    this.body,
-    this.icon,
-    this.badge,
-    this.color,
-    this.sound,
-    this.title,
-    this.bodyLocKey,
-    this.bodyLocArgs,
-    this.clickAction,
-    this.titleLocKey,
-    this.titleLocArgs,
-  });
-
-  /// Identifier used to replace existing notifications in the notification drawer.
-  ///
-  /// If not specified, each request creates a new notification.
-  ///
-  /// If specified and a notification with the same tag is already being shown,
-  /// the new notification replaces the existing one in the notification drawer.
-  ///
-  /// **Platforms:** Android
-  final String? tag;
-
-  /// The notification's body text.
-  ///
-  /// **Platforms:** iOS, Android, Web
-  final String? body;
-
-  /// The notification's icon.
-  ///
-  /// **Android:** Sets the notification icon to `myicon` for drawable resource
-  /// `myicon`. If you don't send this key in the request, FCM displays the
-  /// launcher icon specified in your app manifest.
-  ///
-  /// **Web:** The URL to use for the notification's icon.
-  ///
-  /// **Platforms:** Android, Web
-  final String? icon;
-
-  /// The value of the badge on the home screen app icon.
-  ///
-  /// If not specified, the badge is not changed.
-  ///
-  /// If set to `0`, the badge is removed.
-  ///
-  /// **Platforms:** iOS
-  final String? badge;
-
-  /// The notification icon's color, expressed in `#rrggbb` format.
-  ///
-  /// **Platforms:** Android
-  final String? color;
-
-  /// The sound to be played when the device receives a notification. Supports
-  /// "default" for the default notification sound of the device or the filename of a
-  /// sound resource bundled in the app.
-  /// Sound files must reside in `/res/raw/`.
-  ///
-  /// **Platforms:** Android
-  final String? sound;
-
-  /// The notification's title.
-  ///
-  /// **Platforms:** iOS, Android, Web
-  final String? title;
-
-  /// The key to the body string in the app's string resources to use to localize
-  /// the body text to the user's current localization.
-  ///
-  /// **iOS:** Corresponds to `loc-key` in the APNs payload. See
-  /// [Payload Key Reference](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html)
-  /// and
-  /// [Localizing the Content of Your Remote Notifications](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/CreatingtheNotificationPayload.html#//apple_ref/doc/uid/TP40008194-CH10-SW9)
-  /// for more information.
-  ///
-  /// **Android:** See
-  /// [String Resources](http://developer.android.com/guide/topics/resources/string-resource.html)
-  /// for more information.
-  ///
-  /// **Platforms:** iOS, Android
-  final String? bodyLocKey;
-
-  /// Variable string values to be used in place of the format specifiers in
-  /// `body_loc_key` to use to localize the body text to the user's current
-  /// localization.
-  ///
-  /// The value should be a stringified JSON array.
-  ///
-  /// **iOS:** Corresponds to `loc-args` in the APNs payload. See
-  /// [Payload Key Reference](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html)
-  /// and
-  /// [Localizing the Content of Your Remote Notifications](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/CreatingtheNotificationPayload.html#//apple_ref/doc/uid/TP40008194-CH10-SW9)
-  /// for more information.
-  ///
-  /// **Android:** See
-  /// [Formatting and Styling](http://developer.android.com/guide/topics/resources/string-resource.html#FormattingAndStyling)
-  /// for more information.
-  ///
-  /// **Platforms:** iOS, Android
-  final String? bodyLocArgs;
-
-  /// Action associated with a user click on the notification. If specified, an
-  /// activity with a matching Intent Filter is launched when a user clicks on the
-  /// notification.
-  ///
-  ///   * **Platforms:** Android
-  final String? clickAction;
-
-  /// The key to the title string in the app's string resources to use to localize
-  /// the title text to the user's current localization.
-  ///
-  /// **iOS:** Corresponds to `title-loc-key` in the APNs payload. See
-  /// [Payload Key Reference](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html)
-  /// and
-  /// [Localizing the Content of Your Remote Notifications](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/CreatingtheNotificationPayload.html#//apple_ref/doc/uid/TP40008194-CH10-SW9)
-  /// for more information.
-  ///
-  /// **Android:** See
-  /// [String Resources](http://developer.android.com/guide/topics/resources/string-resource.html)
-  /// for more information.
-  ///
-  /// **Platforms:** iOS, Android
-  final String? titleLocKey;
-
-  /// Variable string values to be used in place of the format specifiers in
-  /// `title_loc_key` to use to localize the title text to the user's current
-  /// localization.
-  ///
-  /// The value should be a stringified JSON array.
-  ///
-  /// **iOS:** Corresponds to `title-loc-args` in the APNs payload. See
-  /// [Payload Key Reference](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/PayloadKeyReference.html)
-  /// and
-  /// [Localizing the Content of Your Remote Notifications](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/CreatingtheNotificationPayload.html#//apple_ref/doc/uid/TP40008194-CH10-SW9)
-  /// for more information.
-  ///
-  /// **Android:** See
-  /// [Formatting and Styling](http://developer.android.com/guide/topics/resources/string-resource.html#FormattingAndStyling)
-  /// for more information.
-  ///
-  /// **Platforms:** iOS, Android
-  final String? titleLocArgs;
-}
-
-// Keys which are not allowed in the messaging data payload object.
-const _blacklistedDataPayloadKeys = {'from'};
-
-/// Interface representing a Firebase Cloud Messaging message payload. One or
-/// both of the `data` and `notification` keys are required.
-///
-/// See [Build send requests](https://firebase.google.com/docs/cloud-messaging/send-message)
-/// for code samples and detailed documentation.
-class MessagingPayload {
-  MessagingPayload({this.data, this.notification}) {
-    if (data == null && notification == null) {
-      throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidPayload,
-        'Messaging payload must contain at least one of the "data" or "notification" properties.',
-      );
-    }
-
-    if (data != null) {
-      for (final key in data!.keys) {
-        if (_blacklistedDataPayloadKeys.contains(key) ||
-            key.startsWith('google.')) {
-          throw FirebaseMessagingAdminException(
-            MessagingClientErrorCode.invalidPayload,
-            'Messaging payload contains the blacklisted "data.$key" property.',
-          );
-        }
-      }
-    }
-  }
-
-  /// The data message payload.
-  ///
-  /// Data
-  /// messages let developers send up to 4KB of custom key-value pairs. The
-  /// keys and values must both be strings. Keys can be any custom string,
-  /// except for the following reserved strings:
-  ///
-  /// <ul>
-  ///   <li><code>from</code></li>
-  ///   <li>Anything starting with <code>google.</code></li>
-  /// </ul>
-  ///
-  /// See [Build send requests](https://firebase.google.com/docs/cloud-messaging/send-message)
-  /// for code samples and detailed documentation.
-  final Map<String, String>? data;
-
-  /// The notification message payload.
-  final NotificationMessagePayload? notification;
-}
-
-class MessagingDevicesResponse {
-  @internal
-  MessagingDevicesResponse({
-    required this.canonicalRegistrationTokenCount,
-    required this.failureCount,
-    required this.multicastId,
-    required this.results,
-    required this.successCount,
-  });
-
-  final int canonicalRegistrationTokenCount;
-  final int failureCount;
-  final int multicastId;
-  final List<MessagingDeviceResult> results;
-  final int successCount;
-}
-
-class MessagingDeviceResult {
-  @internal
-  MessagingDeviceResult({
-    required this.error,
-    required this.messageId,
-    required this.canonicalRegistrationToken,
-  });
-
-  /// The error that occurred when processing the message for the recipient.
-  final FirebaseAdminException? error;
-
-  /// A unique ID for the successfully processed message.
-  final String? messageId;
-
-  /// The canonical registration token for the client app that the message was
-  /// processed and sent to. You should use this value as the registration token
-  /// for future requests. Otherwise, future messages might be rejected.
-  final String? canonicalRegistrationToken;
-}
-
-/// Interface representing the options that can be provided when sending a
-/// message via the FCM legacy APIs.
-///
-/// See [Build send requests](https://firebase.google.com/docs/cloud-messaging/send-message)
-/// for code samples and detailed documentation.
-class MessagingOptions {
-  /// Interface representing the options that can be provided when sending a
-  /// message via the FCM legacy APIs.
-  ///
-  /// See [Build send requests](https://firebase.google.com/docs/cloud-messaging/send-message)
-  /// for code samples and detailed documentation.
-  MessagingOptions({
-    this.dryRun,
-    this.priority,
-    this.timeToLive,
-    this.collapseKey,
-    this.mutableContent,
-    this.contentAvailable,
-    this.restrictedPackageName,
-  }) {
-    final collapseKey = this.collapseKey;
-    if (collapseKey != null && collapseKey.isEmpty) {
-      throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidOptions,
-        'Messaging options contains an invalid value for the "$collapseKey" property. Value must '
-        'be a boolean.',
-      );
-    }
-
-    final priority = this.priority;
-    if (priority != null && priority.isEmpty) {
-      throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidOptions,
-        'Messaging options contains an invalid value for the "priority" property. Value must '
-        'be a non-empty string.',
-      );
-    }
-
-    final restrictedPackageName = this.restrictedPackageName;
-    if (restrictedPackageName != null && restrictedPackageName.isEmpty) {
-      throw FirebaseMessagingAdminException(
-        MessagingClientErrorCode.invalidOptions,
-        'Messaging options contains an invalid value for the "restrictedPackageName" property. '
-        'Value must be a non-empty string.',
-      );
-    }
-  }
-
-  /// Whether or not the message should actually be sent. When set to `true`,
-  /// allows developers to test a request without actually sending a message. When
-  /// set to `false`, the message will be sent.
-  ///
-  /// **Default value:** `false`
-  final bool? dryRun;
-
-  /// The priority of the message. Valid values are `"normal"` and `"high".` On
-  /// iOS, these correspond to APNs priorities `5` and `10`.
-  ///
-  /// By default, notification messages are sent with high priority, and data
-  /// messages are sent with normal priority. Normal priority optimizes the client
-  /// app's battery consumption and should be used unless immediate delivery is
-  /// required. For messages with normal priority, the app may receive the message
-  /// with unspecified delay.
-  ///
-  /// When a message is sent with high priority, it is sent immediately, and the
-  /// app can wake a sleeping device and open a network connection to your server.
-  ///
-  /// For more information, see
-  /// [Setting the priority of a message](https://firebase.google.com/docs/cloud-messaging/concept-options#setting-the-priority-of-a-message).
-  ///
-  /// **Default value:** `"high"` for notification messages, `"normal"` for data
-  /// messages
-  final String? priority;
-
-  /// How long (in seconds) the message should be kept in FCM storage if the device
-  /// is offline. The maximum time to live supported is four weeks, and the default
-  /// value is also four weeks. For more information, see
-  /// [Setting the lifespan of a message](https://firebase.google.com/docs/cloud-messaging/concept-options#ttl).
-  ///
-  /// **Default value:** `2419200` (representing four weeks, in seconds)
-  final int? timeToLive;
-
-  /// String identifying a group of messages (for example, "Updates Available")
-  /// that can be collapsed, so that only the last message gets sent when delivery
-  /// can be resumed. This is used to avoid sending too many of the same messages
-  /// when the device comes back online or becomes active.
-  ///
-  /// There is no guarantee of the order in which messages get sent.
-  ///
-  /// A maximum of four different collapse keys is allowed at any given time. This
-  /// means FCM server can simultaneously store four different
-  /// send-to-sync messages per client app. If you exceed this number, there is no
-  /// guarantee which four collapse keys the FCM server will keep.
-  ///
-  /// **Default value:** None
-  final String? collapseKey;
-
-  /// On iOS, use this field to represent `mutable-content` in the APNs payload.
-  /// When a notification is sent and this is set to `true`, the content of the
-  /// notification can be modified before it is displayed, using a
-  /// [Notification Service app extension](https://developer.apple.com/reference/usernotifications/unnotificationserviceextension).
-  ///
-  /// On Android and Web, this parameter will be ignored.
-  ///
-  /// **Default value:** `false`
-  final bool? mutableContent;
-
-  /// On iOS, use this field to represent `content-available` in the APNs payload.
-  /// When a notification or data message is sent and this is set to `true`, an
-  /// inactive client app is awoken. On Android, data messages wake the app by
-  /// default. On Chrome, this flag is currently not supported.
-  ///
-  /// **Default value:** `false`
-  final bool? contentAvailable;
-
-  /// The package name of the application which the registration tokens must match
-  /// in order to receive the message.
-  ///
-  /// **Default value:** None
-  final String? restrictedPackageName;
 }
 
 /// Interface representing the server response from the legacy {@link Messaging.sendToTopic} method.
@@ -1306,11 +954,7 @@ class BatchResponse {
 class SendResponse {
   /// Interface representing the status of an individual message that was sent as
   /// part of a batch request.
-  SendResponse._({
-    required this.success,
-    this.messageId,
-    this.error,
-  });
+  SendResponse._({required this.success, this.messageId, this.error});
 
   /// A boolean indicating if the message was successfully handed off to FCM or
   /// not. When true, the `messageId` attribute is guaranteed to be set. When
@@ -1323,4 +967,28 @@ class SendResponse {
 
   /// An error, if the message was not handed off to FCM successfully.
   final FirebaseAdminException? error;
+}
+
+/// Interface representing the server response from the
+/// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic] methods.
+class MessagingTopicManagementResponse {
+  /// Interface representing the server response from the
+  /// [Messaging.subscribeToTopic] and [Messaging.unsubscribeFromTopic] methods.
+  MessagingTopicManagementResponse._({
+    required this.failureCount,
+    required this.successCount,
+    required this.errors,
+  });
+
+  /// The number of registration tokens that could not be subscribed to the topic
+  /// and resulted in an error.
+  final int failureCount;
+
+  /// The number of registration tokens that were successfully subscribed to the
+  /// topic.
+  final int successCount;
+
+  /// An array of errors corresponding to the provided registration token(s). The
+  /// length of this array will be equal to [failureCount].
+  final List<FirebaseArrayIndexError> errors;
 }

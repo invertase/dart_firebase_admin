@@ -2,10 +2,12 @@ part of '../auth.dart';
 
 class FirebaseAuthAdminException extends FirebaseAdminException
     implements Exception {
-  FirebaseAuthAdminException(
-    this.errorCode, [
-    String? message,
-  ]) : super('auth', errorCode.code, message ?? errorCode.message);
+  FirebaseAuthAdminException(this.errorCode, [String? message])
+    : super(
+        FirebaseServiceType.auth.name,
+        errorCode.code,
+        message ?? errorCode.message,
+      );
 
   factory FirebaseAuthAdminException.fromServerError({
     required String serverErrorCode,
@@ -15,12 +17,16 @@ class FirebaseAuthAdminException extends FirebaseAdminException
     // ERROR_CODE : Detailed message which can also contain colons
     final colonSeparator = serverErrorCode.indexOf(':');
     String? customMessage;
+    var effectiveErrorCode = serverErrorCode;
     if (colonSeparator != -1) {
       customMessage = serverErrorCode.substring(colonSeparator + 1).trim();
-      serverErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
+      // Treat empty string as null
+      if (customMessage.isEmpty) customMessage = null;
+      effectiveErrorCode = serverErrorCode.substring(0, colonSeparator).trim();
     }
     // If not found, default to internal error.
-    final error = authServerToClientCode[serverErrorCode] ??
+    final error =
+        authServerToClientCode[effectiveErrorCode] ??
         AuthClientErrorCode.internalError;
     // Server detailed message should have highest priority.
     customMessage = customMessage ?? error.message;
@@ -63,8 +69,8 @@ const authServerToClientCode = {
   'INVALID_CONFIG_ID': AuthClientErrorCode.invalidProviderId,
   // ActionCodeSettings missing continue URL.
   'INVALID_CONTINUE_URI': AuthClientErrorCode.invalidContinueUri,
-  // Dynamic link domain in provided ActionCodeSettings is not authorized.
-  'INVALID_DYNAMIC_LINK_DOMAIN': AuthClientErrorCode.invalidDynamicLinkDomain,
+  // Hosting link domain in provided ActionCodeSettings is not owned by the current project.
+  'INVALID_HOSTING_LINK_DOMAIN': AuthClientErrorCode.invalidHostingLinkDomain,
   // uploadAccount provides an email that already exists.
   'DUPLICATE_EMAIL': AuthClientErrorCode.emailAlreadyExists,
   // uploadAccount provides a localId that already exists.
@@ -102,6 +108,8 @@ const authServerToClientCode = {
   'INVALID_PROJECT_ID': AuthClientErrorCode.invalidProjectId,
   // Invalid provider ID.
   'INVALID_PROVIDER_ID': AuthClientErrorCode.invalidProviderId,
+  // Invalid service account.
+  'INVALID_SERVICE_ACCOUNT': AuthClientErrorCode.invalidServiceAccount,
   // Invalid testing phone number.
   'INVALID_TESTING_PHONE_NUMBER': AuthClientErrorCode.invalidTestingPhoneNumber,
   // Invalid tenant type.
@@ -150,7 +158,7 @@ const authServerToClientCode = {
   'TENANT_ID_MISMATCH': AuthClientErrorCode.mismatchingTenantId,
   // Token expired error.
   'TOKEN_EXPIRED': AuthClientErrorCode.idTokenExpired,
-  // Continue URL provided in ActionCodeSettings has a domain that is not whitelisted.
+  // Continue URL provided in ActionCodeSettings has a domain that is not allowed.
   'UNAUTHORIZED_DOMAIN': AuthClientErrorCode.unauthorizedDomain,
   // A multi-factor user requires a supported first factor.
   'UNSUPPORTED_FIRST_FACTOR': AuthClientErrorCode.unsupportedFirstFactor,
@@ -261,11 +269,6 @@ enum AuthClientErrorCode {
     code: 'invalid-display-name',
     message: 'The displayName field must be a valid string.',
   ),
-  invalidDynamicLinkDomain(
-    code: 'invalid-dynamic-link-domain',
-    message: 'The provided dynamic link domain is not configured or authorized '
-        'for the current project.',
-  ),
   invalidEmailVerified(
     code: 'invalid-email-verified',
     message: 'The emailVerified field must be a boolean.',
@@ -290,7 +293,8 @@ enum AuthClientErrorCode {
   ),
   invalidHashAlgorithm(
     code: 'invalid-hash-algorithm',
-    message: 'The hash algorithm must match one of the strings in the list of '
+    message:
+        'The hash algorithm must match one of the strings in the list of '
         'supported algorithms.',
   ),
   invalidHashBlockSize(
@@ -321,6 +325,12 @@ enum AuthClientErrorCode {
     code: 'invalid-hash-salt-separator',
     message:
         'The hashing algorithm salt separator field must be a valid byte buffer.',
+  ),
+  invalidHostingLinkDomain(
+    code: 'invalid-hosting-link-domain',
+    message:
+        'The provided hosting link domain is not configured or authorized '
+        'for the current project.',
   ),
   invalidLastSignInTime(
     code: 'invalid-last-sign-in-time',
@@ -362,7 +372,8 @@ enum AuthClientErrorCode {
   ),
   invalidProjectId(
     code: 'invalid-project-id',
-    message: 'Invalid parent project. '
+    message:
+        'Invalid parent project. '
         "Either parent project doesn't exist or didn't enable multi-tenancy.",
   ),
   invalidProviderData(
@@ -387,6 +398,10 @@ enum AuthClientErrorCode {
     message:
         'The session cookie duration must be a valid number in milliseconds '
         'between 5 minutes and 2 weeks.',
+  ),
+  invalidServiceAccount(
+    code: 'invalid-service-account',
+    message: 'Invalid service account.',
   ),
   invalidTenantId(
     code: 'invalid-tenant-id',
@@ -419,7 +434,8 @@ enum AuthClientErrorCode {
   ),
   missingAndroidPackageName(
     code: 'missing-android-pkg-name',
-    message: 'An Android Package Name must be provided if the Android App is '
+    message:
+        'An Android Package Name must be provided if the Android App is '
         'required to be installed.',
   ),
   missingConfig(
@@ -451,7 +467,8 @@ enum AuthClientErrorCode {
   ),
   missingHashAlgorithm(
     code: 'missing-hash-algorithm',
-    message: 'Importing users with password hashes requires that the hashing '
+    message:
+        'Importing users with password hashes requires that the hashing '
         'algorithm and its parameters be provided.',
   ),
   missingOauthClientId(
@@ -540,7 +557,7 @@ enum AuthClientErrorCode {
   unauthorizedDomain(
     code: 'unauthorized-continue-uri',
     message:
-        'The domain of the continue URL is not whitelisted. Whitelist the domain in the '
+        'The domain of the continue URL is not allowed. Add the domain to the allow list in the '
         'Firebase console.',
   ),
   unsupportedFirstFactor(
@@ -566,14 +583,8 @@ enum AuthClientErrorCode {
     message:
         'There is no user record corresponding to the provided identifier.',
   ),
-  notFound(
-    code: 'not-found',
-    message: 'The requested resource was not found.',
-  ),
-  userDisabled(
-    code: 'user-disabled',
-    message: 'The user record is disabled.',
-  ),
+  notFound(code: 'not-found', message: 'The requested resource was not found.'),
+  userDisabled(code: 'user-disabled', message: 'The user record is disabled.'),
   userNotDisabled(
     code: 'user-not-disabled',
     message:
@@ -593,10 +604,7 @@ enum AuthClientErrorCode {
     message: 'reCAPTCHA enterprise is not enabled.',
   );
 
-  const AuthClientErrorCode({
-    required this.code,
-    required this.message,
-  });
+  const AuthClientErrorCode({required this.code, required this.message});
 
   final String code;
   final String message;

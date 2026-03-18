@@ -59,3 +59,66 @@ bool isTopic(Object? topic) {
   );
   return validTopicRegExp.hasMatch(topic);
 }
+
+/// Validates that a value is a string.
+@internal
+bool isString(Object? value) => value is String;
+
+/// Validates that a value is a non-empty string.
+@internal
+bool isNonEmptyString(Object? value) => value is String && value.isNotEmpty;
+
+/// Validates that a string is a non-empty string. Throws otherwise.
+@internal
+void validateNonEmptyString(Object? value, String name) {
+  if (!isNonEmptyString(value)) {
+    throw ArgumentError('$name must be a non-empty string');
+  }
+}
+
+/// Validates that a value is a string. Throws otherwise.
+@internal
+void validateString(Object? value, String name) {
+  if (!isString(value)) {
+    throw ArgumentError('$name must be a string');
+  }
+}
+
+/// Validates that a string is a valid URL.
+@internal
+bool isURL(String? urlStr) {
+  if (urlStr == null || urlStr.isEmpty) return false;
+
+  // Check for illegal characters
+  final illegalChars = RegExp(
+    r'[^a-z0-9:/?#[\]@!$&'
+    "'"
+    r'()*+,;=.\-_~%]',
+    caseSensitive: false,
+  );
+  if (illegalChars.hasMatch(urlStr)) {
+    return false;
+  }
+
+  try {
+    final uri = Uri.parse(urlStr);
+    // Must have a scheme (http, https, etc.)
+    return uri.hasScheme && uri.host.isNotEmpty;
+  } catch (e) {
+    return false;
+  }
+}
+
+/// Validates that a string is a valid task ID.
+///
+/// Task IDs can only contain letters (A-Za-z), numbers (0-9),
+/// hyphens (-), or underscores (_). Maximum length is 500 characters.
+@internal
+bool isValidTaskId(String? taskId) {
+  if (taskId == null || taskId.isEmpty || taskId.length > 500) {
+    return false;
+  }
+
+  final validTaskIdRegex = RegExp(r'^[A-Za-z0-9_-]+$');
+  return validTaskIdRegex.hasMatch(taskId);
+}

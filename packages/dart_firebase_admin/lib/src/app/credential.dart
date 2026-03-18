@@ -3,114 +3,186 @@ part of '../app.dart';
 @internal
 const envSymbol = #_envSymbol;
 
-class _RequestImpl extends BaseRequest {
-  _RequestImpl(super.method, super.url, [Stream<List<int>>? stream])
-      : _stream = stream ?? const Stream.empty();
-
-  final Stream<List<int>> _stream;
-
-  @override
-  ByteStream finalize() {
-    super.finalize();
-    return ByteStream(_stream);
-  }
-}
-
-/// Will close the underlying `http.Client` depending on a constructor argument.
-class _EmulatorClient extends BaseClient {
-  _EmulatorClient(this.client);
-
-  final Client client;
-
-  @override
-  Future<StreamedResponse> send(BaseRequest request) async {
-    // Make new request object and perform the authenticated request.
-    final modifiedRequest = _RequestImpl(
-      request.method,
-      request.url,
-      request.finalize(),
-    );
-    modifiedRequest.headers.addAll(request.headers);
-    modifiedRequest.headers['Authorization'] = 'Bearer owner';
-
-    return client.send(modifiedRequest);
-  }
-
-  @override
-  void close() {
-    client.close();
-    super.close();
-  }
-}
-
-/// Authentication information for Firebase Admin SDK.
-class Credential {
-  Credential._(
-    this.serviceAccountCredentials, {
-    this.serviceAccountId,
-  }) : assert(
-          serviceAccountId == null || serviceAccountCredentials == null,
-          'Cannot specify both serviceAccountId and serviceAccountCredentials',
-        );
-
-  /// Log in to firebase from a service account file.
-  factory Credential.fromServiceAccount(File serviceAccountFile) {
-    final content = serviceAccountFile.readAsStringSync();
-
-    final json = jsonDecode(content);
-    if (json is! Map<String, Object?>) {
-      throw const FormatException('Invalid service account file');
-    }
-
-    final serviceAccountCredentials =
-        auth.ServiceAccountCredentials.fromJson(json);
-
-    return Credential._(serviceAccountCredentials);
-  }
-
-  /// Log in to firebase from a service account file parameters.
-  factory Credential.fromServiceAccountParams({
-    required String clientId,
-    required String privateKey,
-    required String email,
-  }) {
-    final serviceAccountCredentials = auth.ServiceAccountCredentials(
-      email,
-      ClientId(clientId),
-      privateKey,
-    );
-
-    return Credential._(serviceAccountCredentials);
-  }
-
-  /// Log in to firebase using the environment variable.
+/// Base class for Firebase Admin SDK credentials.
+///
+/// Create credentials using one of the factory methods:
+/// - [Credential.fromServiceAccount] - For service account JSON files
+/// - [Credential.fromServiceAccountParams] - For individual service account parameters
+/// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
+///
+/// The credential is used to authenticate all API calls made by the Admin SDK.
+sealed class Credential {
+  /// Creates a credential using Application Default Credentials (ADC).
+  ///
+  /// ADC attempts to find credentials in the following order:
+  /// 1. [Environment.googleApplicationCredentials] environment variable (path to service account JSON)
+  /// 2. Compute Engine default service account (when running on GCE)
+  /// 3. Other ADC sources
+  ///
+  /// [serviceAccountId] can optionally be provided to override the service
+  /// account email if needed for specific operations.
   factory Credential.fromApplicationDefaultCredentials({
     String? serviceAccountId,
   }) {
-    ServiceAccountCredentials? creds;
-
-    final env =
-        Zone.current[envSymbol] as Map<String, String>? ?? Platform.environment;
-    final maybeConfig = env['GOOGLE_APPLICATION_CREDENTIALS'];
-    if (maybeConfig != null && File(maybeConfig).existsSync()) {
-      try {
-        final text = File(maybeConfig).readAsStringSync();
-        final decodedValue = jsonDecode(text);
-        if (decodedValue is Map) {
-          creds = ServiceAccountCredentials.fromJson(decodedValue);
-        }
-      } on FormatException catch (_) {}
-    }
-
-    return Credential._(
-      creds,
-      serviceAccountId: serviceAccountId,
-    );
+    return ApplicationDefaultCredential._(serviceAccountId: serviceAccountId);
   }
 
-  @internal
-  final String? serviceAccountId;
+  /// Creates a credential from a service account JSON file.
+  ///
+  /// The service account file must contain:
+  /// - `project_id`: The Google Cloud project ID
+  /// - `private_key`: The service account private key
+  /// - `client_email`: The service account email
+  ///
+  /// You can download service account JSON files from the Firebase Console
+  /// under Project Settings > Service Accounts.
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = Credential.fromServiceAccount(
+  ///   File('path/to/service-account.json'),
+  /// );
+  /// ```
+  factory Credential.fromServiceAccount(File serviceAccountFile) {
+    try {
+      final json = serviceAccountFile.readAsStringSync();
+      final credentials = googleapis_auth.ServiceAccountCredentials.fromJson(
+        json,
+      );
+      return ServiceAccountCredential._(credentials);
+    } catch (e) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Failed to parse service account JSON: $e',
+      );
+    }
+  }
 
+  /// Creates a credential from individual service account parameters.
+  ///
+  /// Parameters:
+  /// - [clientId]: The OAuth2 client ID (optional)
+  /// - [privateKey]: The private key in PEM format
+  /// - [email]: The service account email address
+  /// - [projectId]: The Google Cloud project ID
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = Credential.fromServiceAccountParams(
+  ///   clientId: 'client-id',
+  ///   privateKey: '-----BEGIN PRIVATE KEY-----\n...',
+  ///   email: 'client@example.iam.gserviceaccount.com',
+  ///   projectId: 'my-project',
+  /// );
+  /// ```
+  factory Credential.fromServiceAccountParams({
+    String? clientId,
+    required String privateKey,
+    required String email,
+    required String projectId,
+  }) {
+    try {
+      final json = {
+        'type': 'service_account',
+        'project_id': projectId,
+        'private_key': privateKey,
+        'client_email': email,
+        'client_id': clientId ?? '',
+      };
+      final credentials = googleapis_auth.ServiceAccountCredentials.fromJson(
+        json,
+      );
+      return ServiceAccountCredential._(credentials);
+    } catch (e) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Failed to create service account credentials: $e',
+      );
+    }
+  }
+
+  /// Private constructor for sealed class.
+  Credential._();
+
+  /// Returns the underlying [googleapis_auth.ServiceAccountCredentials] if this is a
+  /// [ServiceAccountCredential], null otherwise.
   @internal
-  final auth.ServiceAccountCredentials? serviceAccountCredentials;
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials;
+
+  /// Returns the service account ID (email) if available.
+  @internal
+  String? get serviceAccountId;
+}
+
+/// Service account credentials for Firebase Admin SDK.
+///
+/// Holds [googleapis_auth.ServiceAccountCredentials] and ensures
+/// the [projectId] field is present, which is required for Firebase Admin SDK operations.
+@internal
+final class ServiceAccountCredential extends Credential {
+  ServiceAccountCredential._(this._serviceAccountCredentials) : super._() {
+    // Firebase requires projectId
+    if (_serviceAccountCredentials.projectId == null) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Service account JSON must contain a "project_id" property',
+      );
+    }
+  }
+
+  final googleapis_auth.ServiceAccountCredentials _serviceAccountCredentials;
+
+  /// The Google Cloud project ID associated with this service account.
+  ///
+  /// This is extracted from the `project_id` field in the service account JSON.
+  String get projectId => _serviceAccountCredentials.projectId!;
+
+  /// The service account email address.
+  ///
+  /// This is the `client_email` field from the service account JSON.
+  /// Format: `firebase-adminsdk-xxxxx@project-id.iam.gserviceaccount.com`
+  String get clientEmail => _serviceAccountCredentials.email;
+
+  /// The service account private key in PEM format.
+  ///
+  /// This is used to sign authentication tokens for API calls.
+  String get privateKey => _serviceAccountCredentials.privateKey;
+
+  @override
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
+      _serviceAccountCredentials;
+
+  @override
+  String? get serviceAccountId => _serviceAccountCredentials.email;
+}
+
+/// Application Default Credentials for Firebase Admin SDK.
+///
+/// Uses Google Application Default Credentials (ADC) to automatically discover
+/// credentials from the environment. ADC checks the following sources in order:
+///
+/// 1. [Environment.googleApplicationCredentials] environment variable pointing to a
+///    service account JSON file
+/// 2. **Compute Engine** default service account (when running on GCE, Cloud Run, etc.)
+/// 3. Other ADC sources (gcloud CLI credentials, etc.)
+///
+/// This credential type is recommended for production environments as it allows
+/// the same code to work across different deployment environments without
+/// hardcoding credential paths.
+///
+/// The project ID is discovered from [google_cloud.computeProjectId].
+@internal
+final class ApplicationDefaultCredential extends Credential {
+  ApplicationDefaultCredential._({String? serviceAccountId})
+    : _serviceAccountId = serviceAccountId,
+      super._();
+
+  final String? _serviceAccountId;
+
+  @override
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
+      null;
+
+  @override
+  String? get serviceAccountId => _serviceAccountId;
 }

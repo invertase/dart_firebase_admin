@@ -1,3 +1,9 @@
+import 'dart:io';
+
+/// The current Dart SDK version in semver format (e.g. "3.3.0").
+String get dartVersion =>
+    Platform.version.split(RegExp('[^0-9]')).take(3).join('.');
+
 /// Generates the update mask for the provided object.
 /// Note this will ignore the last key with value undefined.
 List<String> generateUpdateMask(

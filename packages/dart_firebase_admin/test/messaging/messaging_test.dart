@@ -1,19 +1,19 @@
 import 'dart:convert';
 
-import 'package:dart_firebase_admin/src/messaging.dart';
+import 'package:dart_firebase_admin/src/messaging/messaging.dart';
 import 'package:googleapis/fcm/v1.dart' as fmc1;
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../google_cloud_firestore/util/helpers.dart';
+import '../helpers.dart';
 import '../mock.dart';
 
 class ProjectsMessagesResourceMock extends Mock
     implements fmc1.ProjectsMessagesResource {}
 
-class FirebaseMessagingRequestHandlerMock extends Mock
-    implements FirebaseMessagingRequestHandler {}
+class FirebaseMessagingHttpMockAuthClient extends Mock
+    implements FirebaseMessagingHttpClient {}
 
 class FirebaseCloudMessagingApiMock extends Mock
     implements fmc1.FirebaseCloudMessagingApi {}
@@ -26,8 +26,9 @@ extension on Object? {
 
 void main() {
   late Messaging messaging;
+  late FirebaseMessagingRequestHandler requestHandler;
 
-  final requestHandler = FirebaseMessagingRequestHandlerMock();
+  final httpClient = FirebaseMessagingHttpMockAuthClient();
   final messages = ProjectsMessagesResourceMock();
   final projectResourceMock = ProjectsResourceMock();
   final messagingApiMock = FirebaseCloudMessagingApiMock();
@@ -35,10 +36,14 @@ void main() {
   setUpAll(registerFallbacks);
 
   void mockV1<T>() {
-    when(() => requestHandler.v1<T>(any())).thenAnswer((invocation) async {
+    when(() => httpClient.v1<T>(any())).thenAnswer((invocation) async {
       final callback = invocation.positionalArguments.first as Function;
 
-      final result = await Function.apply(callback, [messagingApiMock]);
+      // Pass both the API client and projectId to match the v1() signature
+      final result = await Function.apply(callback, [
+        messagingApiMock,
+        projectId,
+      ]);
       return result as T;
     });
   }
@@ -47,13 +52,26 @@ void main() {
     when(() => projectResourceMock.messages).thenReturn(messages);
     when(() => messagingApiMock.projects).thenReturn(projectResourceMock);
 
-    final sdk = createApp();
-    sdk.useEmulator();
-    messaging = Messaging(sdk, requestHandler: requestHandler);
+    // Mock buildParent to return the expected parent resource path
+    when(() => httpClient.buildParent(any())).thenAnswer(
+      (invocation) => 'projects/${invocation.positionalArguments[0]}',
+    );
+
+    // Mock iidApiHost for topic management
+    when(() => httpClient.iidApiHost).thenReturn('iid.googleapis.com');
+
+    // Use unique app name for each test to avoid interference
+    final appName = 'messaging-test-${DateTime.now().microsecondsSinceEpoch}';
+    final app = createApp(name: appName);
+    requestHandler = FirebaseMessagingRequestHandler(
+      app,
+      httpClient: httpClient,
+    );
+    messaging = Messaging.internal(app, requestHandler: requestHandler);
   });
 
   tearDown(() {
-    reset(requestHandler);
+    reset(httpClient);
     reset(messages);
     reset(projectResourceMock);
     reset(messagingApiMock);
@@ -69,7 +87,7 @@ void main() {
       (code: 505, error: MessagingClientErrorCode.unknownError),
     ]) {
       test('converts $code codes into errors', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(Stream.value(utf8.encode('')), code),
@@ -77,13 +95,16 @@ void main() {
         );
 
         final app = createApp(client: clientMock);
-        final handler = Messaging(app);
+        final handler = Messaging.internal(app);
 
         await expectLater(
           () => handler.send(TokenMessage(token: '123')),
           throwsA(
-            isA<FirebaseMessagingAdminException>()
-                .having((e) => e.errorCode, 'errorCode', error),
+            isA<FirebaseMessagingAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              error,
+            ),
           ),
         );
       });
@@ -92,7 +113,7 @@ void main() {
     for (final MapEntry(key: messagingError, value: code)
         in messagingServerToClientCode.entries) {
       test('converts $messagingError error codes', () async {
-        final clientMock = ClientMock();
+        final clientMock = MockAuthClient();
         when(() => clientMock.send(any())).thenAnswer(
           (_) => Future.value(
             StreamedResponse(
@@ -104,15 +125,13 @@ void main() {
                 ),
               ),
               400,
-              headers: {
-                'content-type': 'application/json',
-              },
+              headers: {'content-type': 'application/json'},
             ),
           ),
         );
 
         final app = createApp(client: clientMock);
-        final handler = Messaging(app);
+        final handler = Messaging.internal(app);
 
         await expectLater(
           () => handler.send(TokenMessage(token: '123')),
@@ -130,13 +149,11 @@ void main() {
     setUp(() => mockV1<String>());
 
     test('should send a message', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
-      final result = await messaging.send(
-        TopicMessage(topic: 'test'),
-      );
+      final result = await messaging.send(TopicMessage(topic: 'test'));
 
       expect(result, 'test');
 
@@ -152,9 +169,9 @@ void main() {
     });
 
     test('throws internal error if response has no name', () {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message()),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message()));
 
       expect(
         () => messaging.send(TopicMessage(topic: 'test')),
@@ -171,14 +188,11 @@ void main() {
     });
 
     test('dryRun', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
-      await messaging.send(
-        TopicMessage(topic: 'test'),
-        dryRun: true,
-      );
+      await messaging.send(TopicMessage(topic: 'test'), dryRun: true);
 
       final capture = verify(() => messages.send(captureAny(), captureAny()))
         ..called(1);
@@ -189,9 +203,9 @@ void main() {
     });
 
     test('supports booleans', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
       await messaging.send(
         TopicMessage(
@@ -232,25 +246,18 @@ void main() {
         1,
       );
 
-      expect(
-        request.message!.webpush!.notification!['renotify'],
-        1,
-      );
+      expect(request.message!.webpush!.notification!['renotify'], 1);
     });
 
     test('supports null alert/sound', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (_) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
 
       await messaging.send(
         TopicMessage(
           topic: 'test',
-          apns: ApnsConfig(
-            payload: ApnsPayload(
-              aps: Aps(),
-            ),
-          ),
+          apns: ApnsConfig(payload: ApnsPayload(aps: Aps())),
           webpush: WebpushConfig(
             notification: WebpushNotification(renotify: true),
           ),
@@ -261,10 +268,7 @@ void main() {
         ..called(1);
       final request = capture.captured.first as fmc1.SendMessageRequest;
 
-      expect(
-        request.message!.apns!.payload!['aps'],
-        <String, Object?>{},
-      );
+      expect(request.message!.apns!.payload!['aps'], <String, Object?>{});
     });
   });
 
@@ -298,19 +302,16 @@ void main() {
     });
 
     test('works', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (i) {
-          final request =
-              i.positionalArguments.first as fmc1.SendMessageRequest;
-          switch (request.message?.topic) {
-            case 'test':
-              // Voluntary cause "test" to resolve after "test2"
-              return Future(() => Future.value(fmc1.Message(name: 'test')));
-            case _:
-              return Future.error('error');
-          }
-        },
-      );
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        final request = i.positionalArguments.first as fmc1.SendMessageRequest;
+        switch (request.message?.topic) {
+          case 'test':
+            // Voluntary cause "test" to resolve after "test2"
+            return Future(() => Future.value(fmc1.Message(name: 'test')));
+          case _:
+            return Future.error('error');
+        }
+      });
 
       final result = await messaging.sendEach([
         TopicMessage(topic: 'test'),
@@ -331,8 +332,11 @@ void main() {
             .having(
               (r) => r.error,
               'error',
-              isA<FirebaseMessagingAdminException>()
-                  .having((e) => e.message, 'message', 'error'),
+              isA<FirebaseMessagingAdminException>().having(
+                (e) => e.message,
+                'message',
+                'error',
+              ),
             ),
       ]);
 
@@ -350,9 +354,9 @@ void main() {
     });
 
     test('dry run', () async {
-      when(() => messages.send(any(), any())).thenAnswer(
-        (i) => Future.value(fmc1.Message(name: 'test')),
-      );
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((i) => Future.value(fmc1.Message(name: 'test')));
 
       await messaging.sendEach(dryRun: true, [
         TopicMessage(topic: 'test'),
@@ -370,6 +374,501 @@ void main() {
       request = capture.captured[1] as fmc1.SendMessageRequest;
 
       expect(request.validateOnly, true);
+    });
+  });
+
+  group('sendEachForMulticast', () {
+    setUp(() => mockV1<BatchResponse>());
+
+    test('should convert multicast message to token messages', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        final request = i.positionalArguments.first as fmc1.SendMessageRequest;
+        return Future.value(
+          fmc1.Message(name: 'message-${request.message?.token}'),
+        );
+      });
+
+      final result = await messaging.sendEachForMulticast(
+        MulticastMessage(
+          tokens: ['token1', 'token2', 'token3'],
+          notification: Notification(title: 'Test', body: 'Body'),
+          data: {'key': 'value'},
+        ),
+      );
+
+      expect(result.successCount, 3);
+      expect(result.failureCount, 0);
+      expect(result.responses.length, 3);
+
+      // Verify that send was called 3 times with the correct token messages
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(3);
+
+      for (var i = 0; i < 3; i++) {
+        final request = capture.captured[i] as fmc1.SendMessageRequest;
+        expect(request.message?.token, 'token${i + 1}');
+        expect(request.message?.notification?.title, 'Test');
+        expect(request.message?.notification?.body, 'Body');
+        expect(request.message?.data, {'key': 'value'});
+      }
+    });
+
+    test('should validate empty tokens list', () {
+      expect(
+        () => messaging.sendEachForMulticast(MulticastMessage(tokens: [])),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'messages must be a non-empty array',
+          ),
+        ),
+      );
+    });
+
+    test('should validate tokens list does not exceed 500', () {
+      expect(
+        () => messaging.sendEachForMulticast(
+          MulticastMessage(
+            tokens: List.generate(501, (index) => 'token$index'),
+          ),
+        ),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'messages list must not contain more than 500 items',
+          ),
+        ),
+      );
+    });
+
+    test('should support dryRun mode', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        return Future.value(fmc1.Message(name: 'test'));
+      });
+
+      await messaging.sendEachForMulticast(
+        MulticastMessage(tokens: ['token1', 'token2']),
+        dryRun: true,
+      );
+
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(2);
+
+      for (var i = 0; i < 2; i++) {
+        final request = capture.captured[i] as fmc1.SendMessageRequest;
+        expect(request.validateOnly, true);
+      }
+    });
+
+    test('should propagate all BaseMessage fields', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        return Future.value(fmc1.Message(name: 'test'));
+      });
+
+      await messaging.sendEachForMulticast(
+        MulticastMessage(
+          tokens: ['token1'],
+          data: {'key': 'value'},
+          notification: Notification(title: 'Title', body: 'Body'),
+          android: AndroidConfig(
+            collapseKey: 'collapse',
+            priority: AndroidConfigPriority.high,
+          ),
+          apns: ApnsConfig(headers: {'apns-priority': '10'}),
+          webpush: WebpushConfig(headers: {'TTL': '300'}),
+          fcmOptions: FcmOptions(analyticsLabel: 'label'),
+        ),
+      );
+
+      final capture = verify(() => messages.send(captureAny(), any()))
+        ..called(1);
+
+      final request = capture.captured.first as fmc1.SendMessageRequest;
+      expect(request.message?.token, 'token1');
+      expect(request.message?.data, {'key': 'value'});
+      expect(request.message?.notification?.title, 'Title');
+      expect(request.message?.notification?.body, 'Body');
+      expect(request.message?.android?.collapseKey, 'collapse');
+      expect(request.message?.android?.priority, 'high');
+      expect(request.message?.apns?.headers, {'apns-priority': '10'});
+      expect(request.message?.webpush?.headers, {'TTL': '300'});
+      expect(request.message?.fcmOptions?.analyticsLabel, 'label');
+    });
+
+    test('should handle mixed success and failure responses', () async {
+      when(() => messages.send(any(), any())).thenAnswer((i) {
+        final request = i.positionalArguments.first as fmc1.SendMessageRequest;
+        if (request.message?.token == 'token2') {
+          return Future.error('error');
+        }
+        return Future.value(fmc1.Message(name: 'success'));
+      });
+
+      final result = await messaging.sendEachForMulticast(
+        MulticastMessage(tokens: ['token1', 'token2', 'token3']),
+      );
+
+      expect(result.successCount, 2);
+      expect(result.failureCount, 1);
+      expect(result.responses.length, 3);
+
+      expect(result.responses[0].success, true);
+      expect(result.responses[0].messageId, 'success');
+      expect(result.responses[1].success, false);
+      expect(result.responses[1].error, isA<FirebaseMessagingAdminException>());
+      expect(result.responses[2].success, true);
+      expect(result.responses[2].messageId, 'success');
+    });
+  });
+
+  group('Topic Management', () {
+    group('subscribeToTopic', () {
+      test('should validate empty registration tokens list', () async {
+        expect(
+          () => messaging.subscribeToTopic([], 'test-topic'),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must be a non-empty list'),
+                ),
+          ),
+        );
+      });
+
+      test('should validate empty token strings', () async {
+        expect(
+          () => messaging.subscribeToTopic([
+            'token1',
+            '',
+            'token3',
+          ], 'test-topic'),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must all be non-empty strings'),
+                ),
+          ),
+        );
+      });
+
+      test('should validate empty topic', () async {
+        expect(
+          () => messaging.subscribeToTopic(['token1'], ''),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must be a non-empty string'),
+                ),
+          ),
+        );
+      });
+
+      test('should validate topic format', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer((_) async => <String, dynamic>{});
+
+        // Valid topics should not throw
+        for (final topic in [
+          'test-topic',
+          '/topics/test-topic',
+          'test_topic',
+          'test.topic',
+          'test~topic',
+          'test%20topic',
+        ]) {
+          await messaging.subscribeToTopic(['token1'], topic);
+        }
+
+        // Invalid topics should throw
+        for (final topic in [
+          'test topic', // space not allowed
+          'test@topic', // @ not allowed
+          'test#topic', // # not allowed
+          '/topics/', // empty after /topics/
+        ]) {
+          expect(
+            () => messaging.subscribeToTopic(['token1'], topic),
+            throwsA(
+              isA<FirebaseMessagingAdminException>()
+                  .having(
+                    (e) => e.errorCode,
+                    'errorCode',
+                    MessagingClientErrorCode.invalidArgument,
+                  )
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    contains('must be a string which matches the format'),
+                  ),
+            ),
+          );
+        }
+      });
+
+      test('should normalize topic by prepending /topics/', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}],
+          },
+        );
+
+        await messaging.subscribeToTopic(['token1'], 'test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        final requestData = capture.captured.last as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+      });
+
+      test('should not modify topic already starting with /topics/', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}],
+          },
+        );
+
+        await messaging.subscribeToTopic(['token1'], '/topics/test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        final requestData = capture.captured.last as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+      });
+
+      test('should make request to IID API with correct parameters', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}, <String, dynamic>{}],
+          },
+        );
+
+        await messaging.subscribeToTopic(['token1', 'token2'], 'test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        expect(capture.captured[0], 'iid.googleapis.com');
+        expect(capture.captured[1], '/iid/v1:batchAdd');
+        final requestData = capture.captured[2] as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+        expect(requestData['registration_tokens'], ['token1', 'token2']);
+      });
+
+      test('should return success response with all successes', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [
+              <String, dynamic>{},
+              <String, dynamic>{},
+              <String, dynamic>{},
+            ],
+          },
+        );
+
+        final response = await messaging.subscribeToTopic([
+          'token1',
+          'token2',
+          'token3',
+        ], 'test-topic');
+
+        expect(response.successCount, 3);
+        expect(response.failureCount, 0);
+        expect(response.errors, isEmpty);
+      });
+
+      test('should return response with partial failures', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [
+              <String, dynamic>{},
+              <String, dynamic>{'error': 'INVALID_ARGUMENT'},
+              <String, dynamic>{},
+              <String, dynamic>{'error': 'NOT_FOUND'},
+            ],
+          },
+        );
+
+        final response = await messaging.subscribeToTopic([
+          'token1',
+          'token2',
+          'token3',
+          'token4',
+        ], 'test-topic');
+
+        expect(response.successCount, 2);
+        expect(response.failureCount, 2);
+        expect(response.errors.length, 2);
+        expect(response.errors[0].index, 1);
+        expect(
+          response.errors[0].error,
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'INVALID_ARGUMENT',
+          ),
+        );
+        expect(response.errors[1].index, 3);
+        expect(
+          response.errors[1].error,
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            'NOT_FOUND',
+          ),
+        );
+      });
+    });
+
+    group('unsubscribeFromTopic', () {
+      test('should validate empty registration tokens list', () async {
+        expect(
+          () => messaging.unsubscribeFromTopic([], 'test-topic'),
+          throwsA(
+            isA<FirebaseMessagingAdminException>()
+                .having(
+                  (e) => e.errorCode,
+                  'errorCode',
+                  MessagingClientErrorCode.invalidArgument,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('must be a non-empty list'),
+                ),
+          ),
+        );
+      });
+
+      test('should make request to IID API with correct parameters', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}, <String, dynamic>{}],
+          },
+        );
+
+        await messaging.unsubscribeFromTopic([
+          'token1',
+          'token2',
+        ], 'test-topic');
+
+        final capture = verify(
+          () => httpClient.invokeRequestHandler(
+            host: captureAny(named: 'host'),
+            path: captureAny(named: 'path'),
+            requestData: captureAny(named: 'requestData'),
+          ),
+        )..called(1);
+
+        expect(capture.captured[0], 'iid.googleapis.com');
+        expect(capture.captured[1], '/iid/v1:batchRemove');
+        final requestData = capture.captured[2] as Map<String, Object?>;
+        expect(requestData['to'], '/topics/test-topic');
+        expect(requestData['registration_tokens'], ['token1', 'token2']);
+      });
+
+      test('should return success response', () async {
+        when(
+          () => httpClient.invokeRequestHandler(
+            host: any(named: 'host'),
+            path: any(named: 'path'),
+            requestData: any(named: 'requestData'),
+          ),
+        ).thenAnswer(
+          (_) async => <String, dynamic>{
+            'results': [<String, dynamic>{}, <String, dynamic>{}],
+          },
+        );
+
+        final response = await messaging.unsubscribeFromTopic([
+          'token1',
+          'token2',
+        ], 'test-topic');
+
+        expect(response.successCount, 2);
+        expect(response.failureCount, 0);
+        expect(response.errors, isEmpty);
+      });
     });
   });
 }

@@ -59,8 +59,9 @@ class UserRecord {
     // If the password hash is redacted (probably due to missing permissions)
     // then clear it out, similar to how the salt is returned. (Otherwise, it
     // *looks* like a b64-encoded hash is present, which is confusing.)
-    final passwordHash =
-        response.passwordHash == _b64Redacted ? null : response.passwordHash;
+    final passwordHash = response.passwordHash == _b64Redacted
+        ? null
+        : response.passwordHash;
 
     final customAttributes = response.customAttributes;
     final customClaims = customAttributes != null
@@ -80,8 +81,9 @@ class UserRecord {
       );
     }
 
-    MultiFactorSettings? multiFactor =
-        MultiFactorSettings.fromResponse(response);
+    MultiFactorSettings? multiFactor = MultiFactorSettings.fromResponse(
+      response,
+    );
     if (multiFactor.enrolledFactors.isEmpty) {
       multiFactor = null;
     }
@@ -169,9 +171,7 @@ class UserRecord {
   /// Returns a JSON-serializable representation of this object.
   ///
   /// A JSON-serializable representation of this object.
-  // TODO is this dead code?
-  // ignore: unused_element
-  Map<String, Object?> _toJson() {
+  Map<String, Object?> toJson() {
     final providerDataJson = <Object?>[];
     final json = <String, Object?>{
       'uid': uid,
@@ -182,7 +182,7 @@ class UserRecord {
       'phoneNumber': phoneNumber,
       'disabled': disabled,
       // Convert metadata to json.
-      'metadata': metadata._toJson(),
+      'metadata': metadata.toJson(),
       'passwordHash': passwordHash,
       'passwordSalt': passwordSalt,
       'customClaims': customClaims,
@@ -192,12 +192,12 @@ class UserRecord {
     };
 
     final multiFactor = this.multiFactor;
-    if (multiFactor != null) json['multiFactor'] = multiFactor._toJson();
+    if (multiFactor != null) json['multiFactor'] = multiFactor.toJson();
 
     json['providerData'] = [];
     for (final entry in providerData) {
       // Convert each provider data to json.
-      providerDataJson.add(entry._toJson());
+      providerDataJson.add(entry.toJson());
     }
     return json;
   }
@@ -215,16 +215,14 @@ class UserInfo {
 
   UserInfo.fromResponse(
     auth1.GoogleCloudIdentitytoolkitV1ProviderUserInfo response,
-  )   : uid = response.rawId,
-        displayName = response.displayName,
-        email = response.email,
-        photoUrl = response.photoUrl,
-        providerId = response.providerId,
-        phoneNumber = response.phoneNumber {
+  ) : uid = response.rawId,
+      displayName = response.displayName,
+      email = response.email,
+      photoUrl = response.photoUrl,
+      providerId = response.providerId,
+      phoneNumber = response.phoneNumber {
     if (response.rawId == null || response.providerId == null) {
-      throw FirebaseAuthAdminException(
-        AuthClientErrorCode.internalError,
-      );
+      throw FirebaseAuthAdminException(AuthClientErrorCode.internalError);
     }
   }
 
@@ -235,7 +233,8 @@ class UserInfo {
   final String? providerId;
   final String? phoneNumber;
 
-  Map<String, Object?> _toJson() {
+  /// Returns a JSON-serializable representation of this object.
+  Map<String, Object?> toJson() {
     return {
       'uid': uid,
       'displayName': displayName,
@@ -264,9 +263,10 @@ class MultiFactorSettings {
 
   final List<MultiFactorInfo> enrolledFactors;
 
-  Map<String, Object?> _toJson() {
+  /// Returns a JSON-serializable representation of this object.
+  Map<String, Object?> toJson() {
     return {
-      'enrolledFactors': enrolledFactors.map((info) => info._toJson()).toList(),
+      'enrolledFactors': enrolledFactors.map((info) => info.toJson()).toList(),
     };
   }
 }
@@ -281,32 +281,34 @@ abstract class MultiFactorInfo {
 
   MultiFactorInfo.fromResponse(
     auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
-  )   : uid = response.mfaEnrollmentId.orThrow(
-          () => throw FirebaseAuthAdminException(
-            AuthClientErrorCode.internalError,
-            'INTERNAL ASSERT FAILED: No uid found for MFA info.',
-          ),
+  ) : uid = response.mfaEnrollmentId.orThrow(
+        () => throw FirebaseAuthAdminException(
+          AuthClientErrorCode.internalError,
+          'INTERNAL ASSERT FAILED: No uid found for MFA info.',
         ),
-        displayName = response.displayName,
-        enrollmentTime = response.enrolledAt
-            .let(int.parse)
-            .let(DateTime.fromMillisecondsSinceEpoch);
+      ),
+      displayName = response.displayName,
+      enrollmentTime = response.enrolledAt
+          .let(int.parse)
+          .let(DateTime.fromMillisecondsSinceEpoch);
 
   /// Initializes the MultiFactorInfo associated subclass using the server side.
   /// If no MultiFactorInfo is associated with the response, null is returned.
   ///
   /// @param response - The server side response.
-  /// @internal
+  @internal
   static MultiFactorInfo? initMultiFactorInfo(
     auth1.GoogleCloudIdentitytoolkitV1MfaEnrollment response,
   ) {
     // PhoneMultiFactorInfo, TotpMultiFactorInfo currently available.
     try {
       final phoneInfo = response.phoneInfo;
-      // TODO Support TotpMultiFactorInfo
+      final totpInfo = response.totpInfo;
 
       if (phoneInfo != null) {
         return PhoneMultiFactorInfo.fromResponse(response);
+      } else if (totpInfo != null) {
+        return TotpMultiFactorInfo.fromResponse(response);
       }
       // Ignore the other SDK unsupported MFA factors to prevent blocking developers using the current SDK.
     } catch (e) {
@@ -333,7 +335,7 @@ abstract class MultiFactorInfo {
   /// Returns a JSON-serializable representation of this object.
   ///
   /// @returns A JSON-serializable representation of this object.
-  Map<String, Object?> _toJson() {
+  Map<String, Object?> toJson() {
     return {
       'uid': uid,
       'displayName': displayName,
@@ -348,8 +350,8 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   /// Initializes the PhoneMultiFactorInfo object using the server side response.
   @internal
   PhoneMultiFactorInfo.fromResponse(super.response)
-      : phoneNumber = response.phoneInfo,
-        super.fromResponse();
+    : phoneNumber = response.phoneInfo,
+      super.fromResponse();
 
   /// The phone number associated with a phone second factor.
   final String? phoneNumber;
@@ -358,11 +360,36 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
   MultiFactorId get factorId => MultiFactorId.phone;
 
   @override
-  Map<String, Object?> _toJson() {
-    return {
-      ...super._toJson(),
-      'phoneNumber': phoneNumber,
-    };
+  Map<String, Object?> toJson() {
+    return {...super.toJson(), 'phoneNumber': phoneNumber};
+  }
+}
+
+/// Represents TOTP (Time-based One-time Password) information for second factor authentication.
+/// This class is used with authenticator apps like Google Authenticator, Authy, etc.
+/// It serves as a marker class with no additional properties beyond what's inherited from MultiFactorInfo.
+class TotpInfo {
+  /// Creates a new [TotpInfo] instance.
+  TotpInfo();
+}
+
+/// Interface representing a TOTP specific user-enrolled second factor.
+class TotpMultiFactorInfo extends MultiFactorInfo {
+  /// Initializes the TotpMultiFactorInfo object using the server side response.
+  @internal
+  TotpMultiFactorInfo.fromResponse(super.response)
+    : totpInfo = TotpInfo(),
+      super.fromResponse();
+
+  /// The `TotpInfo` struct associated with a second factor.
+  final TotpInfo totpInfo;
+
+  @override
+  MultiFactorId get factorId => MultiFactorId.totp;
+
+  @override
+  Map<String, Object?> toJson() {
+    return {...super.toJson(), 'totpInfo': <String, dynamic>{}};
   }
 }
 
@@ -377,31 +404,25 @@ class UserMetadata {
   });
 
   @internal
-  UserMetadata.fromResponse(
-    auth1.GoogleCloudIdentitytoolkitV1UserInfo response,
-  )   : creationTime = DateTime.fromMillisecondsSinceEpoch(
-          int.parse(response.createdAt!),
-        ),
-        lastSignInTime = response.lastLoginAt.let((lastLoginAt) {
-          return DateTime.fromMillisecondsSinceEpoch(int.parse(lastLoginAt));
-        }),
-        lastRefreshTime = response.lastRefreshAt.let(DateTime.parse);
+  UserMetadata.fromResponse(auth1.GoogleCloudIdentitytoolkitV1UserInfo response)
+    : creationTime = DateTime.fromMillisecondsSinceEpoch(
+        int.parse(response.createdAt!),
+      ),
+      lastSignInTime = response.lastLoginAt.let((lastLoginAt) {
+        return DateTime.fromMillisecondsSinceEpoch(int.parse(lastLoginAt));
+      }),
+      lastRefreshTime = response.lastRefreshAt.let(DateTime.parse);
 
   final DateTime creationTime;
   final DateTime? lastSignInTime;
   final DateTime? lastRefreshTime;
 
-  Map<String, Object?> _toJson() {
+  /// Returns a JSON-serializable representation of this object.
+  Map<String, Object?> toJson() {
     return {
       'creationTime': creationTime.microsecondsSinceEpoch.toString(),
       'lastSignInTime': lastSignInTime?.millisecondsSinceEpoch.toString(),
       'lastRefreshTime': lastRefreshTime?.toIso8601String(),
     };
   }
-}
-
-/// Export [UserMetadata._toJson] for testing purposes.
-@internal
-extension UserMetadataToJson on UserMetadata {
-  Map<String, Object?> toJson() => _toJson();
 }

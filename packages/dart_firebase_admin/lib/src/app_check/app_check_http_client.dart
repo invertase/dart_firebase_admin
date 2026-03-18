@@ -1,0 +1,101 @@
+part of 'app_check.dart';
+
+/// HTTP client for Firebase App Check API operations.
+///
+/// Handles HTTP client management, googleapis API client creation,
+/// path builders, and simple API operations.
+/// Does not handle emulator routing as App Check has no emulator support.
+@internal
+class AppCheckHttpClient {
+  AppCheckHttpClient(this.app);
+
+  final FirebaseApp app;
+
+  /// Builds the app resource path for App Check operations.
+  String buildAppPath(String projectId, String appId) {
+    return 'projects/$projectId/apps/$appId';
+  }
+
+  /// Builds the project resource path for App Check operations.
+  String buildProjectPath(String projectId) {
+    return 'projects/$projectId';
+  }
+
+  Future<R> _run<R>(
+    Future<R> Function(googleapis_auth.AuthClient client, String projectId) fn,
+  ) async {
+    final client = await app.client;
+    final projectId = await app.getProjectId();
+    try {
+      return await fn(client, projectId);
+    } on FirebaseAppCheckException {
+      rethrow;
+    } on appcheck1.DetailedApiRequestError catch (e, stack) {
+      switch (e.jsonResponse) {
+        case {'error': {'status': final String status}}:
+          final code = appCheckErrorCodeMapping[status];
+          if (code != null) {
+            Error.throwWithStackTrace(
+              FirebaseAppCheckException(code, e.message),
+              stack,
+            );
+          }
+      }
+      Error.throwWithStackTrace(
+        FirebaseAppCheckException(
+          AppCheckErrorCode.unknownError,
+          'Unexpected error: $e',
+        ),
+        stack,
+      );
+    }
+  }
+
+  /// Executes an App Check v1 API operation with automatic projectId injection.
+  Future<R> v1<R>(
+    Future<R> Function(appcheck1.FirebaseappcheckApi api, String projectId) fn,
+  ) => _run(
+    (client, projectId) => fn(appcheck1.FirebaseappcheckApi(client), projectId),
+  );
+
+  /// Executes an App Check v1Beta API operation with automatic projectId injection.
+  Future<R> v1Beta<R>(
+    Future<R> Function(appcheck1_beta.FirebaseappcheckApi api, String projectId)
+    fn,
+  ) => _run(
+    (client, projectId) =>
+        fn(appcheck1_beta.FirebaseappcheckApi(client), projectId),
+  );
+
+  /// Exchange a custom token for an App Check token (low-level API call).
+  ///
+  /// Returns the raw googleapis response without transformation.
+  Future<appcheck1.GoogleFirebaseAppcheckV1AppCheckToken> exchangeCustomToken(
+    String customToken,
+    String appId,
+  ) {
+    return v1((api, projectId) async {
+      return api.projects.apps.exchangeCustomToken(
+        appcheck1.GoogleFirebaseAppcheckV1ExchangeCustomTokenRequest(
+          customToken: customToken,
+        ),
+        buildAppPath(projectId, appId),
+      );
+    });
+  }
+
+  /// Verify an App Check token with replay protection (low-level API call).
+  ///
+  /// Returns the raw googleapis response without transformation.
+  Future<appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenResponse>
+  verifyAppCheckToken(String token) {
+    return v1Beta((api, projectId) async {
+      return api.projects.verifyAppCheckToken(
+        appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(
+          appCheckToken: token,
+        ),
+        buildProjectPath(projectId),
+      );
+    });
+  }
+}

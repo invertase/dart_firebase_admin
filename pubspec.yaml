@@ -2,7 +2,34 @@ name: dart_firebase_admin_workspace
 publish_to: none
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.9.0 <4.0.0'
+
 dev_dependencies:
-  melos: ^6.1.0
+  melos: ^7.3.0
   test: ^1.26.3
+
+workspace:
+  - packages/dart_firebase_admin
+  - packages/google_cloud_firestore
+
+melos:
+  scripts:
+    docs:
+      description: Generate documentation for all packages
+      run: ../../scripts/generate-docs.sh
+      exec:
+        concurrency: 1
+      select-package:
+        - '*'
+      packageFilters:
+        flutter: false
+        ignore:
+          - "*example*"
+
+  command:
+    bootstrap:
+      hooks:
+        post: ./gen-version.sh
+    version:
+      hooks:
+        post: ./gen-version.sh

@@ -6,9 +6,12 @@ import 'package:dart_firebase_admin/src/app.dart';
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
+import 'mock_service_account.dart';
+
 const _fakeRSAKey =
     '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCUD3KKtJk6JEDA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n4h3z8UdjAgMBAAECggEAR5HmBO2CygufLxLzbZ/jwN7Yitf0v/nT8LRjDs1WFux9\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nPPZaRPjBWvdqg4QttSSBKGm5FnhFPrpEFvOjznNBoQKBgQDJpRvDTIkNnpYhi/ni\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\ndLSYULRW1DBgakQd09NRvPBoQwKBgQC7+KGhoXw5Kvr7qnQu+x0Gb+8u8CHT0qCG\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nvpTRZN3CYQKBgFBc/DaWnxyNcpoGFl4lkBy/G9Q2hPf5KRsqS0CDL7BXCpL0lCyz\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nOcltaAFaTptzmARfj0Q2d7eEzemABr9JHdyCdY0RXgJe96zHijXOTiXPAoGAfe+C\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\npEmuauUytUaZ16G8/T8qh/ndPcqslwHQqsmtWYECgYEAwpvpZvvh7LXH5/OeLRjs\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nKhg2WH+bggdnYug+oRFauQs=\n-----END PRIVATE KEY-----';
 
+// TODO(demolaf): check if we have sufficient tests for credential
 void main() {
   group(Credential, () {
     test('fromServiceAccountParams', () {
@@ -17,6 +20,7 @@ void main() {
           clientId: 'id',
           privateKey: _fakeRSAKey,
           email: 'email',
+          projectId: mockProjectId,
         ),
         returnsNormally,
       );
@@ -28,7 +32,7 @@ void main() {
 
         expect(
           () => Credential.fromServiceAccount(fs.file('service-account.json')),
-          throwsA(isA<FileSystemException>()),
+          throwsA(isA<FirebaseAppException>()),
         );
       });
 
@@ -38,7 +42,7 @@ void main() {
 
         expect(
           () => Credential.fromServiceAccount(fs.file('service-account.json')),
-          throwsFormatException,
+          throwsA(isA<FirebaseAppException>()),
         );
       });
 
@@ -48,7 +52,7 @@ void main() {
 
         expect(
           () => Credential.fromServiceAccount(fs.file('service-account.json')),
-          throwsArgumentError,
+          throwsA(isA<FirebaseAppException>()),
         );
       });
 
@@ -57,6 +61,7 @@ void main() {
         fs.file('service-account.json').writeAsStringSync('''
 {
   "type": "service_account",
+  "project_id": "test-project",
   "client_id": "id",
   "private_key": ${jsonEncode(_fakeRSAKey)},
   "client_email": "email"
@@ -70,12 +75,12 @@ void main() {
 
     group('fromApplicationDefaultCredentials', () {
       test(
-          'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
-          () {
-        final dir = Directory.current.createTempSync();
-        addTearDown(() => dir.deleteSync(recursive: true));
-        final file = File('${dir.path}/service-account.json');
-        file.writeAsStringSync('''
+        'completes if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is valid service account JSON',
+        () {
+          final dir = Directory.current.createTempSync();
+          addTearDown(() => dir.deleteSync(recursive: true));
+          final file = File('${dir.path}/service-account.json');
+          file.writeAsStringSync('''
 {
   "type": "service_account",
   "client_id": "id",
@@ -84,33 +89,30 @@ void main() {
 }
 ''');
 
-        final fakeServiceAccount = {
-          'GOOGLE_APPLICATION_CREDENTIALS': file.path,
-        };
-        final credential = runZoned(
-          Credential.fromApplicationDefaultCredentials,
-          zoneValues: {envSymbol: fakeServiceAccount},
-        );
-        expect(credential.serviceAccountCredentials, isNotNull);
-
-        // Verify if service account is actually being used
-        expect(
-          credential.serviceAccountCredentials!.email,
-          'foo@bar.com',
-        );
-      });
+          final fakeServiceAccount = {
+            'GOOGLE_APPLICATION_CREDENTIALS': file.path,
+          };
+          final credential = runZoned(
+            Credential.fromApplicationDefaultCredentials,
+            zoneValues: {envSymbol: fakeServiceAccount},
+          );
+          expect(credential, isA<ApplicationDefaultCredential>());
+          expect(credential.serviceAccountCredentials, isNull);
+        },
+      );
 
       test(
-          'does nothing if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is not valid service account JSON',
-          () {
-        final credential = runZoned(
-          Credential.fromApplicationDefaultCredentials,
-          zoneValues: {
-            envSymbol: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
-          },
-        );
-        expect(credential.serviceAccountCredentials, isNull);
-      });
+        'does nothing if `GOOGLE_APPLICATION_CREDENTIALS` environment-variable is not valid service account JSON',
+        () {
+          final credential = runZoned(
+            Credential.fromApplicationDefaultCredentials,
+            zoneValues: {
+              envSymbol: {'GOOGLE_APPLICATION_CREDENTIALS': ''},
+            },
+          );
+          expect(credential.serviceAccountCredentials, isNull);
+        },
+      );
     });
   });
 }

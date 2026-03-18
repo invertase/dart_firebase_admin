@@ -1,15 +1,19 @@
 part of '../auth.dart';
 
 _FirebaseTokenGenerator _createFirebaseTokenGenerator(
-  FirebaseAdminApp app, {
+  FirebaseApp app, {
   String? tenantId,
 }) {
   try {
-    final signer =
-        app.isUsingEmulator ? _EmulatedSigner() : CryptoSigner.fromApp(app);
-    return _FirebaseTokenGenerator(signer, tenantId: tenantId);
-  } on CryptoSignerException catch (err, stackTrace) {
-    Error.throwWithStackTrace(_handleCryptoSignerError(err), stackTrace);
+    return _FirebaseTokenGenerator(app, tenantId: tenantId);
+  } on googleapis_auth.ServerRequestFailedException catch (err, stackTrace) {
+    Error.throwWithStackTrace(
+      FirebaseAuthAdminException(
+        AuthClientErrorCode.invalidCredential,
+        err.message,
+      ),
+      stackTrace,
+    );
   }
 }
 
@@ -18,16 +22,19 @@ abstract class _BaseAuth {
     required this.app,
     required _AbstractAuthRequestHandler authRequestHandler,
     _FirebaseTokenGenerator? tokenGenerator,
-  })  : _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
-        _sessionCookieVerifier = _createSessionCookieVerifier(app),
-        _authRequestHandler = authRequestHandler;
+    FirebaseTokenVerifier? idTokenVerifier,
+    FirebaseTokenVerifier? sessionCookieVerifier,
+  }) : _authRequestHandler = authRequestHandler,
+       _tokenGenerator = tokenGenerator ?? _createFirebaseTokenGenerator(app),
+       _sessionCookieVerifier =
+           sessionCookieVerifier ?? _createSessionCookieVerifier(app),
+       _idTokenVerifier = idTokenVerifier ?? _createIdTokenVerifier(app);
 
-  final FirebaseAdminApp app;
+  final FirebaseApp app;
   final _AbstractAuthRequestHandler _authRequestHandler;
   final FirebaseTokenVerifier _sessionCookieVerifier;
   final _FirebaseTokenGenerator _tokenGenerator;
-
-  late final _idTokenVerifier = _createIdTokenVerifier(app);
+  final FirebaseTokenVerifier _idTokenVerifier;
 
   /// Generates the out of band email action link to reset a user's password.
   /// The link is generated for the user with the specified email address. The
@@ -45,7 +52,7 @@ abstract class _BaseAuth {
   ///     if it is installed.
   ///     If the actionCodeSettings is not specified, no URL is appended to the
   ///     action URL.
-  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     The state URL provided must belong to a domain that is allowed by the
   ///     developer in the console. Otherwise an error is thrown.
   ///     Mobile app redirects are only applicable if the developer configures
   ///     and accepts the Firebase Dynamic Links terms of service.
@@ -55,6 +62,8 @@ abstract class _BaseAuth {
     String email, {
     ActionCodeSettings? actionCodeSettings,
   }) {
+    // TODO(demolaf): see if 'PASSWORD_RESET' needs to be replaced with
+    //  _emailActionRequestTypes
     return _authRequestHandler.getEmailActionLink(
       'PASSWORD_RESET',
       email,
@@ -76,7 +85,7 @@ abstract class _BaseAuth {
   ///     the app if it is installed.
   ///     If the actionCodeSettings is not specified, no URL is appended to the
   ///     action URL.
-  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     The state URL provided must belong to a domain that is allowed by the
   ///     developer in the console. Otherwise an error is thrown.
   ///     Mobile app redirects are only applicable if the developer configures
   ///     and accepts the Firebase Dynamic Links terms of service.
@@ -141,7 +150,7 @@ abstract class _BaseAuth {
   ///     the app if it is installed.
   ///     If the actionCodeSettings is not specified, no URL is appended to the
   ///     action URL.
-  ///     The state URL provided must belong to a domain that is whitelisted by the
+  ///     The state URL provided must belong to a domain that is allowed by the
   ///     developer in the console. Otherwise an error is thrown.
   ///     Mobile app redirects are only applicable if the developer configures
   ///     and accepts the Firebase Dynamic Links terms of service.
@@ -175,7 +184,9 @@ abstract class _BaseAuth {
       return ListProviderConfigResults(
         providerConfigs: [
           // Convert each provider config response to a OIDCConfig.
-          ...?response.oauthIdpConfigs?.map(_OIDCConfig.fromResponse),
+          ...?response.oauthIdpConfigs?.map(
+            OIDCAuthProviderConfig.fromResponse,
+          ),
         ],
         pageToken: response.nextPageToken,
       );
@@ -187,7 +198,9 @@ abstract class _BaseAuth {
       return ListProviderConfigResults(
         providerConfigs: [
           // Convert each provider config response to a SAMLConfig.
-          ...?response.inboundSamlConfigs?.map(_SAMLConfig.fromResponse),
+          ...?response.inboundSamlConfigs?.map(
+            SAMLAuthProviderConfig.fromResponse,
+          ),
         ],
         pageToken: response.nextPageToken,
       );
@@ -208,16 +221,16 @@ abstract class _BaseAuth {
   Future<AuthProviderConfig> createProviderConfig(
     AuthProviderConfig config,
   ) async {
-    if (_OIDCConfig.isProviderId(config.providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(config.providerId)) {
       final response = await _authRequestHandler.createOAuthIdpConfig(
-        config as _OIDCConfig,
+        config as OIDCAuthProviderConfig,
       );
-      return _OIDCConfig.fromResponse(response);
-    } else if (_SAMLConfig.isProviderId(config.providerId)) {
+      return OIDCAuthProviderConfig.fromResponse(response);
+    } else if (SAMLAuthProviderConfig.isProviderId(config.providerId)) {
       final response = await _authRequestHandler.createInboundSamlConfig(
-        config as _SAMLConfig,
+        config as SAMLAuthProviderConfig,
       );
-      return _SAMLConfig.fromResponse(response);
+      return SAMLAuthProviderConfig.fromResponse(response);
     }
 
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
@@ -235,18 +248,18 @@ abstract class _BaseAuth {
     String providerId,
     UpdateAuthProviderRequest updatedConfig,
   ) async {
-    if (_OIDCConfig.isProviderId(providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.updateOAuthIdpConfig(
         providerId,
         updatedConfig as OIDCUpdateAuthProviderRequest,
       );
-      return _OIDCConfig.fromResponse(response);
-    } else if (_SAMLConfig.isProviderId(providerId)) {
+      return OIDCAuthProviderConfig.fromResponse(response);
+    } else if (SAMLAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.updateInboundSamlConfig(
         providerId,
         updatedConfig as SAMLUpdateAuthProviderRequest,
       );
-      return _SAMLConfig.fromResponse(response);
+      return SAMLAuthProviderConfig.fromResponse(response);
     }
 
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
@@ -264,14 +277,14 @@ abstract class _BaseAuth {
   /// - [providerId] - The provider ID corresponding to the provider
   ///     config to return.
   Future<AuthProviderConfig> getProviderConfig(String providerId) async {
-    if (_OIDCConfig.isProviderId(providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.getOAuthIdpConfig(providerId);
-      return _OIDCConfig.fromResponse(response);
-    } else if (_SAMLConfig.isProviderId(providerId)) {
+      return OIDCAuthProviderConfig.fromResponse(response);
+    } else if (SAMLAuthProviderConfig.isProviderId(providerId)) {
       final response = await _authRequestHandler.getInboundSamlConfig(
         providerId,
       );
-      return _SAMLConfig.fromResponse(response);
+      return SAMLAuthProviderConfig.fromResponse(response);
     } else {
       throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
     }
@@ -285,9 +298,9 @@ abstract class _BaseAuth {
   /// (GCIP). To learn more about GCIP, including pricing and features,
   /// see the https://cloud.google.com/identity-platform.
   Future<void> deleteProviderConfig(String providerId) {
-    if (_OIDCConfig.isProviderId(providerId)) {
+    if (OIDCAuthProviderConfig.isProviderId(providerId)) {
       return _authRequestHandler.deleteOAuthIdpConfig(providerId);
-    } else if (_SAMLConfig.isProviderId(providerId)) {
+    } else if (SAMLAuthProviderConfig.isProviderId(providerId)) {
       return _authRequestHandler.deleteInboundSamlConfig(providerId);
     }
     throw FirebaseAuthAdminException(AuthClientErrorCode.invalidProviderId);
@@ -356,7 +369,7 @@ abstract class _BaseAuth {
     String idToken, {
     bool checkRevoked = false,
   }) async {
-    final isEmulator = app.isUsingEmulator;
+    final isEmulator = Environment.isAuthEmulatorEnabled();
     final decodedIdToken = await _idTokenVerifier.verifyJWT(
       idToken,
       isEmulator: isEmulator,
@@ -395,12 +408,12 @@ abstract class _BaseAuth {
   /// for code samples and detailed documentation.
   ///
   Future<String> createSessionCookie(
-    String idToken, {
-    required int expiresIn,
-  }) async {
+    String idToken,
+    SessionCookieOptions sessionCookieOptions,
+  ) async {
     return _authRequestHandler.createSessionCookie(
       idToken,
-      expiresIn: expiresIn,
+      expiresIn: sessionCookieOptions.expiresIn,
     );
   }
 
@@ -408,7 +421,7 @@ abstract class _BaseAuth {
     String sessionCookie, {
     bool checkRevoked = false,
   }) async {
-    final isEmulator = app.isUsingEmulator;
+    final isEmulator = Environment.isAuthEmulatorEnabled();
     final decodedIdToken = await _sessionCookieVerifier.verifyJWT(
       sessionCookie,
       isEmulator: isEmulator,
@@ -495,10 +508,7 @@ abstract class _BaseAuth {
     final users =
         response.users?.map(UserRecord.fromResponse).toList() ?? <UserRecord>[];
 
-    return ListUsersResult._(
-      users: users,
-      pageToken: response.nextPageToken,
-    );
+    return ListUsersResult._(users: users, pageToken: response.nextPageToken);
   }
 
   /// Deletes an existing user.
@@ -533,9 +543,12 @@ abstract class _BaseAuth {
   Future<DeleteUsersResult> deleteUsers(List<String> uids) async {
     uids.forEach(assertIsUid);
 
-    final response =
-        await _authRequestHandler.deleteAccounts(uids, force: true);
-    final errors = response.errors ??
+    final response = await _authRequestHandler.deleteAccounts(
+      uids,
+      force: true,
+    );
+    final errors =
+        response.errors ??
         <auth1.GoogleCloudIdentitytoolkitV1BatchDeleteErrorInfo>[];
 
     return DeleteUsersResult._(
@@ -592,8 +605,9 @@ abstract class _BaseAuth {
   /// Returns a Future fulfilled with the user
   /// data corresponding to the provided phone number.
   Future<UserRecord> getUserByPhoneNumber(String phoneNumber) async {
-    final response =
-        await _authRequestHandler.getAccountInfoByPhoneNumber(phoneNumber);
+    final response = await _authRequestHandler.getAccountInfoByPhoneNumber(
+      phoneNumber,
+    );
     // Returns the user record populated with server response.
     return UserRecord.fromResponse(response);
   }
@@ -661,10 +675,12 @@ abstract class _BaseAuth {
   /// Throws [FirebaseAdminException] if any of the identifiers are invalid or if more than 100
   ///  identifiers are specified.
   Future<GetUsersResult> getUsers(List<UserIdentifier> identifiers) async {
-    final response =
-        await _authRequestHandler.getAccountInfoByIdentifiers(identifiers);
+    final response = await _authRequestHandler.getAccountInfoByIdentifiers(
+      identifiers,
+    );
 
-    final userRecords = response.users?.map(UserRecord.fromResponse).toList() ??
+    final userRecords =
+        response.users?.map(UserRecord.fromResponse).toList() ??
         const <UserRecord>[];
 
     // Checks if the specified identifier is within the list of UserRecords.
@@ -678,8 +694,9 @@ abstract class _BaseAuth {
           case PhoneIdentifier():
             return id.phoneNumber == userRecord.phoneNumber;
           case ProviderIdentifier():
-            final matchingUserInfo = userRecord.providerData
-                .firstWhereOrNull((userInfo) => userInfo.phoneNumber != null);
+            final matchingUserInfo = userRecord.providerData.firstWhereOrNull(
+              (userInfo) => userInfo.phoneNumber != null,
+            );
             return matchingUserInfo != null &&
                 id.providerUid == matchingUserInfo.uid;
         }
@@ -704,15 +721,15 @@ abstract class _BaseAuth {
         // Return the corresponding user record.
         .then(getUser)
         .onError<FirebaseAuthAdminException>((error, _) {
-      if (error.errorCode == AuthClientErrorCode.userNotFound) {
-        // Something must have happened after creating the user and then retrieving it.
-        throw FirebaseAuthAdminException(
-          AuthClientErrorCode.internalError,
-          'Unable to create the user record provided.',
-        );
-      }
-      throw error;
-    });
+          if (error.errorCode == AuthClientErrorCode.userNotFound) {
+            // Something must have happened after creating the user and then retrieving it.
+            throw FirebaseAuthAdminException(
+              AuthClientErrorCode.internalError,
+              'Unable to create the user record provided.',
+            );
+          }
+          throw error;
+        });
   }
 
   /// Updates an existing user.
@@ -768,8 +785,10 @@ abstract class _BaseAuth {
       }
     }
 
-    final existingUid =
-        await _authRequestHandler.updateExistingAccount(uid, request);
+    final existingUid = await _authRequestHandler.updateExistingAccount(
+      uid,
+      request,
+    );
     return getUser(existingUid);
   }
 }
@@ -844,4 +863,19 @@ class UserImportResult {
   /// An array of errors corresponding to the provided users to import. The
   /// length of this array is equal to [failureCount].
   final List<FirebaseArrayIndexError> errors;
+}
+
+/// Interface representing the session cookie options needed for the
+/// [_BaseAuth.createSessionCookie] method.
+class SessionCookieOptions {
+  /// Creates a new [SessionCookieOptions] with the specified expiration time.
+  ///
+  /// The [expiresIn] is the session cookie custom expiration in milliseconds.
+  /// The minimum allowed is 5 minutes (300000 ms) and the maximum allowed is 2 weeks (1209600000 ms).
+  const SessionCookieOptions({required this.expiresIn});
+
+  /// The session cookie custom expiration in milliseconds.
+  ///
+  /// The minimum allowed is 5 minutes (300000 ms) and the maximum allowed is 2 weeks (1209600000 ms).
+  final int expiresIn;
 }

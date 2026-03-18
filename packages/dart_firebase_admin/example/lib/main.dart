@@ -1,44 +1,32 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:dart_firebase_admin/firestore.dart';
-import 'package:dart_firebase_admin/messaging.dart';
 
 Future<void> main() async {
-  final admin = FirebaseAdminApp.initializeApp(
-    'dart-firebase-admin',
-    Credential.fromApplicationDefaultCredentials(),
-  );
+  final admin = FirebaseApp.initializeApp();
 
-  // // admin.useEmulator();
+  // Uncomment to run auth example
+  // await authExample(admin);
 
-  final messaging = Messaging(admin);
+  // Uncomment to run project config example
+  // await projectConfigExample(admin);
 
-  final result = await messaging.send(
-    TokenMessage(
-      token:
-          'e8Ap1n9UTQenyB-UEjNQt9:APA91bHhgc9RZYDcCKb7U1scQo1K0ZTSMItop8IqctrOcgvmN__oBo4vgbFX-ji4atr1PVw3Loug-eOCBmj4HVZjUE0aQBA0mGry7uL-7JuMaojhtl13MpvQtbZptvX_8f6vDcqei88O',
-      notification: Notification(
-        title: 'Hello',
-        body: 'World',
-      ),
-    ),
-  );
+  // Uncomment to run tenant example (requires Identity Platform upgrade)
+  // await tenantExample(admin);
 
-  print(result);
+  // await firestoreExample(admin);
 
-  final firestore = Firestore(admin);
+  // await functionsExample(admin);
 
-  final collection = firestore.collection('users');
+  // Uncomment to run messaging example (requires valid fcm token)
+  // await messagingExample(admin);
 
-  await collection.doc('123').set({
-    'name': 'John Doe',
-    'age': 30,
-  });
+  // Uncomment to run storage example
+  // await storageExample(admin);
 
-  final snapshot = await collection.get();
+  // Uncomment to run app check example
+  // await appCheckExample(admin);
 
-  for (final doc in snapshot.docs) {
-    print(doc.data());
-  }
+  // Uncomment to run security rules example
+  // await securityRulesExample(admin);
 
   await admin.close();
 }
