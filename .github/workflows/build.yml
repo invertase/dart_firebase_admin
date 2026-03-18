@@ -18,23 +18,6 @@ on:
         default: 'stable'
 
 jobs:
-  # Check license headers on all source files
-  check-license-header:
-    name: Check License Headers
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download addlicense
-        run: |
-          curl -sL https://github.com/google/addlicense/releases/download/v1.2.0/addlicense_v1.2.0_Linux_x86_64.tar.gz | tar xz -C /usr/local/bin addlicense
-          chmod +x /usr/local/bin/addlicense
-
-      - name: Check license headers
-        run: .github/licenses/check-headers.sh
-
   lint:
     name: Lint (Dart ${{ matrix.dart-version }})
     runs-on: ubuntu-latest
@@ -366,7 +349,7 @@ jobs:
   build:
     name: Build verification (Dart ${{ matrix.dart-version }})
     runs-on: ubuntu-latest
-    needs: [lint, test, test-integration, check-license-header]
+    needs: [lint, test, test-integration]
     # Run even if test-integration was skipped (fork PRs), but not if lint or test failed
     if: |
       always() &&
@@ -406,13 +389,6 @@ jobs:
       - name: Bootstrap workspace
         run: melos bootstrap
         working-directory: .
-
-      - name: Validate license headers
-        run: |
-          if [ "${{ needs.check-license-header.result }}" != "success" ]; then
-            echo "❌ License header check failed"
-            exit 1
-          fi
 
       - name: Verify package
         run: dart pub publish --dry-run

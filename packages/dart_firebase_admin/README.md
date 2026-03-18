@@ -558,7 +558,7 @@ Alongside the Firebase Admin Dart SDK, this repository contains additional works
 
 # Contributing
 
-Contributions are welcome! Please read the [contributing guide](packages/dart_firebase_admin/CONTRIBUTING.md) to get started.
+TODO
 
 # License
 

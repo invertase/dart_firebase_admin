@@ -1,1 +1,0 @@
-packages/dart_firebase_admin/CONTRIBUTING.md
