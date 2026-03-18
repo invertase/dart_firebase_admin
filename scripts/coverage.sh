@@ -18,10 +18,10 @@ PACKAGE_DIR="$SCRIPT_DIR/../packages/dart_firebase_admin"
 cd "$PACKAGE_DIR"
 
 # Build test functions for Cloud Tasks emulator
-cd test/functions
+cd test/fixtures/task_queue_functions
 npm install
 npm run build
-cd ../..
+cd ../../..
 
 dart pub global activate coverage
 
