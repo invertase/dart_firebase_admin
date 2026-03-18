@@ -37,6 +37,6 @@ dev_dependencies:
   uuid: ^4.0.0
 
 false_secrets:
- - /test/auth/jwt_test.dart
- - /test/client/get_id_token.js
- - /test/mock_service_account.dart
+ - /test/unit/auth/jwt_test.dart
+ - /test/fixtures/mock_service_account.dart
+ - /test/unit/app/credential_test.dart
