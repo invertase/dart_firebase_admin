@@ -1,6 +1,10 @@
 name: Build
 
 on:
+  push:
+    branches:
+      - main
+
   pull_request:
     paths-ignore:
       - "**.md"
@@ -32,14 +36,14 @@ jobs:
         working-directory: packages/dart_firebase_admin
 
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2.7.1
         with:
           channel: ${{ matrix.dart-version }}
 
       - name: Cache pub dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
@@ -91,7 +95,7 @@ jobs:
           channel: ${{ matrix.dart-version }}
 
       - name: Cache pub dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
@@ -100,7 +104,7 @@ jobs:
             pub-
 
       - name: Cache Firebase CLI
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/firebase/emulators
           key: firebase-emulators
@@ -223,7 +227,7 @@ jobs:
 
       - name: Comment coverage on PR
         if: matrix.dart-version == 'stable' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const coverage = '${{ steps.coverage.outputs.coverage }}';
@@ -282,7 +286,7 @@ jobs:
       - name: Upload coverage to codecov
         if: matrix.dart-version == 'stable'
         continue-on-error: true
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: packages/dart_firebase_admin/coverage.lcov
           flags: unittests
@@ -322,7 +326,7 @@ jobs:
           service_account: '${{ secrets.SERVICE_ACCOUNT }}'
 
       - name: Cache pub dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
@@ -367,14 +371,14 @@ jobs:
         working-directory: packages/dart_firebase_admin
 
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2.7.1
         with:
           channel: ${{ matrix.dart-version }}
 
       - name: Cache pub dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
