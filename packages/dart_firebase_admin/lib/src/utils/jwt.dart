@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
-import 'package:jose/jose.dart';
 import 'package:meta/meta.dart';
 
 const algorithmRS256 = 'RS256';
@@ -41,7 +40,7 @@ abstract class SignatureVerifier {
 }
 
 abstract class KeyFetcher {
-  Future<JsonWebKeyStore> fetchPublicKeys();
+  Future<Map<String, JWTKey>> fetchPublicKeys();
 }
 
 class UrlKeyFetcher implements KeyFetcher {
@@ -49,11 +48,11 @@ class UrlKeyFetcher implements KeyFetcher {
 
   final Uri clientCert;
 
-  JsonWebKeyStore? _publicKeys;
+  Map<String, JWTKey>? _publicKeys;
   late DateTime _publicKeysExpireAt;
 
   @override
-  Future<JsonWebKeyStore> fetchPublicKeys() async {
+  Future<Map<String, JWTKey>> fetchPublicKeys() async {
     if (_shouldRefresh()) return refresh();
     return _publicKeys!;
   }
@@ -63,7 +62,7 @@ class UrlKeyFetcher implements KeyFetcher {
     return _publicKeysExpireAt.isBefore(DateTime.now());
   }
 
-  Future<JsonWebKeyStore> refresh() async {
+  Future<Map<String, JWTKey>> refresh() async {
     final response = await http.get(clientCert);
     final json = jsonDecode(response.body) as Map<String, Object?>;
     final error = json['error'];
@@ -91,26 +90,27 @@ class UrlKeyFetcher implements KeyFetcher {
       }
     }
 
-    final store = _publicKeys = JsonWebKeyStore();
+    final keys = <String, JWTKey>{};
 
     for (final entry in json.entries) {
-      final key = JsonWebKey.fromPem(entry.value! as String, keyId: entry.key);
-      store.addKey(key);
+      final pem = entry.value! as String;
+      // Google X.509 certs are RSA
+      keys[entry.key] = RSAPublicKey.cert(pem);
     }
 
-    return store;
+    return _publicKeys = keys;
   }
 }
 
 class JwksFetcher implements KeyFetcher {
   JwksFetcher(this.jwksUrl);
   final Uri jwksUrl;
-  JsonWebKeyStore? _publicKeys;
+  Map<String, JWTKey>? _publicKeys;
   int _publicKeysExpireAt = 0;
   static const int hourInMilliseconds = 6 * 60 * 60 * 1000; // 6 hours
 
   @override
-  Future<JsonWebKeyStore> fetchPublicKeys() async {
+  Future<Map<String, JWTKey>> fetchPublicKeys() async {
     if (_shouldRefresh) return refresh();
 
     return _publicKeys!;
@@ -121,27 +121,36 @@ class JwksFetcher implements KeyFetcher {
         _publicKeysExpireAt <= DateTime.now().millisecondsSinceEpoch;
   }
 
-  Future<JsonWebKeyStore> refresh() async {
+  Future<Map<String, JWTKey>> refresh() async {
     final response = await http.get(jwksUrl);
     if (response.statusCode != 200) {
       throw Exception('Failed to fetch JWKS');
     }
 
     final jwks = jsonDecode(response.body) as Map<String, dynamic>;
-    final keys = JsonWebKeySet.fromJson(jwks).keys;
+    final jwkList = jwks['keys'] as List<dynamic>?;
+
+    if (jwkList == null) {
+      throw Exception('Invalid JWKS: missing "keys" array');
+    }
 
     // Reset expire time
     _publicKeysExpireAt = 0;
 
-    // Extract signing keys
-    final store = _publicKeys = JsonWebKeyStore();
-    keys.forEach(store.addKey);
+    final newKeys = <String, JWTKey>{};
+    for (final jwkJson in jwkList) {
+      final jwk = jwkJson as Map<String, dynamic>;
+      final kid = jwk['kid'] as String?;
+      if (kid != null) {
+        newKeys[kid] = JWTKey.fromJWK(jwk);
+      }
+    }
 
     // Set new expiration time
     _publicKeysExpireAt =
         DateTime.now().millisecondsSinceEpoch + hourInMilliseconds;
 
-    return store;
+    return _publicKeys = newKeys;
   }
 }
 
@@ -175,10 +184,15 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
         );
       }
 
-      final store = await keyFetcher.fetchPublicKeys();
+      final keys = await keyFetcher.fetchPublicKeys();
+      final key = keys[kid];
+
+      if (key == null) {
+        throw JwtException(JwtErrorCode.noMatchingKid, 'no-matching-kid-error');
+      }
 
       try {
-        await JsonWebToken.decodeAndVerify(token, store);
+        JWT.verify(token, key);
       } catch (e, stackTrace) {
         Error.throwWithStackTrace(
           JwtException(
@@ -194,7 +208,9 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
     } on JWTException catch (e) {
       throw JwtException(
         JwtErrorCode.unknown,
-        e is JWTUndefinedException ? e.message : '${e.runtimeType}: e.message',
+        e is JWTUndefinedException
+            ? e.message
+            : '${e.runtimeType}: ${e.message}',
       );
     }
   }

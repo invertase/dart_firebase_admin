@@ -1,6 +1,6 @@
 import 'package:dart_firebase_admin/src/utils/jwt.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:jose/jose.dart';
+import 'package:pointycastle/pointycastle.dart' as pc;
 import 'package:test/test.dart';
 
 import '../../fixtures/mock_service_account.dart';
@@ -231,14 +231,12 @@ void main() {
 
 class _TestKeyFetcher implements KeyFetcher {
   @override
-  Future<JsonWebKeyStore> fetchPublicKeys() async {
-    final store = JsonWebKeyStore();
+  Future<Map<String, JWTKey>> fetchPublicKeys() async {
+    final privateKey = RSAPrivateKey(mockPrivateKey);
+    final publicKey = RSAPublicKey.raw(
+      pc.RSAPublicKey(privateKey.key.n!, privateKey.key.publicExponent!),
+    );
 
-    // Public key corresponding to the test private key above
-    const key = mockPrivateKey;
-
-    store.addKey(JsonWebKey.fromPem(key, keyId: 'key1'));
-
-    return store;
+    return {'key1': publicKey};
   }
 }
