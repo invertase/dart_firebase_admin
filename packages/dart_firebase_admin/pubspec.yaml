@@ -23,7 +23,6 @@ dependencies:
   googleapis_beta: ^9.0.0
   http: ^1.0.0
   intl: ^0.20.0
-  jose: ^0.3.4
   meta: ^1.9.1
   pem: ^2.0.5
   pointycastle: ^3.7.0
