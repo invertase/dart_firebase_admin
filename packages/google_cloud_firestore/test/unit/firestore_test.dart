@@ -1,5 +1,9 @@
 import 'package:google_cloud_firestore/google_cloud_firestore.dart';
+import 'package:google_cloud_firestore/src/firestore_http_client.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+
+class MockFirestoreHttpClient extends Mock implements FirestoreHttpClient {}
 
 void main() {
   group('Firestore', () {
@@ -202,6 +206,23 @@ void main() {
         final bundle = firestore.bundle('my-bundle');
         expect(bundle, isA<BundleBuilder>());
         expect(bundle.bundleId, 'my-bundle');
+      });
+    });
+
+    group('terminate()', () {
+      test('calls close() on the HTTP client', () async {
+        final mockClient = MockFirestoreHttpClient();
+        when(mockClient.close).thenAnswer((_) async {});
+        when(() => mockClient.cachedProjectId).thenReturn('test');
+
+        final firestore = Firestore.internal(
+          settings: const Settings(projectId: 'test'),
+          client: mockClient,
+        );
+
+        await firestore.terminate();
+
+        verify(mockClient.close).called(1);
       });
     });
   });
