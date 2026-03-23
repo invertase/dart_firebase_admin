@@ -11,6 +11,9 @@ Future<void> functionsExample(FirebaseApp admin) async {
 
   final functions = admin.functions();
 
+  // Accessing the app property
+  print('> Functions app name: ${functions.app.name}\n');
+
   // Get a task queue reference
   // The function name should match an existing Cloud Function or queue name
   final taskQueue = functions.taskQueue('helloWorld');
@@ -70,7 +73,23 @@ Future<void> functionsExample(FirebaseApp admin) async {
     }
   }
 
-  // Example 5: Delete a task
+  // Example 5: Enqueue with experimental URI override
+  try {
+    print('> Enqueuing a task with a custom handler URI...\n');
+    await taskQueue.enqueue(
+      {'action': 'customHandler'},
+      TaskOptions(
+        experimental: TaskOptionsExperimental(
+          uri: 'https://custom.example.com/task-handler',
+        ),
+      ),
+    );
+    print('Task with experimental URI enqueued!\n');
+  } on FirebaseFunctionsAdminException catch (e) {
+    print('> Functions error: ${e.code} - ${e.message}\n');
+  }
+
+  // Example 6: Delete a task
   try {
     print('> Deleting task...\n');
     await taskQueue.delete('payment-order-456');

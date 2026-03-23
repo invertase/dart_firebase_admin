@@ -191,3 +191,419 @@ Future<void> tenantExample(FirebaseApp admin) async {
     }
   }
 }
+
+Future<void> userManagementExample(FirebaseApp admin) async {
+  print('\n### User Management Example ###\n');
+
+  final auth = admin.auth();
+
+  // getUser
+  try {
+    print('> Fetching user by UID...\n');
+    final user = await auth.getUser('some-uid');
+    print('User: ${user.uid} — ${user.email}');
+  } on FirebaseAuthAdminException catch (e) {
+    if (e.errorCode == AuthClientErrorCode.userNotFound) {
+      print('> User not found');
+    } else {
+      print('> Auth error: ${e.code} - ${e.message}');
+    }
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // getUserByPhoneNumber
+  try {
+    print('> Fetching user by phone number...\n');
+    final user = await auth.getUserByPhoneNumber('+15551234567');
+    print('User by phone: ${user.uid}');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // getUserByProviderUid
+  try {
+    print('> Fetching user by provider UID...\n');
+    final user = await auth.getUserByProviderUid(
+      providerId: 'google.com',
+      uid: 'google-uid-123',
+    );
+    print('User by provider: ${user.uid}');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // getUsers (batch lookup)
+  try {
+    print('> Batch fetching users...\n');
+    final result = await auth.getUsers([
+      UidIdentifier(uid: 'uid-1'),
+      EmailIdentifier(email: 'user@example.com'),
+      PhoneIdentifier(phoneNumber: '+15559876543'),
+    ]);
+    print('Found ${result.users.length} user(s)');
+    print('Not found: ${result.notFound.length}');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // updateUser
+  try {
+    print('> Updating user...\n');
+    final updated = await auth.updateUser(
+      'some-uid',
+      UpdateRequest(displayName: 'Updated Name', disabled: false),
+    );
+    print('Updated user: ${updated.displayName}');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // listUsers
+  try {
+    print('> Listing users (first page)...\n');
+    final result = await auth.listUsers(maxResults: 10);
+    print('Listed ${result.users.length} user(s)');
+    if (result.pageToken != null) {
+      print('Next page token: ${result.pageToken}');
+    }
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // importUsers
+  try {
+    print('> Importing users...\n');
+    final importResult = await auth.importUsers([
+      UserImportRecord(uid: 'import-uid-1', email: 'import1@example.com'),
+      UserImportRecord(uid: 'import-uid-2', email: 'import2@example.com'),
+    ]);
+    print(
+      'Import complete: ${importResult.successCount} succeeded, '
+      '${importResult.failureCount} failed',
+    );
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // deleteUser
+  try {
+    print('> Deleting single user...\n');
+    await auth.deleteUser('some-uid');
+    print('User deleted');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // deleteUsers
+  try {
+    print('> Deleting multiple users...\n');
+    final result = await auth.deleteUsers(['uid-a', 'uid-b', 'uid-c']);
+    print(
+      'Deleted: ${result.successCount} succeeded, '
+      '${result.failureCount} failed',
+    );
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+}
+
+Future<void> emailLinksExample(FirebaseApp admin) async {
+  print('\n### Email Action Links Example ###\n');
+
+  final auth = admin.auth();
+  const email = 'user@example.com';
+  final actionCodeSettings = ActionCodeSettings(
+    url: 'https://example.com/finishSignUp?cartId=1234',
+    handleCodeInApp: true,
+    iOS: ActionCodeSettingsIos('com.example.ios'),
+    android: ActionCodeSettingsAndroid(
+      packageName: 'com.example.android',
+      installApp: true,
+      minimumVersion: '12',
+    ),
+  );
+
+  // generatePasswordResetLink
+  try {
+    print('> Generating password reset link...\n');
+    final link = await auth.generatePasswordResetLink(
+      email,
+      actionCodeSettings: actionCodeSettings,
+    );
+    print('Password reset link: $link\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // generateEmailVerificationLink
+  try {
+    print('> Generating email verification link...\n');
+    final link = await auth.generateEmailVerificationLink(
+      email,
+      actionCodeSettings: actionCodeSettings,
+    );
+    print('Email verification link: $link\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // generateVerifyAndChangeEmailLink
+  try {
+    print('> Generating verify-and-change-email link...\n');
+    final link = await auth.generateVerifyAndChangeEmailLink(
+      email,
+      'newemail@example.com',
+      actionCodeSettings: actionCodeSettings,
+    );
+    print('Verify-and-change-email link: $link\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // generateSignInWithEmailLink
+  try {
+    print('> Generating sign-in-with-email link...\n');
+    final link = await auth.generateSignInWithEmailLink(
+      email,
+      actionCodeSettings,
+    );
+    print('Sign-in-with-email link: $link\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+}
+
+Future<void> tokenExample(FirebaseApp admin) async {
+  print('\n### Custom Tokens & ID Token Verification Example ###\n');
+
+  final auth = admin.auth();
+  const uid = 'some-uid';
+
+  // setCustomUserClaims
+  try {
+    print('> Setting custom user claims...\n');
+    await auth.setCustomUserClaims(
+      uid,
+      customUserClaims: {'admin': true, 'accessLevel': 5},
+    );
+    print('Custom claims set\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // createCustomToken
+  try {
+    print('> Creating custom token...\n');
+    final customToken = await auth.createCustomToken(uid);
+    print(
+      'Custom token (first 40 chars): ${customToken.substring(0, 40)}...\n',
+    );
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // verifyIdToken
+  try {
+    print('> Verifying ID token...\n');
+    final decoded = await auth.verifyIdToken('<id-token-from-client>');
+    print('Decoded token:');
+    print('  - uid: ${decoded.uid}');
+    print('  - email: ${decoded.email}');
+    print('  - iss: ${decoded.iss}');
+    print('');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // revokeRefreshTokens + verifyIdToken with checkRevoked
+  try {
+    print('> Revoking refresh tokens for user...\n');
+    await auth.revokeRefreshTokens(uid);
+    print('Refresh tokens revoked\n');
+
+    print('> Verifying ID token with revocation check...\n');
+    final decoded = await auth.verifyIdToken(
+      '<id-token-from-client>',
+      checkRevoked: true,
+    );
+    print('Token is still valid: uid=${decoded.uid}\n');
+  } on FirebaseAuthAdminException catch (e) {
+    if (e.errorCode == AuthClientErrorCode.idTokenRevoked) {
+      print('> Token has been revoked — require re-authentication');
+    } else {
+      print('> Auth error: ${e.code} - ${e.message}');
+    }
+  } catch (e) {
+    print('> Error: $e');
+  }
+}
+
+Future<void> sessionCookieExample(FirebaseApp admin) async {
+  print('\n### Session Cookie Example ###\n');
+
+  final auth = admin.auth();
+
+  // createSessionCookie
+  try {
+    print('> Creating session cookie...\n');
+    final sessionCookie = await auth.createSessionCookie(
+      '<id-token-from-client>',
+      SessionCookieOptions(expiresIn: const Duration(days: 5).inMilliseconds),
+    );
+    print(
+      'Session cookie created (first 40 chars): '
+      '${sessionCookie.substring(0, 40)}...\n',
+    );
+
+    // verifySessionCookie
+    print('> Verifying session cookie...\n');
+    final decoded = await auth.verifySessionCookie(sessionCookie);
+    print('Session cookie valid: uid=${decoded.uid}\n');
+  } on FirebaseAuthAdminException catch (e) {
+    if (e.errorCode == AuthClientErrorCode.sessionCookieRevoked) {
+      print('> Session cookie has been revoked');
+    } else {
+      print('> Auth error: ${e.code} - ${e.message}');
+    }
+  } catch (e) {
+    print('> Error: $e');
+  }
+}
+
+Future<void> providerConfigExample(FirebaseApp admin) async {
+  print('\n### Provider Config Example ###\n');
+
+  final auth = admin.auth();
+  const oidcProviderId = 'oidc.my-provider';
+  const samlProviderId = 'saml.my-provider';
+
+  // createProviderConfig (OIDC)
+  try {
+    print('> Creating OIDC provider config...\n');
+    final config = await auth.createProviderConfig(
+      OIDCAuthProviderConfig(
+        providerId: oidcProviderId,
+        clientId: 'my-client-id',
+        issuer: 'https://accounts.google.com',
+        displayName: 'My OIDC Provider',
+        enabled: true,
+      ),
+    );
+    print('OIDC provider created: ${config.providerId}\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // createProviderConfig (SAML)
+  try {
+    print('> Creating SAML provider config...\n');
+    final config = await auth.createProviderConfig(
+      SAMLAuthProviderConfig(
+        providerId: samlProviderId,
+        idpEntityId: 'https://idp.example.com',
+        ssoURL: 'https://idp.example.com/sso',
+        x509Certificates: [
+          '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----',
+        ],
+        rpEntityId: 'my-rp-entity-id',
+        displayName: 'My SAML Provider',
+        enabled: true,
+      ),
+    );
+    print('SAML provider created: ${config.providerId}\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // getProviderConfig
+  try {
+    print('> Fetching OIDC provider config...\n');
+    final config = await auth.getProviderConfig(oidcProviderId);
+    print('Provider: ${config.providerId} — enabled: ${config.enabled}\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // updateProviderConfig
+  try {
+    print('> Updating OIDC provider config...\n');
+    final updated = await auth.updateProviderConfig(
+      oidcProviderId,
+      OIDCUpdateAuthProviderRequest(displayName: 'Updated OIDC Provider'),
+    );
+    print('Updated provider: ${updated.displayName}\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // listProviderConfigs
+  try {
+    print('> Listing OIDC provider configs...\n');
+    final result = await auth.listProviderConfigs(
+      AuthProviderConfigFilter.oidc(maxResults: 10),
+    );
+    print('Found ${result.providerConfigs.length} OIDC provider(s)');
+    if (result.pageToken != null) {
+      print('Next page token: ${result.pageToken}');
+    }
+    print('');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+
+  // deleteProviderConfig
+  try {
+    print('> Deleting OIDC provider config...\n');
+    await auth.deleteProviderConfig(oidcProviderId);
+    print('OIDC provider deleted\n');
+
+    print('> Deleting SAML provider config...\n');
+    await auth.deleteProviderConfig(samlProviderId);
+    print('SAML provider deleted\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Auth error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error: $e');
+  }
+}
