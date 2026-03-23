@@ -126,6 +126,23 @@ void main() {
       functions = createFunctionsWithMockHandler(mockHandler);
     });
 
+    group('app property', () {
+      test('returns the app passed to the constructor', () {
+        final appName =
+            'functions-app-test-${DateTime.now().microsecondsSinceEpoch}';
+        final app = FirebaseApp.initializeApp(
+          name: appName,
+          options: const AppOptions(projectId: projectId),
+        );
+        addTearDown(() => FirebaseApp.deleteApp(app));
+
+        final f = Functions.internal(app);
+
+        expect(identical(f.app, app), isTrue);
+        expect(f.app.name, equals(appName));
+      });
+    });
+
     group('taskQueue', () {
       test('creates TaskQueue with function name', () {
         final queue = functions.taskQueue('helloWorld');
@@ -593,6 +610,52 @@ void main() {
           () => TaskOptions(schedule: DelayDelivery(3600)),
           returnsNormally,
         );
+      });
+    });
+
+    group('experimental.uri', () {
+      test('throws on invalid URI', () {
+        expect(
+          () => TaskOptionsExperimental(uri: 'not-a-url'),
+          throwsA(
+            isA<FirebaseFunctionsAdminException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              FunctionsClientErrorCode.invalidArgument,
+            ),
+          ),
+        );
+      });
+
+      test('throws on URI with no scheme', () {
+        expect(
+          () => TaskOptionsExperimental(uri: 'example.com/path'),
+          throwsA(isA<FirebaseFunctionsAdminException>()),
+        );
+      });
+
+      test('accepts a valid HTTPS URI', () {
+        expect(
+          () => TaskOptionsExperimental(uri: 'https://example.com/handler'),
+          returnsNormally,
+        );
+      });
+
+      test('accepts a valid HTTP URI', () {
+        expect(
+          () => TaskOptionsExperimental(uri: 'http://localhost:8080/handler'),
+          returnsNormally,
+        );
+      });
+
+      test('accepts null URI', () {
+        expect(TaskOptionsExperimental.new, returnsNormally);
+      });
+
+      test('stores the URI value', () {
+        const uri = 'https://example.com/handler';
+        final opts = TaskOptionsExperimental(uri: uri);
+        expect(opts.uri, equals(uri));
       });
     });
   });
@@ -1099,6 +1162,43 @@ void main() {
         final task = capturedTaskBody!['task'] as Map<String, dynamic>;
         expect(task['name'], contains(taskId));
         expect(task['name'], contains('helloWorld'));
+      } finally {
+        await app.close();
+      }
+    });
+
+    test('uses experimental.uri as the httpRequest URL', () async {
+      Map<String, dynamic>? capturedTaskBody;
+      const customUri = 'https://custom.example.com/my-handler';
+
+      final authClient = await createTestAuthClient(
+        email: mockClientEmail,
+        apiHandler: (request) {
+          capturedTaskBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return Response(
+            jsonEncode({'name': 'task/123'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+
+      final app = FirebaseApp.initializeApp(
+        name: 'experimental-uri-test-${DateTime.now().microsecondsSinceEpoch}',
+        options: AppOptions(projectId: projectId, httpClient: authClient),
+      );
+
+      try {
+        final functions = Functions.internal(app);
+        final queue = functions.taskQueue('helloWorld');
+        final options = TaskOptions(
+          experimental: TaskOptionsExperimental(uri: customUri),
+        );
+        await queue.enqueue({'data': 'test'}, options);
+
+        final task = capturedTaskBody!['task'] as Map<String, dynamic>;
+        final httpRequest = task['httpRequest'] as Map<String, dynamic>;
+        expect(httpRequest['url'], equals(customUri));
       } finally {
         await app.close();
       }

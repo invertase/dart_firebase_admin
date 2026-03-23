@@ -66,6 +66,19 @@ void main() {
             'message': 'Task with deadline',
           }, TaskOptions(dispatchDeadlineSeconds: 300));
         });
+
+        test('enqueues a task with experimental URI', () async {
+          final queue = functions.taskQueue('helloWorld');
+
+          await queue.enqueue(
+            {'message': 'Task with custom URI'},
+            TaskOptions(
+              experimental: TaskOptionsExperimental(
+                uri: 'https://custom.example.com/handler',
+              ),
+            ),
+          );
+        });
       });
 
       group('delete', () {
