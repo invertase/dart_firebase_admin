@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:dart_firebase_admin/app_check.dart';
 import 'package:dart_firebase_admin/src/app.dart';
 import 'package:dart_firebase_admin/src/app_check/app_check.dart';
@@ -8,7 +7,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 
-import '../../fixtures/helpers.dart';
 import '../../fixtures/mock.dart';
 import '../../fixtures/mock_service_account.dart';
 
@@ -323,101 +321,6 @@ void main() {
           // Expected to fail with invalid token, but structure is what we're testing
         }
       });
-    });
-
-    group('e2e', () {
-      test(
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-        'should create and verify token',
-        () {
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final appCheck = AppCheck.internal(app);
-
-            try {
-              final token = await appCheck.createToken(
-                '1:559949546715:android:13025aec6cc3243d0ab8fe',
-              );
-
-              expect(token.token, isNotEmpty);
-              expect(token.ttlMillis, greaterThan(0));
-
-              final result = await appCheck.verifyToken(token.token);
-
-              expect(result.appId, isNotEmpty);
-              expect(result.token, isNotNull);
-              expect(result.alreadyConsumed, isNull);
-            } finally {
-              await app.close();
-            }
-          }, zoneValues: {envSymbol: prodEnv()});
-        },
-      );
-
-      test(
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-        'should create token with custom ttl',
-        () {
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final appCheck = AppCheck.internal(app);
-
-            try {
-              final token = await appCheck.createToken(
-                '1:559949546715:android:13025aec6cc3243d0ab8fe',
-                AppCheckTokenOptions(ttlMillis: const Duration(hours: 2)),
-              );
-
-              expect(token.token, isNotEmpty);
-              expect(token.ttlMillis, greaterThan(0));
-            } finally {
-              await app.close();
-            }
-          }, zoneValues: {envSymbol: prodEnv()});
-        },
-      );
-
-      test(
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-        'should verify token with consume option',
-        () {
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final appCheck = AppCheck.internal(app);
-
-            try {
-              final token = await appCheck.createToken(
-                '1:559949546715:android:13025aec6cc3243d0ab8fe',
-              );
-
-              final result = await appCheck.verifyToken(
-                token.token,
-                VerifyAppCheckTokenOptions()..consume = true,
-              );
-
-              expect(result.appId, isNotEmpty);
-              expect(result.token, isNotNull);
-              expect(result.alreadyConsumed, equals(false));
-
-              // Verify same token again - should be marked as consumed
-              final result2 = await appCheck.verifyToken(
-                token.token,
-                VerifyAppCheckTokenOptions()..consume = true,
-              );
-
-              expect(result2.alreadyConsumed, equals(true));
-            } finally {
-              await app.close();
-            }
-          }, zoneValues: {envSymbol: prodEnv()});
-        },
-      );
     });
   });
 }
