@@ -14,8 +14,10 @@
 //   FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 dart test test/auth/integration_test.dart
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dart_firebase_admin/auth.dart';
+import 'package:dart_firebase_admin/src/app.dart';
 import 'package:http/http.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -582,6 +584,88 @@ void main() {
           isNot(equals(firstPage.users.first.uid)),
         );
       }
+    });
+  });
+
+  group('getUser', () {
+    test('returns correct user record for an existing uid', () async {
+      final created = await auth.createUser(CreateRequest(uid: _uid.v4()));
+
+      final user = await auth.getUser(created.uid);
+
+      expect(user.uid, equals(created.uid));
+    });
+
+    test('throws FirebaseAuthAdminException for a non-existent uid', () async {
+      await expectLater(
+        () => auth.getUser('uid-that-does-not-exist-${_uid.v4()}'),
+        throwsA(isA<FirebaseAuthAdminException>()),
+      );
+    });
+  });
+
+  group('verifyIdToken', () {
+    // Signs up an anonymous user via the emulator REST API and returns the
+    // uid and ID token. Does not require service account credentials.
+    Future<({String uid, String idToken})> signUpAnonymously() async {
+      final emulatorHost =
+          Platform.environment[Environment.firebaseAuthEmulatorHost] ??
+          'localhost:9099';
+      final url = Uri.parse(
+        'http://$emulatorHost/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key',
+      );
+      final response = await post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'returnSecureToken': true}),
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return (
+        uid: body['localId'] as String,
+        idToken: body['idToken'] as String,
+      );
+    }
+
+    test(
+      'returns decoded token with correct fields for a valid token',
+      () async {
+        final (:uid, :idToken) = await signUpAnonymously();
+
+        final decoded = await auth.verifyIdToken(idToken);
+
+        expect(decoded.uid, equals(uid));
+        expect(decoded.sub, equals(uid));
+        expect(decoded.aud, equals(projectId));
+        expect(decoded.iss, contains('securetoken.google.com'));
+        expect(decoded.exp, greaterThan(decoded.iat));
+      },
+    );
+
+    test('throws FirebaseAuthAdminException for an invalid token', () async {
+      await expectLater(
+        () => auth.verifyIdToken('invalid.token.value'),
+        throwsA(isA<FirebaseAuthAdminException>()),
+      );
+    });
+
+    test('verifies valid token with checkRevoked set to true', () async {
+      final (:uid, :idToken) = await signUpAnonymously();
+
+      final decoded = await auth.verifyIdToken(idToken, checkRevoked: true);
+      expect(decoded.uid, equals(uid));
+    });
+
+    test('throws when token is revoked and checkRevoked is true', () async {
+      final (:uid, :idToken) = await signUpAnonymously();
+
+      // Wait so the revocation timestamp is strictly after the token's iat.
+      await Future<void>.delayed(const Duration(seconds: 1));
+      await auth.revokeRefreshTokens(uid);
+
+      await expectLater(
+        () => auth.verifyIdToken(idToken, checkRevoked: true),
+        throwsA(isA<FirebaseAuthAdminException>()),
+      );
     });
   });
 }

@@ -520,4 +520,342 @@ void main() {
           : 'Provider configs require GCIP (not available in emulator)',
     );
   });
+
+  group('getProviderConfig (Production)', () {
+    test(
+      'returns the config for an existing OIDC provider',
+      () {
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final providerId =
+              'oidc.get-${DateTime.now().millisecondsSinceEpoch}';
+
+          try {
+            await testAuth.createProviderConfig(
+              OIDCAuthProviderConfig(
+                providerId: providerId,
+                displayName: 'Get Test Provider',
+                enabled: true,
+                clientId: 'TEST_CLIENT_ID',
+                issuer: 'https://oidc.example.com/issuer',
+              ),
+            );
+
+            final config = await testAuth.getProviderConfig(providerId);
+
+            expect(config, isA<OIDCAuthProviderConfig>());
+            expect(config.providerId, equals(providerId));
+            expect(config.displayName, equals('Get Test Provider'));
+            expect(config.enabled, isTrue);
+          } finally {
+            await testAuth.deleteProviderConfig(providerId).catchError((_) {});
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      },
+      skip: hasProdEnv
+          ? false
+          : 'Provider configs require GCIP (not available in emulator)',
+    );
+
+    test(
+      'throws FirebaseAuthAdminException for a non-existent provider',
+      () {
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+
+          try {
+            await expectLater(
+              () => testAuth.getProviderConfig('oidc.does-not-exist'),
+              throwsA(isA<FirebaseAuthAdminException>()),
+            );
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      },
+      skip: hasProdEnv
+          ? false
+          : 'Provider configs require GCIP (not available in emulator)',
+    );
+  });
+
+  group('updateProviderConfig (Production)', () {
+    test(
+      'updates an OIDC provider config',
+      () {
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final providerId =
+              'oidc.update-${DateTime.now().millisecondsSinceEpoch}';
+
+          try {
+            await testAuth.createProviderConfig(
+              OIDCAuthProviderConfig(
+                providerId: providerId,
+                displayName: 'Original Name',
+                enabled: true,
+                clientId: 'TEST_CLIENT_ID',
+                issuer: 'https://oidc.example.com/issuer',
+              ),
+            );
+
+            final updated = await testAuth.updateProviderConfig(
+              providerId,
+              OIDCUpdateAuthProviderRequest(
+                displayName: 'Updated Name',
+                enabled: false,
+              ),
+            );
+
+            expect(updated, isA<OIDCAuthProviderConfig>());
+            expect(updated.displayName, equals('Updated Name'));
+            expect(updated.enabled, isFalse);
+          } finally {
+            await testAuth.deleteProviderConfig(providerId).catchError((_) {});
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      },
+      skip: hasProdEnv
+          ? false
+          : 'Provider configs require GCIP (not available in emulator)',
+    );
+
+    test(
+      'updates a SAML provider config',
+      () {
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final providerId =
+              'saml.update-${DateTime.now().millisecondsSinceEpoch}';
+
+          try {
+            await testAuth.createProviderConfig(
+              SAMLAuthProviderConfig(
+                providerId: providerId,
+                displayName: 'Original Name',
+                enabled: true,
+                idpEntityId: 'TEST_IDP_ENTITY_ID',
+                ssoURL: 'https://example.com/login',
+                x509Certificates: ['TEST_CERT'],
+                rpEntityId: 'TEST_RP_ENTITY_ID',
+                callbackURL:
+                    'https://project-id.firebaseapp.com/__/auth/handler',
+              ),
+            );
+
+            final updated = await testAuth.updateProviderConfig(
+              providerId,
+              SAMLUpdateAuthProviderRequest(
+                displayName: 'Updated Name',
+                enabled: false,
+              ),
+            );
+
+            expect(updated, isA<SAMLAuthProviderConfig>());
+            expect(updated.displayName, equals('Updated Name'));
+            expect(updated.enabled, isFalse);
+          } finally {
+            await testAuth.deleteProviderConfig(providerId).catchError((_) {});
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      },
+      skip: hasProdEnv
+          ? false
+          : 'Provider configs require GCIP (not available in emulator)',
+    );
+  });
+
+  group('listProviderConfigs (Production)', () {
+    test(
+      'lists OIDC provider configs including one just created',
+      () {
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final providerId =
+              'oidc.list-${DateTime.now().millisecondsSinceEpoch}';
+
+          try {
+            await testAuth.createProviderConfig(
+              OIDCAuthProviderConfig(
+                providerId: providerId,
+                displayName: 'List Test Provider',
+                enabled: true,
+                clientId: 'TEST_CLIENT_ID',
+                issuer: 'https://oidc.example.com/issuer',
+              ),
+            );
+
+            final result = await testAuth.listProviderConfigs(
+              AuthProviderConfigFilter.oidc(),
+            );
+
+            expect(result.providerConfigs, isNotEmpty);
+            expect(
+              result.providerConfigs.map((c) => c.providerId),
+              contains(providerId),
+            );
+            expect(
+              result.providerConfigs,
+              everyElement(isA<OIDCAuthProviderConfig>()),
+            );
+          } finally {
+            await testAuth.deleteProviderConfig(providerId).catchError((_) {});
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      },
+      skip: hasProdEnv
+          ? false
+          : 'Provider configs require GCIP (not available in emulator)',
+    );
+
+    test(
+      'lists SAML provider configs including one just created',
+      () {
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final providerId =
+              'saml.list-${DateTime.now().millisecondsSinceEpoch}';
+
+          try {
+            await testAuth.createProviderConfig(
+              SAMLAuthProviderConfig(
+                providerId: providerId,
+                displayName: 'List Test Provider',
+                enabled: true,
+                idpEntityId: 'TEST_IDP_ENTITY_ID',
+                ssoURL: 'https://example.com/login',
+                x509Certificates: ['TEST_CERT'],
+                rpEntityId: 'TEST_RP_ENTITY_ID',
+                callbackURL:
+                    'https://project-id.firebaseapp.com/__/auth/handler',
+              ),
+            );
+
+            final result = await testAuth.listProviderConfigs(
+              AuthProviderConfigFilter.saml(),
+            );
+
+            expect(result.providerConfigs, isNotEmpty);
+            expect(
+              result.providerConfigs.map((c) => c.providerId),
+              contains(providerId),
+            );
+            expect(
+              result.providerConfigs,
+              everyElement(isA<SAMLAuthProviderConfig>()),
+            );
+          } finally {
+            await testAuth.deleteProviderConfig(providerId).catchError((_) {});
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      },
+      skip: hasProdEnv
+          ? false
+          : 'Provider configs require GCIP (not available in emulator)',
+    );
+
+    test(
+      'supports pagination with maxResults and pageToken',
+      () {
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final ts = DateTime.now().millisecondsSinceEpoch;
+          final providerId1 = 'oidc.page1-$ts';
+          final providerId2 = 'oidc.page2-$ts';
+
+          try {
+            await Future.wait([
+              testAuth.createProviderConfig(
+                OIDCAuthProviderConfig(
+                  providerId: providerId1,
+                  displayName: 'Page Test 1',
+                  enabled: true,
+                  clientId: 'TEST_CLIENT_ID',
+                  issuer: 'https://oidc.example.com/issuer',
+                ),
+              ),
+              testAuth.createProviderConfig(
+                OIDCAuthProviderConfig(
+                  providerId: providerId2,
+                  displayName: 'Page Test 2',
+                  enabled: true,
+                  clientId: 'TEST_CLIENT_ID',
+                  issuer: 'https://oidc.example.com/issuer',
+                ),
+              ),
+            ]);
+
+            final firstPage = await testAuth.listProviderConfigs(
+              AuthProviderConfigFilter.oidc(maxResults: 1),
+            );
+
+            expect(firstPage.providerConfigs, hasLength(1));
+            expect(firstPage.pageToken, isNotNull);
+
+            final secondPage = await testAuth.listProviderConfigs(
+              AuthProviderConfigFilter.oidc(
+                maxResults: 1,
+                pageToken: firstPage.pageToken,
+              ),
+            );
+
+            expect(secondPage.providerConfigs, hasLength(greaterThan(0)));
+            expect(
+              secondPage.providerConfigs.first.providerId,
+              isNot(equals(firstPage.providerConfigs.first.providerId)),
+            );
+          } finally {
+            await Future.wait([
+              testAuth.deleteProviderConfig(providerId1).catchError((_) {}),
+              testAuth.deleteProviderConfig(providerId2).catchError((_) {}),
+            ]);
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      },
+      skip: hasProdEnv
+          ? false
+          : 'Provider configs require GCIP (not available in emulator)',
+    );
+  });
 }
