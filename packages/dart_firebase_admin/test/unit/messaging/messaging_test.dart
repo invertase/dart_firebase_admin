@@ -187,6 +187,30 @@ void main() {
       );
     });
 
+    test(
+      'sends a ConditionMessage with condition set on the request',
+      () async {
+        when(
+          () => messages.send(any(), any()),
+        ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
+
+        const condition = "'foo-bar' in topics || 'baz' in topics";
+        final result = await messaging.send(
+          ConditionMessage(condition: condition),
+        );
+
+        expect(result, 'test');
+
+        final capture = verify(() => messages.send(captureAny(), captureAny()))
+          ..called(1);
+
+        final request = capture.captured.first as fmc1.SendMessageRequest;
+        expect(request.message?.condition, condition);
+        expect(request.message?.topic, isNull);
+        expect(request.message?.token, isNull);
+      },
+    );
+
     test('dryRun', () async {
       when(
         () => messages.send(any(), any()),
