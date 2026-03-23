@@ -10,7 +10,7 @@ environment:
 dependencies:
   collection: ^1.18.0
   google_cloud: ^0.3.0
-  googleapis: ^15.0.0
+  googleapis: ^16.0.0
   googleapis_auth: ^2.1.0
   http: ^1.0.0
   intl: ^0.20.0
