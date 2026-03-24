@@ -192,7 +192,10 @@ class PublicKeySignatureVerifier implements SignatureVerifier {
       }
 
       try {
-        JWT.verify(token, key);
+        // Firebase session cookies omit the `typ` header claim, which
+        // dart_jsonwebtoken 3.x rejects by default. Disable the check here;
+        // signature, issuer, audience, and expiry are validated separately.
+        JWT.verify(token, key, checkHeaderType: false);
       } catch (e, stackTrace) {
         Error.throwWithStackTrace(
           JwtException(

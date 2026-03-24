@@ -218,7 +218,7 @@ abstract class _AbstractAuthRequestHandler {
       options,
       ignoreMissingFields: true,
     );
-    final updateMask = generateUpdateMask(request);
+    final updateMask = generateUpdateMask(request?.toJson());
 
     final response = await _httpClient.updateOAuthIdpConfig(
       request ?? auth2.GoogleCloudIdentitytoolkitAdminV2OAuthIdpConfig(),
@@ -252,7 +252,7 @@ abstract class _AbstractAuthRequestHandler {
       options,
       ignoreMissingFields: true,
     );
-    final updateMask = generateUpdateMask(request);
+    final updateMask = generateUpdateMask(request?.toJson());
     final response = await _httpClient.updateInboundSamlConfig(
       request ?? auth2.GoogleCloudIdentitytoolkitAdminV2InboundSamlConfig(),
       providerId,

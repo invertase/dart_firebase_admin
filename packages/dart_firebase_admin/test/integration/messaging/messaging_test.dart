@@ -53,6 +53,21 @@ void main() {
         expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
       });
 
+      test('send(ConditionMessage, dryRun) returns a message ID', () async {
+        final messageId = await messaging.send(
+          ConditionMessage(
+            condition: "'foo-bar' in topics || 'baz' in topics",
+            notification: Notification(
+              title: 'Integration Test',
+              body: 'Testing ConditionMessage',
+            ),
+          ),
+          dryRun: true,
+        );
+
+        expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
+      });
+
       test('sendEach()', () async {
         final messages = [
           TopicMessage(
@@ -80,6 +95,36 @@ void main() {
           expect(resp.messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
         }
       });
+
+      test(
+        'sendEach() with mixed message types including ConditionMessage',
+        () async {
+          final messages = [
+            TopicMessage(
+              topic: 'foo-bar',
+              notification: Notification(title: 'Topic'),
+            ),
+            ConditionMessage(
+              condition: "'foo-bar' in topics || 'baz' in topics",
+              notification: Notification(title: 'Condition'),
+            ),
+          ];
+
+          final response = await messaging.sendEach(messages, dryRun: true);
+
+          expect(response.responses.length, equals(2));
+          expect(response.successCount, equals(2));
+          expect(response.failureCount, equals(0));
+
+          for (final resp in response.responses) {
+            expect(resp.success, isTrue);
+            expect(
+              resp.messageId,
+              matches(RegExp(r'^projects/.*/messages/.*$')),
+            );
+          }
+        },
+      );
 
       test('sendEach() validates empty messages list', () async {
         await expectLater(

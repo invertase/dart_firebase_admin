@@ -12,6 +12,11 @@ final int Function(Pointer<Utf8>, Pointer<Utf8>, int) _setenv =
       int Function(Pointer<Utf8>, Pointer<Utf8>, int)
     >('setenv');
 
+final int Function(Pointer<Utf8>) _unsetenv = DynamicLibrary.process()
+    .lookupFunction<Int32 Function(Pointer<Utf8>), int Function(Pointer<Utf8>)>(
+      'unsetenv',
+    );
+
 final int Function(Pointer<Utf16>, Pointer<Utf16>) _setEnvironmentVariableW =
     DynamicLibrary.open('kernel32.dll').lookupFunction<
       Int32 Function(Pointer<Utf16>, Pointer<Utf16>),
@@ -41,6 +46,22 @@ void setNativeEnvironmentVariable(String name, String value) {
           'Failed to set native environment variable: $name',
         );
       }
+    });
+  }
+}
+
+@internal
+void unsetNativeEnvironmentVariable(String name) {
+  if (Platform.isWindows) {
+    using((arena) {
+      final namePtr = name.toNativeUtf16(allocator: arena);
+      // Passing NULL as the second argument deletes the variable on Windows
+      _setEnvironmentVariableW(namePtr, nullptr);
+    });
+  } else {
+    using((arena) {
+      final namePtr = name.toNativeUtf8(allocator: arena);
+      _unsetenv(namePtr);
     });
   }
 }
