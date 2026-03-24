@@ -611,8 +611,12 @@ void main() {
       final emulatorHost =
           Platform.environment[Environment.firebaseAuthEmulatorHost] ??
           'localhost:9099';
+      // The Auth emulator does not validate API keys, so any non-empty string
+      // works. 'emulator-fake-api-key' is a conventional placeholder used in
+      // Firebase tooling for emulator-only requests.
+      const emulatorApiKey = 'emulator-fake-api-key';
       final url = Uri.parse(
-        'http://$emulatorHost/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key',
+        'http://$emulatorHost/identitytoolkit.googleapis.com/v1/accounts:signUp?key=$emulatorApiKey',
       );
       final response = await post(
         url,
