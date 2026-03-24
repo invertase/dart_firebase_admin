@@ -273,21 +273,50 @@ Future<void> batchExample(FirebaseApp admin) async {
 
   final firestore = admin.firestore();
 
+  // Simulate an order placement: atomically create the order, record it on
+  // the user's profile, and decrement the product's stock — all in one batch
+  // so either every write succeeds or none of them do.
   try {
-    print('> Writing documents atomically with batch...\n');
+    print('> Setting up initial product and user documents...\n');
+
+    final productRef = firestore.collection('products').doc('widget-42');
+    final userRef = firestore.collection('users').doc('user-1');
+
+    await productRef.set({'name': 'Widget', 'stock': 10});
+    await userRef.set({'name': 'Alice', 'orderCount': 2});
+
+    print('> Placing order atomically with batch...\n');
 
     final batch = firestore.batch();
+    final orderRef = firestore.collection('orders').doc();
 
-    final col = firestore.collection('batch-demo');
-    batch.set(col.doc('doc-1'), {'name': 'Alice', 'active': true});
-    batch.set(col.doc('doc-2'), {'name': 'Bob', 'active': false});
-    batch.update(col.doc('doc-1'), {
-      FieldPath(const ['active']): false,
+    // 1. Create the new order document.
+    batch.set(orderRef, {
+      'userId': 'user-1',
+      'productId': 'widget-42',
+      'quantity': 1,
+      'status': 'confirmed',
     });
-    batch.delete(col.doc('doc-2'));
+
+    // 2. Increment the user's order count.
+    batch.update(userRef, {
+      FieldPath(const ['orderCount']): 3,
+    });
+
+    // 3. Decrement the product stock.
+    batch.update(productRef, {
+      FieldPath(const ['stock']): 9,
+    });
 
     await batch.commit();
     print('> Batch committed successfully\n');
+
+    // Clean up
+    await Future.wait([
+      orderRef.delete(),
+      productRef.delete(),
+      userRef.delete(),
+    ]);
   } catch (e) {
     print('> Error: $e');
   }
@@ -329,23 +358,24 @@ Future<void> collectionGroupExample(FirebaseApp admin) async {
 
   final firestore = admin.firestore();
 
+  final review1 = firestore
+      .collection('restaurants')
+      .doc('pizza-place')
+      .collection('reviews')
+      .doc('review-1');
+
+  final review2 = firestore
+      .collection('restaurants')
+      .doc('burger-joint')
+      .collection('reviews')
+      .doc('review-2');
+
   try {
     print('> Querying all "reviews" subcollections across documents...\n');
 
     // Set up sample data
-    await firestore
-        .collection('restaurants')
-        .doc('pizza-place')
-        .collection('reviews')
-        .doc('review-1')
-        .set({'rating': 5, 'text': 'Great pizza!'});
-
-    await firestore
-        .collection('restaurants')
-        .doc('burger-joint')
-        .collection('reviews')
-        .doc('review-2')
-        .set({'rating': 4, 'text': 'Good burgers'});
+    await review1.set({'rating': 5, 'text': 'Great pizza!'});
+    await review2.set({'rating': 4, 'text': 'Good burgers'});
 
     final query = firestore.collectionGroup('reviews');
     final snapshot = await query.get();
@@ -357,6 +387,9 @@ Future<void> collectionGroupExample(FirebaseApp admin) async {
     print('');
   } catch (e) {
     print('> Error: $e');
+  } finally {
+    // Clean up sample data regardless of success or failure
+    await Future.wait([review1.delete(), review2.delete()]);
   }
 }
 

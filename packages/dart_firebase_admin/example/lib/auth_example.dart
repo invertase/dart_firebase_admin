@@ -203,7 +203,8 @@ Future<void> userManagementExample(FirebaseApp admin) async {
     print('> Creating temporary user for example...\n');
     tempUser = await auth.createUser(
       CreateRequest(
-        email: 'temp-example-${DateTime.now().millisecondsSinceEpoch}@example.com',
+        email:
+            'temp-example-${DateTime.now().millisecondsSinceEpoch}@example.com',
         password: 'TempPass@12345',
         displayName: 'Temp Example User',
       ),
@@ -451,6 +452,12 @@ Future<void> tokenExample(FirebaseApp admin) async {
   }
 
   // verifyIdToken
+  // To obtain a real ID token, use the Firebase client SDK on the client side:
+  //   - Flutter: await FirebaseAuth.instance.currentUser?.getIdToken()
+  //   - Web:     await firebase.auth().currentUser?.getIdToken()
+  //   - Android: FirebaseAuth.getInstance().currentUser?.getIdToken(false)
+  //   - iOS/macOS: Auth.auth().currentUser?.getIDToken(completion:)
+  // The client sends the token to your server, which then verifies it here.
   try {
     print('> Verifying ID token...\n');
     final decoded = await auth.verifyIdToken('<id-token-from-client>');
@@ -494,6 +501,11 @@ Future<void> sessionCookieExample(FirebaseApp admin) async {
   final auth = admin.auth();
 
   // createSessionCookie
+  // An ID token must first be obtained from the client (see verifyIdToken
+  // comments above for platform-specific examples). Typically the client
+  // sends the token to your server via an HTTP request, and the server
+  // exchanges it for a long-lived session cookie to store in a secure,
+  // HttpOnly cookie.
   try {
     print('> Creating session cookie...\n');
     final sessionCookie = await auth.createSessionCookie(
