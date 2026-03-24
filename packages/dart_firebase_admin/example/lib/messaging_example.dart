@@ -85,7 +85,29 @@ Future<void> messagingExample(FirebaseApp admin) async {
     print('> Error sending multicast: $e');
   }
 
-  // Example 4: Subscribe tokens to a topic
+  // Example 4: Send a message with a condition
+  try {
+    print('> Sending ConditionMessage...\n');
+    final messageId = await messaging.send(
+      ConditionMessage(
+        condition: "'TopicA' in topics || 'TopicB' in topics",
+        notification: Notification(
+          title: 'Condition Message',
+          body: 'Sent to subscribers of TopicA or TopicB',
+        ),
+      ),
+      dryRun: true,
+    );
+    print('ConditionMessage sent!');
+    print('  - Message ID: $messageId');
+    print('');
+  } on FirebaseMessagingAdminException catch (e) {
+    print('> Messaging error: ${e.code} - ${e.message}');
+  } catch (e) {
+    print('> Error sending condition message: $e');
+  }
+
+  // Example 5: Subscribe tokens to a topic
   try {
     print('> Subscribing tokens to topic: test-topic\n');
     // Note: Using fake token for demonstration
@@ -112,7 +134,7 @@ Future<void> messagingExample(FirebaseApp admin) async {
     print('> Error subscribing to topic: $e');
   }
 
-  // Example 5: Send with platform-specific options
+  // Example 6: Send with platform-specific options
   try {
     print('> Sending message with platform-specific options...\n');
     final messageId = await messaging.send(
