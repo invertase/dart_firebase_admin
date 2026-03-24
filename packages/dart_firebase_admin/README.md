@@ -5,7 +5,7 @@
  - [Prerequisites](#prerequisites)
  - [Overview](#overview)
  - [Installation](#installation)
- - [Initialization](#initialization)
+ - [Add the Firebase Admin SDK to your server](#add-the-firebase-admin-sdk-to-your-server)
    - [Initialize the SDK](#initialize-the-sdk)
    - [Initialize the SDK in non-Google environments](#initialize-the-sdk-in-non-google-environments)
    - [Using Workload Identity Federation](#using-workload-identity-federation)
@@ -52,7 +52,7 @@ To use the SDK in your application, `import` it from any Dart file:
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 ```
 
-## Initialization
+## Add the Firebase Admin SDK to your server
 
 ### Initialize the SDK
 
