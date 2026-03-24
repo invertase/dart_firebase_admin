@@ -5,7 +5,7 @@
  - [Prerequisites](#prerequisites)
  - [Overview](#overview)
  - [Installation](#installation)
- - [Initalization](#initalization)
+ - [Initialization](#initialization)
    - [Initialize the SDK](#initialize-the-sdk)
    - [Initialize the SDK in non-Google environments](#initialize-the-sdk-in-non-google-environments)
    - [Using Workload Identity Federation](#using-workload-identity-federation)
@@ -52,7 +52,7 @@ To use the SDK in your application, `import` it from any Dart file:
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 ```
 
-## Initalization
+## Initialization
 
 ### Initialize the SDK
 
@@ -139,12 +139,20 @@ final defaultFirestore = defaultApp.firestore();
 Some use cases require multiple app instances at the same time — for example, reading data from one Firebase project and creating custom tokens for another, or authenticating two apps with separate credentials:
 
 ```dart
-// Initialize the default app
-final defaultApp = FirebaseApp.initializeApp(options: defaultAppOptions);
+// Each AppOptions points to a different Firebase project
+final defaultApp = FirebaseApp.initializeApp(
+  options: AppOptions(
+    credential: Credential.fromServiceAccount(File('path/to/default-service-account.json')),
+    projectId: 'my-default-project',
+  ),
+);
 
 // Initialize another app with a different config
 final otherApp = FirebaseApp.initializeApp(
-  options: otherAppOptions,
+  options: AppOptions(
+    credential: Credential.fromServiceAccount(File('path/to/other-service-account.json')),
+    projectId: 'my-other-project',
+  ),
   name: 'other',
 );
 
