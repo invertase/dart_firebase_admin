@@ -197,10 +197,30 @@ Future<void> userManagementExample(FirebaseApp admin) async {
 
   final auth = admin.auth();
 
+  // Create a temporary user to use throughout this example
+  late UserRecord tempUser;
+  try {
+    print('> Creating temporary user for example...\n');
+    tempUser = await auth.createUser(
+      CreateRequest(
+        email: 'temp-example-${DateTime.now().millisecondsSinceEpoch}@example.com',
+        password: 'TempPass@12345',
+        displayName: 'Temp Example User',
+      ),
+    );
+    print('Temporary user created: ${tempUser.uid}\n');
+  } on FirebaseAuthAdminException catch (e) {
+    print('> Failed to create temporary user: ${e.code} - ${e.message}');
+    return;
+  } catch (e) {
+    print('> Failed to create temporary user: $e');
+    return;
+  }
+
   // getUser
   try {
     print('> Fetching user by UID...\n');
-    final user = await auth.getUser('some-uid');
+    final user = await auth.getUser(tempUser.uid);
     print('User: ${user.uid} — ${user.email}');
   } on FirebaseAuthAdminException catch (e) {
     if (e.errorCode == AuthClientErrorCode.userNotFound) {
@@ -241,9 +261,8 @@ Future<void> userManagementExample(FirebaseApp admin) async {
   try {
     print('> Batch fetching users...\n');
     final result = await auth.getUsers([
-      UidIdentifier(uid: 'uid-1'),
-      EmailIdentifier(email: 'user@example.com'),
-      PhoneIdentifier(phoneNumber: '+15559876543'),
+      UidIdentifier(uid: tempUser.uid),
+      EmailIdentifier(email: tempUser.email!),
     ]);
     print('Found ${result.users.length} user(s)');
     print('Not found: ${result.notFound.length}');
@@ -257,7 +276,7 @@ Future<void> userManagementExample(FirebaseApp admin) async {
   try {
     print('> Updating user...\n');
     final updated = await auth.updateUser(
-      'some-uid',
+      tempUser.uid,
       UpdateRequest(displayName: 'Updated Name', disabled: false),
     );
     print('Updated user: ${updated.displayName}');
@@ -298,11 +317,11 @@ Future<void> userManagementExample(FirebaseApp admin) async {
     print('> Error: $e');
   }
 
-  // deleteUser
+  // deleteUser — clean up the temporary user created at the start
   try {
-    print('> Deleting single user...\n');
-    await auth.deleteUser('some-uid');
-    print('User deleted');
+    print('> Deleting temporary user...\n');
+    await auth.deleteUser(tempUser.uid);
+    print('Temporary user deleted');
   } on FirebaseAuthAdminException catch (e) {
     print('> Auth error: ${e.code} - ${e.message}');
   } catch (e) {
@@ -311,7 +330,7 @@ Future<void> userManagementExample(FirebaseApp admin) async {
 
   // deleteUsers
   try {
-    print('> Deleting multiple users...\n');
+    print('> Deleting multiple users (demo with non-existent UIDs)...\n');
     final result = await auth.deleteUsers(['uid-a', 'uid-b', 'uid-c']);
     print(
       'Deleted: ${result.successCount} succeeded, '
