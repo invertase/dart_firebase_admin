@@ -43,6 +43,7 @@ class AppCheckTokenGenerator {
         'aud': firebaseAppCheckAudience,
         'exp': iat + (oneMinuteInSeconds * 5),
         'iat': iat,
+        if (options?.ttlMillis case final ttl?) 'ttl': '${ttl.inSeconds}s',
       };
 
       final token = '${_encodeSegment(header)}.${_encodeSegment(body)}';
