@@ -21,6 +21,10 @@ class Storage implements FirebaseService {
         );
       }
       setNativeEnvironmentVariable('STORAGE_EMULATOR_HOST', emulatorHost);
+    } else {
+      // Ensure no emulator host leaks into production GCS client from a
+      // previous emulator-mode Storage instance in the same process.
+      unsetNativeEnvironmentVariable('STORAGE_EMULATOR_HOST');
     }
     _delegate = gcs.Storage();
   }
