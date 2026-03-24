@@ -542,6 +542,7 @@ void main() {
                 displayName: 'Get Test Provider',
                 enabled: true,
                 clientId: 'TEST_CLIENT_ID',
+                clientSecret: 'TEST_CLIENT_SECRET',
                 issuer: 'https://oidc.example.com/issuer',
               ),
             );
@@ -611,6 +612,7 @@ void main() {
                 displayName: 'Original Name',
                 enabled: true,
                 clientId: 'TEST_CLIENT_ID',
+                clientSecret: 'TEST_CLIENT_SECRET',
                 issuer: 'https://oidc.example.com/issuer',
               ),
             );
@@ -709,6 +711,7 @@ void main() {
                 displayName: 'List Test Provider',
                 enabled: true,
                 clientId: 'TEST_CLIENT_ID',
+                clientSecret: 'TEST_CLIENT_SECRET',
                 issuer: 'https://oidc.example.com/issuer',
               ),
             );
@@ -811,6 +814,7 @@ void main() {
                   displayName: 'Page Test 1',
                   enabled: true,
                   clientId: 'TEST_CLIENT_ID',
+                  clientSecret: 'TEST_CLIENT_SECRET',
                   issuer: 'https://oidc.example.com/issuer',
                 ),
               ),
@@ -820,6 +824,7 @@ void main() {
                   displayName: 'Page Test 2',
                   enabled: true,
                   clientId: 'TEST_CLIENT_ID',
+                  clientSecret: 'TEST_CLIENT_SECRET',
                   issuer: 'https://oidc.example.com/issuer',
                 ),
               ),
