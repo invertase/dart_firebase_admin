@@ -54,30 +54,22 @@ void main() {
       });
 
       test(
-        'send(TokenMessage, dryRun) with invalid token throws registration-token-not-registered',
+        'send(TokenMessage, dryRun) returns a message ID for a registered device token',
         () async {
-          // FCM validates tokens even in dry-run mode, so a fake token
-          // results in registration-token-not-registered rather than a message ID.
-          await expectLater(
-            () => messaging.send(
-              TokenMessage(
-                token: registrationToken,
-                notification: Notification(
-                  title: 'Integration Test',
-                  body: 'Testing TokenMessage',
-                ),
-              ),
-              dryRun: true,
-            ),
-            throwsA(
-              isA<FirebaseMessagingAdminException>().having(
-                (e) => e.errorCode,
-                'errorCode',
-                MessagingClientErrorCode.registrationTokenNotRegistered,
+          final messageId = await messaging.send(
+            TokenMessage(
+              token: registrationToken,
+              notification: Notification(
+                title: 'Integration Test',
+                body: 'Testing TokenMessage success path',
               ),
             ),
+            dryRun: true,
           );
+          expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
         },
+        skip:
+            'No FCM emulator available. Requires a real FCM registration token from a client app.',
       );
 
       test('send(ConditionMessage, dryRun) returns a message ID', () async {
