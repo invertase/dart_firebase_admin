@@ -41,7 +41,7 @@ sealed class Message extends _BaseMessage {
 
 /// A message targeting a specific registration token.
 ///
-/// See [Send to individual devices](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-specific-devices)
+/// See [Send to individual devices](https://firebase.google.com/docs/cloud-messaging/send/admin-sdk#send-messages-to-specific-devices)
 class TokenMessage extends Message {
   TokenMessage({
     required this.token,
@@ -71,7 +71,7 @@ class TokenMessage extends Message {
 
 /// A message targeting a topic.
 ///
-/// See [Send to a topic](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-topics)
+/// See [Send to a topic](https://firebase.google.com/docs/cloud-messaging/send-topic-messages)
 class TopicMessage extends Message {
   TopicMessage({
     required this.topic,
@@ -101,7 +101,7 @@ class TopicMessage extends Message {
 
 /// A message targeting a condition.
 ///
-/// See [Send to topic conditions](https://firebase.google.com/docs/cloud-messaging/send-topic-messages).
+/// See [Send to topic conditions](https://firebase.google.com/docs/cloud-messaging/send-topic-messages#sending-to-topic-conditions).
 class ConditionMessage extends Message {
   ConditionMessage({
     required this.condition,
@@ -131,6 +131,8 @@ class ConditionMessage extends Message {
 
 /// Payload for the [Messaging.sendEachForMulticast] method. The payload contains all the fields
 /// in the BaseMessage type, and a list of tokens.
+///
+/// See [Send to multiple devices](https://firebase.google.com/docs/cloud-messaging/send/admin-sdk#send-messages-to-multiple-devices)
 class MulticastMessage extends _BaseMessage {
   MulticastMessage({
     super.data,
