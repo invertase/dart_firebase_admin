@@ -187,6 +187,25 @@ void main() {
       );
     });
 
+    test('sends a TokenMessage with token set on the request', () async {
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
+
+      const token = 'my-device-token';
+      final result = await messaging.send(TokenMessage(token: token));
+
+      expect(result, 'test');
+
+      final capture = verify(() => messages.send(captureAny(), captureAny()))
+        ..called(1);
+
+      final request = capture.captured.first as fmc1.SendMessageRequest;
+      expect(request.message?.token, token);
+      expect(request.message?.topic, isNull);
+      expect(request.message?.condition, isNull);
+    });
+
     test(
       'sends a ConditionMessage with condition set on the request',
       () async {

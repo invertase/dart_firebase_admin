@@ -53,6 +53,25 @@ void main() {
         expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
       });
 
+      test(
+        'send(TokenMessage, dryRun) returns a message ID for a registered device token',
+        () async {
+          final messageId = await messaging.send(
+            TokenMessage(
+              token: registrationToken,
+              notification: Notification(
+                title: 'Integration Test',
+                body: 'Testing TokenMessage success path',
+              ),
+            ),
+            dryRun: true,
+          );
+          expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
+        },
+        skip:
+            'No FCM emulator available. Requires a real FCM registration token from a client app.',
+      );
+
       test('send(ConditionMessage, dryRun) returns a message ID', () async {
         final messageId = await messaging.send(
           ConditionMessage(
