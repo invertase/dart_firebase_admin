@@ -53,6 +53,33 @@ void main() {
         expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
       });
 
+      test(
+        'send(TokenMessage, dryRun) with invalid token throws registration-token-not-registered',
+        () async {
+          // FCM validates tokens even in dry-run mode, so a fake token
+          // results in registration-token-not-registered rather than a message ID.
+          await expectLater(
+            () => messaging.send(
+              TokenMessage(
+                token: registrationToken,
+                notification: Notification(
+                  title: 'Integration Test',
+                  body: 'Testing TokenMessage',
+                ),
+              ),
+              dryRun: true,
+            ),
+            throwsA(
+              isA<FirebaseMessagingAdminException>().having(
+                (e) => e.errorCode,
+                'errorCode',
+                MessagingClientErrorCode.registrationTokenNotRegistered,
+              ),
+            ),
+          );
+        },
+      );
+
       test('send(ConditionMessage, dryRun) returns a message ID', () async {
         final messageId = await messaging.send(
           ConditionMessage(
