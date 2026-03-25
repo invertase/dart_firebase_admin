@@ -2,9 +2,15 @@
 
 ## Table of Contents
 
+ - [Prerequisites](#prerequisites)
  - [Overview](#overview)
  - [Installation](#installation)
- - [Initalization](#initalization)
+ - [Add the Firebase Admin SDK to your server](#add-the-firebase-admin-sdk-to-your-server)
+   - [Initialize the SDK](#initialize-the-sdk)
+   - [Initialize the SDK in non-Google environments](#initialize-the-sdk-in-non-google-environments)
+   - [Using Workload Identity Federation](#using-workload-identity-federation)
+   - [Initialize multiple apps](#initialize-multiple-apps)
+   - [Testing with gcloud end user credentials](#testing-with-gcloud-end-user-credentials)
  - [Usage](#usage)
    - [Authentication](#authentication)
    - [App Check](#app-check)
@@ -17,6 +23,10 @@
  - [Additional Packages](#additional-packages)
  - [Contributing](#contributing)
  - [License](#license)
+
+## Prerequisites
+
+Make sure that your server runs **Dart SDK 3.9 or higher**.
 
 ## Overview
 
@@ -42,7 +52,7 @@ To use the SDK in your application, `import` it from any Dart file:
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 ```
 
-## Initalization
+## Add the Firebase Admin SDK to your server
 
 ### Initialize the SDK
 
@@ -54,6 +64,17 @@ final app = FirebaseApp.initializeApp();
 ```
 
 This will automatically initialize the SDK with [Google Application Default Credentials](https://cloud.google.com/docs/authentication/production#providing_credentials_to_your_application). Because default credentials lookup is fully automated in Google environments, with no need to supply environment variables or other configuration, this way of initializing the SDK is strongly recommended for applications running in Google environments such as Firebase App Hosting, Cloud Run, App Engine, and Cloud Functions for Firebase.
+
+To optionally specify initialization options, use the `FIREBASE_CONFIG` environment variable. If the content begins with `{` it will be parsed as a JSON object, otherwise it is treated as a path to a JSON file containing the options:
+
+```bash
+export FIREBASE_CONFIG='{"projectId":"my-project"}'
+```
+
+```dart
+// Options are read automatically from FIREBASE_CONFIG
+final app = FirebaseApp.initializeApp();
+```
 
 ### Initialize the SDK in non-Google environments
 
@@ -76,6 +97,94 @@ The following `Credential` constructors are available:
 - `Credential.fromApplicationDefaultCredentials({String? serviceAccountId})` — Uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) (recommended for Google environments). Optionally accepts a `serviceAccountId` to override the service account email.
 - `Credential.fromServiceAccount(File)` — Loads credentials from a service account JSON file downloaded from the Firebase Console.
 - `Credential.fromServiceAccountParams({required String privateKey, required String email, required String projectId, String? clientId})` — Builds credentials from individual service account fields directly.
+
+#### Using Workload Identity Federation
+
+[Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation) lets external workloads (such as GitHub Actions, AWS, or Azure) authenticate as a Google service account without a long-lived key file.
+
+Once your WIF credential configuration file is generated, point `GOOGLE_APPLICATION_CREDENTIALS` to it:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/wif-credential-config.json"
+```
+
+Then initialize the SDK with ADC, providing the impersonated service account email via `serviceAccountId`. This is required because WIF credential configs do not embed a `client_email` field, unlike service account key files:
+
+```dart
+final app = FirebaseApp.initializeApp(
+  options: AppOptions(
+    credential: Credential.fromApplicationDefaultCredentials(
+      serviceAccountId: 'my-service-account@my-project.iam.gserviceaccount.com',
+    ),
+    projectId: 'my-project',
+  ),
+);
+```
+
+### Initialize multiple apps
+
+In most cases, you only have to initialize a single default app:
+
+```dart
+// Initialize the default app
+final defaultApp = FirebaseApp.initializeApp();
+
+print(defaultApp.name); // '[DEFAULT]'
+
+// Access services from the default app
+final defaultAuth = defaultApp.auth();
+final defaultFirestore = defaultApp.firestore();
+```
+
+Some use cases require multiple app instances at the same time — for example, reading data from one Firebase project and creating custom tokens for another, or authenticating two apps with separate credentials:
+
+```dart
+// Each AppOptions points to a different Firebase project
+final defaultApp = FirebaseApp.initializeApp(
+  options: AppOptions(
+    credential: Credential.fromServiceAccount(File('path/to/default-service-account.json')),
+    projectId: 'my-default-project',
+  ),
+);
+
+// Initialize another app with a different config
+final otherApp = FirebaseApp.initializeApp(
+  options: AppOptions(
+    credential: Credential.fromServiceAccount(File('path/to/other-service-account.json')),
+    projectId: 'my-other-project',
+  ),
+  name: 'other',
+);
+
+print(defaultApp.name); // '[DEFAULT]'
+print(otherApp.name);   // 'other'
+
+// Access services from each app
+final defaultAuth = defaultApp.auth();
+final defaultFirestore = defaultApp.firestore();
+
+final otherAuth = otherApp.auth();
+final otherFirestore = otherApp.firestore();
+```
+
+### Testing with gcloud end user credentials
+
+When testing locally with Google Application Default Credentials obtained via `gcloud auth application-default login`, you must explicitly provide a project ID because Firebase Authentication does not accept gcloud end-user credentials without one:
+
+```dart
+final app = FirebaseApp.initializeApp(
+  options: AppOptions(
+    credential: Credential.fromApplicationDefaultCredentials(),
+    projectId: '<FIREBASE_PROJECT_ID>',
+  ),
+);
+```
+
+Alternatively, set the `GOOGLE_CLOUD_PROJECT` environment variable to avoid changing your code:
+
+```bash
+export GOOGLE_CLOUD_PROJECT="<FIREBASE_PROJECT_ID>"
+```
 
 ## Usage
 
