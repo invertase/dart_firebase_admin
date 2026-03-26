@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// Google Cloud Firestore client library for Dart.
-///
-/// This library provides a Dart client for Google Cloud Firestore, allowing
-/// you to interact with Firestore databases from Dart applications.
 library;
 
 import 'package:meta/meta.dart';

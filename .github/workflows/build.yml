@@ -50,6 +50,7 @@ jobs:
             --ignore "**/*.ts" \
             --ignore "**/*.txt" \
             --ignore "**/.dart_tool/**" \
+            --ignore "LICENSE" \
             .
 
   lint:
