@@ -179,10 +179,7 @@ dart analyze
 
 ### License Headers
 
-All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically, with templates in `.github/licenses/`:
-
-- `default.txt` — plain text, applied to TypeScript (`/** */`) and shell (`#`) files
-- Dart files use the built-in `-l apache` type, which handles `//` style and year substitution natively
+All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically.
 
 **Install addlicense:**
 
@@ -196,13 +193,23 @@ sudo mv addlicense /usr/local/bin/
 **Add headers to new files (run from repo root):**
 
 ```bash
-.github/licenses/add-headers.sh
+addlicense -f header_template.txt \
+  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
+  --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
+  --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
+  --ignore "**/.dart_tool/**" \
+  .
 ```
 
 **Check headers (dry run, same as CI):**
 
 ```bash
-.github/licenses/check-headers.sh
+addlicense -f header_template.txt --check \
+  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
+  --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
+  --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
+  --ignore "**/.dart_tool/**" \
+  .
 ```
 
 CI will fail if any source file is missing its license header.
