@@ -363,7 +363,7 @@ class WebpushNotification {
       'tag': tag,
       'timestamp': timestamp,
       'vibrate': vibrate,
-      if (customData case final customData?) ...customData,
+      ...?customData,
     }.toCleanRequest();
   }
 }
@@ -420,10 +420,7 @@ class ApnsPayload {
   final Map<String, String>? customData;
 
   Map<String, Object?> _toRequest() {
-    return {
-      'aps': aps._toRequest(),
-      if (customData case final customData?) ...customData,
-    }.toCleanRequest();
+    return {'aps': aps._toRequest(), ...?customData}.toCleanRequest();
   }
 }
 

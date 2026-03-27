@@ -87,7 +87,6 @@ class FirebaseMessagingRequestHandler {
             (value) {
               return SendResponse._(success: true, messageId: value.name);
             },
-            // ignore: avoid_types_on_closure_parameters
             onError: (Object? error) {
               // Convert DetailedApiRequestError to FirebaseMessagingAdminException
               final messagingError = error is FirebaseMessagingAdminException

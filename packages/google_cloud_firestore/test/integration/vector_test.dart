@@ -10,7 +10,6 @@ import '../fixtures/helpers.dart';
 void main() {
   // Skip all tests if emulator is not configured
   if (!isFirestoreEmulatorEnabled()) {
-    // ignore: avoid_print
     print(
       'Skipping Vector integration tests. '
       'Set FIRESTORE_EMULATOR_HOST environment variable to run these tests.',

@@ -2,15 +2,18 @@ name: dart_firebase_admin_workspace
 publish_to: none
 
 environment:
-  sdk: '>=3.9.0 <4.0.0'
+  sdk: ^3.9.0
 
 dev_dependencies:
+  dart_flutter_team_lints: ^3.0.0
   melos: ^7.3.0
   test: ^1.26.3
 
 workspace:
   - packages/dart_firebase_admin
   - packages/google_cloud_firestore
+  - packages/dart_firebase_admin/example
+  - packages/dart_firebase_admin/example_server_app
 
 melos:
   scripts:

@@ -734,7 +734,6 @@ class UpdateRequest extends _BaseUpdateRequest {
   final List<String>? providersToUnlink;
 
   UpdateRequest Function({String? email, String? phoneNumber}) get copyWith {
-    // ignore: avoid_types_on_closure_parameters, false positive
     return ({Object? email = _sentinel, Object? phoneNumber = _sentinel}) {
       return UpdateRequest._(
         disabled: disabled,

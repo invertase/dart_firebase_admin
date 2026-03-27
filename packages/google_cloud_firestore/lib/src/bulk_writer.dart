@@ -425,7 +425,7 @@ class BulkWriter {
 
   /// User-provided success callback.
   void Function(DocumentReference<Object?>, WriteResult) _successCallback =
-      (_, __) {};
+      (_, _) {};
 
   /// User-provided error callback. Returns true to retry, false otherwise.
   bool Function(BulkWriterError) _errorCallback = _defaultErrorCallback;
@@ -456,7 +456,6 @@ class BulkWriter {
   ///   print('Successfully wrote to ${ref.path}');
   /// });
   /// ```
-  // ignore: use_setters_to_change_properties
   void onWriteResult(
     void Function(DocumentReference<Object?>, WriteResult) callback,
   ) {
@@ -484,7 +483,6 @@ class BulkWriter {
   ///   return false; // Don't retry
   /// });
   /// ```
-  // ignore: use_setters_to_change_properties
   void onWriteError(bool Function(BulkWriterError) callback) {
     _errorCallback = callback;
   }
@@ -892,14 +890,12 @@ class BulkWriter {
 
   /// For testing: Set max pending operations count.
   @visibleForTesting
-  // ignore: use_setters_to_change_properties
   void setMaxPendingOpCount(int count) {
     _maxPendingOpCount = count;
   }
 
   /// For testing: Set max batch size.
   @visibleForTesting
-  // ignore: use_setters_to_change_properties
   void setMaxBatchSize(int size) {
     assert(
       _bulkCommitBatch.pendingOps.isEmpty,

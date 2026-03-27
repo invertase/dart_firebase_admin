@@ -931,7 +931,7 @@ class AuthRequestHandler extends _AbstractAuthRequestHandler {
       if (config.state != null) 'state': config.state,
       if (config.enabledProviders != null)
         'enabledProviders': config.enabledProviders,
-      if (providerConfigsJson != null) 'providerConfigs': providerConfigsJson,
+      'providerConfigs': ?providerConfigsJson,
     };
   }
 

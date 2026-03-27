@@ -1,1 +1,1 @@
-export 'src/auth.dart' hide AuthRequestHandler, AuthHttpClient;
+export 'src/auth.dart' hide AuthHttpClient, AuthRequestHandler;
