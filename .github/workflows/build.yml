@@ -22,6 +22,37 @@ on:
         default: 'stable'
 
 jobs:
+  # Check license headers on all source files
+  check-license-header:
+    name: Check License Headers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download addlicense
+        run: |
+          curl -sL https://github.com/google/addlicense/releases/download/v1.2.0/addlicense_v1.2.0_Linux_x86_64.tar.gz | tar xz -C /usr/local/bin addlicense
+          chmod +x /usr/local/bin/addlicense
+
+      - name: Check license headers
+        run: |
+          addlicense -f header_template.txt \
+            --check \
+            --ignore "**/*.yml" \
+            --ignore "**/*.yaml" \
+            --ignore "**/*.xml" \
+            --ignore "**/*.g.dart" \
+            --ignore "**/*.sh" \
+            --ignore "**/*.html" \
+            --ignore "**/*.js" \
+            --ignore "**/*.ts" \
+            --ignore "**/*.txt" \
+            --ignore "**/.dart_tool/**" \
+            --ignore "LICENSE" \
+            .
+
   lint:
     name: Lint (Dart ${{ matrix.dart-version }})
     runs-on: ubuntu-latest
@@ -353,10 +384,11 @@ jobs:
   build:
     name: Build verification (Dart ${{ matrix.dart-version }})
     runs-on: ubuntu-latest
-    needs: [lint, test, test-wif]
-    # Run even if test-wif was skipped (fork PRs), but not if lint or test failed
+    needs: [check-license-header, lint, test, test-wif]
+    # Run even if test-wif was skipped (fork PRs), but not if other jobs failed
     if: |
       always() &&
+      needs.check-license-header.result == 'success' &&
       needs.lint.result == 'success' &&
       needs.test.result == 'success' &&
       (needs.test-wif.result == 'success' || needs.test-wif.result == 'skipped')
