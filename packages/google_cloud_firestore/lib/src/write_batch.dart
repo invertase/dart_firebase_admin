@@ -33,9 +33,6 @@ class WriteResult {
   int get hashCode => writeTime.hashCode;
 }
 
-// ignore: avoid_private_typedef_functions
-typedef _PendingWriteOp = firestore_v1.Write Function();
-
 /// A Firestore WriteBatch that can be used to atomically commit multiple write
 /// operations at once.
 class WriteBatch {
@@ -43,7 +40,7 @@ class WriteBatch {
 
   final Firestore firestore;
   var _commited = false;
-  final _operations = <({String docPath, _PendingWriteOp op})>[];
+  final _operations = <({String docPath, firestore_v1.Write Function() op})>[];
 
   /// Create a document with the provided object values. This will fail the batch
   /// if a document exists at its location.

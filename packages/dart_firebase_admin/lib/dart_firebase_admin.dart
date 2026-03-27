@@ -14,13 +14,13 @@
 
 export 'src/app.dart'
     hide
-        envSymbol,
-        ApplicationDefaultCredential,
-        ServiceAccountCredential,
         AppRegistry,
+        ApplicationDefaultCredential,
+        CloudTasksEmulatorClient,
         EmulatorClient,
         Environment,
-        FirebaseUserAgentClient,
-        FirebaseServiceType,
         FirebaseService,
-        CloudTasksEmulatorClient;
+        FirebaseServiceType,
+        FirebaseUserAgentClient,
+        ServiceAccountCredential,
+        envSymbol;

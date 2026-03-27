@@ -62,7 +62,6 @@ List<Map<String, dynamic>> bundleToElementArray(Uint8List buffer) {
 void main() {
   // Skip all tests if emulator is not configured
   if (!isFirestoreEmulatorEnabled()) {
-    // ignore: avoid_print
     print(
       'Skipping Bundle integration tests. '
       'Set FIRESTORE_EMULATOR_HOST environment variable to run these tests.',

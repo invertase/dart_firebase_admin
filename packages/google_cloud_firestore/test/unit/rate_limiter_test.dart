@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ignore_for_file: invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
-
 import 'package:google_cloud_firestore/src/firestore.dart';
 import 'package:test/test.dart';
 
