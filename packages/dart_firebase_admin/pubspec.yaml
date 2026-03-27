@@ -7,32 +7,32 @@ repository: "https://github.com/invertase/dart_firebase_admin"
 publish_to: none
 
 environment:
-  sdk: ">=3.9.0 <4.0.0"
+  sdk: ^3.9.0
 
 dependencies:
   asn1lib: ^1.6.0
-  collection: ^1.18.0
-  dart_jsonwebtoken: ^3.0.0
+  collection: ^1.19.1
+  dart_jsonwebtoken: ^3.2.0
   equatable: ^2.0.7
-  ffi: ^2.1.2
+  ffi: ^2.2.0
   google_cloud: ^0.3.0
   google_cloud_firestore: ^0.1.0
   google_cloud_storage: ^0.5.1
-  googleapis: ^15.0.0
+  googleapis: ^16.0.0
   googleapis_auth: ^2.2.0
   googleapis_beta: ^9.0.0
-  http: ^1.0.0
+  http: ^1.6.0
   intl: ^0.20.0
-  meta: ^1.9.1
-  pem: ^2.0.5
-  pointycastle: ^3.7.0
+  meta: ^1.18.1
+  pem: ^2.0.6
+  pointycastle: ^4.0.0
 
 dev_dependencies:
   build_runner: ^2.4.7
-  file: ^7.0.0
-  mocktail: ^1.0.1
+  file: ^7.0.1
+  mocktail: ^1.0.2
   path: ^1.9.1
-  test: ^1.24.4
+  test: ^1.26.3
   uuid: ^4.0.0
 
 false_secrets:

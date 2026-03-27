@@ -393,8 +393,8 @@ class Transaction {
         // Ensure the _transactionIdPromise is set synchronously so that
         // subsequent operations will not race to start another transaction
         _transactionIdPromise = resultPromise.then((r) {
-          if (r.transaction case final _transaction?) {
-            return _transaction;
+          if (r.transaction case final transaction?) {
+            return transaction;
           } else {
             // Illegal state
             // The read operation was provided with new transaction options but did not return a transaction ID

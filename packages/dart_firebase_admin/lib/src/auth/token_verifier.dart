@@ -138,7 +138,6 @@ class FirebaseTokenVerifier {
           ? EmulatorSignatureVerifier()
           : _signatureVerifier;
       await verifier.verify(token);
-      // ignore: avoid_catching_errors
     } on JwtException catch (error, stackTrace) {
       Error.throwWithStackTrace(_mapJwtErrorToAuthError(error), stackTrace);
     }

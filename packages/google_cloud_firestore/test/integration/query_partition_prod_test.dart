@@ -34,14 +34,12 @@ void main() {
                 }
                 await batch.commit();
 
-                // ignore: avoid_print
                 print(
                   'Cleaned up ${snapshot.docs.length} documents from collection group: $collectionGroupId',
                 );
               }
             } catch (e) {
               // Log error but continue cleanup of other collection groups
-              // ignore: avoid_print
               print(
                 'Error cleaning up collection group $collectionGroupId: $e',
               );

@@ -41,10 +41,8 @@ void main() {
 
       try {
         originalConfig = await testAuth.projectConfigManager.getProjectConfig();
-        // ignore: avoid_print
         print('Original config saved for restoration after tests');
       } catch (e) {
-        // ignore: avoid_print
         print('Warning: Could not save original config: $e');
       } finally {
         await app.close();
@@ -76,10 +74,8 @@ void main() {
             mobileLinksConfig: originalConfig!.mobileLinksConfig,
           ),
         );
-        // ignore: avoid_print
         print('Original config restored successfully');
       } catch (e) {
-        // ignore: avoid_print
         print('Warning: Could not restore original config: $e');
       } finally {
         await app.close();

@@ -1,5 +1,3 @@
-// ignore_for_file: invalid_use_of_internal_member
-
 import 'package:google_cloud_firestore/src/backoff.dart';
 import 'package:test/test.dart';
 

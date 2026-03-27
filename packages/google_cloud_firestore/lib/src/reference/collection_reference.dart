@@ -106,7 +106,6 @@ final class CollectionReference<T> extends Query<T> {
       for (final document
           in response.documents ?? const <firestore_v1.Document>[])
         doc(
-          // ignore: unnecessary_null_checks, we don't want to inadvertently obtain a new document
           _QualifiedResourcePath.fromSlashSeparatedString(document.name!).id!,
         ),
     ];

@@ -535,7 +535,7 @@ class BundleBuilder {
       name: doc.metadata.name,
       readTime: doc.metadata.readTime,
       exists: doc.metadata.exists,
-      queries: [...existingQueries, if (queryName != null) queryName],
+      queries: [...existingQueries, ?queryName],
     );
 
     if (_compareTimestamps(snapshotReadTime, _latestReadTime) > 0) {
