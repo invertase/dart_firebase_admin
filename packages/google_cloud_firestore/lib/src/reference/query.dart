@@ -1035,11 +1035,7 @@ base class Query<T> {
     AggregateField? aggregateField2,
     AggregateField? aggregateField3,
   ]) {
-    final fields = [
-      aggregateField1,
-      if (aggregateField2 != null) aggregateField2,
-      if (aggregateField3 != null) aggregateField3,
-    ];
+    final fields = [aggregateField1, ?aggregateField2, ?aggregateField3];
 
     return AggregateQuery._(
       query: this,

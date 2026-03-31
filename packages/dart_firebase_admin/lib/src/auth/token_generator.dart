@@ -95,7 +95,7 @@ class _FirebaseTokenGenerator {
         'iss': account,
         'sub': account,
         'uid': uid,
-        if (tenantId case final tenantId?) 'tenant_id': tenantId,
+        'tenant_id': ?tenantId,
         if (claims.isNotEmpty) 'claims': claims,
       };
 

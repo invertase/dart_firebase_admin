@@ -13,5 +13,5 @@
 // limitations under the License.
 
 export 'src/app_check/app_check.dart'
-    hide AppCheckRequestHandler, AppCheckHttpClient;
+    hide AppCheckHttpClient, AppCheckRequestHandler;
 export 'src/app_check/app_check_api.dart';

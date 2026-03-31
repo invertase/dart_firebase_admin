@@ -158,7 +158,7 @@ void main() {
           final contentBytes = Uint8List.fromList(testContent.codeUnits);
 
           // Upload object
-          await bucket.storage.insertObject(
+          await bucket.storage.uploadObject(
             bucket.name,
             objectName,
             contentBytes,
@@ -189,7 +189,7 @@ void main() {
           final contentBytes = Uint8List.fromList(testContent.codeUnits);
 
           // Upload with custom metadata
-          await bucket.storage.insertObject(
+          await bucket.storage.uploadObject(
             bucket.name,
             objectName,
             contentBytes,
@@ -220,7 +220,7 @@ void main() {
           final contentBytes = Uint8List.fromList(testContent.codeUnits);
 
           // Upload object
-          await bucket.storage.insertObject(
+          await bucket.storage.uploadObject(
             bucket.name,
             objectName,
             contentBytes,
@@ -256,7 +256,7 @@ void main() {
           currentObject = (bucketName: testBucketName, objectName: objectName);
 
           const content = 'Emulator test';
-          await bucket.storage.insertObject(
+          await bucket.storage.uploadObject(
             bucket.name,
             objectName,
             Uint8List.fromList(content.codeUnits),
@@ -285,7 +285,7 @@ Future<void> verifyBucket(gcs.Bucket bucket, String testName) async {
   final objectName = 'data_${DateTime.now().millisecondsSinceEpoch}.txt';
 
   // Upload
-  await bucket.storage.insertObject(
+  await bucket.storage.uploadObject(
     bucket.name,
     objectName,
     Uint8List.fromList(expected.codeUnits),

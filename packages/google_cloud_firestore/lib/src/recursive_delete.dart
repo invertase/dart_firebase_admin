@@ -215,7 +215,6 @@ class _RecursiveDelete {
   /// Deletes the provided reference and updates pending operation count.
   void _deleteRef(DocumentReference<DocumentData> docRef) {
     _pendingOpsCount++;
-    // ignore: unawaited_futures
     writer
         .delete(docRef)
         .then(

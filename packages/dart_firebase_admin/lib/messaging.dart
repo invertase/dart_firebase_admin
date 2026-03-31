@@ -13,4 +13,7 @@
 // limitations under the License.
 
 export 'src/messaging/messaging.dart'
-    hide FirebaseMessagingRequestHandler, FirebaseMessagingHttpClient;
+    hide
+        FirebaseMessagingHttpClient,
+        FirebaseMessagingRequestHandler,
+        messagingServerToClientCode;

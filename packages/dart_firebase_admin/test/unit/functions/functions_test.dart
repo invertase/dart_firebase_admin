@@ -53,7 +53,7 @@ MockClient createMockHttpClient({
           'access_token': 'mock-access-token',
           'expires_in': 3600,
           'token_type': 'Bearer',
-          if (idToken != null) 'id_token': idToken,
+          'id_token': ?idToken,
         }),
         200,
         headers: {'content-type': 'application/json'},

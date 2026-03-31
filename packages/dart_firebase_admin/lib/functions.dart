@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export 'src/functions/functions.dart';
+export 'src/functions/functions.dart' hide functionsServerToClientCode;

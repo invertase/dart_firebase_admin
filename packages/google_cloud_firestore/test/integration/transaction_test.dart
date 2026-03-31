@@ -174,9 +174,9 @@ void main() {
       DocumentSnapshot<Map<String, dynamic>> setData;
 
       getData = await firestore.runTransaction((transaction) async {
-        final _getData = await transaction.get(docRef);
+        final getData0 = await transaction.get(docRef);
         transaction.set(docRef, {'value': 44});
-        return _getData;
+        return getData0;
       });
 
       setData = await docRef.get();

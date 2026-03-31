@@ -46,7 +46,7 @@ void main() {
               } catch (_) {}
             });
 
-            await bucket.storage.insertObject(
+            await bucket.storage.uploadObject(
               bucket.name,
               objectName,
               Uint8List.fromList(uploadedContent.codeUnits),
@@ -86,7 +86,7 @@ void main() {
               } catch (_) {}
             });
 
-            await bucket.storage.insertObject(
+            await bucket.storage.uploadObject(
               bucket.name,
               objectName,
               Uint8List.fromList(uploadedContent.codeUnits),
