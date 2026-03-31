@@ -36,7 +36,7 @@ Future<void> basicExample(FirebaseApp admin) async {
     const fileContent = 'Hello from basicExample() in storage_example.dart';
 
     print('> Uploading "$objectName" to Storage...\n');
-    await bucket.storage.insertObject(
+    await bucket.storage.uploadObject(
       bucket.name,
       objectName,
       utf8.encode(fileContent),
@@ -73,7 +73,7 @@ Future<void> getDownloadURLExample(FirebaseApp admin) async {
   const objectName = 'download-url-example.txt';
 
   try {
-    await bucket.storage.insertObject(
+    await bucket.storage.uploadObject(
       bucket.name,
       objectName,
       utf8.encode('Hello from getDownloadURLExample()!'),

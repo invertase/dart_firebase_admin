@@ -9,4 +9,4 @@ environment:
 dependencies:
   dart_firebase_admin:
   google_cloud_firestore:
-  google_cloud_storage: ^0.5.1
+  google_cloud_storage: ^0.6.0

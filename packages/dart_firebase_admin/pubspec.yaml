@@ -15,9 +15,9 @@ dependencies:
   dart_jsonwebtoken: ^3.2.0
   equatable: ^2.0.7
   ffi: ^2.2.0
-  google_cloud: ^0.3.0
+  google_cloud: ^0.4.0
   google_cloud_firestore: ^0.1.0
-  google_cloud_storage: ^0.5.1
+  google_cloud_storage: ^0.6.0
   googleapis: ^16.0.0
   googleapis_auth: ^2.2.0
   googleapis_beta: ^9.0.0

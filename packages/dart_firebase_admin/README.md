@@ -595,7 +595,7 @@ final bucket = storage.bucket('<bucket-name>');
 #### insertObject (upload)
 
 ```dart
-await bucket.storage.insertObject(
+await bucket.storage.uploadObject(
   bucket.name,
   'path/to/file.txt',
   Uint8List.fromList('Hello, world!'.codeUnits),
