@@ -127,6 +127,7 @@ class FirebaseApp {
           serviceAccountCredentials,
           scopes,
         ),
+      RefreshTokenCredential() => credential.createAuthClient(scopes),
       _ => googleapis_auth.clientViaApplicationDefaultCredentials(
         scopes: scopes,
       ),
