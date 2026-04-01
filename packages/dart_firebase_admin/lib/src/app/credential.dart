@@ -23,6 +23,8 @@ const envSymbol = #_envSymbol;
 /// - [Credential.fromServiceAccount] - For service account JSON files
 /// - [Credential.fromServiceAccountParams] - For individual service account parameters
 /// - [Credential.fromApplicationDefaultCredentials] - For Application Default Credentials (ADC)
+/// - [Credential.fromRefreshToken] - For OAuth2 refresh token JSON files
+/// - [Credential.fromRefreshTokenParams] - For individual OAuth2 refresh token parameters
 ///
 /// The credential is used to authenticate all API calls made by the Admin SDK.
 sealed class Credential {
@@ -115,6 +117,124 @@ sealed class Credential {
     }
   }
 
+  /// Creates a credential from an OAuth2 refresh token JSON file.
+  ///
+  /// The file must contain:
+  /// - `client_id`: The OAuth2 client ID
+  /// - `client_secret`: The OAuth2 client secret
+  /// - `refresh_token`: The refresh token
+  /// - `type`: The credential type (typically `"authorized_user"`)
+  ///
+  /// You can obtain a refresh token JSON file by running:
+  /// ```
+  /// gcloud auth application-default login
+  /// ```
+  /// which writes credentials to `~/.config/gcloud/application_default_credentials.json`.
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = Credential.fromRefreshToken(
+  ///   File('path/to/refresh_token.json'),
+  /// );
+  /// ```
+  factory Credential.fromRefreshToken(File refreshTokenFile) {
+    final String raw;
+    try {
+      raw = refreshTokenFile.readAsStringSync();
+    } on IOException catch (e) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Failed to read refresh token file: $e',
+      );
+    }
+
+    final Object? json;
+    try {
+      json = jsonDecode(raw);
+    } on FormatException catch (e) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Failed to parse refresh token JSON: ${e.message}',
+      );
+    }
+
+    if (json case {
+      'client_id': final String clientId,
+      'client_secret': final String clientSecret,
+      'refresh_token': final String refreshToken,
+      'type': final String type,
+    } when clientId.isNotEmpty &&
+        clientSecret.isNotEmpty &&
+        refreshToken.isNotEmpty &&
+        type.isNotEmpty) {
+      return RefreshTokenCredential._(
+        clientId: clientId,
+        clientSecret: clientSecret,
+        refreshToken: refreshToken,
+      );
+    }
+
+    throw FirebaseAppException(
+      AppErrorCode.invalidCredential,
+      'Refresh token file must contain non-empty string fields: '
+      '"client_id", "client_secret", "refresh_token", and "type".',
+    );
+  }
+
+  /// Creates a credential from individual OAuth2 refresh token parameters.
+  ///
+  /// Parameters:
+  /// - [clientId]: The OAuth2 client ID
+  /// - [clientSecret]: The OAuth2 client secret
+  /// - [refreshToken]: The refresh token
+  /// - [type]: The credential type (typically `"authorized_user"`)
+  ///
+  /// Example:
+  /// ```dart
+  /// final credential = Credential.fromRefreshTokenParams(
+  ///   clientId: 'my-client-id',
+  ///   clientSecret: 'my-client-secret',
+  ///   refreshToken: 'my-refresh-token',
+  ///   type: 'authorized_user',
+  /// );
+  /// ```
+  factory Credential.fromRefreshTokenParams({
+    required String clientId,
+    required String clientSecret,
+    required String refreshToken,
+    required String type,
+  }) {
+    if (clientId.isEmpty) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Refresh token must contain a non-empty "client_id".',
+      );
+    }
+    if (clientSecret.isEmpty) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Refresh token must contain a non-empty "client_secret".',
+      );
+    }
+    if (refreshToken.isEmpty) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Refresh token must contain a non-empty "refresh_token".',
+      );
+    }
+    if (type.isEmpty) {
+      throw FirebaseAppException(
+        AppErrorCode.invalidCredential,
+        'Refresh token must contain a non-empty "type".',
+      );
+    }
+    return RefreshTokenCredential._(
+      clientId: clientId,
+      clientSecret: clientSecret,
+      refreshToken: refreshToken,
+    );
+  }
+
   /// Private constructor for sealed class.
   Credential._();
 
@@ -168,6 +288,64 @@ final class ServiceAccountCredential extends Credential {
 
   @override
   String? get serviceAccountId => _serviceAccountCredentials.email;
+}
+
+/// OAuth2 refresh token credentials for Firebase Admin SDK.
+///
+/// Uses a refresh token to obtain and automatically refresh access tokens.
+/// Obtain a refresh token file by running `gcloud auth application-default login`.
+@internal
+final class RefreshTokenCredential extends Credential {
+  RefreshTokenCredential._({
+    required this.clientId,
+    required this.clientSecret,
+    required this.refreshToken,
+  }) : super._();
+
+  /// The OAuth2 client ID.
+  final String clientId;
+
+  /// The OAuth2 client secret.
+  final String clientSecret;
+
+  /// The OAuth2 refresh token.
+  final String refreshToken;
+
+  @override
+  googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
+      null;
+
+  @override
+  String? get serviceAccountId => null;
+
+  // TODO: move this into googleapis_auth as clientViaRefreshToken
+  /// Creates an auto-refreshing authenticated HTTP client for [scopes].
+  ///
+  /// An optional [baseClient] can be provided for testing. When omitted, a
+  /// plain [Client] is used.
+  @internal
+  Future<googleapis_auth.AutoRefreshingAuthClient> createAuthClient(
+    List<String> scopes, {
+    Client? baseClient,
+  }) async {
+    final id = googleapis_auth.ClientId(clientId, clientSecret);
+    // Deliberately expired — forces a token exchange on the first API call.
+    final expiredToken = googleapis_auth.AccessToken(
+      'Bearer',
+      '',
+      DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    );
+    final credentials = googleapis_auth.AccessCredentials(
+      expiredToken,
+      refreshToken,
+      scopes,
+    );
+    return googleapis_auth.autoRefreshingClient(
+      id,
+      credentials,
+      baseClient ?? Client(),
+    );
+  }
 }
 
 /// Application Default Credentials for Firebase Admin SDK.

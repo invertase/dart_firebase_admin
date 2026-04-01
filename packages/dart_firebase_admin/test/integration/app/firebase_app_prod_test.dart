@@ -99,6 +99,64 @@ void main() {
       );
     });
 
+    group('_createDefaultClient – refresh token path', () {
+      final refreshTokenFile = Platform.environment['FIREBASE_REFRESH_TOKEN_CREDENTIALS'];
+
+      test(
+        'creates an authenticated client via refresh token credential',
+        () {
+          return runZoned(() async {
+            final credential = Credential.fromRefreshToken(
+              File(refreshTokenFile!),
+            );
+
+            final app = FirebaseApp.initializeApp(
+              name: 'rt-client-${DateTime.now().microsecondsSinceEpoch}',
+              options: AppOptions(projectId: projectId, credential: credential),
+            );
+
+            try {
+              final client = await app.client;
+              expect(client, isNotNull);
+            } finally {
+              await app.close();
+            }
+          }, zoneValues: {envSymbol: prodEnv()});
+        },
+        skip: refreshTokenFile != null
+            ? false
+            : 'Requires FIREBASE_REFRESH_TOKEN_CREDENTIALS to be set '
+                '(path to a refresh token JSON file, e.g. '
+                '~/.config/gcloud/application_default_credentials.json)',
+        timeout: const Timeout(Duration(seconds: 30)),
+      );
+
+      test(
+        'SDK-created refresh token client is closed when app.close() is called',
+        () {
+          return runZoned(() async {
+            final credential = Credential.fromRefreshToken(
+              File(refreshTokenFile!),
+            );
+
+            final app = FirebaseApp.initializeApp(
+              name: 'rt-close-${DateTime.now().microsecondsSinceEpoch}',
+              options: AppOptions(projectId: projectId, credential: credential),
+            );
+
+            await app.client;
+            await app.close();
+
+            expect(app.isDeleted, isTrue);
+          }, zoneValues: {envSymbol: prodEnv()});
+        },
+        skip: refreshTokenFile != null
+            ? false
+            : 'Requires FIREBASE_REFRESH_TOKEN_CREDENTIALS to be set',
+        timeout: const Timeout(Duration(seconds: 30)),
+      );
+    });
+
     group('getProjectId – computeProjectId fallback', () {
       test(
         'falls back to computeProjectId() when no projectId source is configured',

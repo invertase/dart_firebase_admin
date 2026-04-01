@@ -7,6 +7,10 @@ set -e
 # export GOOGLE_APPLICATION_CREDENTIALS=service-account-key.json
 # export RUN_PROD_TESTS=true
 #
+# To also run the refresh token credential integration tests, set:
+# export FIREBASE_REFRESH_TOKEN_CREDENTIALS=~/.config/gcloud/application_default_credentials.json
+# (run `gcloud auth application-default login` first if the file doesn't exist)
+#
 # RUN_PROD_TESTS is intentionally never set in CI to avoid quota-heavy tests running there.
 # WIF tests (gated by hasWifEnv) still run in CI via the google-github-actions/auth step.
 
