@@ -100,7 +100,8 @@ void main() {
     });
 
     group('_createDefaultClient – refresh token path', () {
-      final refreshTokenFile = Platform.environment['FIREBASE_REFRESH_TOKEN_CREDENTIALS'];
+      final refreshTokenFile =
+          Platform.environment['FIREBASE_REFRESH_TOKEN_CREDENTIALS'];
 
       test(
         'creates an authenticated client via refresh token credential',
@@ -126,8 +127,8 @@ void main() {
         skip: refreshTokenFile != null
             ? false
             : 'Requires FIREBASE_REFRESH_TOKEN_CREDENTIALS to be set '
-                '(path to a refresh token JSON file, e.g. '
-                '~/.config/gcloud/application_default_credentials.json)',
+                  '(path to a refresh token JSON file, e.g. '
+                  '~/.config/gcloud/application_default_credentials.json)',
         timeout: const Timeout(Duration(seconds: 30)),
       );
 

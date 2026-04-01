@@ -39,11 +39,15 @@ void main() {
 
     test('throws if client_id is missing', () {
       final fs = MemoryFileSystem.test();
-      fs.file('refresh_token.json').writeAsStringSync(jsonEncode({
-        'client_secret': 'secret',
-        'refresh_token': 'token',
-        'type': 'authorized_user',
-      }));
+      fs
+          .file('refresh_token.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'client_secret': 'secret',
+              'refresh_token': 'token',
+              'type': 'authorized_user',
+            }),
+          );
       expect(
         () => Credential.fromRefreshToken(fs.file('refresh_token.json')),
         throwsA(isA<FirebaseAppException>()),
@@ -52,11 +56,15 @@ void main() {
 
     test('throws if client_secret is missing', () {
       final fs = MemoryFileSystem.test();
-      fs.file('refresh_token.json').writeAsStringSync(jsonEncode({
-        'client_id': 'id',
-        'refresh_token': 'token',
-        'type': 'authorized_user',
-      }));
+      fs
+          .file('refresh_token.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'client_id': 'id',
+              'refresh_token': 'token',
+              'type': 'authorized_user',
+            }),
+          );
       expect(
         () => Credential.fromRefreshToken(fs.file('refresh_token.json')),
         throwsA(isA<FirebaseAppException>()),
@@ -65,11 +73,15 @@ void main() {
 
     test('throws if refresh_token is missing', () {
       final fs = MemoryFileSystem.test();
-      fs.file('refresh_token.json').writeAsStringSync(jsonEncode({
-        'client_id': 'id',
-        'client_secret': 'secret',
-        'type': 'authorized_user',
-      }));
+      fs
+          .file('refresh_token.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'client_id': 'id',
+              'client_secret': 'secret',
+              'type': 'authorized_user',
+            }),
+          );
       expect(
         () => Credential.fromRefreshToken(fs.file('refresh_token.json')),
         throwsA(isA<FirebaseAppException>()),
@@ -78,11 +90,15 @@ void main() {
 
     test('throws if type is missing', () {
       final fs = MemoryFileSystem.test();
-      fs.file('refresh_token.json').writeAsStringSync(jsonEncode({
-        'client_id': 'id',
-        'client_secret': 'secret',
-        'refresh_token': 'token',
-      }));
+      fs
+          .file('refresh_token.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'client_id': 'id',
+              'client_secret': 'secret',
+              'refresh_token': 'token',
+            }),
+          );
       expect(
         () => Credential.fromRefreshToken(fs.file('refresh_token.json')),
         throwsA(isA<FirebaseAppException>()),
@@ -91,12 +107,16 @@ void main() {
 
     test('throws if any field is an empty string', () {
       final fs = MemoryFileSystem.test();
-      fs.file('refresh_token.json').writeAsStringSync(jsonEncode({
-        'client_id': '',
-        'client_secret': 'secret',
-        'refresh_token': 'token',
-        'type': 'authorized_user',
-      }));
+      fs
+          .file('refresh_token.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'client_id': '',
+              'client_secret': 'secret',
+              'refresh_token': 'token',
+              'type': 'authorized_user',
+            }),
+          );
       expect(
         () => Credential.fromRefreshToken(fs.file('refresh_token.json')),
         throwsA(isA<FirebaseAppException>()),
@@ -105,12 +125,16 @@ void main() {
 
     test('returns RefreshTokenCredential for valid file', () {
       final fs = MemoryFileSystem.test();
-      fs.file('refresh_token.json').writeAsStringSync(jsonEncode({
-        'client_id': 'test-id',
-        'client_secret': 'test-secret',
-        'refresh_token': 'test-refresh-token',
-        'type': 'authorized_user',
-      }));
+      fs
+          .file('refresh_token.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'client_id': 'test-id',
+              'client_secret': 'test-secret',
+              'refresh_token': 'test-refresh-token',
+              'type': 'authorized_user',
+            }),
+          );
 
       final credential = Credential.fromRefreshToken(
         fs.file('refresh_token.json'),
