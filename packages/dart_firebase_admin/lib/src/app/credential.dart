@@ -158,15 +158,17 @@ sealed class Credential {
       );
     }
 
-    if (json case {
-      'client_id': final String clientId,
-      'client_secret': final String clientSecret,
-      'refresh_token': final String refreshToken,
-      'type': final String type,
-    } when clientId.isNotEmpty &&
-        clientSecret.isNotEmpty &&
-        refreshToken.isNotEmpty &&
-        type.isNotEmpty) {
+    if (json
+        case {
+          'client_id': final String clientId,
+          'client_secret': final String clientSecret,
+          'refresh_token': final String refreshToken,
+          'type': final String type,
+        }
+        when clientId.isNotEmpty &&
+            clientSecret.isNotEmpty &&
+            refreshToken.isNotEmpty &&
+            type.isNotEmpty) {
       return RefreshTokenCredential._(
         clientId: clientId,
         clientSecret: clientSecret,
@@ -202,7 +204,7 @@ sealed class Credential {
     required String clientId,
     required String clientSecret,
     required String refreshToken,
-    required String type,
+    String type = 'authorized_user',
   }) {
     if (clientId.isEmpty) {
       throw FirebaseAppException(
