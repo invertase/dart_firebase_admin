@@ -319,35 +319,6 @@ final class RefreshTokenCredential extends Credential {
 
   @override
   String? get serviceAccountId => null;
-
-  // TODO: move this into googleapis_auth as clientViaRefreshToken
-  /// Creates an auto-refreshing authenticated HTTP client for [scopes].
-  ///
-  /// An optional [baseClient] can be provided for testing. When omitted, a
-  /// plain [Client] is used.
-  @internal
-  Future<googleapis_auth.AutoRefreshingAuthClient> createAuthClient(
-    List<String> scopes, {
-    Client? baseClient,
-  }) async {
-    final id = googleapis_auth.ClientId(clientId, clientSecret);
-    // Deliberately expired — forces a token exchange on the first API call.
-    final expiredToken = googleapis_auth.AccessToken(
-      'Bearer',
-      '',
-      DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-    );
-    final credentials = googleapis_auth.AccessCredentials(
-      expiredToken,
-      refreshToken,
-      scopes,
-    );
-    return googleapis_auth.autoRefreshingClient(
-      id,
-      credentials,
-      baseClient ?? Client(),
-    );
-  }
 }
 
 /// Application Default Credentials for Firebase Admin SDK.

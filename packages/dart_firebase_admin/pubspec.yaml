@@ -19,7 +19,11 @@ dependencies:
   google_cloud_firestore:
   google_cloud_storage: ^0.6.0
   googleapis: ^16.0.0
-  googleapis_auth: ^2.2.0
+  googleapis_auth:
+    git:
+      url: https://github.com/google/googleapis.dart.git
+      path: googleapis_auth
+      ref: c3fa07da0841ba75493c59b64aa0aa901541957e
   googleapis_beta: ^9.0.0
   http: ^1.6.0
   intl: ^0.20.0
