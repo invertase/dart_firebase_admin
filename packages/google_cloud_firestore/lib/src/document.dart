@@ -203,7 +203,7 @@ class DocumentSnapshot<T> {
   ///
   /// final documentSnapshot = await documentRef.get();
   /// final data = documentSnapshot.data();
-  /// print('Retrieved data: ${JSON.stringify(data)}');
+  /// print('Retrieved data: ${jsonEncode(data)}');
   /// ```
   T? data() {
     final fieldsProto = _fieldsProto;
