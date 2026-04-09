@@ -1,8 +1,7 @@
-# Firebase Admin Dart SDK
-
 ## Table of Contents
 
  - [Overview](#overview)
+ - [Supported Services](#supported-services)
  - [Installation](#installation)
  - [Add the Firebase Admin SDK to your server](#add-the-firebase-admin-sdk-to-your-server)
    - [Prerequisites](#prerequisites)
@@ -10,7 +9,7 @@
    - [Add the SDK](#add-the-sdk)
    - [Initialize the SDK](#initialize-the-sdk)
    - [Initialize the SDK in non-Google environments](#initialize-the-sdk-in-non-google-environments)
-   - [Using Workload Identity Federation](#using-workload-identity-federation)
+     - [Using Workload Identity Federation](#using-workload-identity-federation)
    - [Initialize multiple apps](#initialize-multiple-apps)
    - [Testing with gcloud end user credentials](#testing-with-gcloud-end-user-credentials)
  - [Usage](#usage)
@@ -21,8 +20,6 @@
    - [Messaging](#messaging)
    - [Storage](#storage)
    - [Security Rules](#security-rules)
- - [Supported Services](#supported-services)
- - [Additional Packages](#additional-packages)
  - [Contributing](#contributing)
  - [License](#license)
 
@@ -35,6 +32,33 @@ Admin Dart SDK enables access to Firebase services from privileged environments
 
 For more information, visit the
 [Firebase Admin SDK setup guide](https://firebase.google.com/docs/admin/setup/).
+
+## Supported Services
+
+The Firebase Admin Dart SDK currently supports the following Firebase services:
+
+🟢 - Fully supported <br />
+🟡 - Partially supported / Work in progress <br />
+🔴 - Not supported
+
+| Service            | Status | Notes                                |
+|--------------------|:------:|--------------------------------------|
+| App                | 🟢     |                                      |
+| App Check          | 🟢     |                                      |
+| Authentication     | 🟢     |                                      |
+| Data Connect       | 🔴     |                                      |
+| Realtime Database  | 🔴     |                                      |
+| Event Arc          | 🔴     |                                      |
+| Extensions         | 🔴     |                                      |
+| Firestore          | 🟢     | Via [package:google_cloud_firestore] |
+| Functions          | 🟢     |                                      |
+| Installations      | 🔴     |                                      |
+| Machine Learning   | 🔴     |                                      |
+| Messaging          | 🟢     |                                      |
+| Project Management | 🔴     |                                      |
+| Remote Config      | 🔴     |                                      |
+| Security Rules     | 🟢     |                                      |
+| Storage            | 🟢     | Via [package:google_cloud_storage]   |
 
 ## Installation
 
@@ -94,7 +118,8 @@ final app = FirebaseApp.initializeApp();
 
 To optionally specify initialization options for services such as Realtime Database, Cloud Storage, or Cloud Functions, use the `FIREBASE_CONFIG` environment variable. If the content of the `FIREBASE_CONFIG` variable begins with a `{` it will be parsed as a JSON object. Otherwise the SDK assumes that the string is the path of a JSON file containing the options.
 
-> **Note:** The `FIREBASE_CONFIG` environment variable is included automatically in App Hosting backends and Cloud Functions for Firebase functions.
+> [!NOTE]
+> The `FIREBASE_CONFIG` environment variable is included automatically in App Hosting backends and Cloud Functions for Firebase functions.
 
 ```bash
 export FIREBASE_CONFIG='{"projectId":"my-project"}'
@@ -218,7 +243,8 @@ final otherAuth = otherApp.auth();
 final otherFirestore = otherApp.firestore();
 ```
 
-> **Note:** Each app instance has its own configuration options and authentication state.
+> [!NOTE]
+> Each app instance has its own configuration options and authentication state.
 
 ### Testing with gcloud end user credentials
 
@@ -358,7 +384,8 @@ print('Token: ${result.token}');
 
 ### Firestore
 
-> **Note:** The core firestore API is provided by [package:google_cloud_firestore].
+> [!NOTE]
+> The core firestore API is provided by [package:google_cloud_firestore].
 
 ```dart
 import 'dart:async';
@@ -584,7 +611,8 @@ await messaging.unsubscribeFromTopic(['<token-1>', '<token-2>'], 'news');
 
 ### Storage
 
-> **Note:** The core storage API is provided by [package:google_cloud_storage].
+> [!NOTE]
+> The core storage API is provided by [package:google_cloud_storage].
 
 ```dart
 import 'dart:typed_data';
@@ -709,38 +737,12 @@ print('Created ruleset: ${ruleset.name}');
 await securityRules.deleteRuleset(ruleset.name);
 ```
 
-## Supported Services
 
-The Firebase Admin Dart SDK currently supports the following Firebase services:
-
-🟢 - Fully supported <br />
-🟡 - Partially supported / Work in progress <br />
-🔴 - Not supported
-
-| Service               | Status  | Notes                          |
-|-----------------------|---------|--------------------------------|
-| App                   | 🟢      |                                |
-| App Check             | 🟢      |                                |
-| Authentication        | 🟢      |                                |
-| Data Connect          | 🔴      |                                |
-| Realtime Database     | 🔴      |                                |
-| Event Arc             | 🔴      |                                |
-| Extensions            | 🔴      |                                |
-| Firestore             | 🟢      | Via [package:google_cloud_firestore].<br>*Excludes realtime capabilities* |
-| Functions             | 🟢      |                                |
-| Installations         | 🔴      |                                |
-| Machine Learning      | 🔴      |                                |
-| Messaging             | 🟢      |                                |
-| Project Management    | 🔴      |                                |
-| Remote Config         | 🔴      |                                |
-| Security Rules        | 🟢      |                                |
-| Storage               | 🟢      | Via [package:google_cloud_storage]. | 
-
-# Contributing
+## Contributing
 
 Contributions are welcome! Please read the [contributing guide](CONTRIBUTING.md) to get started.
 
-# License
+## License
 
 [Apache License Version 2.0](LICENSE)
 
