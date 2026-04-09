@@ -440,14 +440,17 @@ void _validateUserInput(
 
     case Map<Object?, Object?>():
       for (final entry in value.entries) {
+        final keyPath = switch (entry.key) {
+          final FieldPath fp => fp,
+          final String s => FieldPath([s]),
+          _ => FieldPath([entry.key.toString()]),
+        };
         _validateUserInput(
           arg,
           entry.value,
           description: description,
           options: options,
-          path: path == null
-              ? FieldPath.from(entry.key)
-              : path._appendPath(FieldPath.from(entry.key)),
+          path: path == null ? keyPath : path._appendPath(keyPath),
           level: level + 1,
           inArray: inArray,
         );
