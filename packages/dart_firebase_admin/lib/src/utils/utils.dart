@@ -18,37 +18,38 @@ import 'dart:io';
 String get dartVersion =>
     Platform.version.split(RegExp('[^0-9]')).take(3).join('.');
 
-/// Generates the update mask for the provided object.
-/// Note this will ignore the last key with value undefined.
-List<String> generateUpdateMask(
-  Object? obj, {
-  List<String> terminalPaths = const [],
-  String root = '',
-}) {
+List<String> _generateUpdateMask(Object? obj, String root) {
   if (obj is! Map) return [];
 
   final updateMask = <String>[];
   for (final key in obj.keys) {
-    final nextPath = root.isEmpty ? '$root.$key' : '$key';
+    final nextPath = root.isEmpty ? key.toString() : '$root.$key';
     // We hit maximum path.
     // Consider switching to Set<string> if the list grows too large.
-    if (terminalPaths.contains(nextPath)) {
-      // Add key and stop traversing this branch.
-      updateMask.add('$key');
-    } else {
-      final maskList = generateUpdateMask(
-        obj[key],
-        terminalPaths: terminalPaths,
-        root: nextPath,
-      );
-      if (maskList.isNotEmpty) {
-        for (final mask in maskList) {
-          updateMask.add('$key.$mask');
-        }
-      } else {
-        updateMask.add('$key');
+    final maskList = _generateUpdateMask(obj[key], nextPath);
+    if (maskList.isNotEmpty) {
+      for (final mask in maskList) {
+        updateMask.add('$key.$mask');
       }
+    } else {
+      updateMask.add('$key');
     }
   }
   return updateMask;
 }
+
+/// Generates a list of field paths (update mask) for the provided object.
+///
+/// Returns an empty list if the [obj] is not a [Map].
+///
+/// All keys present in the map are included in the mask. If a key's value is
+/// another map, the paths are extended to the keys of that map. If a key's
+/// value is not a map (including primitive values like numbers, strings, and
+/// `null`), that key becomes a leaf in the path.
+///
+/// Example:
+/// ```dart
+/// generateUpdateMask({'a': 1, 'b': {'c': null, 'd': {}}})
+/// // Returns: ['a', 'b.c', 'b.d']
+/// ```
+List<String> generateUpdateMask(Object? obj) => _generateUpdateMask(obj, '');
