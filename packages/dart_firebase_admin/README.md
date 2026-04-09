@@ -358,6 +358,8 @@ print('Token: ${result.token}');
 
 ### Firestore
 
+> **Note:** The core firestore API is provided by [package:google_cloud_firestore].
+
 ```dart
 import 'dart:async';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
@@ -582,6 +584,8 @@ await messaging.unsubscribeFromTopic(['<token-1>', '<token-2>'], 'news');
 
 ### Storage
 
+> **Note:** The core storage API is provided by [package:google_cloud_storage].
+
 ```dart
 import 'dart:typed_data';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
@@ -722,7 +726,7 @@ The Firebase Admin Dart SDK currently supports the following Firebase services:
 | Realtime Database     | 🔴      |                                |
 | Event Arc             | 🔴      |                                |
 | Extensions            | 🔴      |                                |
-| Firestore             | 🟢      | Excludes realtime capabilities |
+| Firestore             | 🟢      | Via [package:google_cloud_firestore].<br>*Excludes realtime capabilities* |
 | Functions             | 🟢      |                                |
 | Installations         | 🔴      |                                |
 | Machine Learning      | 🔴      |                                |
@@ -730,14 +734,7 @@ The Firebase Admin Dart SDK currently supports the following Firebase services:
 | Project Management    | 🔴      |                                |
 | Remote Config         | 🔴      |                                |
 | Security Rules        | 🟢      |                                |
-| Storage               | 🟢      |                                |
-
-## Additional Packages
-
-Alongside the Firebase Admin Dart SDK, this repository contains additional workspace/pub.dev packages to accomodate the SDK:
-
-- [google_cloud_firestore](/packages/google_cloud_firestore/): Standalone Google APIs Firestore SDK, which the Firebase SDK extends.
-- [google_cloud_storage](https://github.com/googleapis/google-cloud-dart/tree/main/packages/google_cloud_storage): Standalone Google Cloud Storage SDK, which the Firebase SDK extends.
+| Storage               | 🟢      | Via [package:google_cloud_storage]. | 
 
 # Contributing
 
@@ -746,3 +743,6 @@ Contributions are welcome! Please read the [contributing guide](CONTRIBUTING.md)
 # License
 
 [Apache License Version 2.0](LICENSE)
+
+[package:google_cloud_firestore]: https://pub.dev/packages/google_cloud_firestore
+[package:google_cloud_storage]: https://pub.dev/packages/google_cloud_storage
