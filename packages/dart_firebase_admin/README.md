@@ -37,9 +37,9 @@ For more information, visit the
 
 The Firebase Admin Dart SDK currently supports the following Firebase services:
 
-🟢 - Fully supported <br />
-🟡 - Partially supported / Work in progress <br />
-🔴 - Not supported
+- 🟢 - Fully supported
+- 🟡 - Partially supported / Work in progress
+- 🔴 - Not supported
 
 | Service            | Status | Notes                                |
 |--------------------|:------:|--------------------------------------|
