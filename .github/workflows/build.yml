@@ -64,7 +64,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/dart_firebase_admin
+        working-directory: packages/firebase_admin_sdk
 
     steps:
       - uses: actions/checkout@v5
@@ -111,7 +111,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/dart_firebase_admin
+        working-directory: packages/firebase_admin_sdk
 
     steps:
       - uses: actions/checkout@v5
@@ -159,7 +159,7 @@ jobs:
 
       - run: npm install -g firebase-tools
 
-      - name: Run dart_firebase_admin tests with coverage
+      - name: Run firebase_admin_sdk tests with coverage
         run: ${{ github.workspace }}/scripts/coverage.sh
 
       - name: Run google_cloud_firestore tests with coverage
@@ -171,7 +171,7 @@ jobs:
           cp coverage.lcov coverage_admin.lcov
           cp ../google_cloud_firestore/coverage.lcov coverage_firestore.lcov
 
-          # Merge coverage reports from all packages (relative to packages/dart_firebase_admin)
+          # Merge coverage reports from all packages (relative to packages/firebase_admin_sdk)
           # Only merge files that exist
           COVERAGE_FILES=""
           [ -f coverage.lcov ] && COVERAGE_FILES="$COVERAGE_FILES coverage.lcov"
@@ -244,7 +244,7 @@ jobs:
 
           # Console output
           echo "=== Coverage Report ==="
-          echo "dart_firebase_admin: ${ADMIN_PCT}% (${ADMIN_HIT}/${ADMIN_TOTAL} lines)"
+          echo "firebase_admin_sdk: ${ADMIN_PCT}% (${ADMIN_HIT}/${ADMIN_TOTAL} lines)"
           echo "google_cloud_firestore: ${FIRESTORE_PCT}% (${FIRESTORE_HIT}/${FIRESTORE_TOTAL} lines)"
           echo "----------------------"
           echo "Total: ${COVERAGE_PCT}% (${HIT_LINES}/${TOTAL_LINES} lines)"
@@ -280,7 +280,7 @@ jobs:
             ### Package Breakdown
             | Package | Coverage |
             |---------|----------|
-            | dart_firebase_admin | ${adminCov}% |
+            | firebase_admin_sdk | ${adminCov}% |
             | google_cloud_firestore | ${firestoreCov}% |
 
             _Minimum threshold: 40%_`;
@@ -320,7 +320,7 @@ jobs:
         continue-on-error: true
         uses: codecov/codecov-action@v4
         with:
-          files: packages/dart_firebase_admin/coverage.lcov
+          files: packages/firebase_admin_sdk/coverage.lcov
           flags: unittests
           fail_ci_if_error: false
 
@@ -340,7 +340,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/dart_firebase_admin
+        working-directory: packages/firebase_admin_sdk
 
     steps:
       - uses: actions/checkout@v5
@@ -380,8 +380,8 @@ jobs:
       - name: Run WIF auth test
         run: dart test test/integration/app/firebase_app_prod_test.dart --concurrency=1
 
-  build:
-    name: Build verification (Dart ${{ matrix.dart-version }})
+  publish:
+    name: Publish verification
     runs-on: ubuntu-latest
     needs: [check-license-header, lint, test, test-wif]
     # Run even if test-wif was skipped (fork PRs), but not if other jobs failed
@@ -392,29 +392,24 @@ jobs:
       needs.test.result == 'success' &&
       (needs.test-wif.result == 'success' || needs.test-wif.result == 'skipped')
 
-    strategy:
-      fail-fast: false
-      matrix:
-        dart-version: [stable, beta]
-
     defaults:
       run:
-        working-directory: packages/dart_firebase_admin
+        working-directory: packages/firebase_admin_sdk
 
     steps:
       - uses: actions/checkout@v5
 
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: ${{ matrix.dart-version }}
+          sdk: stable
 
       - name: Cache pub dependencies
         uses: actions/cache@v5
         with:
           path: ~/.pub-cache
-          key: pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
+          key: pub-stable-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
-            pub-${{ matrix.dart-version }}-
+            pub-stable-
             pub-
 
       - run: dart pub global activate melos

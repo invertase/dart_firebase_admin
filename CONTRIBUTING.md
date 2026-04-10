@@ -13,7 +13,7 @@ Thank you for contributing to the Firebase community!
 We get lots of those and we love helping you, but GitHub is not the best place for them. Issues which just ask about usage will be closed. Here are some resources to get help:
 
 - Go through the [Firebase Admin SDK setup guide](https://firebase.google.com/docs/admin/setup/)
-- Read the full [API reference](https://pub.dev/documentation/dart_firebase_admin/latest/)
+- Read the full [API reference](https://pub.dev/documentation/firebase_admin_sdk/latest/)
 
 If the official documentation doesn't help, try asking on [Stack Overflow](https://stackoverflow.com/questions/tagged/firebase+dart).
 
@@ -21,9 +21,9 @@ If the official documentation doesn't help, try asking on [Stack Overflow](https
 
 ## Think you found a bug?
 
-Search through [existing issues](https://github.com/invertase/dart_firebase_admin/issues) before opening a new one — your question may have already been answered.
+Search through [existing issues](https://github.com/firebase/firebase-admin-dart/issues) before opening a new one — your question may have already been answered.
 
-If your issue appears to be a bug and hasn't been reported, [open a new issue](https://github.com/invertase/dart_firebase_admin/issues/new) using the bug report template and include a minimal repro.
+If your issue appears to be a bug and hasn't been reported, [open a new issue](https://github.com/firebase/firebase-admin-dart/issues/new) using the bug report template and include a minimal repro.
 
 If you are up to the challenge, [submit a pull request](#want-to-submit-a-pull-request) with a fix!
 
@@ -33,7 +33,7 @@ Share your idea through our [feature request support channel](https://firebase.g
 
 ## Want to submit a pull request?
 
-Sweet, we'd love to accept your contribution! [Open a new pull request](https://github.com/invertase/dart_firebase_admin/pulls) and fill out the provided template.
+Sweet, we'd love to accept your contribution! [Open a new pull request](https://github.com/firebase/firebase-admin-dart/pulls) and fill out the provided template.
 
 **If you want to implement a new feature, please open an issue with a proposal first so that we can figure out if the feature makes sense and how it will work.**
 
@@ -78,7 +78,7 @@ All submissions, including submissions by project members, require review. We us
 3. Verify your setup by running the analyzer and formatter:
 
    ```bash
-   cd packages/dart_firebase_admin
+   cd packages/firebase_admin_sdk
    dart format --set-exit-if-changed .
    dart analyze
    ```
@@ -88,11 +88,11 @@ All submissions, including submissions by project members, require review. We us
 This repository is a monorepo managed by [Melos](https://melos.invertase.dev/).
 
 ```
-dart_firebase_admin/             # Workspace root
+firebase_admin_sdk/             # Workspace root
 ├── packages/
-│   ├── dart_firebase_admin/     # Main Firebase Admin SDK package
+│   ├── firebase_admin_sdk/     # Main Firebase Admin SDK package
 │   │   ├── lib/
-│   │   │   ├── dart_firebase_admin.dart  # Public API barrel file
+│   │   │   ├── firebase_admin_sdk.dart  # Public API barrel file
 │   │   │   ├── auth.dart                 # Auth public exports
 │   │   │   ├── firestore.dart            # Firestore public exports
 │   │   │   ├── messaging.dart            # Messaging public exports
@@ -123,7 +123,7 @@ Tests are split into unit/emulator tests and production integration tests.
 #### Unit and Emulator Tests
 
 ```bash
-# From packages/dart_firebase_admin
+# From packages/firebase_admin_sdk
 
 # Run all tests against emulators (requires Firebase CLI)
 firebase emulators:exec --project dart-firebase-admin --only auth,firestore,functions,tasks,storage \
@@ -240,7 +240,7 @@ The project uses strict analysis settings (`strict-casts`, `strict-inference`, `
 ### Public API
 
 - Each Firebase product has its own barrel file (e.g., `lib/auth.dart`, `lib/firestore.dart`). Only add exports there for types that users need directly.
-- The top-level `lib/dart_firebase_admin.dart` re-exports core types. Product-specific types belong in their respective barrel files.
+- The top-level `lib/firebase_admin_sdk.dart` re-exports core types. Product-specific types belong in their respective barrel files.
 - Classes under `lib/src/` are implementation details and should not be exported from barrel files unless they are part of the public API.
 
 ### Documentation
