@@ -226,7 +226,7 @@ class TenantManager {
   /// starting from the offset as specified by [pageToken]. This is used to
   /// retrieve all the tenants of a specified project in batches.
   ///
-  /// [maxResults] - The page size, 1000 if undefined. This is also
+  /// [maxResults] - The page size, 1000 if not specified. This is also
   ///   the maximum allowed limit.
   /// [pageToken] - The next page token. If not specified, returns
   ///   tenants starting without any offset.

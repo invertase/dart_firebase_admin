@@ -39,7 +39,7 @@ melos:
   command:
     bootstrap:
       hooks:
-        post: ./gen-version.sh
+        post: ./scripts/gen-version.sh
     version:
       hooks:
-        post: ./gen-version.sh
+        post: ./scripts/gen-version.sh

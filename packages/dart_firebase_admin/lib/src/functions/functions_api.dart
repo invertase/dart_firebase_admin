@@ -154,8 +154,8 @@ class TaskOptions {
   /// rates in all task commands. The infrastructure relies on an approximately
   /// uniform distribution of task IDs to store and serve tasks efficiently.
   ///
-  /// The ID can contain only letters ([A-Za-z]), numbers ([0-9]), hyphens (-),
-  /// or underscores (_). The maximum length is 500 characters.
+  /// The ID can contain only letters (`[A-Za-z]`), numbers (`[0-9]`), hyphens
+  /// (`-`), or underscores (`_`). The maximum length is 500 characters.
   final String? id;
 
   /// HTTP request headers to include in the request to the task queue function.
