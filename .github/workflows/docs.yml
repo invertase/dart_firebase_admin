@@ -3,7 +3,7 @@ name: Deploy Documentation
 on:
   push:
     branches:
-      - next
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -26,12 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: subosito/flutter-action@v2
+      - uses: dart-lang/setup-dart@v1
         with:
-          channel: stable
+          sdk: stable
 
-      - name: Cache pub dependencies
-        uses: actions/cache@v3
+      - uses: actions/cache@v5
         with:
           path: ~/.pub-cache
           key: pub-docs-${{ hashFiles('**/pubspec.lock') }}
@@ -39,17 +38,15 @@ jobs:
             pub-docs-
             pub-
 
-      - name: Install Melos
-        run: dart pub global activate melos
+      - run: dart pub global activate melos
 
-      - name: Bootstrap workspace
-        run: melos bootstrap
+      - run: melos bootstrap
 
       - name: Generate documentation
         run: melos run docs --no-select
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: doc
 
