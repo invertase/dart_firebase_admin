@@ -503,7 +503,7 @@ abstract class _BaseAuth {
   /// See https://firebase.google.com/docs/auth/admin/manage-users#list_all_users
   /// for code samples and detailed documentation.
   ///
-  /// - maxResults - The page size, 1000 if undefined. This is also
+  /// - maxResults - The page size, 1000 if not specified. This is also
   ///   the maximum allowed limit.
   /// - pageToken - The next page token. If not specified, returns
   ///   users starting without any offset.

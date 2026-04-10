@@ -112,7 +112,7 @@ class Tenant {
     try {
       emailSignInConfig = _EmailSignInConfig.fromServerResponse(response);
     } catch (e) {
-      // If allowPasswordSignup is undefined, it is disabled by default.
+      // If allowPasswordSignup is `null`, it is disabled by default.
       emailSignInConfig = _EmailSignInConfig(
         enabled: false,
         passwordRequired: true,

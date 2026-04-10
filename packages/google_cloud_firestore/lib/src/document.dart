@@ -23,8 +23,8 @@ class Optional<T> {
 /// Firestore database. The data can be extracted with [data].
 ///
 /// For a DocumentSnapshot that points to a non-existing document, any data
-/// access will return 'undefined'. You can use the
-/// [exists] property to explicitly verify a document's existence.
+/// access will return `null`. You can use the [exists] property to explicitly
+/// verify a document's existence.
 @immutable
 class DocumentSnapshot<T> {
   const DocumentSnapshot._({
@@ -195,19 +195,15 @@ class DocumentSnapshot<T> {
   /// ```
   bool get exists => _fieldsProto != null;
 
-  /// Retrieves all fields in the document as an object. Returns 'undefined' if
+  /// Retrieves all fields in the document as an object. Returns `null` if
   /// the document doesn't exist.
-  ///
-  /// Returns an object containing all fields in the document or
-  /// 'null' if the document doesn't exist.
   ///
   /// ```dart
   /// final documentRef = firestore.doc('col/doc');
   ///
-  /// documentRef.get().then((documentSnapshot) {
-  ///   final data = documentSnapshot.data();
-  ///   print('Retrieved data: ${JSON.stringify(data)}');
-  /// });
+  /// final documentSnapshot = await documentRef.get();
+  /// final data = documentSnapshot.data();
+  /// print('Retrieved data: ${jsonEncode(data)}');
   /// ```
   T? data() {
     final fieldsProto = _fieldsProto;
