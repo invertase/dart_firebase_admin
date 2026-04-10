@@ -15,6 +15,13 @@ workspace:
   - packages/dart_firebase_admin/example
   - packages/dart_firebase_admin/example_server_app
 
+dependency_overrides:
+  googleapis_auth:
+    git:
+      url: https://github.com/google/googleapis.dart.git
+      path: googleapis_auth
+      ref: c3fa07da0841ba75493c59b64aa0aa901541957e
+
 melos:
   scripts:
     docs:
@@ -32,7 +39,7 @@ melos:
   command:
     bootstrap:
       hooks:
-        post: ./gen-version.sh
+        post: ./scripts/gen-version.sh
     version:
       hooks:
-        post: ./gen-version.sh
+        post: ./scripts/gen-version.sh
