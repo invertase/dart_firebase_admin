@@ -19,7 +19,7 @@ String get dartVersion =>
     Platform.version.split(RegExp('[^0-9]')).take(3).join('.');
 
 /// Generates the update mask for the provided object.
-/// Note this will ignore the last key with value undefined.
+/// Note this will ignore the last key with value `null`.
 List<String> generateUpdateMask(
   Object? obj, {
   List<String> terminalPaths = const [],
