@@ -46,7 +46,7 @@ jobs:
         run: melos run docs --no-select
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v7
+        uses: actions/upload-pages-artifact@v4
         with:
           path: doc
 
