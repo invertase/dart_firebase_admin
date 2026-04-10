@@ -3,7 +3,7 @@
 # Script to generate version.g.dart for dart_firebase_admin
 # Extracts version from pubspec.yaml and writes to lib/src/version.g.dart
 
-set -e
+set -euo pipefail
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,7 +14,7 @@ package_dir="$PROJECT_ROOT/packages/dart_firebase_admin"
 pubspec_file="$package_dir/pubspec.yaml"
 
 # Extract version from pubspec.yaml (format: version: X.Y.Z)
-version=$(grep -E "^version:" "$pubspec_file" | head -n 1 | sed -E 's/^version:[[:space:]]*([^[:space:]#]*).*/\1/')
+version=$(grep -E "^version:" "$pubspec_file" | head -n 1 | sed -E 's/^version:[[:space:]]*([^[:space:]#]*).*/\1/' || true)
 
 if [ -z "$version" ]; then
   echo "Error: Could not find version in $pubspec_file"
@@ -36,5 +36,3 @@ const String packageVersion = '$version';
 EOF
 
 echo "Generated $version_file with version: $version"
-
-echo "Version generation complete!"
