@@ -3,7 +3,7 @@ analyzer:
   errors:
     lines_longer_than_80_chars: ignore
   exclude:
-    - packages/dart_firebase_admin/example_server_app/**
+    - packages/firebase_admin_sdk/example_server_app/**
   language:
     strict-casts: true
     strict-inference: true

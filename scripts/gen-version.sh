@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to generate version.g.dart for dart_firebase_admin
+# Script to generate version.g.dart for firebase_admin_sdk
 # Extracts version from pubspec.yaml and writes to lib/src/version.g.dart
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Project root is the parent directory
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-package_dir="$PROJECT_ROOT/packages/dart_firebase_admin"
+package_dir="$PROJECT_ROOT/packages/firebase_admin_sdk"
 pubspec_file="$package_dir/pubspec.yaml"
 
 # Extract version from pubspec.yaml (format: version: X.Y.Z)

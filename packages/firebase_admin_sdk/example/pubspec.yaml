@@ -1,0 +1,12 @@
+name: firebase_admin_sdk_example
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: '^3.9.0'
+
+dependencies:
+  firebase_admin_sdk:
+  google_cloud_firestore:
+  google_cloud_storage: ^0.6.0
