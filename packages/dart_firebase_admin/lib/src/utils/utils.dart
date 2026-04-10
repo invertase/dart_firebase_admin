@@ -18,7 +18,13 @@ import 'dart:io';
 String get dartVersion =>
     Platform.version.split(RegExp('[^0-9]')).take(3).join('.');
 
-List<String> _generateUpdateMask(Object? obj, String root) {
+/// Generates the update mask for the provided object.
+/// Note this will ignore the last key with value `null`.
+List<String> generateUpdateMask(
+  Object? obj, {
+  List<String> terminalPaths = const [],
+  String root = '',
+}) {
   if (obj is! Map) return [];
 
   final updateMask = <String>[];
