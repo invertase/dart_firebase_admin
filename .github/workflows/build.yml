@@ -381,7 +381,7 @@ jobs:
         run: dart test test/integration/app/firebase_app_prod_test.dart --concurrency=1
 
   build:
-    name: Build verification (Dart ${{ matrix.dart-version }})
+    name: Build verification
     runs-on: ubuntu-latest
     needs: [check-license-header, lint, test, test-wif]
     # Run even if test-wif was skipped (fork PRs), but not if other jobs failed
@@ -392,11 +392,6 @@ jobs:
       needs.test.result == 'success' &&
       (needs.test-wif.result == 'success' || needs.test-wif.result == 'skipped')
 
-    strategy:
-      fail-fast: false
-      matrix:
-        dart-version: [stable, beta]
-
     defaults:
       run:
         working-directory: packages/firebase_admin_sdk
@@ -406,15 +401,15 @@ jobs:
 
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: ${{ matrix.dart-version }}
+          sdk: stable
 
       - name: Cache pub dependencies
         uses: actions/cache@v5
         with:
           path: ~/.pub-cache
-          key: pub-${{ matrix.dart-version }}-${{ hashFiles('**/pubspec.lock') }}
+          key: pub-stable-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
-            pub-${{ matrix.dart-version }}-
+            pub-stable-
             pub-
 
       - run: dart pub global activate melos

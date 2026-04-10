@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 0.5.0
+
+- New release with a new name. See below for historical context.
+
 # Package renamed `firebase_admin_sdk` from `dart_firebase_admin`
 
 - Source lineage from [dart_firebase_admin@0.4.1](https://pub.dev/packages/dart_firebase_admin/versions/0.4.1)
