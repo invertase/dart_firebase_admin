@@ -420,7 +420,7 @@ abstract class _AbstractAuthRequestHandler {
   /// Exports the users (single batch only) with a size of maxResults and starting from
   /// the offset as specified by pageToken.
   ///
-  /// maxResults - The page size, 1000 if undefined. This is also the maximum
+  /// maxResults - The page size, 1000 if not specified. This is also the maximum
   /// allowed limit.
   ///
   /// pageToken - The next page token. If not specified, returns users starting
