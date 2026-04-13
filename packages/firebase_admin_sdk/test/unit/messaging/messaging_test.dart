@@ -272,7 +272,7 @@ void main() {
               aps: Aps(
                 contentAvailable: true,
                 mutableContent: true,
-                sound: CriticalSound(critical: true, name: 'default'),
+                sound: const CriticalSound(critical: true, name: 'default'),
               ),
             ),
           ),

@@ -482,15 +482,14 @@ class Aps {
 
   Map<String, Object?> _toRequest() {
     return {
-      if (alert != null) 'alert': alert?._toRequest(),
-      if (badge != null) 'badge': badge,
-      if (sound != null) 'sound': sound!._toRequest(),
-      if (contentAvailable != null) 'content-available': contentAvailable,
-      if (mutableContent != null) 'mutable-content': mutableContent,
-      if (category != null) 'category': category,
-      if (threadId != null) 'thread-id': threadId,
-      if (interruptionLevel != null)
-        'interruption-level': interruptionLevel!._value,
+      'alert': ?alert?._toRequest(),
+      'badge': ?badge,
+      'sound': ?sound?._toRequest(),
+      'content-available': ?contentAvailable,
+      'mutable-content': ?mutableContent,
+      'category': ?category,
+      'thread-id': ?threadId,
+      'interruption-level': ?interruptionLevel?._value,
     }.toCleanRequest();
   }
 }
@@ -597,7 +596,7 @@ final class ApsSoundName extends ApsSound {
 /// Requires the Critical Alerts entitlement. For a simple sound name, use
 /// [ApsSoundName] instead.
 final class CriticalSound extends ApsSound {
-  CriticalSound({this.critical, required this.name, this.volume});
+  const CriticalSound({this.critical, required this.name, this.volume});
 
   /// The critical alert flag. Set to `true` to enable the critical alert.
   final bool? critical;
