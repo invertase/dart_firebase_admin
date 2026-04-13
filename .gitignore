@@ -4,7 +4,7 @@ firestore-debug.log
 coverage.lcov
 
 node_modules
-packages/dart_firebase_admin/test/client/package-lock.json
+packages/firebase_admin_sdk/test/client/package-lock.json
 
 build
 coverage

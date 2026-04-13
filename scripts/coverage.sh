@@ -16,7 +16,7 @@ set -e
 
 # Get the script's directory and the package directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PACKAGE_DIR="$SCRIPT_DIR/../packages/dart_firebase_admin"
+PACKAGE_DIR="$SCRIPT_DIR/../packages/firebase_admin_sdk"
 
 # Change to package directory
 cd "$PACKAGE_DIR"

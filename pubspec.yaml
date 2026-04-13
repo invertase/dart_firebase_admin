@@ -1,4 +1,4 @@
-name: dart_firebase_admin_workspace
+name: firebase_admin_sdk_workspace
 publish_to: none
 
 environment:
@@ -10,10 +10,10 @@ dev_dependencies:
   test: ^1.26.3
 
 workspace:
-  - packages/dart_firebase_admin
+  - packages/firebase_admin_sdk
   - packages/google_cloud_firestore
-  - packages/dart_firebase_admin/example
-  - packages/dart_firebase_admin/example_server_app
+  - packages/firebase_admin_sdk/example
+  - packages/firebase_admin_sdk/example_server_app
 
 melos:
   scripts:
