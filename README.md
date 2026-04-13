@@ -1,1 +1,1 @@
-packages/dart_firebase_admin/README.md
+packages/firebase_admin_sdk/README.md
