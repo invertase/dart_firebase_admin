@@ -449,6 +449,7 @@ class Aps {
     this.mutableContent,
     this.category,
     this.threadId,
+    this.interruptionLevel,
   });
 
   /// Alert to be included in the message. This may be a string or an object of
@@ -459,8 +460,9 @@ class Aps {
   /// not specified, the badge will remain unchanged.
   final num? badge;
 
-  /// Sound to be played with the message.
-  final CriticalSound? sound;
+  /// Sound to be played with the message. May be a simple sound name via
+  /// [ApsSoundName] or a critical alert configuration via [CriticalSound].
+  final ApsSound? sound;
 
   /// Specifies whether to configure a background update notification.
   final bool? contentAvailable;
@@ -475,15 +477,20 @@ class Aps {
   /// An app-specific identifier for grouping notifications.
   final String? threadId;
 
+  /// The interruption level of the notification.
+  final ApsInterruptionLevel? interruptionLevel;
+
   Map<String, Object?> _toRequest() {
     return {
       if (alert != null) 'alert': alert?._toRequest(),
       if (badge != null) 'badge': badge,
-      if (sound != null) 'sound': sound?._toRequest(),
+      if (sound != null) 'sound': sound!._toRequest(),
       if (contentAvailable != null) 'content-available': contentAvailable,
       if (mutableContent != null) 'mutable-content': mutableContent,
       if (category != null) 'category': category,
       if (threadId != null) 'thread-id': threadId,
+      if (interruptionLevel != null)
+        'interruption-level': interruptionLevel!._value,
     }.toCleanRequest();
   }
 }
@@ -532,9 +539,64 @@ class ApsAlert {
   }
 }
 
+/// The interruption level of an APNs notification, as defined by Apple.
+///
+/// See https://developer.apple.com/documentation/usernotifications/unnotificationinterruptionlevel
+enum ApsInterruptionLevel {
+  /// The system presents the notification immediately, lights up the screen,
+  /// and can play a sound.
+  active,
+
+  /// The system presents the notification immediately, lights up the screen,
+  /// and bypasses the mute switch to play a sound. Requires the Critical Alerts
+  /// entitlement.
+  critical,
+
+  /// The system adds the notification to the notification list without lighting
+  /// up the screen or playing a sound.
+  passive,
+
+  /// The notification appears immediately and can play a sound, but will not
+  /// break through Focus or Do Not Disturb.
+  timeSensitive;
+
+  String get _value => switch (this) {
+    ApsInterruptionLevel.active => 'active',
+    ApsInterruptionLevel.critical => 'critical',
+    ApsInterruptionLevel.passive => 'passive',
+    ApsInterruptionLevel.timeSensitive => 'time-sensitive',
+  };
+}
+
+/// Base class for the APNs `sound` field.
+///
+/// Use [ApsSoundName] for a simple sound file name, or [CriticalSound] for a
+/// critical alert sound configuration.
+sealed class ApsSound {
+  const ApsSound();
+  Object _toRequest();
+}
+
+/// A simple sound name for an APNs notification.
+///
+/// Use `"default"` to play the system sound, or provide the filename of a
+/// sound resource bundled in the app.
+final class ApsSoundName extends ApsSound {
+  const ApsSoundName(this.name);
+
+  /// The name of the sound file to play.
+  final String name;
+
+  @override
+  String _toRequest() => name;
+}
+
 /// Represents a critical sound configuration that can be included in the
 /// `aps` dictionary of an APNs payload.
-class CriticalSound {
+///
+/// Requires the Critical Alerts entitlement. For a simple sound name, use
+/// [ApsSoundName] instead.
+final class CriticalSound extends ApsSound {
   CriticalSound({this.critical, required this.name, this.volume});
 
   /// The critical alert flag. Set to `true` to enable the critical alert.
@@ -549,6 +611,7 @@ class CriticalSound {
   /// (silent) and 1.0 (full volume).
   final double? volume;
 
+  @override
   Map<String, Object?> _toRequest() {
     return {
       'critical': critical,
