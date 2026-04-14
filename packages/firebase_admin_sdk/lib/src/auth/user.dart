@@ -17,6 +17,9 @@ part of '../auth.dart';
 /// 'REDACTED', encoded as a base64 string.
 final _b64Redacted = base64Encode('REDACTED'.codeUnits);
 
+String? _formatDate(DateTime? dateTime) =>
+    dateTime == null ? null : formatHttpDate(dateTime.toUtc());
+
 enum MultiFactorId {
   phone._('phone'),
   totp._('totp');
@@ -183,37 +186,24 @@ class UserRecord {
   final MultiFactorSettings? multiFactor;
 
   /// Returns a JSON-serializable representation of this object.
-  ///
-  /// A JSON-serializable representation of this object.
   Map<String, Object?> toJson() {
-    final providerDataJson = <Object?>[];
-    final json = <String, Object?>{
+    return <String, Object?>{
       'uid': uid,
-      'email': email,
+      'email': ?email,
       'emailVerified': emailVerified,
-      'displayName': displayName,
-      'photoURL': photoUrl,
-      'phoneNumber': phoneNumber,
+      'displayName': ?displayName,
+      'photoURL': ?photoUrl,
+      'phoneNumber': ?phoneNumber,
       'disabled': disabled,
-      // Convert metadata to json.
       'metadata': metadata.toJson(),
-      'passwordHash': passwordHash,
-      'passwordSalt': passwordSalt,
-      'customClaims': customClaims,
-      'tokensValidAfterTime': tokensValidAfterTime,
-      'tenantId': tenantId,
-      'providerData': providerDataJson,
+      'passwordHash': ?passwordHash,
+      'passwordSalt': ?passwordSalt,
+      'customClaims': ?customClaims,
+      'tokensValidAfterTime': ?_formatDate(tokensValidAfterTime),
+      'tenantId': ?tenantId,
+      'multiFactor': ?multiFactor?.toJson(),
+      'providerData': providerData.map((e) => e.toJson()).toList(),
     };
-
-    final multiFactor = this.multiFactor;
-    if (multiFactor != null) json['multiFactor'] = multiFactor.toJson();
-
-    json['providerData'] = [];
-    for (final entry in providerData) {
-      // Convert each provider data to json.
-      providerDataJson.add(entry.toJson());
-    }
-    return json;
   }
 }
 
@@ -250,12 +240,12 @@ class UserInfo {
   /// Returns a JSON-serializable representation of this object.
   Map<String, Object?> toJson() {
     return {
-      'uid': uid,
-      'displayName': displayName,
-      'email': email,
-      'photoURL': photoUrl,
-      'providerId': providerId,
-      'phoneNumber': phoneNumber,
+      'uid': ?uid,
+      'displayName': ?displayName,
+      'email': ?email,
+      'photoURL': ?photoUrl,
+      'providerId': ?providerId,
+      'phoneNumber': ?phoneNumber,
     };
   }
 }
@@ -352,9 +342,9 @@ abstract class MultiFactorInfo {
   Map<String, Object?> toJson() {
     return {
       'uid': uid,
-      'displayName': displayName,
+      'displayName': ?displayName,
       'factorId': factorId._value,
-      'enrollmentTime': enrollmentTime,
+      'enrollmentTime': ?_formatDate(enrollmentTime),
     };
   }
 }
@@ -375,7 +365,7 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
 
   @override
   Map<String, Object?> toJson() {
-    return {...super.toJson(), 'phoneNumber': phoneNumber};
+    return {...super.toJson(), 'phoneNumber': ?phoneNumber};
   }
 }
 
@@ -434,9 +424,9 @@ class UserMetadata {
   /// Returns a JSON-serializable representation of this object.
   Map<String, Object?> toJson() {
     return {
-      'creationTime': creationTime.microsecondsSinceEpoch.toString(),
-      'lastSignInTime': lastSignInTime?.millisecondsSinceEpoch.toString(),
-      'lastRefreshTime': lastRefreshTime?.toIso8601String(),
+      'lastSignInTime': ?_formatDate(lastSignInTime),
+      'creationTime': _formatDate(creationTime),
+      'lastRefreshTime': ?_formatDate(lastRefreshTime),
     };
   }
 }
