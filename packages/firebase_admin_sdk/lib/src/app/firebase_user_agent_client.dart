@@ -34,7 +34,7 @@ class FirebaseUserAgentClient extends BaseClient
   Future<StreamedResponse> send(BaseRequest request) {
     request.headers['X-Firebase-Client'] = 'fire-admin-dart/$packageVersion';
     request.headers['X-Goog-Api-Client'] =
-        'gl-dart/$dartVersion fire-admin-dart/$packageVersion';
+        'gl-dart/$dartVersion fire-admin/$packageVersion';
     return _client.send(request);
   }
 

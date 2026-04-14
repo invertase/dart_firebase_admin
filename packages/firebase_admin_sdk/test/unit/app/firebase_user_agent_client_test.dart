@@ -56,12 +56,12 @@ void main() {
       expect(captured.length, 1);
       expect(
         captured.first.headers['X-Goog-Api-Client'],
-        'gl-dart/$dartVersion fire-admin-dart/$packageVersion',
+        'gl-dart/$dartVersion fire-admin/$packageVersion',
       );
     });
 
     test(
-      'X-Goog-Api-Client has correct format gl-dart/<version> fire-admin-dart/<version>',
+      'X-Goog-Api-Client has correct format gl-dart/<version> fire-admin/<version>',
       () async {
         final captured = <BaseRequest>[];
         final client = FirebaseUserAgentClient(_CapturingAuthClient(captured));
@@ -72,7 +72,7 @@ void main() {
         final parts = value.split(' ');
         expect(parts.length, 2);
         expect(parts[0], startsWith('gl-dart/'));
-        expect(parts[1], startsWith('fire-admin-dart/'));
+        expect(parts[1], startsWith('fire-admin/'));
         expect(parts[1].split('/').last, packageVersion);
       },
     );
@@ -116,7 +116,7 @@ void main() {
 
       expect(
         captured.first.headers['X-Goog-Api-Client'],
-        'gl-dart/$dartVersion fire-admin-dart/$packageVersion',
+        'gl-dart/$dartVersion fire-admin/$packageVersion',
       );
     });
 
@@ -136,7 +136,7 @@ void main() {
         );
         expect(
           req.headers['X-Goog-Api-Client'],
-          'gl-dart/$dartVersion fire-admin-dart/$packageVersion',
+          'gl-dart/$dartVersion fire-admin/$packageVersion',
         );
       }
     });
