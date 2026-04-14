@@ -189,18 +189,18 @@ class UserRecord {
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'uid': uid,
-      'email': email,
+      'email': ?email,
       'emailVerified': emailVerified,
-      'displayName': displayName,
-      'photoURL': photoUrl,
-      'phoneNumber': phoneNumber,
+      'displayName': ?displayName,
+      'photoURL': ?photoUrl,
+      'phoneNumber': ?phoneNumber,
       'disabled': disabled,
       'metadata': metadata.toJson(),
-      'passwordHash': passwordHash,
-      'passwordSalt': passwordSalt,
+      'passwordHash': ?passwordHash,
+      'passwordSalt': ?passwordSalt,
       'customClaims': ?customClaims,
       'tokensValidAfterTime': ?_formatDate(tokensValidAfterTime),
-      'tenantId': tenantId,
+      'tenantId': ?tenantId,
       'multiFactor': ?multiFactor?.toJson(),
       'providerData': providerData.map((e) => e.toJson()).toList(),
     };
@@ -240,12 +240,12 @@ class UserInfo {
   /// Returns a JSON-serializable representation of this object.
   Map<String, Object?> toJson() {
     return {
-      'uid': uid,
-      'displayName': displayName,
-      'email': email,
-      'photoURL': photoUrl,
-      'providerId': providerId,
-      'phoneNumber': phoneNumber,
+      'uid': ?uid,
+      'displayName': ?displayName,
+      'email': ?email,
+      'photoURL': ?photoUrl,
+      'providerId': ?providerId,
+      'phoneNumber': ?phoneNumber,
     };
   }
 }
@@ -342,9 +342,9 @@ abstract class MultiFactorInfo {
   Map<String, Object?> toJson() {
     return {
       'uid': uid,
-      'displayName': displayName,
+      'displayName': ?displayName,
       'factorId': factorId._value,
-      'enrollmentTime': _formatDate(enrollmentTime),
+      'enrollmentTime': ?_formatDate(enrollmentTime),
     };
   }
 }
@@ -365,7 +365,7 @@ class PhoneMultiFactorInfo extends MultiFactorInfo {
 
   @override
   Map<String, Object?> toJson() {
-    return {...super.toJson(), 'phoneNumber': phoneNumber};
+    return {...super.toJson(), 'phoneNumber': ?phoneNumber};
   }
 }
 
@@ -424,9 +424,9 @@ class UserMetadata {
   /// Returns a JSON-serializable representation of this object.
   Map<String, Object?> toJson() {
     return {
-      'lastSignInTime': _formatDate(lastSignInTime),
+      'lastSignInTime': ?_formatDate(lastSignInTime),
       'creationTime': _formatDate(creationTime),
-      'lastRefreshTime': _formatDate(lastRefreshTime),
+      'lastRefreshTime': ?_formatDate(lastRefreshTime),
     };
   }
 }
