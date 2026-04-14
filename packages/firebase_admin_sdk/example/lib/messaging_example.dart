@@ -166,7 +166,7 @@ Future<void> messagingExample(FirebaseApp admin) async {
           payload: ApnsPayload(
             aps: Aps(
               contentAvailable: true,
-              sound: CriticalSound(critical: true, name: 'default'),
+              sound: const CriticalSound(critical: true, name: 'default'),
             ),
           ),
         ),

@@ -272,7 +272,7 @@ void main() {
               aps: Aps(
                 contentAvailable: true,
                 mutableContent: true,
-                sound: CriticalSound(critical: true, name: 'default'),
+                sound: const CriticalSound(critical: true, name: 'default'),
               ),
             ),
           ),
@@ -305,6 +305,72 @@ void main() {
 
       expect(request.message!.webpush!.notification!['renotify'], 1);
     });
+
+    test('ApsSoundName serialises as a plain string', () async {
+      when(
+        () => messages.send(any(), any()),
+      ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
+
+      await messaging.send(
+        TopicMessage(
+          topic: 'test',
+          apns: ApnsConfig(
+            payload: ApnsPayload(
+              aps: Aps(sound: const ApsSoundName('default')),
+            ),
+          ),
+        ),
+      );
+
+      final capture = verify(() => messages.send(captureAny(), captureAny()))
+        ..called(1);
+      final request = capture.captured.first as fmc1.SendMessageRequest;
+
+      expect(
+        request.message!.apns!.payload!['aps']
+            .cast<Map<Object?, Object?>>()['sound'],
+        'default',
+      );
+    });
+
+    test(
+      'ApsInterruptionLevel serialises with correct APNs key values',
+      () async {
+        for (final (level, expected) in [
+          (ApsInterruptionLevel.active, 'active'),
+          (ApsInterruptionLevel.critical, 'critical'),
+          (ApsInterruptionLevel.passive, 'passive'),
+          (ApsInterruptionLevel.timeSensitive, 'time-sensitive'),
+        ]) {
+          when(
+            () => messages.send(any(), any()),
+          ).thenAnswer((_) => Future.value(fmc1.Message(name: 'test')));
+
+          await messaging.send(
+            TopicMessage(
+              topic: 'test',
+              apns: ApnsConfig(
+                payload: ApnsPayload(aps: Aps(interruptionLevel: level)),
+              ),
+            ),
+          );
+
+          final capture = verify(
+            () => messages.send(captureAny(), captureAny()),
+          )..called(1);
+          final request = capture.captured.first as fmc1.SendMessageRequest;
+
+          expect(
+            request.message!.apns!.payload!['aps']
+                .cast<Map<Object?, Object?>>()['interruption-level'],
+            expected,
+            reason: 'Expected $level to serialise as "$expected"',
+          );
+
+          reset(messages);
+        }
+      },
+    );
 
     test('supports null alert/sound', () async {
       when(

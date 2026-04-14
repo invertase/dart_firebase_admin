@@ -159,6 +159,32 @@ void main() {
         },
       );
 
+      test(
+        'send() with ApsSoundName and ApsInterruptionLevel is accepted by FCM',
+        () async {
+          final messageId = await messaging.send(
+            TopicMessage(
+              topic: 'foo-bar',
+              notification: Notification(
+                title: 'Integration Test',
+                body: 'Testing APNs sound and interruption level',
+              ),
+              apns: ApnsConfig(
+                payload: ApnsPayload(
+                  aps: Aps(
+                    sound: const ApsSoundName('default'),
+                    interruptionLevel: ApsInterruptionLevel.timeSensitive,
+                  ),
+                ),
+              ),
+            ),
+            dryRun: true,
+          );
+
+          expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
+        },
+      );
+
       test('sendEach() validates empty messages list', () async {
         await expectLater(
           () => messaging.sendEach([]),
