@@ -66,7 +66,7 @@ void main() {
     });
 
     test('toJson serialization', () {
-      final now = DateTime.now().toUtc();
+      final now = DateTime.utc(2026, 4, 14, 18, 41, 23);
 
       final metadata = UserMetadata.fromResponse(
         auth1.GoogleCloudIdentitytoolkitV1UserInfo(
@@ -78,9 +78,9 @@ void main() {
 
       final json = metadata.toJson();
       expect(json, {
-        'lastSignInTime': '0',
-        'creationTime': '0',
-        'lastRefreshTime': now.toIso8601String(),
+        'creationTime': 'Thu, 01 Jan 1970 00:00:00 GMT',
+        'lastSignInTime': 'Thu, 01 Jan 1970 00:00:00 GMT',
+        'lastRefreshTime': 'Tue, 14 Apr 2026 18:41:23 GMT',
       });
     });
 
@@ -200,7 +200,7 @@ void main() {
       expect(json['displayName'], 'Work Phone');
       expect(json['phoneNumber'], '+19876543210');
       expect(json['factorId'], 'phone');
-      expect(json['enrollmentTime'], isNotNull);
+      expect(json['enrollmentTime'], 'Sun, 09 Sep 2001 01:46:40 GMT');
     });
   });
 
@@ -274,7 +274,7 @@ void main() {
       expect(json['displayName'], 'Work Authenticator');
       expect(json['totpInfo'], isA<Map<String, dynamic>>());
       expect(json['factorId'], 'totp');
-      expect(json['enrollmentTime'], isNotNull);
+      expect(json['enrollmentTime'], 'Wed, 18 May 2033 03:33:20 GMT');
     });
   });
 
@@ -674,7 +674,7 @@ void main() {
       expect(json['passwordSalt'], 'salt456');
       expect(json['customClaims'], isNotNull);
       expect(json['tenantId'], 'tenant-1');
-      expect(json['tokensValidAfterTime'], isNotNull);
+      expect(json['tokensValidAfterTime'], 'Thu, 01 Jan 1970 00:33:20 GMT');
       expect(json['multiFactor'], isNotNull);
     });
   });

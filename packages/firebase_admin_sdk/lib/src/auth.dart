@@ -24,6 +24,7 @@ import 'package:googleapis/identitytoolkit/v2.dart' as v2;
 import 'package:googleapis/identitytoolkit/v3.dart' as auth3;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:meta/meta.dart';
 
 import 'app.dart';

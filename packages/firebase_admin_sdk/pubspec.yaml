@@ -20,6 +20,7 @@ dependencies:
   googleapis_auth: ^2.3.0
   googleapis_beta: ^9.0.0
   http: ^1.6.0
+  http_parser: ^4.1.2
   intl: ^0.20.0
   meta: ^1.18.1
   pem: ^2.0.6
