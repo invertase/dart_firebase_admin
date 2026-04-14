@@ -116,17 +116,44 @@ class WriteBatch {
   }) async {
     _commited = true;
 
-    return firestore._firestoreClient.v1((api, projectId) async {
-      final request = firestore_v1.CommitRequest(
-        transaction: transactionId,
-        writes: _operations.map((op) => op.op()).toList(),
-      );
+    final request = firestore_v1.CommitRequest(
+      transaction: transactionId,
+      writes: _operations.map((op) => op.op()).toList(),
+    );
 
-      return api.projects.databases.documents.commit(
-        request,
-        firestore._formattedDatabaseName,
-      );
-    });
+    if (transactionId != null) {
+      return firestore._firestoreClient.v1((api, projectId) async {
+        return api.projects.databases.documents.commit(
+          request,
+          firestore._formattedDatabaseName,
+        );
+      });
+    }
+
+    const retryCodes = StatusCode.resourceExhaustedAbortedUnavailable;
+    const maxAttempts = 5;
+
+    final backoff = ExponentialBackoff();
+    FirestoreException? lastError;
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        await _maybeBackoff(backoff, lastError);
+        return await firestore._firestoreClient.v1((api, projectId) async {
+          return api.projects.databases.documents.commit(
+            request,
+            firestore._formattedDatabaseName,
+          );
+        });
+      } on FirestoreException catch (e) {
+        lastError = e;
+        if (!retryCodes.contains(e.errorCode.statusCode)) {
+          rethrow;
+        }
+      }
+    }
+
+    throw lastError!;
   }
 
   ///Resets the WriteBatch and dequeues all pending operations.
