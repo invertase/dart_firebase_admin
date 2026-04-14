@@ -782,7 +782,9 @@ await securityRules.deleteRuleset(ruleset.name);
 
 ## Contributing
 
-Contributions are welcome! Please read the [contributing guide](CONTRIBUTING.md) to get started.
+Contributions are welcome! Please read the
+[contributing guide](https://github.com/firebase/firebase-admin-dart/blob/main/CONTRIBUTING.md)
+to get started.
 
 ## License
 
