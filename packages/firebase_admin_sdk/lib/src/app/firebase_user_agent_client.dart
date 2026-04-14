@@ -18,7 +18,7 @@ part of '../app.dart';
 ///
 /// Wraps another HTTP client and injects:
 /// - `X-Firebase-Client: fire-admin-dart/{version}`
-/// - `X-Goog-Api-Client: gl-dart/{dartVersion} fire-admin-dart/{version}`
+/// - `X-Goog-Api-Client: gl-dart/{dartVersion} fire-admin/{version}`
 /// into every outgoing request so Firebase backend services can identify the SDK.
 @internal
 class FirebaseUserAgentClient extends BaseClient
