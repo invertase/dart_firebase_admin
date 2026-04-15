@@ -2,6 +2,7 @@
 
 - Reformatted CHANGELOG.md.
 - Update dependency `meta: ^1.17.0` to allow workspaces with stable Flutter.
+- Removed dependency on `package:googleapis_beta`.
 
 ## 0.5.0
 

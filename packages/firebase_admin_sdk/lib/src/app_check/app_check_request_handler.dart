@@ -52,9 +52,7 @@ class AppCheckRequestHandler {
   ///
   /// Returns true if token was already consumed, false otherwise.
   Future<bool> verifyReplayProtection(String token) async {
-    final response = await _httpClient.verifyAppCheckToken(token);
-
-    return response.alreadyConsumed ?? false;
+    return await _httpClient.verifyAppCheckToken(token);
   }
 
   /// Converts a duration string with the suffix `s` to milliseconds.
