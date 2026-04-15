@@ -5,7 +5,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## 0.5.1-wip
 
-- Add an example for pub.dev (thanks to @brianquinlan)
+- Added an example.
 
 ## 0.5.0
 
