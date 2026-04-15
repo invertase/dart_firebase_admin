@@ -20,28 +20,26 @@ void main() {
   final scriptDir = Directory(scriptPath).parent.path;
   final repoRoot = Directory(scriptDir).parent.path;
 
-  final adminPkgDir = '$repoRoot/packages/firebase_admin_sdk';
-  final firestorePkgDir = '$repoRoot/packages/google_cloud_firestore';
+  final packagesDir = Directory('$repoRoot/packages');
+  final packages = packagesDir.listSync().whereType<Directory>();
 
-  final adminCoverageFile = File('$adminPkgDir/coverage.lcov');
-  final firestoreCoverageFile = File('$firestorePkgDir/coverage.lcov');
-
-  // 1. Save individual package coverage files before merging
-  final savedAdminFile = File('$adminPkgDir/coverage_admin.lcov');
-  final savedFirestoreFile = File('$adminPkgDir/coverage_firestore.lcov');
-
-  if (adminCoverageFile.existsSync()) {
-    adminCoverageFile.copySync(savedAdminFile.path);
-  }
-  if (firestoreCoverageFile.existsSync()) {
-    firestoreCoverageFile.copySync(savedFirestoreFile.path);
-  }
-
-  // 2. Merge coverage reports
+  final coverageData = <String, ({double pct, int hit, int total})>{};
   final coverageFiles = <File>[];
-  if (adminCoverageFile.existsSync()) coverageFiles.add(adminCoverageFile);
-  if (firestoreCoverageFile.existsSync()) {
-    coverageFiles.add(firestoreCoverageFile);
+
+  for (final pkg in packages) {
+    final name = pkg.path.split(Platform.pathSeparator).last;
+    final covFile = File('${pkg.path}/coverage.lcov');
+
+    if (!covFile.existsSync()) {
+      print(
+        'Error: Coverage file missing for package $name at ${covFile.path}',
+      );
+      exitCode = 1;
+      return;
+    }
+
+    coverageFiles.add(covFile);
+    coverageData[name] = calculateCoverage(covFile);
   }
 
   if (coverageFiles.isEmpty) {
@@ -53,43 +51,21 @@ void main() {
   // Create merged file content
   final mergedContent = StringBuffer();
   for (final file in coverageFiles) {
-    mergedContent.writeln(file.readAsStringSync());
+    final content = file.readAsStringSync();
+    mergedContent.write(content);
+    if (content.isNotEmpty && !content.endsWith('\n')) {
+      mergedContent.write('\n');
+    }
   }
 
   // Overwrite coverage.lcov in admin package with merged content
+  final adminPkgDir = '$repoRoot/packages/firebase_admin_sdk';
   File(
     '$adminPkgDir/coverage.lcov',
   ).writeAsStringSync(mergedContent.toString());
 
-  // 3. Calculate coverage and check threshold
-  (double pct, int hit, int total) calculateCoverage(File file) {
-    if (!file.existsSync()) return (0.00, 0, 0);
-    final lines = file.readAsLinesSync();
-    var total = 0;
-    var hit = 0;
-    for (final line in lines) {
-      if (line.startsWith('LF:')) {
-        total += int.parse(line.substring(3));
-      } else if (line.startsWith('LH:')) {
-        hit += int.parse(line.substring(3));
-      }
-    }
-    if (total > 0) {
-      final pct = (hit / total) * 100;
-      return (pct, hit, total);
-    }
-    return (0.00, 0, 0);
-  }
-
-  final adminCov = calculateCoverage(savedAdminFile);
-  final firestoreCov = calculateCoverage(savedFirestoreFile);
-
   // Calculate total coverage from merged file
   final totalCov = calculateCoverage(File('$adminPkgDir/coverage.lcov'));
-
-  final coveragePct = totalCov.$1.toStringAsFixed(2);
-  final totalLines = totalCov.$3;
-  final hitLines = totalCov.$2;
 
   // Output for GitHub Actions
   void githubOutput(String key, String value) {
@@ -101,26 +77,28 @@ void main() {
     }
   }
 
-  githubOutput('coverage', coveragePct);
-  githubOutput('total_lines', totalLines.toString());
-  githubOutput('hit_lines', hitLines.toString());
+  final coveragePct = totalCov.pct.toStringAsFixed(2);
 
-  githubOutput('admin_coverage', adminCov.$1.toStringAsFixed(2));
-  githubOutput('firestore_coverage', firestoreCov.$1.toStringAsFixed(2));
+  githubOutput('coverage', coveragePct);
+  githubOutput('total_lines', totalCov.total.toString());
+  githubOutput('hit_lines', totalCov.hit.toString());
+
+  coverageData.forEach((pkgName, cov) {
+    githubOutput('${pkgName}_coverage', cov.pct.toStringAsFixed(2));
+  });
 
   // Console output
   print('=== Coverage Report ===');
-  print(
-    'firebase_admin_sdk: ${adminCov.$1.toStringAsFixed(2)}% (${adminCov.$2}/${adminCov.$3} lines)',
-  );
-  print(
-    'google_cloud_firestore: ${firestoreCov.$1.toStringAsFixed(2)}% (${firestoreCov.$2}/${firestoreCov.$3} lines)',
-  );
+  coverageData.forEach((pkgName, cov) {
+    print(
+      '$pkgName: ${cov.pct.toStringAsFixed(2)}% (${cov.hit}/${cov.total} lines)',
+    );
+  });
   print('----------------------');
-  print('Total: $coveragePct% ($hitLines/$totalLines lines)');
+  print('Total: $coveragePct% (${totalCov.hit}/${totalCov.total} lines)');
 
   // Check threshold
-  if (totalCov.$1 < 40) {
+  if (totalCov.pct < 40) {
     print('Coverage $coveragePct% is below 40% threshold');
     githubOutput('status', '❌ Coverage $coveragePct% is below 40% threshold');
     exitCode = 1;
@@ -128,4 +106,23 @@ void main() {
     print('Coverage $coveragePct% meets 40% threshold');
     githubOutput('status', '✅ Coverage $coveragePct% meets 40% threshold');
   }
+}
+
+({double pct, int hit, int total}) calculateCoverage(File file) {
+  if (!file.existsSync()) return (pct: 0.0, hit: 0, total: 0);
+  final lines = file.readAsLinesSync();
+  var total = 0;
+  var hit = 0;
+  for (final line in lines) {
+    if (line.startsWith('LF:')) {
+      total += int.parse(line.substring(3));
+    } else if (line.startsWith('LH:')) {
+      hit += int.parse(line.substring(3));
+    }
+  }
+  if (total > 0) {
+    final pct = (hit / total) * 100;
+    return (pct: pct, hit: hit, total: total);
+  }
+  return (pct: 0.0, hit: 0, total: 0);
 }
