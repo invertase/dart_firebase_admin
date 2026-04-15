@@ -1,7 +1,7 @@
 ## 0.5.1-wip
 
 - Added an example.
-- Add a more detailed project description. (thanks to @brianquinlan)
+- Added a more detailed project description.
 
 ## 0.5.0
 
