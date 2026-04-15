@@ -1,16 +1,18 @@
 ## 0.5.1-wip
 
-- Fix historical changelog.
+- Reformatted CHANGELOG.md.
 
 ## 0.5.0
 
 - New release with a new name. See below for historical context.
 
-**Package renamed `firebase_admin_sdk` from `dart_firebase_admin`**
+> [!NOTE]
+> Before 0.5.0, this package was published as
+> [`package:dart_firebase_admin`](https://pub.dev/packages/dart_firebase_admin/versions/0.4.1)
 
-- Source lineage from [dart_firebase_admin@0.4.1](https://pub.dev/packages/dart_firebase_admin/versions/0.4.1)
-
-**Historical changes from `firebase_admin_sdk` by [OttomanDeveloper](https://github.com/OttomanDeveloper/)**
+> [!NOTE]
+> Versions 0.0.1 to 0.0.6 were unrelated to this package and were released
+> by [OttomanDeveloper](https://github.com/OttomanDeveloper/).
 
 ## 0.0.6 - 2024-04-07
 
