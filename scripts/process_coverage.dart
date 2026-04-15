@@ -53,7 +53,7 @@ void main() {
   // Create merged file content
   final mergedContent = StringBuffer();
   for (final file in coverageFiles) {
-    mergedContent.write(file.readAsStringSync());
+    mergedContent.writeln(file.readAsStringSync());
   }
 
   // Overwrite coverage.lcov in admin package with merged content
@@ -83,10 +83,6 @@ void main() {
 
   final adminCov = calculateCoverage(savedAdminFile);
   final firestoreCov = calculateCoverage(savedFirestoreFile);
-  // Storage was referenced in original script but never created.
-  final storageCov = calculateCoverage(
-    File('$adminPkgDir/coverage_storage.lcov'),
-  );
 
   // Calculate total coverage from merged file
   final totalCov = calculateCoverage(File('$adminPkgDir/coverage.lcov'));
@@ -111,7 +107,6 @@ void main() {
 
   githubOutput('admin_coverage', adminCov.$1.toStringAsFixed(2));
   githubOutput('firestore_coverage', firestoreCov.$1.toStringAsFixed(2));
-  githubOutput('storage_coverage', storageCov.$1.toStringAsFixed(2));
 
   // Console output
   print('=== Coverage Report ===');
