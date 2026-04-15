@@ -1,4 +1,16 @@
-#!/usr/bin/env dart
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import 'dart:io';
 
@@ -28,7 +40,9 @@ void main() {
   // 2. Merge coverage reports
   final coverageFiles = <File>[];
   if (adminCoverageFile.existsSync()) coverageFiles.add(adminCoverageFile);
-  if (firestoreCoverageFile.existsSync()) coverageFiles.add(firestoreCoverageFile);
+  if (firestoreCoverageFile.existsSync()) {
+    coverageFiles.add(firestoreCoverageFile);
+  }
 
   if (coverageFiles.isEmpty) {
     print('No coverage files found!');
@@ -43,7 +57,9 @@ void main() {
   }
 
   // Overwrite coverage.lcov in admin package with merged content
-  File('$adminPkgDir/coverage.lcov').writeAsStringSync(mergedContent.toString());
+  File(
+    '$adminPkgDir/coverage.lcov',
+  ).writeAsStringSync(mergedContent.toString());
 
   // 3. Calculate coverage and check threshold
   (double pct, int hit, int total) calculateCoverage(File file) {
@@ -68,7 +84,9 @@ void main() {
   final adminCov = calculateCoverage(savedAdminFile);
   final firestoreCov = calculateCoverage(savedFirestoreFile);
   // Storage was referenced in original script but never created.
-  final storageCov = calculateCoverage(File('$adminPkgDir/coverage_storage.lcov'));
+  final storageCov = calculateCoverage(
+    File('$adminPkgDir/coverage_storage.lcov'),
+  );
 
   // Calculate total coverage from merged file
   final totalCov = calculateCoverage(File('$adminPkgDir/coverage.lcov'));
@@ -81,7 +99,9 @@ void main() {
   void githubOutput(String key, String value) {
     final githubOutput = Platform.environment['GITHUB_OUTPUT'];
     if (githubOutput != null && githubOutput.isNotEmpty) {
-      File(githubOutput).writeAsStringSync('$key=$value\n', mode: FileMode.append);
+      File(
+        githubOutput,
+      ).writeAsStringSync('$key=$value\n', mode: FileMode.append);
     }
   }
 
@@ -95,8 +115,12 @@ void main() {
 
   // Console output
   print('=== Coverage Report ===');
-  print('firebase_admin_sdk: ${adminCov.$1.toStringAsFixed(2)}% (${adminCov.$2}/${adminCov.$3} lines)');
-  print('google_cloud_firestore: ${firestoreCov.$1.toStringAsFixed(2)}% (${firestoreCov.$2}/${firestoreCov.$3} lines)');
+  print(
+    'firebase_admin_sdk: ${adminCov.$1.toStringAsFixed(2)}% (${adminCov.$2}/${adminCov.$3} lines)',
+  );
+  print(
+    'google_cloud_firestore: ${firestoreCov.$1.toStringAsFixed(2)}% (${firestoreCov.$2}/${firestoreCov.$3} lines)',
+  );
   print('----------------------');
   print('Total: $coveragePct% ($hitLines/$totalLines lines)');
 
