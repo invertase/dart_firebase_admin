@@ -91,7 +91,7 @@ class AppCheckHttpClient {
 
   /// Verify an App Check token with replay protection (low-level API call).
   ///
-  /// Returns the raw googleapis response without transformation.
+  /// Returns `true` if the token was already consumed, `false` otherwise.
   Future<bool> verifyAppCheckToken(String token) => _run(
     (client, projectId) async =>
         _verifyAppCheckTokenRest(client, projectId, token),
@@ -113,13 +113,38 @@ Future<bool> _verifyAppCheckTokenRest(
   );
 
   if (response.statusCode != 200) {
+    Map<String, dynamic>? jsonResponse;
+    try {
+      jsonResponse = switch (jsonDecode(response.body)) {
+        Map<String, dynamic> m => m,
+        _ => null,
+      };
+    } catch (_) {
+      // Ignore parsing errors or type mismatches.
+    }
+
     throw appcheck1.DetailedApiRequestError(
       response.statusCode,
       response.body,
-      jsonResponse: jsonDecode(response.body) as Map<String, dynamic>?,
+      jsonResponse: jsonResponse,
     );
   }
 
-  final data = jsonDecode(response.body) as Map<String, dynamic>;
-  return data['alreadyConsumed'] as bool? ?? false;
+  final Object? data;
+  try {
+    data = jsonDecode(response.body);
+  } catch (e) {
+    throw FirebaseAppCheckException(
+      AppCheckErrorCode.unknownError,
+      'Failed to parse JSON response from verifyAppCheckToken: $e',
+    );
+  }
+
+  return switch (data) {
+    {'alreadyConsumed': bool consumed} => consumed,
+    _ => throw FirebaseAppCheckException(
+      AppCheckErrorCode.unknownError,
+      'Unexpected response format from verifyAppCheckToken',
+    ),
+  };
 }
