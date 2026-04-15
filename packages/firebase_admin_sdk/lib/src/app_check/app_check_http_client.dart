@@ -72,15 +72,6 @@ class AppCheckHttpClient {
     (client, projectId) => fn(appcheck1.FirebaseappcheckApi(client), projectId),
   );
 
-  /// Executes an App Check v1Beta API operation with automatic projectId injection.
-  Future<R> v1Beta<R>(
-    Future<R> Function(appcheck1_beta.FirebaseappcheckApi api, String projectId)
-    fn,
-  ) => _run(
-    (client, projectId) =>
-        fn(appcheck1_beta.FirebaseappcheckApi(client), projectId),
-  );
-
   /// Exchange a custom token for an App Check token (low-level API call).
   ///
   /// Returns the raw googleapis response without transformation.
@@ -101,15 +92,34 @@ class AppCheckHttpClient {
   /// Verify an App Check token with replay protection (low-level API call).
   ///
   /// Returns the raw googleapis response without transformation.
-  Future<appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenResponse>
-  verifyAppCheckToken(String token) {
-    return v1Beta((api, projectId) async {
-      return api.projects.verifyAppCheckToken(
-        appcheck1_beta.GoogleFirebaseAppcheckV1betaVerifyAppCheckTokenRequest(
-          appCheckToken: token,
-        ),
-        buildProjectPath(projectId),
-      );
-    });
+  Future<bool> verifyAppCheckToken(String token) => _run(
+    (client, projectId) async =>
+        _verifyAppCheckTokenRest(client, projectId, token),
+  );
+}
+
+/// See https://firebase.google.com/docs/reference/appcheck/rest/v1beta/projects/verifyAppCheckToken
+Future<bool> _verifyAppCheckTokenRest(
+  googleapis_auth.AuthClient client,
+  String projectId,
+  String token,
+) async {
+  final url =
+      'https://firebaseappcheck.googleapis.com/v1beta/projects/$projectId:verifyAppCheckToken';
+  final response = await client.post(
+    Uri.parse(url),
+    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+    body: jsonEncode({'appCheckToken': token}),
+  );
+
+  if (response.statusCode != 200) {
+    throw appcheck1.DetailedApiRequestError(
+      response.statusCode,
+      response.body,
+      jsonResponse: jsonDecode(response.body) as Map<String, dynamic>?,
+    );
   }
+
+  final data = jsonDecode(response.body) as Map<String, dynamic>;
+  return data['alreadyConsumed'] as bool? ?? false;
 }
