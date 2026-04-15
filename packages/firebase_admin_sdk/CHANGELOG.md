@@ -1,7 +1,7 @@
 ## 0.5.1
 
 - Fix historical changelog.
-- Drop meta dependency to `^1.17.0`
+- Update dependency `meta: ^1.17.0` to allow workspaces with stable Flutter.
 
 ## 0.5.0
 
