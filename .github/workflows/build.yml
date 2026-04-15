@@ -168,7 +168,7 @@ jobs:
       - name: Process coverage and check threshold
         if: matrix.dart-version == 'stable'
         id: coverage
-        run: ../../scripts/process_coverage.sh
+        run: dart ../../scripts/process_coverage.dart
 
       - name: Comment coverage on PR
         if: matrix.dart-version == 'stable' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
