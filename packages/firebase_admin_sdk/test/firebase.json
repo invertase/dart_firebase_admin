@@ -22,7 +22,7 @@
   },
   "functions": [
     {
-      "source": "test/fixtures/task_queue_functions",
+      "source": "fixtures/task_queue_functions",
       "codebase": "default",
       "ignore": [
         "node_modules",

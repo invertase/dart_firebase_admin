@@ -15,11 +15,6 @@
 import 'package:firebase_admin_sdk/firebase_admin_sdk.dart';
 import 'package:firebase_admin_sdk/functions.dart';
 
-/// Functions example prerequisites:
-/// 1) Run `npm run build` in `example_functions_ts` to generate `index.js`.
-/// 2) From the example directory root (with `firebase.json` and `.firebaserc`),
-///    start emulators with `firebase emulators:start`.
-/// 3) Run `firebase_admin_sdk/example/run_with_emulator.sh`.
 Future<void> functionsExample(FirebaseApp admin) async {
   print('\n### Functions Example ###\n');
 
