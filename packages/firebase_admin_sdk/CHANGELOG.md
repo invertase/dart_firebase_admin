@@ -1,6 +1,7 @@
-## 0.5.1-wip
+## 0.5.1
 
 - Reformatted CHANGELOG.md.
+- Update dependency `meta: ^1.17.0` to allow workspaces with stable Flutter.
 
 ## 0.5.0
 
