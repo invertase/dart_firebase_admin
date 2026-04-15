@@ -1,7 +1,7 @@
-# Change Log
+## 0.5.1-wip
 
-All notable changes to this project will be documented in this file.
-See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+- Added an example.
+- Added a more detailed project description.
 
 ## 0.5.0
 

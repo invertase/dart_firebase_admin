@@ -1,7 +1,10 @@
 name: google_cloud_firestore
-description: Google Cloud Firestore client library for Dart.
+description: >-
+  A Dart client library for Google Cloud Firestore, a flexible, scalable
+  database for mobile, web, and server development from Firebase and
+  Google Cloud.
 resolution: workspace
-version: 0.5.0
+version: 0.5.1-wip
 repository: https://github.com/firebase/firebase-admin-dart/tree/main/packages/google_cloud_firestore
 
 environment:

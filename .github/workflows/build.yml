@@ -38,7 +38,7 @@ jobs:
 
       - name: Check license headers
         run: |
-          addlicense -f header_template.txt \
+          addlicense -f scripts/header_template.txt \
             --check \
             --ignore "**/*.yml" \
             --ignore "**/*.yaml" \
