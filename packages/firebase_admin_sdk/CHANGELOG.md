@@ -1,6 +1,7 @@
-## 0.5.1-wip
+## 0.5.1
 
 - Fix historical changelog.
+- Drop meta dependency to `^1.17.0`
 
 ## 0.5.0
 
