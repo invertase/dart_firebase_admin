@@ -66,13 +66,15 @@ void main() {
 
   final coveragePct = totalCov.pct.toStringAsFixed(2);
 
-  _githubOutput('coverage', coveragePct);
-  _githubOutput('total_lines', totalCov.total.toString());
-  _githubOutput('hit_lines', totalCov.hit.toString());
+  if (_isOnGitHub) {
+    _githubOutput('coverage', coveragePct);
+    _githubOutput('total_lines', totalCov.total.toString());
+    _githubOutput('hit_lines', totalCov.hit.toString());
 
-  coverageData.forEach((pkgName, cov) {
-    _githubOutput('${pkgName}_coverage', cov.pct.toStringAsFixed(2));
-  });
+    coverageData.forEach((pkgName, cov) {
+      _githubOutput('${pkgName}_coverage', cov.pct.toStringAsFixed(2));
+    });
+  }
 
   // Console output
   print('=== Coverage Report ===');
@@ -84,7 +86,6 @@ void main() {
   print('----------------------');
   print('Total: $coveragePct% (${totalCov.hit}/${totalCov.total} lines)');
 
-  // Check threshold
   if (totalCov.pct < 40) {
     print('Coverage $coveragePct% is below 40% threshold');
     _githubOutput('status', '❌ Coverage $coveragePct% is below 40% threshold');
@@ -95,14 +96,17 @@ void main() {
   }
 }
 
+final _isOnGitHub = switch (Platform.environment['GITHUB_OUTPUT']) {
+  String path when path.isNotEmpty => true,
+  _ => false,
+};
+
 // Output for GitHub Actions
 void _githubOutput(String key, String value) {
-  final githubOutput = Platform.environment['GITHUB_OUTPUT'];
-  if (githubOutput != null && githubOutput.isNotEmpty) {
-    File(
-      githubOutput,
-    ).writeAsStringSync('$key=$value\n', mode: FileMode.append);
-  }
+  if (!_isOnGitHub) return;
+  File(
+    Platform.environment['GITHUB_OUTPUT']!,
+  ).writeAsStringSync('$key=$value\n', mode: FileMode.append);
 }
 
 ({double pct, int hit, int total}) _calculateCoverage(File file) {
