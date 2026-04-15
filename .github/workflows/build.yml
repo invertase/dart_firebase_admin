@@ -233,7 +233,7 @@ jobs:
         continue-on-error: true
         uses: codecov/codecov-action@v4
         with:
-          files: packages/firebase_admin_sdk/coverage.lcov
+          files: coverage.lcov
           flags: unittests
           fail_ci_if_error: false
 

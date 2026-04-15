@@ -20,13 +20,12 @@ void main() {
   final scriptDir = Directory(scriptPath).parent.path;
   final repoRoot = Directory(scriptDir).parent.path;
 
-  final packagesDir = Directory('$repoRoot/packages');
-  final packages = packagesDir.listSync().whereType<Directory>();
-
   final coverageData = <String, ({double pct, int hit, int total})>{};
   final coverageFiles = <File>[];
 
-  for (final pkg in packages) {
+  for (final pkg in Directory(
+    '$repoRoot/packages',
+  ).listSync().whereType<Directory>()) {
     final name = pkg.path.split(Platform.pathSeparator).last;
     final covFile = File('${pkg.path}/coverage.lcov');
 
@@ -39,7 +38,7 @@ void main() {
     }
 
     coverageFiles.add(covFile);
-    coverageData[name] = calculateCoverage(covFile);
+    coverageData[name] = _calculateCoverage(covFile);
   }
 
   if (coverageFiles.isEmpty) {
@@ -58,33 +57,21 @@ void main() {
     }
   }
 
-  // Overwrite coverage.lcov in admin package with merged content
-  final adminPkgDir = '$repoRoot/packages/firebase_admin_sdk';
-  File(
-    '$adminPkgDir/coverage.lcov',
-  ).writeAsStringSync(mergedContent.toString());
+  // Write merged coverage file to the repo root
+  final mergedCoverageFile = File('$repoRoot/coverage.lcov');
+  mergedCoverageFile.writeAsStringSync(mergedContent.toString());
 
   // Calculate total coverage from merged file
-  final totalCov = calculateCoverage(File('$adminPkgDir/coverage.lcov'));
-
-  // Output for GitHub Actions
-  void githubOutput(String key, String value) {
-    final githubOutput = Platform.environment['GITHUB_OUTPUT'];
-    if (githubOutput != null && githubOutput.isNotEmpty) {
-      File(
-        githubOutput,
-      ).writeAsStringSync('$key=$value\n', mode: FileMode.append);
-    }
-  }
+  final totalCov = _calculateCoverage(mergedCoverageFile);
 
   final coveragePct = totalCov.pct.toStringAsFixed(2);
 
-  githubOutput('coverage', coveragePct);
-  githubOutput('total_lines', totalCov.total.toString());
-  githubOutput('hit_lines', totalCov.hit.toString());
+  _githubOutput('coverage', coveragePct);
+  _githubOutput('total_lines', totalCov.total.toString());
+  _githubOutput('hit_lines', totalCov.hit.toString());
 
   coverageData.forEach((pkgName, cov) {
-    githubOutput('${pkgName}_coverage', cov.pct.toStringAsFixed(2));
+    _githubOutput('${pkgName}_coverage', cov.pct.toStringAsFixed(2));
   });
 
   // Console output
@@ -100,16 +87,25 @@ void main() {
   // Check threshold
   if (totalCov.pct < 40) {
     print('Coverage $coveragePct% is below 40% threshold');
-    githubOutput('status', '❌ Coverage $coveragePct% is below 40% threshold');
+    _githubOutput('status', '❌ Coverage $coveragePct% is below 40% threshold');
     exitCode = 1;
   } else {
     print('Coverage $coveragePct% meets 40% threshold');
-    githubOutput('status', '✅ Coverage $coveragePct% meets 40% threshold');
+    _githubOutput('status', '✅ Coverage $coveragePct% meets 40% threshold');
   }
 }
 
-({double pct, int hit, int total}) calculateCoverage(File file) {
-  if (!file.existsSync()) return (pct: 0.0, hit: 0, total: 0);
+// Output for GitHub Actions
+void _githubOutput(String key, String value) {
+  final githubOutput = Platform.environment['GITHUB_OUTPUT'];
+  if (githubOutput != null && githubOutput.isNotEmpty) {
+    File(
+      githubOutput,
+    ).writeAsStringSync('$key=$value\n', mode: FileMode.append);
+  }
+}
+
+({double pct, int hit, int total}) _calculateCoverage(File file) {
   final lines = file.readAsLinesSync();
   var total = 0;
   var hit = 0;
