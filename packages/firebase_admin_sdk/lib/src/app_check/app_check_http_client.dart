@@ -142,6 +142,7 @@ Future<bool> _verifyAppCheckTokenRest(
 
   return switch (data) {
     {'alreadyConsumed': bool consumed} => consumed,
+    Map() => false,
     _ => throw FirebaseAppCheckException(
       AppCheckErrorCode.unknownError,
       'Unexpected response format from verifyAppCheckToken',
