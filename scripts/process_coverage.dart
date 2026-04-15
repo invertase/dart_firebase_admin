@@ -71,9 +71,15 @@ void main() {
     _githubOutput('total_lines', totalCov.total.toString());
     _githubOutput('hit_lines', totalCov.hit.toString());
 
+    final table = StringBuffer();
+    table.writeln('''
+### Package Breakdown
+| Package | Coverage |
+|---------|----------|''');
     coverageData.forEach((pkgName, cov) {
-      _githubOutput('${pkgName}_coverage', cov.pct.toStringAsFixed(2));
+      table.writeln('| $pkgName | ${cov.pct.toStringAsFixed(2)}% |');
     });
+    _githubOutput('coverage_table', table.toString().trimRight());
   }
 
   // Console output
@@ -104,9 +110,16 @@ final _isOnGitHub = switch (Platform.environment['GITHUB_OUTPUT']) {
 // Output for GitHub Actions
 void _githubOutput(String key, String value) {
   if (!_isOnGitHub) return;
-  File(
-    Platform.environment['GITHUB_OUTPUT']!,
-  ).writeAsStringSync('$key=$value\n', mode: FileMode.append);
+  final file = File(Platform.environment['GITHUB_OUTPUT']!);
+  if (value.contains('\n')) {
+    final delimiter = 'EOF_${key.toUpperCase()}';
+    file.writeAsStringSync(
+      '$key<<$delimiter\n$value\n$delimiter\n',
+      mode: FileMode.append,
+    );
+  } else {
+    file.writeAsStringSync('$key=$value\n', mode: FileMode.append);
+  }
 }
 
 ({double pct, int hit, int total}) _calculateCoverage(File file) {

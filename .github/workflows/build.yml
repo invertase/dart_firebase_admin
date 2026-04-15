@@ -179,9 +179,7 @@ jobs:
             const status = '${{ steps.coverage.outputs.status }}';
             const hitLines = '${{ steps.coverage.outputs.hit_lines }}';
             const totalLines = '${{ steps.coverage.outputs.total_lines }}';
-            const adminCov = '${{ steps.coverage.outputs.admin_coverage }}';
-            const firestoreCov = '${{ steps.coverage.outputs.firestore_coverage }}';
-            const storageCov = '${{ steps.coverage.outputs.storage_coverage }}';
+            const coverageTable = `${{ steps.coverage.outputs.coverage_table }}`;
 
             const body = `## Coverage Report
 
@@ -190,11 +188,7 @@ jobs:
             **Total Coverage:** ${coverage}%
             **Lines Covered:** ${hitLines}/${totalLines}
 
-            ### Package Breakdown
-            | Package | Coverage |
-            |---------|----------|
-            | firebase_admin_sdk | ${adminCov}% |
-            | google_cloud_firestore | ${firestoreCov}% |
+            ${coverageTable}
 
             _Minimum threshold: 40%_`;
 
