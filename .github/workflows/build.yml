@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download addlicense
         run: |
@@ -67,7 +67,7 @@ jobs:
         working-directory: packages/firebase_admin_sdk
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: dart-lang/setup-dart@v1
         with:
@@ -114,7 +114,7 @@ jobs:
         working-directory: packages/firebase_admin_sdk
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -250,7 +250,7 @@ jobs:
         working-directory: packages/firebase_admin_sdk
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -304,7 +304,7 @@ jobs:
         working-directory: packages/firebase_admin_sdk
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: dart-lang/setup-dart@v1
         with:
