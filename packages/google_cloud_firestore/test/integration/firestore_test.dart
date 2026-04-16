@@ -12,10 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:google_cloud_firestore/google_cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 import '../fixtures/helpers.dart';
+
+/// Seeds a Firestore document directly via the emulator REST API, bypassing
+/// the Dart SDK's serializer. This lets us create documents with special double
+/// values (Infinity, -Infinity, NaN) that the SDK's write path currently can't
+/// encode, so we can test the read path independently.
+Future<void> _seedDocumentWithSpecialDoubles(
+  String docPath,
+  Map<String, Object?> fields,
+) async {
+  final emulatorHost = Platform.environment['FIRESTORE_EMULATOR_HOST']!;
+  final uri = Uri.http(
+    emulatorHost,
+    '/v1/projects/$projectId/databases/(default)/documents/$docPath',
+  );
+
+  final encodedFields = fields.map((key, value) {
+    final encoded = switch (value) {
+      double.infinity => {'doubleValue': 'Infinity'},
+      double.negativeInfinity => {'doubleValue': '-Infinity'},
+      _ when value is double && value.isNaN => {'doubleValue': 'NaN'},
+      _ => throw ArgumentError('Unsupported seed value: $value'),
+    };
+    return MapEntry(key, encoded);
+  });
+
+  final response = await http.patch(
+    uri,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'fields': encodedFields}),
+  );
+
+  if (response.statusCode != 200) {
+    throw StateError(
+      'Failed to seed document at $docPath: '
+      '${response.statusCode} ${response.body}',
+    );
+  }
+}
 
 void main() {
   group('Firestore', () {
@@ -65,6 +107,84 @@ void main() {
           (data['agents']! as Map<String, Object?>)['products/product-b'],
           10.0,
         );
+      });
+    });
+
+    group('special IEEE 754 double values', () {
+      group('write path', () {
+        test('set() round-trips double.infinity', () async {
+          final ref = firestore.collection('special-doubles').doc();
+          await ref.set({'value': double.infinity});
+
+          final data = (await ref.get()).data()!;
+          expect(data['value'], double.infinity);
+        });
+
+        test('set() round-trips double.negativeInfinity', () async {
+          final ref = firestore.collection('special-doubles').doc();
+          await ref.set({'value': double.negativeInfinity});
+
+          final data = (await ref.get()).data()!;
+          expect(data['value'], double.negativeInfinity);
+        });
+
+        test('set() round-trips double.nan', () async {
+          final ref = firestore.collection('special-doubles').doc();
+          await ref.set({'value': double.nan});
+
+          final data = (await ref.get()).data()!;
+          expect(data['value'], isNaN);
+        });
+      });
+
+      group('read path', () {
+        test('get() decodes Infinity seeded via REST API', () async {
+          final ref = firestore.collection('special-doubles').doc();
+          await _seedDocumentWithSpecialDoubles('special-doubles/${ref.id}', {
+            'value': double.infinity,
+          });
+
+          final data = (await ref.get()).data()!;
+          expect(data['value'], double.infinity);
+        });
+
+        test('get() decodes -Infinity seeded via REST API', () async {
+          final ref = firestore.collection('special-doubles').doc();
+          await _seedDocumentWithSpecialDoubles('special-doubles/${ref.id}', {
+            'value': double.negativeInfinity,
+          });
+
+          final data = (await ref.get()).data()!;
+          expect(data['value'], double.negativeInfinity);
+        });
+
+        test('get() decodes NaN seeded via REST API', () async {
+          final ref = firestore.collection('special-doubles').doc();
+          await _seedDocumentWithSpecialDoubles('special-doubles/${ref.id}', {
+            'value': double.nan,
+          });
+
+          final data = (await ref.get()).data()!;
+          expect(data['value'], isNaN);
+        });
+      });
+
+      group('query path', () {
+        test('query results decode documents with Infinity', () async {
+          final ref = firestore.collection('special-doubles-query').doc();
+          await _seedDocumentWithSpecialDoubles(
+            'special-doubles-query/${ref.id}',
+            {'value': double.infinity},
+          );
+
+          final results = await firestore
+              .collection('special-doubles-query')
+              .get();
+
+          expect(results.docs, isNotEmpty);
+          final data = results.docs.first.data();
+          expect(data['value'], double.infinity);
+        });
       });
     });
   });
