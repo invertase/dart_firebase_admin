@@ -12,10 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:google_cloud_firestore/google_cloud_firestore.dart';
 import 'package:test/test.dart' hide throwsArgumentError;
 
 import '../fixtures/helpers.dart';
+
+void _writeRetryError(
+  HttpRequest request,
+  int code,
+  String status,
+  String message,
+) {
+  request.response
+    ..statusCode = code
+    ..headers.contentType = ContentType.json
+    ..write(
+      jsonEncode({
+        'error': {'code': code, 'status': status, 'message': message},
+      }),
+    );
+  request.response.close();
+}
+
+void _writeCommitSuccess(HttpRequest request) {
+  request.response
+    ..statusCode = 200
+    ..headers.contentType = ContentType.json
+    ..write(
+      jsonEncode({
+        'commitTime': '2024-01-01T00:00:00.000Z',
+        'writeResults': [
+          {'updateTime': '2024-01-01T00:00:00.000Z'},
+        ],
+      }),
+    );
+  request.response.close();
+}
 
 void main() {
   group('WriteBatch', () {
@@ -339,6 +374,120 @@ void main() {
         final results = await batch.commit();
         expect(results, isEmpty);
       });
+    });
+  });
+
+  group('WriteBatch retry', () {
+    late HttpServer server;
+    late Firestore firestore;
+    late int callCount;
+    late void Function(HttpRequest request, int callNumber) handler;
+
+    setUp(() async {
+      callCount = 0;
+      handler = (_, _) {};
+
+      server = await HttpServer.bind('localhost', 0);
+      server.listen((request) async {
+        await request.drain<void>();
+        callCount++;
+        handler(request, callCount);
+      });
+
+      firestore = Firestore(
+        settings: Settings(
+          projectId: 'test-project',
+          environmentOverride: {
+            'FIRESTORE_EMULATOR_HOST': 'localhost:${server.port}',
+            'GOOGLE_CLOUD_PROJECT': 'test-project',
+          },
+        ),
+      );
+    });
+
+    tearDown(() async {
+      await firestore.terminate();
+      await server.close(force: true);
+    });
+
+    test('retries on UNAVAILABLE and succeeds', () async {
+      handler = (request, callNumber) {
+        if (callNumber == 1) {
+          _writeRetryError(request, 503, 'UNAVAILABLE', 'Service unavailable');
+        } else {
+          _writeCommitSuccess(request);
+        }
+      };
+
+      await firestore.doc('test/retry').set({'value': 1});
+      expect(callCount, 2);
+    });
+
+    test('retries on ABORTED and succeeds', () async {
+      handler = (request, callNumber) {
+        if (callNumber == 1) {
+          _writeRetryError(request, 409, 'ABORTED', 'Transaction lock timeout');
+        } else {
+          _writeCommitSuccess(request);
+        }
+      };
+
+      await firestore.doc('test/retry').set({'value': 1});
+      expect(callCount, 2);
+    });
+
+    test('succeeds after multiple transient failures', () async {
+      handler = (request, callNumber) {
+        if (callNumber <= 3) {
+          _writeRetryError(request, 503, 'UNAVAILABLE', 'Service unavailable');
+        } else {
+          _writeCommitSuccess(request);
+        }
+      };
+
+      await firestore.doc('test/retry').set({'value': 1});
+      expect(callCount, 4);
+    });
+
+    test('does not retry on PERMISSION_DENIED', () async {
+      handler = (request, _) {
+        _writeRetryError(
+          request,
+          403,
+          'PERMISSION_DENIED',
+          'Missing permissions',
+        );
+      };
+
+      await expectLater(
+        () => firestore.doc('test/retry').set({'value': 1}),
+        throwsA(
+          isA<FirestoreException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            FirestoreClientErrorCode.permissionDenied,
+          ),
+        ),
+      );
+      expect(callCount, 1);
+    });
+
+    test('does not retry on INVALID_ARGUMENT', () async {
+      handler = (request, _) {
+        _writeRetryError(request, 400, 'INVALID_ARGUMENT', 'Invalid field');
+      };
+
+      await expectLater(
+        () => firestore.doc('test/retry').set({'value': 1}),
+        throwsA(
+          isA<FirestoreException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            FirestoreClientErrorCode.invalidArgument,
+          ),
+        ),
+      );
+      expect(callCount, 1);
     });
   });
 }

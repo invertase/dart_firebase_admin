@@ -1,3 +1,7 @@
+## 0.5.2-wip
+
+- Remove dependency on `package:equatable`.
+
 ## 0.5.1
 
 - Reformatted CHANGELOG.md.

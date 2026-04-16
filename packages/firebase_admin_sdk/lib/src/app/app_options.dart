@@ -18,7 +18,7 @@ part of '../app.dart';
 ///
 /// Only [credential] is required. All other fields are optional and will be
 /// auto-discovered or use defaults when not provided.
-class AppOptions extends Equatable {
+class AppOptions {
   const AppOptions({
     this.credential,
     this.projectId,
@@ -135,13 +135,25 @@ class AppOptions extends Equatable {
   final Map<String, dynamic>? databaseAuthVariableOverride;
 
   @override
-  List<Object?> get props => [
-    // Exclude credential and httpClient from comparison
-    // (they're instances that can't be meaningfully compared)
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppOptions &&
+          runtimeType == other.runtimeType &&
+          projectId == other.projectId &&
+          databaseURL == other.databaseURL &&
+          storageBucket == other.storageBucket &&
+          serviceAccountId == other.serviceAccountId &&
+          const MapEquality<String, dynamic>().equals(
+            databaseAuthVariableOverride,
+            other.databaseAuthVariableOverride,
+          );
+
+  @override
+  int get hashCode => Object.hash(
     projectId,
     databaseURL,
     storageBucket,
     serviceAccountId,
-    databaseAuthVariableOverride,
-  ];
+    const MapEquality<String, dynamic>().hash(databaseAuthVariableOverride),
+  );
 }
