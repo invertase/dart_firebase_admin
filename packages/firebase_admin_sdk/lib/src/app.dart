@@ -17,7 +17,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:equatable/equatable.dart';
+import 'package:collection/collection.dart';
 import 'package:google_cloud/constants.dart' as google_cloud;
 import 'package:google_cloud/google_cloud.dart' as google_cloud;
 import 'package:google_cloud_firestore/google_cloud_firestore.dart'
