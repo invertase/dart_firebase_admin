@@ -205,7 +205,7 @@ class BundledQuery {
   }
 
   /// Converts a Filter to JSON.
-  static Map<String, dynamic> _filterToJson(firestore_v1.Filter filter) {
+  static Map<String, dynamic> _filterToJson(firestore_v1.StructuredQuery_Filter filter) {
     if (filter.compositeFilter != null) {
       final composite = filter.compositeFilter!;
       return {
@@ -249,21 +249,24 @@ class BundledQuery {
       return {'booleanValue': value.booleanValue};
     }
     if (value.integerValue != null) {
-      return {'integerValue': value.integerValue};
+      return {'integerValue': value.integerValue.toString()};
     }
     if (value.doubleValue != null) {
       return {'doubleValue': value.doubleValue};
     }
     if (value.timestampValue != null) {
-      // timestampValue in googleapis is a String (ISO 8601 format)
-      return {'timestampValue': value.timestampValue};
+      return {
+        'timestampValue': _toGoogleDateTime(
+          seconds: value.timestampValue!.seconds,
+          nanoseconds: value.timestampValue!.nanos,
+        ),
+      };
     }
     if (value.stringValue != null) {
       return {'stringValue': value.stringValue};
     }
     if (value.bytesValue != null) {
-      // bytesValue in googleapis is already base64-encoded String
-      return {'bytesValue': value.bytesValue};
+      return {'bytesValue': base64Encode(value.bytesValue!)};
     }
     if (value.referenceValue != null) {
       return {'referenceValue': value.referenceValue};
@@ -278,7 +281,7 @@ class BundledQuery {
       final array = value.arrayValue!;
       return {
         'arrayValue': {
-          'values': array.values?.map(_valueToJson).toList() ?? [],
+          'values': array.values.map(_valueToJson).toList(),
         },
       };
     }
@@ -286,11 +289,9 @@ class BundledQuery {
       final map = value.mapValue!;
       return {
         'mapValue': {
-          'fields':
-              map.fields?.map(
-                (key, value) => MapEntry(key, _valueToJson(value)),
-              ) ??
-              {},
+          'fields': map.fields.map(
+            (key, value) => MapEntry(key, _valueToJson(value)),
+          ),
         },
       };
     }
@@ -382,13 +383,19 @@ class BundleElement {
   static Map<String, dynamic> _documentToJson(firestore_v1.Document doc) {
     return {
       'name': doc.name,
-      if (doc.fields != null)
-        'fields': doc.fields!.map(
-          (key, value) => MapEntry(key, BundledQuery._valueToJson(value)),
+      'fields': doc.fields.map(
+        (key, value) => MapEntry(key, BundledQuery._valueToJson(value)),
+      ),
+      if (doc.createTime != null)
+        'createTime': _toGoogleDateTime(
+          seconds: doc.createTime!.seconds,
+          nanoseconds: doc.createTime!.nanos,
         ),
-      // createTime and updateTime in googleapis are ISO 8601 strings
-      if (doc.createTime != null) 'createTime': doc.createTime,
-      if (doc.updateTime != null) 'updateTime': doc.updateTime,
+      if (doc.updateTime != null)
+        'updateTime': _toGoogleDateTime(
+          seconds: doc.updateTime!.seconds,
+          nanoseconds: doc.updateTime!.nanos,
+        ),
     };
   }
 }
@@ -513,7 +520,7 @@ class BundleBuilder {
       final docProto = snapshot.exists
           ? firestore_v1.Document(
               name: snapshot.ref._formattedName,
-              fields: snapshot._fieldsProto?.fields,
+              fields: snapshot._fieldsProto?.fields ?? const {},
               createTime: snapshot.createTime?._toProto().timestampValue,
               updateTime: snapshot.updateTime?._toProto().timestampValue,
             )

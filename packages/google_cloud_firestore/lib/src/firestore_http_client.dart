@@ -17,7 +17,7 @@ import 'dart:convert';
 
 import 'package:google_cloud/constants.dart' as google_cloud;
 import 'package:google_cloud/google_cloud.dart' as google_cloud;
-import 'package:googleapis/firestore/v1.dart' as firestore_v1;
+import 'package:google_cloud_firestore_v1/firestore.dart' as firestore_v1;
 import 'package:googleapis_auth/auth_io.dart' as googleapis_auth;
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
@@ -62,16 +62,18 @@ class _SpecialDoubleClient extends BaseClient {
     if (!contentType.contains('application/json')) return response;
 
     final body = await response.stream.bytesToString();
-    if (!body.contains('"doubleValue"')) return _rebuild(response, body);
+    var patched = body;
 
-    final patched = body.replaceAllMapped(_specialDoublePattern, (m) {
-      final sentinel = switch (m.group(1)) {
-        'Infinity' => kInfinitySentinel,
-        '-Infinity' => kNegInfinitySentinel,
-        _ => kNaNSentinel, // 'NaN'
-      };
-      return '{"stringValue":"$sentinel"}';
-    });
+    if (body.contains('"doubleValue"')) {
+      patched = patched.replaceAllMapped(_specialDoublePattern, (m) {
+        final sentinel = switch (m.group(1)) {
+          'Infinity' => kInfinitySentinel,
+          '-Infinity' => kNegInfinitySentinel,
+          _ => kNaNSentinel, // 'NaN'
+        };
+        return '{"stringValue":"$sentinel"}';
+      });
+    }
 
     return _rebuild(response, patched);
   }
@@ -207,7 +209,7 @@ class FirestoreHttpClient {
     if (serviceAccountCreds != null) {
       final authClient = await googleapis_auth.clientViaServiceAccount(
         serviceAccountCreds,
-        [firestore_v1.FirestoreApi.cloudPlatformScope],
+        ['https://www.googleapis.com/auth/datastore'],
       );
       return _SpecialDoubleAuthClient(authClient);
     }
@@ -215,7 +217,7 @@ class FirestoreHttpClient {
     // Fall back to Application Default Credentials
     final authClient = await googleapis_auth
         .clientViaApplicationDefaultCredentials(
-          scopes: [firestore_v1.FirestoreApi.cloudPlatformScope],
+          scopes: ['https://www.googleapis.com/auth/datastore'],
         );
     return _SpecialDoubleAuthClient(authClient);
   }
@@ -248,10 +250,10 @@ class FirestoreHttpClient {
 
   /// Executes a Firestore v1 API operation with automatic projectId injection.
   Future<R> v1<R>(
-    Future<R> Function(firestore_v1.FirestoreApi api, String projectId) fn,
+    Future<R> Function(firestore_v1.Firestore api, String projectId) fn,
   ) => _run(
     (client, projectId) => fn(
-      firestore_v1.FirestoreApi(client, rootUrl: _firestoreApiHost.toString()),
+      firestore_v1.Firestore(client: client, endPoint: _firestoreApiHost),
       projectId,
     ),
   );

@@ -132,31 +132,8 @@ final class Timestamp implements _Serializable {
     return Timestamp(seconds: seconds, nanoseconds: nanos);
   }
 
-  factory Timestamp._fromString(String timestampValue) {
-    final date = DateTime.parse(timestampValue);
-    var nanos = 0;
-
-    if (timestampValue.length > 20) {
-      final nanoString = timestampValue.substring(
-        20,
-        timestampValue.length - 1,
-      );
-      final trailingZeroes = 9 - nanoString.length;
-      nanos = int.parse(nanoString) * (math.pow(10, trailingZeroes).toInt());
-    }
-
-    if (nanos.isNaN || date.second.isNaN) {
-      throw ArgumentError.value(
-        timestampValue,
-        'timestampValue',
-        'Specify a valid ISO 8601 timestamp.',
-      );
-    }
-
-    return Timestamp(
-      seconds: date.millisecondsSinceEpoch ~/ 1000,
-      nanoseconds: nanos,
-    );
+  factory Timestamp._fromProto(protobuf_v1.Timestamp proto) {
+    return Timestamp(seconds: proto.seconds, nanoseconds: proto.nanos);
   }
 
   static const _msToNanos = 1000000;
@@ -199,9 +176,9 @@ final class Timestamp implements _Serializable {
   @override
   firestore_v1.Value _toProto() {
     return firestore_v1.Value(
-      timestampValue: _toGoogleDateTime(
+      timestampValue: protobuf_v1.Timestamp(
         seconds: seconds,
-        nanoseconds: nanoseconds,
+        nanos: nanoseconds,
       ),
     );
   }
