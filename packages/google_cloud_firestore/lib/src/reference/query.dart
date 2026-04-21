@@ -55,6 +55,7 @@ interface class Query<T> {
   ///
   /// Passing `null` for both parameters removes the current converter and
   /// returns an untyped `Query<DocumentData>`.
+  @mustBeOverridden
   Query<U> withConverter<U>({
     FromFirestore<U>? fromFirestore,
     ToFirestore<U>? toFirestore,
@@ -993,6 +994,7 @@ interface class Query<T> {
     return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
+  @mustBeOverridden
   @override
   bool operator ==(Object other) {
     return other is Query<T> &&

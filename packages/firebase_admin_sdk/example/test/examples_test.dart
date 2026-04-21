@@ -86,11 +86,33 @@ class MockUserRepository extends Mock implements UserRepository {}
 class MockFirestore extends Mock implements Firestore {}
 
 class MockCollectionReference<T> extends Mock
-    implements CollectionReference<T> {}
+    implements CollectionReference<T> {
+  @override
+  CollectionReference<U> withConverter<U>({
+    Object? fromFirestore,
+    Object? toFirestore,
+  }) => throw UnimplementedError();
+
+  @override
+  bool operator ==(Object other) => identical(this, other);
+
+  @override
+  int get hashCode => identityHashCode(this);
+}
 
 class MockDocumentReference<T> extends Mock implements DocumentReference<T> {}
 
-class MockQuery<T> extends Mock implements Query<T> {}
+class MockQuery<T> extends Mock implements Query<T> {
+  @override
+  Query<U> withConverter<U>({Object? fromFirestore, Object? toFirestore}) =>
+      throw UnimplementedError();
+
+  @override
+  bool operator ==(Object other) => identical(this, other);
+
+  @override
+  int get hashCode => identityHashCode(this);
+}
 
 class MockQuerySnapshot<T> extends Mock implements QuerySnapshot<T> {}
 
