@@ -15,7 +15,7 @@
 part of '../firestore.dart';
 
 @immutable
-base class Query<T> {
+interface class Query<T> {
   const Query._({
     required this.firestore,
     required _QueryOptions<T> queryOptions,
@@ -55,7 +55,6 @@ base class Query<T> {
   ///
   /// Passing `null` for both parameters removes the current converter and
   /// returns an untyped `Query<DocumentData>`.
-  @mustBeOverridden
   Query<U> withConverter<U>({
     FromFirestore<U>? fromFirestore,
     ToFirestore<U>? toFirestore,
@@ -994,7 +993,6 @@ base class Query<T> {
     return Query<T>._(firestore: firestore, queryOptions: options);
   }
 
-  @mustBeOverridden
   @override
   bool operator ==(Object other) {
     return other is Query<T> &&
