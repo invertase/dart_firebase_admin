@@ -36,7 +36,7 @@ const kNegInfinitySentinel = '__fs_double_neg_infinity__';
 @internal
 const kNaNSentinel = '__fs_double_nan__';
 
-abstract base class _Serializable {
+abstract class _Serializable {
   firestore_v1.Value _toProto();
 }
 

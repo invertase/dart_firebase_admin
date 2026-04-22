@@ -1,6 +1,7 @@
 ## 0.5.2-wip
 
 - Remove dependency on `package:equatable`.
+- Make `Query`, `CollectionReference`, `DocumentReference`, and `CollectionGroup` mockable.
 
 ## 0.5.1
 

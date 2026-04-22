@@ -15,7 +15,7 @@
 part of 'firestore.dart';
 
 @immutable
-final class CollectionGroup<T> extends Query<T> {
+interface class CollectionGroup<T> extends Query<T> {
   CollectionGroup._(
     String collectionId, {
     required super.firestore,
