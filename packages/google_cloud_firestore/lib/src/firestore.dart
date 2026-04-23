@@ -552,11 +552,20 @@ class Firestore {
         readTimeProto,
         this,
       );
-    } else {
-      throw ArgumentError(
-        'documentOrName must be either a String or firestore_v1.Document',
-      );
     }
+
+    throw ArgumentError(
+      'documentOrName must be either a String or firestore_v1.Document',
+    );
+  }
+
+  @internal
+  QuerySnapshot<T> querySnapshot_<T>(
+    Query<T> query,
+    Timestamp readTime,
+    List<QueryDocumentSnapshot<T>> docs,
+  ) {
+    return QuerySnapshot<T>._(query: query, readTime: readTime, docs: docs);
   }
 
   /// Creates a QuerySnapshot for testing purposes.
