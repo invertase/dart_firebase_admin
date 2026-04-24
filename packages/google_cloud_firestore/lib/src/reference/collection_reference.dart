@@ -119,10 +119,9 @@ final class CollectionReference<T> extends Query<T> {
     });
 
     return [
-      for (final document
-          in response.documents ?? const <firestore_v1.Document>[])
+      for (final document in response.documents)
         doc(
-          _QualifiedResourcePath.fromSlashSeparatedString(document.name!).id!,
+          _QualifiedResourcePath.fromSlashSeparatedString(document.name).id!,
         ),
     ];
   }

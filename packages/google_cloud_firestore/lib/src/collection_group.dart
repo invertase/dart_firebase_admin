@@ -111,7 +111,7 @@ final class CollectionGroup<T> extends Query<T> {
 
       // Continue to next page if token is present
       pageToken = response.nextPageToken;
-    } while (pageToken != null && pageToken.isNotEmpty);
+    } while (pageToken.isNotEmpty);
 
     return partitions;
   }

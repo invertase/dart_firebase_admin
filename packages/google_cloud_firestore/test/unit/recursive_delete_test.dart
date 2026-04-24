@@ -13,14 +13,12 @@
 // limitations under the License.
 
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:google_cloud_firestore/google_cloud_firestore.dart';
 import 'package:google_cloud_firestore/src/firestore_http_client.dart';
 import 'package:google_cloud_firestore_v1/firestore.dart' as firestore_v1;
 import 'package:google_cloud_firestore_v1/testing.dart';
 import 'package:google_cloud_protobuf/protobuf.dart' as protobuf_v1;
-import 'package:google_cloud_rpc/exceptions.dart' as rpc_exceptions;
 import 'package:google_cloud_rpc/rpc.dart' as rpc;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';

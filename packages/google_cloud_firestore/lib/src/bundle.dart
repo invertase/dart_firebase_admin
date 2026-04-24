@@ -147,18 +147,17 @@ class BundledQuery {
       json['select'] = {
         'fields':
             query.select!.fields
-                ?.map((f) => {'fieldPath': f.fieldPath})
-                .toList() ??
-            [],
+            .map((f) => {'fieldPath': f.fieldPath})
+            .toList(),
       };
     }
 
-    if (query.from != null && query.from!.isNotEmpty) {
-      json['from'] = query.from!
+    if (query.from.isNotEmpty) {
+      json['from'] = query.from
           .map(
             (f) => {
               'collectionId': f.collectionId,
-              if (f.allDescendants ?? false) 'allDescendants': true,
+              if (f.allDescendants) 'allDescendants': true,
             },
           )
           .toList();
@@ -168,8 +167,8 @@ class BundledQuery {
       json['where'] = _filterToJson(query.where!);
     }
 
-    if (query.orderBy != null && query.orderBy!.isNotEmpty) {
-      json['orderBy'] = query.orderBy!
+    if (query.orderBy.isNotEmpty) {
+      json['orderBy'] = query.orderBy
           .map(
             (o) => {
               'field': {'fieldPath': o.field?.fieldPath},
@@ -181,15 +180,15 @@ class BundledQuery {
 
     if (query.startAt != null) {
       json['startAt'] = {
-        'values': query.startAt!.values?.map(_valueToJson).toList() ?? [],
-        if (query.startAt!.before ?? false) 'before': true,
+        'values': query.startAt!.values.map(_valueToJson).toList(),
+        if (query.startAt!.before) 'before': true,
       };
     }
 
     if (query.endAt != null) {
       json['endAt'] = {
-        'values': query.endAt!.values?.map(_valueToJson).toList() ?? [],
-        if (query.endAt!.before ?? false) 'before': true,
+        'values': query.endAt!.values.map(_valueToJson).toList(),
+        if (query.endAt!.before) 'before': true,
       };
     }
 
@@ -197,9 +196,7 @@ class BundledQuery {
       json['limit'] = query.limit;
     }
 
-    if (query.offset != null) {
-      json['offset'] = query.offset;
-    }
+    json['offset'] = query.offset;
 
     return json;
   }
@@ -211,7 +208,7 @@ class BundledQuery {
       return {
         'compositeFilter': {
           'op': composite.op,
-          'filters': composite.filters?.map(_filterToJson).toList() ?? [],
+          'filters': composite.filters.map(_filterToJson).toList(),
         },
       };
     }

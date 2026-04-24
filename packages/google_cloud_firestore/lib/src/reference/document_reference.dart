@@ -82,7 +82,7 @@ final class DocumentReference<T> implements _Serializable {
 
       final result = await a.listCollectionIds(request);
 
-      final ids = result.collectionIds ?? [];
+      final ids = result.collectionIds;
       ids.sort((a, b) => a.compareTo(b));
 
       return [for (final id in ids) collection(id)];

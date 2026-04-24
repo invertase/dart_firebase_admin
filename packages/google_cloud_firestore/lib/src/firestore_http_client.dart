@@ -23,7 +23,6 @@ import 'package:meta/meta.dart';
 
 import '../google_cloud_firestore.dart';
 import 'environment.dart';
-import 'firestore.dart' show Serializer;
 import 'firestore_exception.dart';
 
 /// Internal HTTP request implementation that wraps a stream.

@@ -100,6 +100,9 @@ class Serializer {
       case _Serializable():
         return value._toProto();
 
+      case Uint8List():
+        return firestore_v1.Value(bytesValue: value);
+
       case List():
         return firestore_v1.Value(
           arrayValue: firestore_v1.ArrayValue(
@@ -118,10 +121,6 @@ class Serializer {
         if (fields.fields.isEmpty) return null;
 
         return firestore_v1.Value(mapValue: fields);
-
-      case Uint8List():
-        return firestore_v1.Value(bytesValue: value);
-
       default:
         throw ArgumentError.value(
           value,
