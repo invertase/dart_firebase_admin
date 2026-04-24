@@ -15,7 +15,7 @@
 part of '../firestore.dart';
 
 @immutable
-interface class CollectionReference<T> extends Query<T> {
+base class CollectionReference<T> extends Query<T> {
   CollectionReference._({
     required super.firestore,
     required _ResourcePath path,

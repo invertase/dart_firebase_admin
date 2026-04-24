@@ -178,7 +178,7 @@ class Serializer {
       case firestore_v1.Value(:final doubleValue?):
         return doubleValue;
       case firestore_v1.Value(:final timestampValue?):
-        return Timestamp._fromString(timestampValue);
+        return Timestamp._fromProto(timestampValue);
       case firestore_v1.Value(:final referenceValue?):
         final resourcePath = _QualifiedResourcePath.fromSlashSeparatedString(
           referenceValue,

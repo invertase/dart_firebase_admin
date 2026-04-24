@@ -15,7 +15,7 @@
 part of '../firestore.dart';
 
 @immutable
-interface class DocumentReference<T> implements _Serializable {
+base class DocumentReference<T> implements _Serializable {
   const DocumentReference._({
     required this.firestore,
     required _ResourcePath path,

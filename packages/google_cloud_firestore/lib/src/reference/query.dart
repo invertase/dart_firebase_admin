@@ -15,7 +15,7 @@
 part of '../firestore.dart';
 
 @immutable
-interface class Query<T> {
+base class Query<T> {
   const Query._({
     required this.firestore,
     required _QueryOptions<T> queryOptions,
