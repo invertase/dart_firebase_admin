@@ -186,11 +186,8 @@ class Serializer {
         return bytesValue;
 
       default:
-        throw ArgumentError.value(
-          proto,
-          'proto',
-          'Cannot decode type from Firestore Value: ${proto.runtimeType}',
-        );
+        // An empty Value or any other unknown type is treated as null.
+        return null;
     }
   }
 }
