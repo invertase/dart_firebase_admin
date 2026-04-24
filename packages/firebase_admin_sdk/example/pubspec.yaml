@@ -10,3 +10,7 @@ dependencies:
   firebase_admin_sdk: ^0.5.0
   google_cloud_firestore: ^0.5.0
   google_cloud_storage: ^0.6.0
+
+dev_dependencies:
+  mocktail: ^1.0.5
+  test: ^1.31.0
