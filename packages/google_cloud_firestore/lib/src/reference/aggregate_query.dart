@@ -141,8 +141,8 @@ class AggregateQuery {
     Timestamp? readTime;
 
     await for (final result in response) {
-      if (result.result != null) {
-        for (final entry in result.result!.aggregateFields.entries) {
+      if (result.result case final aggregationResult?) {
+        for (final entry in aggregationResult.aggregateFields.entries) {
           final value = entry.value;
           if (value.integerValue != null) {
             results[entry.key] = value.integerValue;
