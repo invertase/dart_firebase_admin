@@ -27,6 +27,7 @@ class AppOptions {
     this.serviceAccountId,
     this.httpClient,
     this.databaseAuthVariableOverride,
+    this.additionalScopes = const [],
   });
 
   /// A credential used to authenticate the Admin SDK.
@@ -98,6 +99,25 @@ class AppOptions {
   /// );
   /// ```
   final googleapis_auth.AuthClient? httpClient;
+
+  /// Additional OAuth2 scopes to request when creating the authenticated HTTP client.
+  ///
+  /// The SDK always requests the scopes it needs internally
+  /// (`cloud-platform` and `firebase`). Use this when you also need access to
+  /// Google APIs not covered by those scopes.
+  ///
+  /// Has no effect when [httpClient] is provided — the SDK uses that client
+  /// as-is and does not request any scopes on your behalf.
+  ///
+  /// Example — add a BigQuery scope so [FirebaseApp.client] can be used with
+  /// the BigQuery API:
+  /// ```dart
+  /// AppOptions(
+  ///   credential: Credential.fromServiceAccount(File('sa.json')),
+  ///   additionalScopes: ['https://www.googleapis.com/auth/bigquery'],
+  /// )
+  /// ```
+  final List<String> additionalScopes;
 
   /// The object to use as the auth variable in Realtime Database Rules.
   ///

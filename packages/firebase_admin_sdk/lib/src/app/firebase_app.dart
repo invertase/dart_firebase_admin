@@ -107,47 +107,42 @@ class FirebaseApp {
   Future<googleapis_auth.AuthClient>? _httpClient;
 
   Future<googleapis_auth.AuthClient> _createDefaultClient() async {
-    // Always create an authenticated client for production services.
-    // Services with emulators (Firestore, Auth) create their own
-    // unauthenticated clients when in emulator mode to avoid ADC warnings.
-
-    // Use proper OAuth scope constants
     final scopes = [
       auth3.IdentityToolkitApi.cloudPlatformScope,
       auth3.IdentityToolkitApi.firebaseScope,
+      ...options.additionalScopes,
     ];
-
-    // Get credential
-    final credential = options.credential;
-
-    // Create authenticated client based on credential type
-    final client = switch (credential) {
-      Credential(:final serviceAccountCredentials?) =>
-        googleapis_auth.clientViaServiceAccount(
-          serviceAccountCredentials,
-          scopes,
-        ),
-      RefreshTokenCredential(
-        :final clientId,
-        :final clientSecret,
-        :final refreshToken,
-      ) =>
-        googleapis_auth.clientViaRefreshToken(
-          googleapis_auth.ClientId(clientId, clientSecret),
-          refreshToken,
-          scopes,
-        ),
-      _ => googleapis_auth.clientViaApplicationDefaultCredentials(
-        scopes: scopes,
-      ),
-    };
-
-    return FirebaseUserAgentClient(await client);
+    final credential =
+        options.credential ?? Credential.fromApplicationDefaultCredentials();
+    return FirebaseUserAgentClient(await credential.createClient(scopes));
   }
 
-  /// Returns the HTTP client for this app.
-  /// Lazily initializes on first access.
-  @internal
+  /// The authenticated HTTP client for this app.
+  ///
+  /// Lazily initialized on first access. Returns the client provided via
+  /// [AppOptions.httpClient] if one was supplied, otherwise creates a default
+  /// client using the app's [AppOptions.credential] and the SDK's required
+  /// scopes plus any [AppOptions.additionalScopes].
+  ///
+  /// Use this when you need to call Google APIs not directly supported by this
+  /// SDK — for example, passing the client to a `googleapis` package API for
+  /// advanced Cloud Storage operations (resumable uploads, byte-range fetches,
+  /// etc.).
+  ///
+  /// **Lifecycle:** The client is closed automatically when [close] is called,
+  /// unless it was provided via [AppOptions.httpClient] — in that case you own
+  /// its lifecycle and must close it yourself.
+  ///
+  /// **Scopes:** The default client is granted `cloud-platform` and `firebase`
+  /// scopes, which cover most Google APIs. If you need additional scopes,
+  /// set [AppOptions.additionalScopes] — or provide a fully configured client
+  /// via [AppOptions.httpClient].
+  ///
+  /// Example:
+  /// ```dart
+  /// final storageApi = StorageApi(await app.client);
+  /// final object = await storageApi.objects.get(bucket, objectName);
+  /// ```
   Future<googleapis_auth.AuthClient> get client {
     return _httpClient ??= options.httpClient != null
         ? Future.value(options.httpClient!)
