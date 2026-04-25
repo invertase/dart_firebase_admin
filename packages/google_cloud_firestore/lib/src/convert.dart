@@ -33,8 +33,7 @@ void _assertValidProtobufValue(firestore_v1.Value proto) {
     proto.functionValue,
     proto.pipelineValue,
   ];
-
-  if (values.nonNulls.length > 1) {
-    throw ArgumentError.value(proto, 'proto', 'Multiple types set in Value');
+  if (values.nonNulls.length != 1) {
+    throw ArgumentError.value(proto, 'proto', 'Unable to infer type value');
   }
 }

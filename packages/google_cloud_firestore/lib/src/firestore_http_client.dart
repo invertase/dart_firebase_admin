@@ -129,7 +129,7 @@ class FirestoreHttpClient {
 
     // Fall back to Application Default Credentials
     return googleapis_auth.clientViaApplicationDefaultCredentials(
-      scopes: ['https://www.googleapis.com/auth/datastore'],
+      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
     );
   }
 
