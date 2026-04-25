@@ -155,23 +155,24 @@ void main() {
 
       expect(elements, hasLength(3));
 
-      // 1. Metadata
       verifyMetadata(
         elements[0]['metadata'] as Map<String, dynamic>,
         Timestamp(seconds: 1577840405, nanoseconds: 6),
         1,
       );
 
-      // 2. Document Metadata
+      // Verify doc1Meta and doc1Snap
       final docMeta = elements[1]['documentMetadata'] as Map<String, dynamic>;
       expect(
-        docMeta['name'],
-        equals('$databaseRoot/documents/collectionId/doc1'),
+        docMeta,
+        equals({
+          'name': '$databaseRoot/documents/collectionId/doc1',
+          'exists': true,
+          'readTime': {'seconds': '1577840405', 'nanos': 6},
+        }),
       );
-      expect(docMeta['exists'], isTrue);
-      expect(docMeta['readTime'], isNotNull);
 
-      // 3. Document
+      // Verify doc1Meta and doc1Snap
       final docSnap = elements[2]['document'] as Map<String, dynamic>;
       expect(
         docSnap['name'],
@@ -181,17 +182,20 @@ void main() {
     });
 
     test('succeeds with query snapshots', () {
+      // XXX - XXX - XXX - XXX - XXX - XXX
       final bundle = firestore.bundle(testBundleId);
 
-      final snap = firestore.snapshot_(
-        firestore_v1.Document(
-          name: '$databaseRoot/documents/collectionId/doc1',
-          fields: {'foo': firestore_v1.Value(stringValue: 'value')},
-          createTime: protobuf_v1.Timestamp(seconds: 1, nanos: 2000000),
-          updateTime: protobuf_v1.Timestamp(seconds: 3, nanos: 4000),
-        ),
-        Timestamp(seconds: 1577840405, nanoseconds: 6),
-      ) as QueryDocumentSnapshot<Object?>;
+      final snap =
+          firestore.snapshot_(
+                firestore_v1.Document(
+                  name: '$databaseRoot/documents/collectionId/doc1',
+                  fields: {'foo': firestore_v1.Value(stringValue: 'value')},
+                  createTime: protobuf_v1.Timestamp(seconds: 1, nanos: 2000000),
+                  updateTime: protobuf_v1.Timestamp(seconds: 3, nanos: 4000),
+                ),
+                Timestamp(seconds: 1577840405, nanoseconds: 6),
+              )
+              as QueryDocumentSnapshot<Object?>;
 
       final query = firestore.collection('collectionId').limit(1);
       final querySnapshot = firestore.querySnapshot_(
@@ -207,14 +211,13 @@ void main() {
 
       expect(elements, hasLength(4));
 
-      // 1. Metadata
       verifyMetadata(
         elements[0]['metadata'] as Map<String, dynamic>,
         Timestamp(seconds: 1577840405, nanoseconds: 6),
         1,
       );
 
-      // 2. Named Query
+      // Verify docMeta and docSnap
       final namedQuery = elements[1]['namedQuery'] as Map<String, dynamic>;
       expect(namedQuery['name'], equals('query-name'));
       expect(namedQuery['readTime'], isNotNull);
