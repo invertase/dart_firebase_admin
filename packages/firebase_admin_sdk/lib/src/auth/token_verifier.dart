@@ -465,7 +465,7 @@ class DecodedIdToken {
 /// Custom claims are all claims that are not standard OpenID Connect claims
 /// or reserved Firebase claims.
 Map<String, Object?> _extractCustomClaims(Map<String, Object?> map) {
-  return Map<String, Object?>.from(map)..removeWhere(
+  return {...map}..removeWhere(
     (key, _) => const {
       'aud',
       'auth_time',
