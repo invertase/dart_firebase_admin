@@ -349,6 +349,7 @@ class DecodedIdToken {
   DecodedIdToken({
     required this.aud,
     required this.authTime,
+    required this.claims,
     required this.email,
     required this.emailVerified,
     required this.exp,
@@ -368,6 +369,7 @@ class DecodedIdToken {
       authTime: DateTime.fromMillisecondsSinceEpoch(
         (map['auth_time']! as int) * 1000,
       ),
+      claims: map,
       email: map['email'] as String?,
       emailVerified: map['email_verified'] as bool?,
       exp: map['exp']! as int,
@@ -452,11 +454,8 @@ class DecodedIdToken {
   /// convenience, and is set as the value of the [`sub`](#sub) property.
   String uid;
 
-  /**
-   * Other arbitrary claims included in the ID token.
-   */
-  // TODO allow any key
-  // [key: string]: any;
+  /// Other arbitrary claims included in the ID token.
+  final Map<String, Object?> claims;
 }
 
 /// User facing token information related to the Firebase ID token.
