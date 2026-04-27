@@ -20,7 +20,7 @@ import 'package:test/test.dart';
 
 import '../../fixtures/helpers.dart';
 
-const _testAppId = '1:559949546715:android:13025aec6cc3243d0ab8fe';
+const _testAppId = '1:559949546715:android:4268b2eabcd3124b0ab8fe';
 
 void main() {
   group(

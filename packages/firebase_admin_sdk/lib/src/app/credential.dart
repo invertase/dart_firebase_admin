@@ -240,6 +240,29 @@ sealed class Credential {
   /// Private constructor for sealed class.
   Credential._();
 
+  /// Creates an authenticated HTTP client scoped to [scopes].
+  ///
+  /// Use this when you need to call Google APIs directly — for example,
+  /// passing the client to a `googleapis` API that is not covered by this SDK.
+  ///
+  /// The returned client handles token refresh automatically. You are
+  /// responsible for closing the client when you no longer need it.
+  ///
+  /// Example — use the authenticated client with the `googleapis` Storage API:
+  /// ```dart
+  /// final client = await credential.createClient([
+  ///   'https://www.googleapis.com/auth/cloud-platform',
+  ///   'https://www.googleapis.com/auth/devstorage.full_control',
+  /// ]);
+  /// try {
+  ///   final storage = StorageApi(client);
+  ///   // ...
+  /// } finally {
+  ///   client.close();
+  /// }
+  /// ```
+  Future<googleapis_auth.AuthClient> createClient(List<String> scopes);
+
   /// Returns the underlying [googleapis_auth.ServiceAccountCredentials] if this is a
   /// [ServiceAccountCredential], null otherwise.
   @internal
@@ -285,6 +308,13 @@ final class ServiceAccountCredential extends Credential {
   String get privateKey => _serviceAccountCredentials.privateKey;
 
   @override
+  Future<googleapis_auth.AuthClient> createClient(List<String> scopes) =>
+      googleapis_auth.clientViaServiceAccount(
+        _serviceAccountCredentials,
+        scopes,
+      );
+
+  @override
   googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
       _serviceAccountCredentials;
 
@@ -312,6 +342,14 @@ final class RefreshTokenCredential extends Credential {
 
   /// The OAuth2 refresh token.
   final String refreshToken;
+
+  @override
+  Future<googleapis_auth.AuthClient> createClient(List<String> scopes) =>
+      googleapis_auth.clientViaRefreshToken(
+        googleapis_auth.ClientId(clientId, clientSecret),
+        refreshToken,
+        scopes,
+      );
 
   @override
   googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
@@ -343,6 +381,10 @@ final class ApplicationDefaultCredential extends Credential {
       super._();
 
   final String? _serviceAccountId;
+
+  @override
+  Future<googleapis_auth.AuthClient> createClient(List<String> scopes) =>
+      googleapis_auth.clientViaApplicationDefaultCredentials(scopes: scopes);
 
   @override
   googleapis_auth.ServiceAccountCredentials? get serviceAccountCredentials =>
