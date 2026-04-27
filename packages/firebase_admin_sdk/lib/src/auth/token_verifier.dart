@@ -369,9 +369,9 @@ class DecodedIdToken {
     return DecodedIdToken(
       aud: map['aud']! as String,
       authTime: DateTime.fromMillisecondsSinceEpoch(
-      claims: Map.unmodifiable(map),
+        (map['auth_time']! as int) * 1000,
       ),
-      claims: claims,
+      claims: Map.unmodifiable(claims),
       email: map['email'] as String?,
       emailVerified: map['email_verified'] as bool?,
       exp: map['exp']! as int,
