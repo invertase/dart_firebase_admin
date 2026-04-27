@@ -163,6 +163,10 @@ class AppOptions {
           databaseURL == other.databaseURL &&
           storageBucket == other.storageBucket &&
           serviceAccountId == other.serviceAccountId &&
+          const ListEquality<String>().equals(
+            additionalScopes,
+            other.additionalScopes,
+          ) &&
           const MapEquality<String, dynamic>().equals(
             databaseAuthVariableOverride,
             other.databaseAuthVariableOverride,
@@ -174,6 +178,7 @@ class AppOptions {
     databaseURL,
     storageBucket,
     serviceAccountId,
+    const ListEquality<String>().hash(additionalScopes),
     const MapEquality<String, dynamic>().hash(databaseAuthVariableOverride),
   );
 }
