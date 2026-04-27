@@ -364,12 +364,14 @@ class DecodedIdToken {
 
   @internal
   factory DecodedIdToken.fromMap(Map<String, Object?> map) {
+    final claims = _extractCustomClaims(map);
+
     return DecodedIdToken(
       aud: map['aud']! as String,
       authTime: DateTime.fromMillisecondsSinceEpoch(
         (map['auth_time']! as int) * 1000,
       ),
-      claims: map,
+      claims: claims,
       email: map['email'] as String?,
       emailVerified: map['email_verified'] as bool?,
       exp: map['exp']! as int,
@@ -456,6 +458,28 @@ class DecodedIdToken {
 
   /// Other arbitrary claims included in the ID token.
   final Map<String, Object?> claims;
+}
+
+/// Extracts custom claims from the raw ID token payload map.
+///
+/// Custom claims are all claims that are not standard OpenID Connect claims
+/// or reserved Firebase claims.
+Map<String, Object?> _extractCustomClaims(Map<String, Object?> map) {
+  return Map<String, Object?>.from(map)..removeWhere(
+    (key, _) => const {
+      'aud',
+      'auth_time',
+      'email',
+      'email_verified',
+      'exp',
+      'firebase',
+      'iat',
+      'iss',
+      'phone_number',
+      'picture',
+      'sub',
+    }.contains(key),
+  );
 }
 
 /// User facing token information related to the Firebase ID token.

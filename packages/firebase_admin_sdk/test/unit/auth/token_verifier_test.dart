@@ -62,6 +62,8 @@ void main() {
       expect(idToken.claims['custom_claim'], 'mock-custom-claim');
       expect(idToken.claims['isAdmin'], true);
       expect(idToken.claims['numberOfTests'], 3);
+      expect(idToken.claims.containsKey('aud'), false);
+      expect(idToken.claims.containsKey('sub'), false);
     });
   });
 }
