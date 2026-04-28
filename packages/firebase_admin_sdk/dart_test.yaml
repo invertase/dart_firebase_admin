@@ -1,0 +1,11 @@
+tags:
+  prod:
+    description: >
+      Tests that hit real Firebase production APIs.
+      Requires GOOGLE_APPLICATION_CREDENTIALS pointing to a service account
+      with access to the dart-firebase-admin project.
+  wif:
+    description: >
+      Tests that verify the Workload Identity Federation credential flow.
+      Requires GOOGLE_APPLICATION_CREDENTIALS pointing to an external_account
+      JSON (set up via google-github-actions/auth in CI, or gcloud locally).

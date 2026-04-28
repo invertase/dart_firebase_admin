@@ -48,327 +48,311 @@ void main() {
     messaging = Messaging.internal(app);
   });
 
-  group(
-    'Send Message Integration',
-    () {
-      test('send(message, dryRun) returns a message ID', () async {
-        final messageId = await messaging.send(
-          TopicMessage(
-            topic: 'foo-bar',
-            notification: Notification(
-              title: 'Integration Test',
-              body: 'Testing send() method',
-            ),
+  group('Send Message Integration', () {
+    test('send(message, dryRun) returns a message ID', () async {
+      final messageId = await messaging.send(
+        TopicMessage(
+          topic: 'foo-bar',
+          notification: Notification(
+            title: 'Integration Test',
+            body: 'Testing send() method',
           ),
-          dryRun: true,
-        );
-
-        // Should return a message ID matching the pattern
-        expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
-      });
-
-      test(
-        'send(TokenMessage, dryRun) returns a message ID for a registered device token',
-        () async {
-          final messageId = await messaging.send(
-            TokenMessage(
-              token: registrationToken,
-              notification: Notification(
-                title: 'Integration Test',
-                body: 'Testing TokenMessage success path',
-              ),
-            ),
-            dryRun: true,
-          );
-          expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
-        },
-        skip:
-            'No FCM emulator available. Requires a real FCM registration token from a client app.',
+        ),
+        dryRun: true,
       );
 
-      test('send(ConditionMessage, dryRun) returns a message ID', () async {
+      // Should return a message ID matching the pattern
+      expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
+    });
+
+    test(
+      'send(TokenMessage, dryRun) returns a message ID for a registered device token',
+      () async {
         final messageId = await messaging.send(
-          ConditionMessage(
-            condition: "'foo-bar' in topics || 'baz' in topics",
+          TokenMessage(
+            token: registrationToken,
             notification: Notification(
               title: 'Integration Test',
-              body: 'Testing ConditionMessage',
+              body: 'Testing TokenMessage success path',
             ),
           ),
           dryRun: true,
         );
-
         expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
-      });
+      },
+      skip:
+          'No FCM emulator available. Requires a real FCM registration token from a client app.',
+    );
 
-      test('sendEach()', () async {
+    test('send(ConditionMessage, dryRun) returns a message ID', () async {
+      final messageId = await messaging.send(
+        ConditionMessage(
+          condition: "'foo-bar' in topics || 'baz' in topics",
+          notification: Notification(
+            title: 'Integration Test',
+            body: 'Testing ConditionMessage',
+          ),
+        ),
+        dryRun: true,
+      );
+
+      expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
+    });
+
+    test('sendEach()', () async {
+      final messages = [
+        TopicMessage(
+          topic: 'foo-bar',
+          notification: Notification(title: 'Test 1'),
+        ),
+        TopicMessage(
+          topic: 'foo-bar',
+          notification: Notification(title: 'Test 2'),
+        ),
+        TopicMessage(
+          topic: 'foo-bar',
+          notification: Notification(title: 'Test 3'),
+        ),
+      ];
+
+      final response = await messaging.sendEach(messages, dryRun: true);
+
+      expect(response.responses.length, equals(messages.length));
+      expect(response.successCount, equals(messages.length));
+      expect(response.failureCount, equals(0));
+
+      for (final resp in response.responses) {
+        expect(resp.success, isTrue);
+        expect(resp.messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
+      }
+    });
+
+    test(
+      'sendEach() with mixed message types including ConditionMessage',
+      () async {
         final messages = [
           TopicMessage(
             topic: 'foo-bar',
-            notification: Notification(title: 'Test 1'),
+            notification: Notification(title: 'Topic'),
           ),
-          TopicMessage(
-            topic: 'foo-bar',
-            notification: Notification(title: 'Test 2'),
-          ),
-          TopicMessage(
-            topic: 'foo-bar',
-            notification: Notification(title: 'Test 3'),
+          ConditionMessage(
+            condition: "'foo-bar' in topics || 'baz' in topics",
+            notification: Notification(title: 'Condition'),
           ),
         ];
 
         final response = await messaging.sendEach(messages, dryRun: true);
 
-        expect(response.responses.length, equals(messages.length));
-        expect(response.successCount, equals(messages.length));
+        expect(response.responses.length, equals(2));
+        expect(response.successCount, equals(2));
         expect(response.failureCount, equals(0));
 
         for (final resp in response.responses) {
           expect(resp.success, isTrue);
           expect(resp.messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
         }
-      });
+      },
+    );
 
-      test(
-        'sendEach() with mixed message types including ConditionMessage',
-        () async {
-          final messages = [
-            TopicMessage(
-              topic: 'foo-bar',
-              notification: Notification(title: 'Topic'),
+    test(
+      'send() with ApsSoundName and ApsInterruptionLevel is accepted by FCM',
+      () async {
+        final messageId = await messaging.send(
+          TopicMessage(
+            topic: 'foo-bar',
+            notification: Notification(
+              title: 'Integration Test',
+              body: 'Testing APNs sound and interruption level',
             ),
-            ConditionMessage(
-              condition: "'foo-bar' in topics || 'baz' in topics",
-              notification: Notification(title: 'Condition'),
-            ),
-          ];
-
-          final response = await messaging.sendEach(messages, dryRun: true);
-
-          expect(response.responses.length, equals(2));
-          expect(response.successCount, equals(2));
-          expect(response.failureCount, equals(0));
-
-          for (final resp in response.responses) {
-            expect(resp.success, isTrue);
-            expect(
-              resp.messageId,
-              matches(RegExp(r'^projects/.*/messages/.*$')),
-            );
-          }
-        },
-      );
-
-      test(
-        'send() with ApsSoundName and ApsInterruptionLevel is accepted by FCM',
-        () async {
-          final messageId = await messaging.send(
-            TopicMessage(
-              topic: 'foo-bar',
-              notification: Notification(
-                title: 'Integration Test',
-                body: 'Testing APNs sound and interruption level',
-              ),
-              apns: ApnsConfig(
-                payload: ApnsPayload(
-                  aps: Aps(
-                    sound: const ApsSoundName('default'),
-                    interruptionLevel: ApsInterruptionLevel.timeSensitive,
-                  ),
+            apns: ApnsConfig(
+              payload: ApnsPayload(
+                aps: Aps(
+                  sound: const ApsSoundName('default'),
+                  interruptionLevel: ApsInterruptionLevel.timeSensitive,
                 ),
               ),
             ),
-            dryRun: true,
-          );
-
-          expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
-        },
-      );
-
-      test('sendEach() validates empty messages list', () async {
-        await expectLater(
-          () => messaging.sendEach([]),
-          throwsA(
-            isA<FirebaseMessagingAdminException>().having(
-              (e) => e.message,
-              'message',
-              contains('non-empty'),
-            ),
           ),
+          dryRun: true,
         );
-      });
 
-      test(
-        'sendEachForMulticast() with invalid token returns invalid argument error',
-        () async {
-          // Use invalid tokens to test error handling
-          final multicastMessage = MulticastMessage(
-            tokens: ['not-a-token', 'also-not-a-token'],
-            notification: Notification(title: 'Multicast Test'),
-          );
+        expect(messageId, matches(RegExp(r'^projects/.*/messages/.*$')));
+      },
+    );
 
-          final response = await messaging.sendEachForMulticast(
-            multicastMessage,
-            dryRun: true,
-          );
-
-          expect(response.responses.length, equals(2));
-          expect(response.successCount, equals(0));
-          expect(response.failureCount, equals(2));
-
-          for (final resp in response.responses) {
-            expect(resp.success, isFalse);
-            expect(resp.messageId, isNull);
-            expect(
-              resp.error,
-              isA<FirebaseMessagingAdminException>().having(
-                (e) => e.errorCode,
-                'errorCode',
-                MessagingClientErrorCode.invalidArgument,
-              ),
-            );
-          }
-        },
-      );
-
-      test('sendEachForMulticast() validates empty tokens list', () async {
-        await expectLater(
-          () => messaging.sendEachForMulticast(MulticastMessage(tokens: [])),
-          throwsA(
-            isA<FirebaseMessagingAdminException>().having(
-              (e) => e.message,
-              'message',
-              contains('non-empty'),
-            ),
+    test('sendEach() validates empty messages list', () async {
+      await expectLater(
+        () => messaging.sendEach([]),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            contains('non-empty'),
           ),
+        ),
+      );
+    });
+
+    test(
+      'sendEachForMulticast() with invalid token returns invalid argument error',
+      () async {
+        // Use invalid tokens to test error handling
+        final multicastMessage = MulticastMessage(
+          tokens: ['not-a-token', 'also-not-a-token'],
+          notification: Notification(title: 'Multicast Test'),
         );
-      });
-    },
-    skip: hasProdEnv
-        ? false
-        : 'Requires Application Default Credentials (gcloud auth application-default login)',
-  );
 
-  group(
-    'Topic Management Integration',
-    () {
-      test(
-        'subscribeToTopic() returns a response with correct structure',
-        () async {
-          final response = await messaging.subscribeToTopic([
-            registrationToken,
-          ], testTopic);
+        final response = await messaging.sendEachForMulticast(
+          multicastMessage,
+          dryRun: true,
+        );
 
-          // Verify response structure (token might be invalid, so we just check types)
-          expect(response.successCount, isA<int>());
-          expect(response.failureCount, isA<int>());
-          expect(response.errors, isA<List<Object?>>());
+        expect(response.responses.length, equals(2));
+        expect(response.successCount, equals(0));
+        expect(response.failureCount, equals(2));
 
-          // Total should equal number of tokens
-          expect(response.successCount + response.failureCount, equals(1));
-        },
-      );
-
-      test(
-        'unsubscribeFromTopic() returns a response with correct structure',
-        () async {
-          final response = await messaging.unsubscribeFromTopic([
-            registrationToken,
-          ], testTopic);
-
-          // Verify response structure
-          expect(response.successCount, isA<int>());
-          expect(response.failureCount, isA<int>());
-          expect(response.errors, isA<List<Object?>>());
-
-          // Total should equal number of tokens
-          expect(response.successCount + response.failureCount, equals(1));
-        },
-      );
-
-      test(
-        'subscribeToTopic() with multiple tokens returns correct count',
-        () async {
-          final response = await messaging.subscribeToTopic([
-            registrationToken,
-            registrationToken,
-          ], testTopic);
-
-          // Should return 2 results (even if both fail due to invalid tokens)
-          expect(response.successCount + response.failureCount, equals(2));
-        },
-      );
-
-      test('subscribeToTopic() fails with invalid topic format', () async {
-        await expectLater(
-          () => messaging.subscribeToTopic([registrationToken], invalidTopic),
-          throwsA(
+        for (final resp in response.responses) {
+          expect(resp.success, isFalse);
+          expect(resp.messageId, isNull);
+          expect(
+            resp.error,
             isA<FirebaseMessagingAdminException>().having(
               (e) => e.errorCode,
               'errorCode',
               MessagingClientErrorCode.invalidArgument,
             ),
-          ),
-        );
-      });
+          );
+        }
+      },
+    );
 
-      test('unsubscribeFromTopic() fails with invalid topic format', () async {
-        await expectLater(
-          () =>
-              messaging.unsubscribeFromTopic([registrationToken], invalidTopic),
-          throwsA(
-            isA<FirebaseMessagingAdminException>().having(
-              (e) => e.errorCode,
-              'errorCode',
-              MessagingClientErrorCode.invalidArgument,
-            ),
+    test('sendEachForMulticast() validates empty tokens list', () async {
+      await expectLater(
+        () => messaging.sendEachForMulticast(MulticastMessage(tokens: [])),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.message,
+            'message',
+            contains('non-empty'),
           ),
-        );
-      });
+        ),
+      );
+    });
+  }, tags: 'prod');
 
-      test('subscribeToTopic() handles topic normalization', () async {
-        // Both should work (with and without /topics/ prefix)
-        final response1 = await messaging.subscribeToTopic([
+  group('Topic Management Integration', () {
+    test(
+      'subscribeToTopic() returns a response with correct structure',
+      () async {
+        final response = await messaging.subscribeToTopic([
           registrationToken,
-        ], 'test-normalization');
-        expect(response1.successCount + response1.failureCount, equals(1));
+        ], testTopic);
 
-        final response2 = await messaging.subscribeToTopic([
+        // Verify response structure (token might be invalid, so we just check types)
+        expect(response.successCount, isA<int>());
+        expect(response.failureCount, isA<int>());
+        expect(response.errors, isA<List<Object?>>());
+
+        // Total should equal number of tokens
+        expect(response.successCount + response.failureCount, equals(1));
+      },
+    );
+
+    test(
+      'unsubscribeFromTopic() returns a response with correct structure',
+      () async {
+        final response = await messaging.unsubscribeFromTopic([
           registrationToken,
-        ], '/topics/test-normalization');
-        expect(response2.successCount + response2.failureCount, equals(1));
-      });
+        ], testTopic);
 
-      test('subscribeToTopic() with array validates properly', () async {
-        // Empty array should fail
-        await expectLater(
-          () => messaging.subscribeToTopic([], testTopic),
-          throwsA(
-            isA<FirebaseMessagingAdminException>().having(
-              (e) => e.errorCode,
-              'errorCode',
-              MessagingClientErrorCode.invalidArgument,
-            ),
-          ),
-        );
-      });
+        // Verify response structure
+        expect(response.successCount, isA<int>());
+        expect(response.failureCount, isA<int>());
+        expect(response.errors, isA<List<Object?>>());
 
-      test('unsubscribeFromTopic() with array validates properly', () async {
-        // Empty array should fail
-        await expectLater(
-          () => messaging.unsubscribeFromTopic([], testTopic),
-          throwsA(
-            isA<FirebaseMessagingAdminException>().having(
-              (e) => e.errorCode,
-              'errorCode',
-              MessagingClientErrorCode.invalidArgument,
-            ),
+        // Total should equal number of tokens
+        expect(response.successCount + response.failureCount, equals(1));
+      },
+    );
+
+    test(
+      'subscribeToTopic() with multiple tokens returns correct count',
+      () async {
+        final response = await messaging.subscribeToTopic([
+          registrationToken,
+          registrationToken,
+        ], testTopic);
+
+        // Should return 2 results (even if both fail due to invalid tokens)
+        expect(response.successCount + response.failureCount, equals(2));
+      },
+    );
+
+    test('subscribeToTopic() fails with invalid topic format', () async {
+      await expectLater(
+        () => messaging.subscribeToTopic([registrationToken], invalidTopic),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            MessagingClientErrorCode.invalidArgument,
           ),
-        );
-      });
-    },
-    skip: hasProdEnv
-        ? false
-        : 'Requires Application Default Credentials (gcloud auth application-default login)',
-  );
+        ),
+      );
+    });
+
+    test('unsubscribeFromTopic() fails with invalid topic format', () async {
+      await expectLater(
+        () => messaging.unsubscribeFromTopic([registrationToken], invalidTopic),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            MessagingClientErrorCode.invalidArgument,
+          ),
+        ),
+      );
+    });
+
+    test('subscribeToTopic() handles topic normalization', () async {
+      // Both should work (with and without /topics/ prefix)
+      final response1 = await messaging.subscribeToTopic([
+        registrationToken,
+      ], 'test-normalization');
+      expect(response1.successCount + response1.failureCount, equals(1));
+
+      final response2 = await messaging.subscribeToTopic([
+        registrationToken,
+      ], '/topics/test-normalization');
+      expect(response2.successCount + response2.failureCount, equals(1));
+    });
+
+    test('subscribeToTopic() with array validates properly', () async {
+      // Empty array should fail
+      await expectLater(
+        () => messaging.subscribeToTopic([], testTopic),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            MessagingClientErrorCode.invalidArgument,
+          ),
+        ),
+      );
+    });
+
+    test('unsubscribeFromTopic() with array validates properly', () async {
+      // Empty array should fail
+      await expectLater(
+        () => messaging.unsubscribeFromTopic([], testTopic),
+        throwsA(
+          isA<FirebaseMessagingAdminException>().having(
+            (e) => e.errorCode,
+            'errorCode',
+            MessagingClientErrorCode.invalidArgument,
+          ),
+        ),
+      );
+    });
+  }, tags: 'prod');
 }
