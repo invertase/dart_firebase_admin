@@ -186,9 +186,7 @@ class Serializer {
         return firestore.doc(resourcePath.relativeName);
       case firestore_v1.Value(:final arrayValue?):
         final values = arrayValue.values;
-        return <Object?>[
-          for (final value in values) decodeValue(value),
-        ];
+        return <Object?>[for (final value in values) decodeValue(value)];
       case firestore_v1.Value(nullValue: != null):
         return null;
       case firestore_v1.Value(:final mapValue?):

@@ -46,14 +46,14 @@ class _FieldFilterInternal extends _FilterInternal {
   @override
   firestore_v1.StructuredQuery_Filter toProto() {
     final value = this.value;
-    final filter = op == WhereFilter.equal
-        ? firestore_v1.StructuredQuery_UnaryFilter_Operator.isNan
-        : firestore_v1.StructuredQuery_UnaryFilter_Operator.isNotNan;
     final fieldReference = firestore_v1.StructuredQuery_FieldReference(
       fieldPath: field._formattedName,
     );
 
     if (value is num && value.isNaN) {
+      final filter = op == WhereFilter.equal
+          ? firestore_v1.StructuredQuery_UnaryFilter_Operator.isNan
+          : firestore_v1.StructuredQuery_UnaryFilter_Operator.isNotNan;
       return firestore_v1.StructuredQuery_Filter(
         unaryFilter: firestore_v1.StructuredQuery_UnaryFilter(
           field: fieldReference,
@@ -63,6 +63,9 @@ class _FieldFilterInternal extends _FilterInternal {
     }
 
     if (value == null) {
+      final filter = op == WhereFilter.equal
+          ? firestore_v1.StructuredQuery_UnaryFilter_Operator.isNull
+          : firestore_v1.StructuredQuery_UnaryFilter_Operator.isNotNull;
       return firestore_v1.StructuredQuery_Filter(
         unaryFilter: firestore_v1.StructuredQuery_UnaryFilter(
           field: fieldReference,
