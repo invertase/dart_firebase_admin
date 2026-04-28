@@ -1,0 +1,6 @@
+tags:
+  prod:
+    description: >
+      Tests that hit real Firestore production APIs.
+      Requires GOOGLE_APPLICATION_CREDENTIALS pointing to a service account
+      with access to the dart-firebase-admin project.

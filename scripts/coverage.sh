@@ -3,16 +3,12 @@
 # Fast fail the script on failures.
 set -e
 
-# To run production tests locally, set both of these:
+# prod/wif tests are opt-in: set GOOGLE_APPLICATION_CREDENTIALS to include them.
 # export GOOGLE_APPLICATION_CREDENTIALS=service-account-key.json
-# export RUN_PROD_TESTS=true
 #
 # To also run the refresh token credential integration tests, set:
 # export FIREBASE_REFRESH_TOKEN_CREDENTIALS=~/.config/gcloud/application_default_credentials.json
 # (run `gcloud auth application-default login` first if the file doesn't exist)
-#
-# RUN_PROD_TESTS is intentionally never set in CI to avoid quota-heavy tests running there.
-# WIF tests (gated by hasWifEnv) still run in CI via the google-github-actions/auth step.
 
 # Get the script's directory and the package directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -29,8 +25,14 @@ cd ../../..
 
 dart pub global activate coverage
 
+# Exclude prod/wif tests unless a credential is available.
+TEST_TAGS="--exclude-tags prod,wif"
+if [ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]; then
+  TEST_TAGS=""
+fi
+
 # Use test_with_coverage which supports workspaces (dart test --coverage doesn't work with resolution: workspace)
-firebase emulators:exec --config test/firebase.json --project dart-firebase-admin --only auth,firestore,functions,tasks,storage "dart run coverage:test_with_coverage -- --concurrency=1"
+firebase emulators:exec --config test/firebase.json --project dart-firebase-admin --only auth,firestore,functions,tasks,storage "dart run coverage:test_with_coverage -- --concurrency=1 $TEST_TAGS"
 
 # test_with_coverage already generates lcov.info, just move it
 mv coverage/lcov.info coverage.lcov

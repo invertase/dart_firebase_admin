@@ -41,9 +41,6 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
       );
 
@@ -62,12 +59,9 @@ void main() {
             expect(app.isDeleted, isTrue);
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
       );
-    });
+    }, tags: 'prod');
 
     group('_createDefaultClient – service account path', () {
       test(
@@ -92,12 +86,9 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
       );
-    });
+    }, tags: 'prod');
 
     group('_createDefaultClient – refresh token path', () {
       final refreshTokenFile =
@@ -124,11 +115,6 @@ void main() {
             }
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: refreshTokenFile != null
-            ? false
-            : 'Requires FIREBASE_REFRESH_TOKEN_CREDENTIALS to be set '
-                  '(path to a refresh token JSON file, e.g. '
-                  '~/.config/gcloud/application_default_credentials.json)',
         timeout: const Timeout(Duration(seconds: 30)),
       );
 
@@ -151,12 +137,9 @@ void main() {
             expect(app.isDeleted, isTrue);
           }, zoneValues: {envSymbol: prodEnv()});
         },
-        skip: refreshTokenFile != null
-            ? false
-            : 'Requires FIREBASE_REFRESH_TOKEN_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
       );
-    });
+    }, tags: 'prod');
 
     group('getProjectId – computeProjectId fallback', () {
       test(
@@ -176,12 +159,9 @@ void main() {
             }
           }, zoneValues: {envSymbol: null});
         },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GOOGLE_APPLICATION_CREDENTIALS to be set',
         timeout: const Timeout(Duration(seconds: 30)),
       );
-    });
+    }, tags: 'prod');
 
     group('Workload Identity Federation tests', () {
       late FirebaseApp app;
@@ -199,47 +179,35 @@ void main() {
         );
       });
 
-      test(
-        'should initializeApp via WIF (ADC)',
-        () {
-          expect(app, isNotNull);
-        },
-        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-      );
+      test('should initializeApp via WIF (ADC)', () {
+        expect(app, isNotNull);
+      });
 
-      test(
-        'should test Auth (getUsers)',
-        () async {
-          final auth = app.auth();
-          expect(auth, isNotNull);
+      test('should test Auth (getUsers)', () async {
+        final auth = app.auth();
+        expect(auth, isNotNull);
 
-          final listUsersResult = await auth.listUsers(maxResults: 1);
-          expect(listUsersResult.users, isA<List<UserRecord>>());
-        },
-        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-      );
+        final listUsersResult = await auth.listUsers(maxResults: 1);
+        expect(listUsersResult.users, isA<List<UserRecord>>());
+      });
 
-      test(
-        'should test Firestore (write + read)',
-        () async {
-          final db = app.firestore();
-          expect(db, isNotNull);
+      test('should test Firestore (write + read)', () async {
+        final db = app.firestore();
+        expect(db, isNotNull);
 
-          final docRef = db.collection('wif-demo').doc('test-connection');
-          const testMessage = 'Hello from GitHub Actions WIF!';
+        final docRef = db.collection('wif-demo').doc('test-connection');
+        const testMessage = 'Hello from GitHub Actions WIF!';
 
-          await docRef.set({
-            'timestamp': DateTime.now().toIso8601String(),
-            'message': testMessage,
-          });
+        await docRef.set({
+          'timestamp': DateTime.now().toIso8601String(),
+          'message': testMessage,
+        });
 
-          final doc = await docRef.get();
-          expect(doc.exists, isTrue);
-          expect(doc.data()?['message'], equals(testMessage));
-          expect(doc.data()?['timestamp'], isNotNull);
-        },
-        skip: hasWifEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-      );
-    });
+        final doc = await docRef.get();
+        expect(doc.exists, isTrue);
+        expect(doc.data()?['message'], equals(testMessage));
+        expect(doc.data()?['timestamp'], isNotNull);
+      });
+    }, tags: 'wif');
   });
 }
