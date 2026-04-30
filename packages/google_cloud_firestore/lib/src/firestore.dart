@@ -170,8 +170,10 @@ class Settings {
 
   /// Environment variable overrides for testing.
   ///
-  /// This allows tests to inject environment variables (like FIRESTORE_EMULATOR_HOST)
-  /// without modifying the actual process environment.
+  /// Allows cross-package tests to inject environment variables (such as
+  /// `FIRESTORE_EMULATOR_HOST`) without modifying the actual process
+  /// environment. Within `google_cloud_firestore` itself, prefer using
+  /// `runZoned` with `envSymbol` instead.
   ///
   /// Example:
   /// ```dart

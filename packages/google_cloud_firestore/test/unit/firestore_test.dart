@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
+
 import 'package:google_cloud_firestore/google_cloud_firestore.dart';
 import 'package:google_cloud_firestore/src/firestore_http_client.dart';
 import 'package:mocktail/mocktail.dart';
@@ -46,6 +48,40 @@ void main() {
       );
 
       expect(firestore.projectId, 'explicit-project');
+    });
+
+    test(
+      'projectId getter returns value from GOOGLE_CLOUD_PROJECT env var',
+      () {
+        runZoned(
+          () {
+            final firestore = Firestore(settings: const Settings());
+            expect(firestore.projectId, 'env-project');
+          },
+          zoneValues: {
+            envSymbol: <String, String>{'GOOGLE_CLOUD_PROJECT': 'env-project'},
+          },
+        );
+      },
+    );
+
+    test('projectId getter returns value from GCLOUD_PROJECT env var', () {
+      runZoned(
+        () {
+          final firestore = Firestore(settings: const Settings());
+          expect(firestore.projectId, 'env-project');
+        },
+        zoneValues: {
+          envSymbol: <String, String>{'GCLOUD_PROJECT': 'env-project'},
+        },
+      );
+    });
+
+    test('projectId getter throws when no project ID is discoverable', () {
+      runZoned(() {
+        final firestore = Firestore(settings: const Settings());
+        expect(() => firestore.projectId, throwsStateError);
+      }, zoneValues: {envSymbol: <String, String>{}});
     });
 
     test('databaseId getter returns default when not set', () {

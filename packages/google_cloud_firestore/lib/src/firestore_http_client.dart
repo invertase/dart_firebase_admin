@@ -179,10 +179,10 @@ class FirestoreHttpClient {
   /// Returns `null` when only async strategies (gcloud CLI, metadata server)
   /// could succeed; those are handled by [_run] and cached in [cachedProjectId].
   String? getProjectId() {
-    final env = _settings.environmentOverride;
-    if (env != null) {
+    final zoneEnv = Zone.current[envSymbol] as Map<String, String>?;
+    if (zoneEnv != null) {
       for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
-        final value = env[envKey];
+        final value = zoneEnv[envKey];
         if (value != null) return value;
       }
       return null;
@@ -249,10 +249,10 @@ class FirestoreHttpClient {
 
     String? projectId;
 
-    final env = _settings.environmentOverride;
-    if (env != null) {
+    final zoneEnv = Zone.current[envSymbol] as Map<String, String>?;
+    if (zoneEnv != null) {
       for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
-        final value = env[envKey];
+        final value = zoneEnv[envKey];
         if (value != null) {
           projectId = value;
           break;
