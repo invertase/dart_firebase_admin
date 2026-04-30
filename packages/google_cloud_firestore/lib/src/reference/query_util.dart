@@ -55,6 +55,7 @@ bool _valueEqual(firestore_v1.Value a, firestore_v1.Value b) {
         if (bValue == null) return false;
         if (!_valueEqual(value, bValue)) return false;
       }
+      return true;
     case firestore_v1.Value(:final nullValue?):
       return nullValue == b.nullValue;
     case firestore_v1.Value(:final referenceValue?):
