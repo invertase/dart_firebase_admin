@@ -17,25 +17,6 @@ part of 'firestore.dart';
 @internal
 typedef ApiMapValue = Map<String, firestore_v1.Value>;
 
-// Sentinel string values used to round-trip special IEEE 754 doubles through
-// the googleapis JSON deserialiser, which cannot handle non-finite doubles.
-//
-// [_SpecialDoubleClient] in firestore_http_client.dart rewrites incoming
-// Firestore REST API responses:
-//   "doubleValue":"Infinity"   →  "stringValue":"<kInfinitySentinel>"
-//   "doubleValue":"-Infinity"  →  "stringValue":"<kNegInfinitySentinel>"
-//   "doubleValue":"NaN"        →  "stringValue":"<kNaNSentinel>"
-//
-// [Serializer.decodeValue] then maps each sentinel back to the corresponding
-// Dart double constant.  The names are package-internal (no `_` prefix) so
-// that firestore_http_client.dart can reference them via its barrel import.
-@internal
-const kInfinitySentinel = '__fs_double_infinity__';
-@internal
-const kNegInfinitySentinel = '__fs_double_neg_infinity__';
-@internal
-const kNaNSentinel = '__fs_double_nan__';
-
 abstract class _Serializable {
   firestore_v1.Value _toProto();
 }
@@ -162,15 +143,7 @@ class Serializer {
 
     switch (proto) {
       case firestore_v1.Value(:final stringValue?):
-        // The HTTP response interceptor rewrites special double strings
-        // ("Infinity", "-Infinity", "NaN") as sentinel stringValues so that
-        // googleapis can parse the response without casting a String to num.
-        return switch (stringValue) {
-          kInfinitySentinel => double.infinity,
-          kNegInfinitySentinel => double.negativeInfinity,
-          kNaNSentinel => double.nan,
-          _ => stringValue,
-        };
+        return stringValue;
       case firestore_v1.Value(:final booleanValue?):
         return booleanValue;
       case firestore_v1.Value(:final integerValue?):
