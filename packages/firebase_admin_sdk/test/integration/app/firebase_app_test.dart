@@ -25,36 +25,29 @@ import '../../fixtures/mock_service_account.dart';
 
 void main() {
   group('FirebaseApp Integration', () {
-    group(
-      'client creation',
-      () {
-        tearDown(() {
-          FirebaseApp.apps.forEach(FirebaseApp.deleteApp);
-        });
+    group('client creation', () {
+      tearDown(() {
+        FirebaseApp.apps.forEach(FirebaseApp.deleteApp);
+      });
 
-        test(
-          'creates an authenticated client via Application Default Credentials',
-          () async {
-            final app = FirebaseApp.initializeApp(
-              name: 'adc-client-${DateTime.now().microsecondsSinceEpoch}',
-              options: AppOptions(
-                credential: Credential.fromApplicationDefaultCredentials(),
-                projectId: mockProjectId,
-              ),
-            );
+      test(
+        'creates an authenticated client via Application Default Credentials',
+        () async {
+          final app = FirebaseApp.initializeApp(
+            name: 'adc-client-${DateTime.now().microsecondsSinceEpoch}',
+            options: AppOptions(
+              credential: Credential.fromApplicationDefaultCredentials(),
+              projectId: mockProjectId,
+            ),
+          );
 
-            final client = await app.client;
-            expect(client, isNotNull);
+          final client = await app.client;
+          expect(client, isNotNull);
 
-            await app.close();
-          },
-        );
-      },
-      skip: !hasProdEnv
-          ? 'Skipping client creation tests. '
-                'Set GOOGLE_APPLICATION_CREDENTIALS to run these tests.'
-          : false,
-    );
+          await app.close();
+        },
+      );
+    }, tags: 'prod');
 
     group(
       'Firestore emulator lifecycle',

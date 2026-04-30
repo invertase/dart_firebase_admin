@@ -43,85 +43,76 @@ void main() {
 
   group('FirebaseAuth', () {
     group('verifyIdToken', () {
-      test(
-        'verifies ID token from Firebase Auth production',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+      test('verifies ID token from Firebase Auth production', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final authProd = Auth.internal(app);
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final authProd = Auth.internal(app);
 
-            try {
-              // Helper function to exchange custom token for ID token
-              Future<String> getIdTokenFromCustomToken(
-                String customToken,
-              ) async {
-                final client = await authProd.app.client;
-                final api = IdentityToolkitApi(client);
+          try {
+            // Helper function to exchange custom token for ID token
+            Future<String> getIdTokenFromCustomToken(String customToken) async {
+              final client = await authProd.app.client;
+              final api = IdentityToolkitApi(client);
 
-                final request =
-                    GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
-                      token: customToken,
-                      returnSecureToken: true,
-                    );
-
-                final response = await api.accounts.signInWithCustomToken(
-                  request,
-                );
-
-                if (response.idToken == null || response.idToken!.isEmpty) {
-                  throw Exception(
-                    'Failed to exchange custom token for ID token: No idToken in response',
+              final request =
+                  GoogleCloudIdentitytoolkitV1SignInWithCustomTokenRequest(
+                    token: customToken,
+                    returnSecureToken: true,
                   );
-                }
 
-                return response.idToken!;
-              }
+              final response = await api.accounts.signInWithCustomToken(
+                request,
+              );
 
-              // Create a user and get ID token
-              const email = 'foo@google.com';
-              const password =
-                  'TestPassword123!'; // Meets all password requirements
-              UserRecord? user;
-              try {
-                user = await authProd.createUser(
-                  CreateRequest(email: email, password: password),
+              if (response.idToken == null || response.idToken!.isEmpty) {
+                throw Exception(
+                  'Failed to exchange custom token for ID token: No idToken in response',
                 );
-
-                final customToken = await authProd.createCustomToken(user.uid);
-                final token = await getIdTokenFromCustomToken(customToken);
-                final decodedToken = await authProd.verifyIdToken(token);
-
-                expect(decodedToken.aud, 'dart-firebase-admin');
-                expect(decodedToken.uid, user.uid);
-                expect(decodedToken.sub, user.uid);
-                expect(decodedToken.email, email);
-                expect(decodedToken.emailVerified, false);
-                expect(decodedToken.phoneNumber, isNull);
-                expect(decodedToken.firebase.identities, {
-                  'email': [email],
-                });
-                // When signing in with custom token, signInProvider is 'custom'
-                expect(decodedToken.firebase.signInProvider, 'custom');
-              } finally {
-                if (user != null) {
-                  await authProd.deleteUser(user.uid);
-                }
               }
-            } finally {
-              await app.close();
+
+              return response.idToken!;
             }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires production mode but runs with emulator auto-detection',
-      );
+
+            // Create a user and get ID token
+            const email = 'foo@google.com';
+            const password =
+                'TestPassword123!'; // Meets all password requirements
+            UserRecord? user;
+            try {
+              user = await authProd.createUser(
+                CreateRequest(email: email, password: password),
+              );
+
+              final customToken = await authProd.createCustomToken(user.uid);
+              final token = await getIdTokenFromCustomToken(customToken);
+              final decodedToken = await authProd.verifyIdToken(token);
+
+              expect(decodedToken.aud, 'dart-firebase-admin');
+              expect(decodedToken.uid, user.uid);
+              expect(decodedToken.sub, user.uid);
+              expect(decodedToken.email, email);
+              expect(decodedToken.emailVerified, false);
+              expect(decodedToken.phoneNumber, isNull);
+              expect(decodedToken.firebase.identities, {
+                'email': [email],
+              });
+              // When signing in with custom token, signInProvider is 'custom'
+              expect(decodedToken.firebase.signInProvider, 'custom');
+            } finally {
+              if (user != null) {
+                await authProd.deleteUser(user.uid);
+              }
+            }
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      }, tags: 'prod');
     });
 
     group('Email Action Links', () {

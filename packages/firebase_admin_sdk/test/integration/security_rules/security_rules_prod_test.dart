@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+@Tags(['prod'])
+library;
+
 import 'package:firebase_admin_sdk/security_rules.dart';
 import 'package:test/test.dart';
 
@@ -48,89 +51,77 @@ void main() {
       'service firebase.storage { match /b/{bucket}/o { match /{allPaths=**} { allow read, write: if request.auth != null; } } }';
 
   group('SecurityRules', () {
-    test(
-      'ruleset e2e',
-      () async {
-        final ruleset = await securityRules.createRuleset(
-          RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
-        );
-        createdRulesets.add(ruleset.name);
+    test('ruleset e2e', () async {
+      final ruleset = await securityRules.createRuleset(
+        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
+      );
+      createdRulesets.add(ruleset.name);
 
-        final ruleset2 = await securityRules.getRuleset(ruleset.name);
-        expect(ruleset2.name, ruleset.name);
-        expect(ruleset2.createTime, isNotEmpty);
-        expect(ruleset2.source.single.name, 'firestore.rules');
-        expect(ruleset2.source.single.content, simpleFirestoreContent);
+      final ruleset2 = await securityRules.getRuleset(ruleset.name);
+      expect(ruleset2.name, ruleset.name);
+      expect(ruleset2.createTime, isNotEmpty);
+      expect(ruleset2.source.single.name, 'firestore.rules');
+      expect(ruleset2.source.single.content, simpleFirestoreContent);
 
-        await securityRules.deleteRuleset(ruleset.name);
+      await securityRules.deleteRuleset(ruleset.name);
 
-        expect(
-          securityRules.getRuleset(ruleset.name),
-          throwsA(
-            isA<FirebaseSecurityRulesException>().having(
-              (e) => e.code,
-              'code',
-              'security-rules/not-found',
-            ),
+      expect(
+        securityRules.getRuleset(ruleset.name),
+        throwsA(
+          isA<FirebaseSecurityRulesException>().having(
+            (e) => e.code,
+            'code',
+            'security-rules/not-found',
           ),
-        );
-      },
-      skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-    );
+        ),
+      );
+    });
 
-    test(
-      'listRulesetMetadata',
-      () async {
-        final ruleset = await securityRules.createRuleset(
-          RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
-        );
-        createdRulesets.add(ruleset.name);
+    test('listRulesetMetadata', () async {
+      final ruleset = await securityRules.createRuleset(
+        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
+      );
+      createdRulesets.add(ruleset.name);
 
-        final ruleset2 = await securityRules.createRuleset(
-          RulesFile(
-            name: 'firestore.rules',
-            content: '/* hello */ $simpleFirestoreContent',
-          ),
-        );
-        createdRulesets.add(ruleset2.name);
+      final ruleset2 = await securityRules.createRuleset(
+        RulesFile(
+          name: 'firestore.rules',
+          content: '/* hello */ $simpleFirestoreContent',
+        ),
+      );
+      createdRulesets.add(ruleset2.name);
 
-        final metadata = await securityRules.listRulesetMetadata(pageSize: 1);
+      final metadata = await securityRules.listRulesetMetadata(pageSize: 1);
 
-        expect(metadata.rulesets.length, 1);
-        expect(metadata.nextPageToken, isNotNull);
-        expect(metadata.rulesets.single.name, ruleset2.name);
+      expect(metadata.rulesets.length, 1);
+      expect(metadata.nextPageToken, isNotNull);
+      expect(metadata.rulesets.single.name, ruleset2.name);
 
-        final metadata2 = await securityRules.listRulesetMetadata(
-          pageSize: 1,
-          nextPageToken: metadata.nextPageToken,
-        );
+      final metadata2 = await securityRules.listRulesetMetadata(
+        pageSize: 1,
+        nextPageToken: metadata.nextPageToken,
+      );
 
-        expect(metadata2.rulesets.length, 1);
-        expect(metadata2.rulesets.single.name, isNot(ruleset2.name));
-        expect(metadata2.rulesets.single.name, ruleset.name);
-      },
-      skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-    );
+      expect(metadata2.rulesets.length, 1);
+      expect(metadata2.rulesets.single.name, isNot(ruleset2.name));
+      expect(metadata2.rulesets.single.name, ruleset.name);
+    });
 
-    test(
-      'firestore release flow',
-      () async {
-        final ruleset = await securityRules.createRuleset(
-          RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
-        );
-        createdRulesets.add(ruleset.name);
+    test('firestore release flow', () async {
+      final ruleset = await securityRules.createRuleset(
+        RulesFile(name: 'firestore.rules', content: simpleFirestoreContent),
+      );
+      createdRulesets.add(ruleset.name);
 
-        final before = await securityRules.getFirestoreRuleset();
+      final before = await securityRules.getFirestoreRuleset();
 
-        expect(before.name, isNot(ruleset.name));
+      expect(before.name, isNot(ruleset.name));
 
-        await securityRules.releaseFirestoreRuleset(ruleset.name);
+      await securityRules.releaseFirestoreRuleset(ruleset.name);
 
-        final after = await securityRules.getFirestoreRuleset();
-        expect(after.name, ruleset.name);
-      },
-      skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
-    );
+      final after = await securityRules.getFirestoreRuleset();
+      expect(after.name, ruleset.name);
+    });
 
     test(
       'storage release flow',
@@ -174,7 +165,6 @@ void main() {
             ),
           );
         },
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -191,7 +181,6 @@ void main() {
             ),
           );
         },
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -213,7 +202,6 @@ void main() {
             ),
           );
         },
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -231,7 +219,6 @@ void main() {
             ),
           );
         },
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
 
       test(
@@ -248,7 +235,6 @@ void main() {
             ),
           );
         },
-        skip: hasProdEnv ? false : 'Requires GOOGLE_APPLICATION_CREDENTIALS',
       );
     });
   });

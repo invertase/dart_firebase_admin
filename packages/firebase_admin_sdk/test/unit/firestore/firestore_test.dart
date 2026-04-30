@@ -149,10 +149,6 @@ void main() {
         () {
           // This test requires GOOGLE_APPLICATION_CREDENTIALS to be set
           // or running in a GCP environment
-          if (!hasProdEnv) {
-            return;
-          }
-
           final adcApp = FirebaseApp.initializeApp(
             name: 'adc-app',
             options: AppOptions(projectId: 'test-project', httpClient: client),
@@ -164,6 +160,7 @@ void main() {
 
           expect(db, isNotNull);
         },
+        tags: 'prod',
       );
     });
 

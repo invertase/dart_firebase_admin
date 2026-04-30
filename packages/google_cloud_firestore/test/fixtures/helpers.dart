@@ -20,11 +20,6 @@ import 'package:test/test.dart';
 
 const projectId = 'dart-firebase-admin';
 
-/// Whether quota-heavy production tests should run.
-/// Never set in CI — opt in locally by exporting RUN_PROD_TESTS=true alongside
-/// a service-account credential in GOOGLE_APPLICATION_CREDENTIALS.
-final hasProdEnv = Platform.environment['RUN_PROD_TESTS'] == 'true';
-
 /// Whether the Firestore emulator is enabled.
 bool isFirestoreEmulatorEnabled() {
   return Platform.environment['FIRESTORE_EMULATOR_HOST'] != null;
