@@ -80,6 +80,7 @@ import 'package:google_cloud_firestore/google_cloud_firestore.dart';
 
 // Option 1: Use Application Default Credentials (ADC)
 // Recommended for Google environments like Cloud Run, App Engine, etc.
+// The project ID is discovered automatically from the environment.
 final firestore = Firestore();
 
 // Option 2: With a service account file
@@ -101,6 +102,23 @@ final firestoreWithParams = Firestore(
       projectId: 'my-project',
     ),
   ),
+);
+```
+
+#### Using ADC locally with gcloud auth
+
+When authenticating locally via `gcloud auth application-default login`, the
+credentials produced (type: `authorized_user`) do not include a project ID.
+You must supply it either via an environment variable or in `Settings`:
+
+```bash
+export GOOGLE_CLOUD_PROJECT=your-project-id
+```
+
+```dart
+// Or set it explicitly in Settings
+final firestore = Firestore(
+  settings: Settings(projectId: 'your-project-id'),
 );
 ```
 
