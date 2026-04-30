@@ -341,6 +341,12 @@ class Firestore {
     final explicit = _settings.projectId;
     if (explicit != null) return explicit;
 
+    // Check environment variables and credentials file synchronously.
+    // Async strategies (gcloud CLI, metadata server) are handled by _run()
+    // and cached in cachedProjectId after the first API call.
+    final discovered = _firestoreClient.getProjectId();
+    if (discovered != null) return discovered;
+
     throw StateError(
       'Project ID has not been discovered yet. '
       'Initialize the SDK with credentials that include a project ID, '

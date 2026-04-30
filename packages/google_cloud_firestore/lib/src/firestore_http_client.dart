@@ -173,6 +173,28 @@ class FirestoreHttpClient {
 
   String? get cachedProjectId => _cachedProjectId;
 
+  /// Synchronously resolves the project ID from environment variables or the
+  /// credentials file, without any network I/O.
+  ///
+  /// Returns `null` when only async strategies (gcloud CLI, metadata server)
+  /// could succeed; those are handled by [_run] and cached in [cachedProjectId].
+  String? getProjectId() {
+    final env = _settings.environmentOverride;
+    if (env != null) {
+      for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
+        final value = env[envKey];
+        if (value != null) return value;
+      }
+      return null;
+    }
+
+    final explicitProjectId = _settings.projectId;
+    if (explicitProjectId != null) return explicitProjectId;
+
+    return google_cloud.projectIdFromEnvironmentVariables() ??
+        google_cloud.projectIdFromCredentialsFile();
+  }
+
   /// Gets the Firestore API host URL based on emulator configuration.
   Uri get _firestoreApiHost {
     final emulatorHost = Environment.getFirestoreEmulatorHost(
