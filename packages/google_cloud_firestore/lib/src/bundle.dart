@@ -196,7 +196,9 @@ class BundledQuery {
       json['limit'] = query.limit;
     }
 
-    json['offset'] = query.offset;
+    if (query.offset != 0) {
+      json['offset'] = query.offset;
+    }
 
     return json;
   }

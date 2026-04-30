@@ -269,7 +269,8 @@ class _BulkCommitBatch extends WriteBatch {
           pendingOps[i].onSuccess(WriteResult._(updateTime));
         } else {
           // Operation failed - create exception with status details
-          final errorMessage = status.message;
+          final errorMessage =
+              status.message.isEmpty ? 'Operation failed' : status.message;
           final errorCode = FirestoreClientErrorCode.fromStatusCode(
             status.code,
           );

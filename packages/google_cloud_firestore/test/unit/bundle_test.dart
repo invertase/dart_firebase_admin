@@ -150,16 +150,11 @@ void main() {
       bundle.addDocument(snap1);
       bundle.addDocument(snap2);
 
-      final bundleBuffer = bundle.build();
-      final elements = bundleToElementArray(bundleBuffer);
+      final elements = bundleToElementArray(bundle.build());
+      expect(elements.length, equals(3));
 
-      expect(elements, hasLength(3));
-
-      verifyMetadata(
-        elements[0]['metadata'] as Map<String, dynamic>,
-        Timestamp(seconds: 1577840405, nanoseconds: 6),
-        1,
-      );
+      final meta = elements[0]['metadata'] as Map<String, dynamic>;
+      verifyMetadata(meta, snap1.readTime!, 1);
 
       // Verify doc1Meta and doc1Snap
       final docMeta = elements[1]['documentMetadata'] as Map<String, dynamic>;
@@ -182,7 +177,6 @@ void main() {
     });
 
     test('succeeds with query snapshots', () {
-      // XXX - XXX - XXX - XXX - XXX - XXX
       final bundle = firestore.bundle(testBundleId);
 
       final snap =
@@ -255,14 +249,28 @@ void main() {
 
       bundle.addDocument(snap1);
 
-      final bundleBuffer1 = bundle.build();
-      final elements1 = bundleToElementArray(bundleBuffer1);
-      expect(elements1, hasLength(3));
+      final elements = bundleToElementArray(bundle.build());
+      expect(elements.length, equals(3));
 
-      final doc1Meta = elements1[1]['documentMetadata'] as Map<String, dynamic>;
-      expect(doc1Meta, containsPair('exists', true));
+      final meta = elements[0]['metadata'] as Map<String, dynamic>;
+      verifyMetadata(meta, snap1.readTime!, 1);
+
+      // Verify doc1Meta and doc1Snap
+      final doc1Meta = elements[1]['documentMetadata'] as Map<String, dynamic>;
+      final doc1Snap = elements[2]['document'] as Map<String, dynamic>;
       expect(
-        doc1Meta['name'],
+        doc1Meta,
+        equals({
+          'name': '$databaseRoot/documents/collectionId/doc1',
+          'readTime': {
+            'seconds': snap1.readTime!.seconds.toString(),
+            'nanos': snap1.readTime!.nanoseconds,
+          },
+          'exists': true,
+        }),
+      );
+      expect(
+        doc1Snap['name'],
         equals('$databaseRoot/documents/collectionId/doc1'),
       );
 
@@ -294,15 +302,15 @@ void main() {
       );
     });
 
-    test('succeeds with empty content', () {
+    test('succeeds when nothing is added', () {
       final bundle = firestore.bundle(testBundleId);
-      final bundleBuffer = bundle.build();
 
-      final elements = bundleToElementArray(bundleBuffer);
-      expect(elements, hasLength(1));
+      final elements = bundleToElementArray(bundle.build());
+      expect(elements.length, equals(1));
 
+      final meta = elements[0]['metadata'] as Map<String, dynamic>;
       verifyMetadata(
-        elements[0]['metadata'] as Map<String, dynamic>,
+        meta,
         Timestamp(seconds: 0, nanoseconds: 0),
         0,
         expectEmptyContent: true,

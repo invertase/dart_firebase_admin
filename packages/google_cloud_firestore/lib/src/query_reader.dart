@@ -80,9 +80,7 @@ class _QueryReader<T> {
       final document = e.document;
       if (document == null) {
         // End of stream marker
-        if (e.readTime != null) {
-          queryReadTime = Timestamp._fromProto(e.readTime!);
-        }
+        queryReadTime = e.readTime?.let(Timestamp._fromProto);
         continue;
       }
 

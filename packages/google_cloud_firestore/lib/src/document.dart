@@ -136,10 +136,9 @@ class DocumentSnapshot<T> {
     protobuf_v1.Timestamp? readTime,
     Firestore firestore,
   ) {
-    final name = document.name;
     final ref = DocumentReference<DocumentData>._(
       firestore: firestore,
-      path: _QualifiedResourcePath.fromSlashSeparatedString(name),
+      path: _QualifiedResourcePath.fromSlashSeparatedString(document.name),
       converter: _jsonConverter,
     );
 

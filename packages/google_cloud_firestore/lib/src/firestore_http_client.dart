@@ -123,7 +123,7 @@ class FirestoreHttpClient {
     if (serviceAccountCreds != null) {
       return googleapis_auth.clientViaServiceAccount(
         serviceAccountCreds,
-        ['https://www.googleapis.com/auth/datastore'],
+        ['https://www.googleapis.com/auth/cloud-platform'],
       );
     }
 

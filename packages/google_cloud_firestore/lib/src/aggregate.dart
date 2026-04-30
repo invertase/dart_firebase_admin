@@ -111,7 +111,7 @@ class AggregateField {
         );
     }
 
-    return AggregateFieldInternal(aggregation: aggregation);
+    return AggregateFieldInternal(alias: alias, aggregation: aggregation);
   }
 }
 
@@ -159,11 +159,13 @@ class average extends AggregateField {
 @immutable
 @internal
 class AggregateFieldInternal {
-  const AggregateFieldInternal({required this.aggregation});
+  const AggregateFieldInternal({
+    required this.alias,
+    required this.aggregation,
+  });
 
+  final String alias;
   final firestore_v1.StructuredAggregationQuery_Aggregation aggregation;
-
-  String get alias => aggregation.alias;
 
   @override
   bool operator ==(Object other) {

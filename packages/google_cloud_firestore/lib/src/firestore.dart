@@ -552,11 +552,11 @@ class Firestore {
         readTimeProto,
         this,
       );
+    } else {
+      throw ArgumentError(
+        'documentOrName must be either a String or firestore_v1.Document',
+      );
     }
-
-    throw ArgumentError(
-      'documentOrName must be either a String or firestore_v1.Document',
-    );
   }
 
   @internal

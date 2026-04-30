@@ -77,9 +77,9 @@ class AggregateQuery {
         metrics = ExplainMetrics._fromProto(result.explainMetrics!);
       }
 
-      if (result.result != null) {
+      if (result.result case final aggregationResult?) {
         hadResult = true;
-        for (final entry in result.result!.aggregateFields.entries) {
+        for (final entry in aggregationResult.aggregateFields.entries) {
           final value = entry.value;
           if (value.integerValue != null) {
             results[entry.key] = value.integerValue;
