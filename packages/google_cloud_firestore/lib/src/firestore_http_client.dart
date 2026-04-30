@@ -176,23 +176,44 @@ class FirestoreHttpClient {
   /// Synchronously resolves the project ID from environment variables or the
   /// credentials file, without any network I/O.
   ///
+  /// Checks (in order): [cachedProjectId], Zone env ([envSymbol]),
+  /// [Settings.environmentOverride], real environment variables, then the
+  /// credentials file at `GOOGLE_APPLICATION_CREDENTIALS`.
+  ///
   /// Returns `null` when only async strategies (gcloud CLI, metadata server)
   /// could succeed; those are handled by [_run] and cached in [cachedProjectId].
   String? getProjectId() {
+    if (_cachedProjectId != null) return _cachedProjectId;
+
     final zoneEnv = Zone.current[envSymbol] as Map<String, String>?;
+    String? discovered;
+
     if (zoneEnv != null) {
       for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
         final value = zoneEnv[envKey];
-        if (value != null) return value;
+        if (value != null) {
+          discovered = value;
+          break;
+        }
       }
-      return null;
+    } else {
+      final envOverride = _settings.environmentOverride;
+      if (envOverride != null) {
+        for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
+          final value = envOverride[envKey];
+          if (value != null) {
+            discovered = value;
+            break;
+          }
+        }
+      } else {
+        discovered =
+            google_cloud.projectIdFromEnvironmentVariables() ??
+            google_cloud.projectIdFromCredentialsFile();
+      }
     }
 
-    final explicitProjectId = _settings.projectId;
-    if (explicitProjectId != null) return explicitProjectId;
-
-    return google_cloud.projectIdFromEnvironmentVariables() ??
-        google_cloud.projectIdFromCredentialsFile();
+    return discovered != null ? (_cachedProjectId = discovered) : null;
   }
 
   /// Gets the Firestore API host URL based on emulator configuration.
@@ -247,25 +268,14 @@ class FirestoreHttpClient {
   ) async {
     final client = await _client;
 
-    String? projectId;
-
-    final zoneEnv = Zone.current[envSymbol] as Map<String, String>?;
-    if (zoneEnv != null) {
-      for (final envKey in google_cloud.projectIdEnvironmentVariableOptions) {
-        final value = zoneEnv[envKey];
-        if (value != null) {
-          projectId = value;
-          break;
-        }
-      }
-    }
-
-    projectId ??= _settings.projectId;
-    projectId ??= await google_cloud.computeProjectId();
+    final projectId =
+        getProjectId() ??
+        _settings.projectId ??
+        await google_cloud.computeProjectId();
 
     _cachedProjectId = projectId;
 
-    return firestoreGuard(() => fn(client, projectId!));
+    return firestoreGuard(() => fn(client, projectId));
   }
 
   /// Executes a Firestore v1 API operation with automatic projectId injection.
