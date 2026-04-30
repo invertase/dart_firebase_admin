@@ -28,6 +28,9 @@
 // Run standalone with:
 //   GOOGLE_APPLICATION_CREDENTIALS=service-account-key.json dart test test/auth/project_config_integration_prod_test.dart
 
+@Tags(['prod'])
+library;
+
 import 'dart:async';
 import 'dart:io';
 
@@ -35,15 +38,11 @@ import 'package:firebase_admin_sdk/auth.dart';
 import 'package:firebase_admin_sdk/src/app.dart';
 import 'package:test/test.dart';
 
-import '../../fixtures/helpers.dart';
-
 void main() {
   ProjectConfig? originalConfig;
 
   // Save original config before running update tests
   setUpAll(() async {
-    if (!hasProdEnv) return;
-
     // Remove emulator env var from the zone environment
     final prodEnv = Map<String, String>.from(Platform.environment);
     prodEnv.remove(Environment.firebaseAuthEmulatorHost);
@@ -66,7 +65,7 @@ void main() {
 
   // Restore original config after all tests complete
   tearDownAll(() async {
-    if (!hasProdEnv || originalConfig == null) return;
+    if (originalConfig == null) return;
 
     // Remove emulator env var from the zone environment
     final prodEnv = Map<String, String>.from(Platform.environment);
@@ -99,391 +98,342 @@ void main() {
 
   group('ProjectConfigManager (Production)', () {
     group('updateProjectConfig - MFA', () {
-      test(
-        'updates multi-factor authentication configuration',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+      test('updates multi-factor authentication configuration', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth.internal(app);
-            final projectConfigManager = testAuth.projectConfigManager;
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final projectConfigManager = testAuth.projectConfigManager;
 
-            try {
-              final updatedConfig = await projectConfigManager
-                  .updateProjectConfig(
-                    UpdateProjectConfigRequest(
-                      multiFactorConfig: MultiFactorConfig(
-                        state: MultiFactorConfigState.enabled,
-                        factorIds: ['phone'],
-                      ),
+          try {
+            final updatedConfig = await projectConfigManager
+                .updateProjectConfig(
+                  UpdateProjectConfigRequest(
+                    multiFactorConfig: MultiFactorConfig(
+                      state: MultiFactorConfigState.enabled,
+                      factorIds: ['phone'],
                     ),
-                  );
+                  ),
+                );
 
-              expect(updatedConfig, isA<ProjectConfig>());
+            expect(updatedConfig, isA<ProjectConfig>());
 
-              if (updatedConfig.multiFactorConfig != null) {
+            if (updatedConfig.multiFactorConfig != null) {
+              expect(
+                updatedConfig.multiFactorConfig!.state,
+                equals(MultiFactorConfigState.enabled),
+              );
+            }
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      });
+
+      test('updates multi-factor authentication with TOTP provider config', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final projectConfigManager = testAuth.projectConfigManager;
+
+          try {
+            final updatedConfig = await projectConfigManager
+                .updateProjectConfig(
+                  UpdateProjectConfigRequest(
+                    multiFactorConfig: MultiFactorConfig(
+                      state: MultiFactorConfigState.enabled,
+                      providerConfigs: [
+                        MultiFactorProviderConfig(
+                          state: MultiFactorConfigState.enabled,
+                          totpProviderConfig: TotpMultiFactorProviderConfig(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+
+            expect(updatedConfig, isA<ProjectConfig>());
+
+            if (updatedConfig.multiFactorConfig != null) {
+              expect(
+                updatedConfig.multiFactorConfig!.state,
+                equals(MultiFactorConfigState.enabled),
+              );
+              expect(
+                updatedConfig.multiFactorConfig!.providerConfigs,
+                isNotNull,
+              );
+              if (updatedConfig.multiFactorConfig!.providerConfigs != null) {
                 expect(
-                  updatedConfig.multiFactorConfig!.state,
+                  updatedConfig.multiFactorConfig!.providerConfigs!.length,
+                  equals(1),
+                );
+                expect(
+                  updatedConfig.multiFactorConfig!.providerConfigs![0].state,
                   equals(MultiFactorConfigState.enabled),
                 );
               }
-            } finally {
-              await app.close();
             }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GCIP (Google Cloud Identity Platform)',
-      );
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      });
 
-      test(
-        'updates multi-factor authentication with TOTP provider config',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+      test('updates TOTP provider config with adjacentIntervals', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth.internal(app);
-            final projectConfigManager = testAuth.projectConfigManager;
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final projectConfigManager = testAuth.projectConfigManager;
 
-            try {
-              final updatedConfig = await projectConfigManager
-                  .updateProjectConfig(
-                    UpdateProjectConfigRequest(
-                      multiFactorConfig: MultiFactorConfig(
-                        state: MultiFactorConfigState.enabled,
-                        providerConfigs: [
-                          MultiFactorProviderConfig(
-                            state: MultiFactorConfigState.enabled,
-                            totpProviderConfig: TotpMultiFactorProviderConfig(),
+          try {
+            final updatedConfig = await projectConfigManager
+                .updateProjectConfig(
+                  UpdateProjectConfigRequest(
+                    multiFactorConfig: MultiFactorConfig(
+                      state: MultiFactorConfigState.enabled,
+                      providerConfigs: [
+                        MultiFactorProviderConfig(
+                          state: MultiFactorConfigState.enabled,
+                          totpProviderConfig: TotpMultiFactorProviderConfig(
+                            adjacentIntervals: 5,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
+                  ),
+                );
 
-              expect(updatedConfig, isA<ProjectConfig>());
+            expect(updatedConfig, isA<ProjectConfig>());
 
-              if (updatedConfig.multiFactorConfig != null) {
+            if (updatedConfig.multiFactorConfig != null) {
+              final providerConfigs =
+                  updatedConfig.multiFactorConfig!.providerConfigs;
+              if (providerConfigs != null && providerConfigs.isNotEmpty) {
                 expect(
-                  updatedConfig.multiFactorConfig!.state,
+                  providerConfigs[0].totpProviderConfig?.adjacentIntervals,
+                  equals(5),
+                );
+              }
+            }
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      });
+
+      test('updates MFA with both SMS and TOTP enabled', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final projectConfigManager = testAuth.projectConfigManager;
+
+          try {
+            final updatedConfig = await projectConfigManager
+                .updateProjectConfig(
+                  UpdateProjectConfigRequest(
+                    multiFactorConfig: MultiFactorConfig(
+                      state: MultiFactorConfigState.enabled,
+                      factorIds: ['phone'],
+                      providerConfigs: [
+                        MultiFactorProviderConfig(
+                          state: MultiFactorConfigState.enabled,
+                          totpProviderConfig: TotpMultiFactorProviderConfig(
+                            adjacentIntervals: 3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+
+            expect(updatedConfig, isA<ProjectConfig>());
+
+            if (updatedConfig.multiFactorConfig != null) {
+              expect(
+                updatedConfig.multiFactorConfig!.state,
+                equals(MultiFactorConfigState.enabled),
+              );
+              expect(
+                updatedConfig.multiFactorConfig!.factorIds,
+                contains('phone'),
+              );
+              final providerConfigs =
+                  updatedConfig.multiFactorConfig!.providerConfigs;
+              if (providerConfigs != null && providerConfigs.isNotEmpty) {
+                expect(
+                  providerConfigs[0].state,
                   equals(MultiFactorConfigState.enabled),
                 );
-                expect(
-                  updatedConfig.multiFactorConfig!.providerConfigs,
-                  isNotNull,
-                );
-                if (updatedConfig.multiFactorConfig!.providerConfigs != null) {
-                  expect(
-                    updatedConfig.multiFactorConfig!.providerConfigs!.length,
-                    equals(1),
-                  );
-                  expect(
-                    updatedConfig.multiFactorConfig!.providerConfigs![0].state,
-                    equals(MultiFactorConfigState.enabled),
-                  );
-                }
               }
-            } finally {
-              await app.close();
             }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GCIP (Google Cloud Identity Platform)',
-      );
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      });
 
-      test(
-        'updates TOTP provider config with adjacentIntervals',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+      test('updates TOTP provider config with disabled state', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth.internal(app);
-            final projectConfigManager = testAuth.projectConfigManager;
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final projectConfigManager = testAuth.projectConfigManager;
 
-            try {
-              final updatedConfig = await projectConfigManager
-                  .updateProjectConfig(
-                    UpdateProjectConfigRequest(
-                      multiFactorConfig: MultiFactorConfig(
-                        state: MultiFactorConfigState.enabled,
-                        providerConfigs: [
-                          MultiFactorProviderConfig(
-                            state: MultiFactorConfigState.enabled,
-                            totpProviderConfig: TotpMultiFactorProviderConfig(
-                              adjacentIntervals: 5,
-                            ),
-                          ),
-                        ],
-                      ),
+          try {
+            final updatedConfig = await projectConfigManager
+                .updateProjectConfig(
+                  UpdateProjectConfigRequest(
+                    multiFactorConfig: MultiFactorConfig(
+                      state: MultiFactorConfigState.enabled,
+                      providerConfigs: [
+                        MultiFactorProviderConfig(
+                          state: MultiFactorConfigState.disabled,
+                          totpProviderConfig: TotpMultiFactorProviderConfig(),
+                        ),
+                      ],
                     ),
-                  );
-
-              expect(updatedConfig, isA<ProjectConfig>());
-
-              if (updatedConfig.multiFactorConfig != null) {
-                final providerConfigs =
-                    updatedConfig.multiFactorConfig!.providerConfigs;
-                if (providerConfigs != null && providerConfigs.isNotEmpty) {
-                  expect(
-                    providerConfigs[0].totpProviderConfig?.adjacentIntervals,
-                    equals(5),
-                  );
-                }
-              }
-            } finally {
-              await app.close();
-            }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GCIP (Google Cloud Identity Platform)',
-      );
-
-      test(
-        'updates MFA with both SMS and TOTP enabled',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
-
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth.internal(app);
-            final projectConfigManager = testAuth.projectConfigManager;
-
-            try {
-              final updatedConfig = await projectConfigManager
-                  .updateProjectConfig(
-                    UpdateProjectConfigRequest(
-                      multiFactorConfig: MultiFactorConfig(
-                        state: MultiFactorConfigState.enabled,
-                        factorIds: ['phone'],
-                        providerConfigs: [
-                          MultiFactorProviderConfig(
-                            state: MultiFactorConfigState.enabled,
-                            totpProviderConfig: TotpMultiFactorProviderConfig(
-                              adjacentIntervals: 3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-
-              expect(updatedConfig, isA<ProjectConfig>());
-
-              if (updatedConfig.multiFactorConfig != null) {
-                expect(
-                  updatedConfig.multiFactorConfig!.state,
-                  equals(MultiFactorConfigState.enabled),
+                  ),
                 );
+
+            expect(updatedConfig, isA<ProjectConfig>());
+
+            if (updatedConfig.multiFactorConfig != null) {
+              final providerConfigs =
+                  updatedConfig.multiFactorConfig!.providerConfigs;
+              if (providerConfigs != null && providerConfigs.isNotEmpty) {
                 expect(
-                  updatedConfig.multiFactorConfig!.factorIds,
-                  contains('phone'),
+                  providerConfigs[0].state,
+                  equals(MultiFactorConfigState.disabled),
                 );
-                final providerConfigs =
-                    updatedConfig.multiFactorConfig!.providerConfigs;
-                if (providerConfigs != null && providerConfigs.isNotEmpty) {
-                  expect(
-                    providerConfigs[0].state,
-                    equals(MultiFactorConfigState.enabled),
-                  );
-                }
               }
-            } finally {
-              await app.close();
             }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GCIP (Google Cloud Identity Platform)',
-      );
-
-      test(
-        'updates TOTP provider config with disabled state',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
-
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth.internal(app);
-            final projectConfigManager = testAuth.projectConfigManager;
-
-            try {
-              final updatedConfig = await projectConfigManager
-                  .updateProjectConfig(
-                    UpdateProjectConfigRequest(
-                      multiFactorConfig: MultiFactorConfig(
-                        state: MultiFactorConfigState.enabled,
-                        providerConfigs: [
-                          MultiFactorProviderConfig(
-                            state: MultiFactorConfigState.disabled,
-                            totpProviderConfig: TotpMultiFactorProviderConfig(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-
-              expect(updatedConfig, isA<ProjectConfig>());
-
-              if (updatedConfig.multiFactorConfig != null) {
-                final providerConfigs =
-                    updatedConfig.multiFactorConfig!.providerConfigs;
-                if (providerConfigs != null && providerConfigs.isNotEmpty) {
-                  expect(
-                    providerConfigs[0].state,
-                    equals(MultiFactorConfigState.disabled),
-                  );
-                }
-              }
-            } finally {
-              await app.close();
-            }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GCIP (Google Cloud Identity Platform)',
-      );
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      });
     });
 
     group('updateProjectConfig - reCAPTCHA', () {
-      test(
-        'updates reCAPTCHA configuration',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+      test('updates reCAPTCHA configuration', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth.internal(app);
-            final projectConfigManager = testAuth.projectConfigManager;
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final projectConfigManager = testAuth.projectConfigManager;
 
-            try {
-              // Note: phoneEnforcementState requires useSmsBotScore or useSmsTollFraudProtection
-              // to be enabled, which are not yet supported in the Dart SDK.
-              // Testing only emailPasswordEnforcementState which doesn't have this requirement.
-              final updatedConfig = await projectConfigManager.updateProjectConfig(
-                UpdateProjectConfigRequest(
-                  recaptchaConfig: RecaptchaConfig(
-                    emailPasswordEnforcementState:
-                        RecaptchaProviderEnforcementState.enforce,
-                    // phoneEnforcementState requires toll fraud or bot score enablement
-                    // which is not yet supported in the Dart SDK
-                  ),
+          try {
+            // Note: phoneEnforcementState requires useSmsBotScore or useSmsTollFraudProtection
+            // to be enabled, which are not yet supported in the Dart SDK.
+            // Testing only emailPasswordEnforcementState which doesn't have this requirement.
+            final updatedConfig = await projectConfigManager.updateProjectConfig(
+              UpdateProjectConfigRequest(
+                recaptchaConfig: RecaptchaConfig(
+                  emailPasswordEnforcementState:
+                      RecaptchaProviderEnforcementState.enforce,
+                  // phoneEnforcementState requires toll fraud or bot score enablement
+                  // which is not yet supported in the Dart SDK
                 ),
+              ),
+            );
+
+            expect(updatedConfig, isA<ProjectConfig>());
+
+            if (updatedConfig.recaptchaConfig != null) {
+              expect(
+                updatedConfig.recaptchaConfig!.emailPasswordEnforcementState,
+                equals(RecaptchaProviderEnforcementState.enforce),
               );
-
-              expect(updatedConfig, isA<ProjectConfig>());
-
-              if (updatedConfig.recaptchaConfig != null) {
-                expect(
-                  updatedConfig.recaptchaConfig!.emailPasswordEnforcementState,
-                  equals(RecaptchaProviderEnforcementState.enforce),
-                );
-              }
-            } finally {
-              await app.close();
             }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires reCAPTCHA Enterprise configuration',
-      );
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      });
     });
 
     group('updateProjectConfig - Combined', () {
-      test(
-        'updates multiple configuration fields at once',
-        () {
-          // Remove emulator env var from the zone environment
-          final prodEnv = Map<String, String>.from(Platform.environment);
-          prodEnv.remove(Environment.firebaseAuthEmulatorHost);
+      test('updates multiple configuration fields at once', () {
+        // Remove emulator env var from the zone environment
+        final prodEnv = Map<String, String>.from(Platform.environment);
+        prodEnv.remove(Environment.firebaseAuthEmulatorHost);
 
-          return runZoned(() async {
-            final appName =
-                'prod-test-${DateTime.now().microsecondsSinceEpoch}';
-            final app = FirebaseApp.initializeApp(name: appName);
-            final testAuth = Auth.internal(app);
-            final projectConfigManager = testAuth.projectConfigManager;
+        return runZoned(() async {
+          final appName = 'prod-test-${DateTime.now().microsecondsSinceEpoch}';
+          final app = FirebaseApp.initializeApp(name: appName);
+          final testAuth = Auth.internal(app);
+          final projectConfigManager = testAuth.projectConfigManager;
 
-            try {
-              final updatedConfig = await projectConfigManager
-                  .updateProjectConfig(
-                    UpdateProjectConfigRequest(
-                      emailPrivacyConfig: EmailPrivacyConfig(
-                        enableImprovedEmailPrivacy: true,
-                      ),
-                      multiFactorConfig: MultiFactorConfig(
-                        state: MultiFactorConfigState.enabled,
-                        factorIds: ['phone'],
-                      ),
-                      mobileLinksConfig: const MobileLinksConfig(
-                        domain: MobileLinksDomain.firebaseDynamicLinkDomain,
-                      ),
+          try {
+            final updatedConfig = await projectConfigManager
+                .updateProjectConfig(
+                  UpdateProjectConfigRequest(
+                    emailPrivacyConfig: EmailPrivacyConfig(
+                      enableImprovedEmailPrivacy: true,
                     ),
-                  );
+                    multiFactorConfig: MultiFactorConfig(
+                      state: MultiFactorConfigState.enabled,
+                      factorIds: ['phone'],
+                    ),
+                    mobileLinksConfig: const MobileLinksConfig(
+                      domain: MobileLinksDomain.firebaseDynamicLinkDomain,
+                    ),
+                  ),
+                );
 
-              expect(updatedConfig, isA<ProjectConfig>());
+            expect(updatedConfig, isA<ProjectConfig>());
 
-              if (updatedConfig.emailPrivacyConfig != null) {
-                expect(
-                  updatedConfig.emailPrivacyConfig!.enableImprovedEmailPrivacy,
-                  isTrue,
-                );
-              }
-              if (updatedConfig.multiFactorConfig != null) {
-                expect(
-                  updatedConfig.multiFactorConfig!.state,
-                  equals(MultiFactorConfigState.enabled),
-                );
-              }
-              if (updatedConfig.mobileLinksConfig != null) {
-                expect(
-                  updatedConfig.mobileLinksConfig!.domain,
-                  equals(MobileLinksDomain.firebaseDynamicLinkDomain),
-                );
-              }
-            } finally {
-              await app.close();
+            if (updatedConfig.emailPrivacyConfig != null) {
+              expect(
+                updatedConfig.emailPrivacyConfig!.enableImprovedEmailPrivacy,
+                isTrue,
+              );
             }
-          }, zoneValues: {envSymbol: prodEnv});
-        },
-        skip: hasProdEnv
-            ? false
-            : 'Requires GCIP (Google Cloud Identity Platform)',
-      );
+            if (updatedConfig.multiFactorConfig != null) {
+              expect(
+                updatedConfig.multiFactorConfig!.state,
+                equals(MultiFactorConfigState.enabled),
+              );
+            }
+            if (updatedConfig.mobileLinksConfig != null) {
+              expect(
+                updatedConfig.mobileLinksConfig!.domain,
+                equals(MobileLinksDomain.firebaseDynamicLinkDomain),
+              );
+            }
+          } finally {
+            await app.close();
+          }
+        }, zoneValues: {envSymbol: prodEnv});
+      });
     });
   });
 }

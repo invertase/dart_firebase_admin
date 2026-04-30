@@ -39,16 +39,6 @@ google_cloud_firestore.Settings mockFirestoreSettingsWithDb(
   environmentOverride: const {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'},
 );
 
-/// Whether any Google credentials are available (including WIF/external_account).
-/// Gates WIF-specific tests that run in both CI and local environments.
-final hasWifEnv =
-    Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] != null;
-
-/// Whether quota-heavy production tests should run.
-/// Never set in CI — opt in locally by exporting RUN_PROD_TESTS=true alongside
-/// a service-account credential in GOOGLE_APPLICATION_CREDENTIALS.
-final hasProdEnv = Platform.environment['RUN_PROD_TESTS'] == 'true';
-
 /// Returns a copy of [Platform.environment] with all emulator host variables
 /// removed, so tests can connect to production Firebase even when emulators
 /// are configured in the outer environment.

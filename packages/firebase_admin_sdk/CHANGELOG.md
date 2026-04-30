@@ -2,6 +2,12 @@
 
 - Remove dependency on `package:equatable`.
 - Make `Query`, `CollectionReference`, `DocumentReference`, and `CollectionGroup` mockable.
+- `Credential.createClient(List<String> scopes)` — create an authenticated `AuthClient` directly
+  from a credential with custom scopes, without needing a `FirebaseApp` instance.
+- AppOptions.additionalScopes` — append extra OAuth2 scopes to the SDK-managed HTTP client 
+  without providing your own `AuthClient`.
+- `FirebaseApp.client` is now part of the public API.
+- Add support for custom claims in ID tokens.
 
 ## 0.5.1
 
