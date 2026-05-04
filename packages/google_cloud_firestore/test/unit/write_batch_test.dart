@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -382,6 +383,7 @@ void main() {
     late Firestore firestore;
     late int callCount;
     late void Function(HttpRequest request, int callNumber) handler;
+    late Map<Object, Object?> zoneValues;
 
     setUp(() async {
       callCount = 0;
@@ -394,14 +396,14 @@ void main() {
         handler(request, callCount);
       });
 
+      zoneValues = {
+        envSymbol: <String, String>{
+          'FIRESTORE_EMULATOR_HOST': 'localhost:${server.port}',
+        },
+      };
+
       firestore = Firestore(
-        settings: Settings(
-          projectId: 'test-project',
-          environmentOverride: {
-            'FIRESTORE_EMULATOR_HOST': 'localhost:${server.port}',
-            'GOOGLE_CLOUD_PROJECT': 'test-project',
-          },
-        ),
+        settings: const Settings(projectId: 'test-project'),
       );
     });
 
@@ -419,7 +421,10 @@ void main() {
         }
       };
 
-      await firestore.doc('test/retry').set({'value': 1});
+      await runZoned(
+        () => firestore.doc('test/retry').set({'value': 1}),
+        zoneValues: zoneValues,
+      );
       expect(callCount, 2);
     });
 
@@ -432,7 +437,10 @@ void main() {
         }
       };
 
-      await firestore.doc('test/retry').set({'value': 1});
+      await runZoned(
+        () => firestore.doc('test/retry').set({'value': 1}),
+        zoneValues: zoneValues,
+      );
       expect(callCount, 2);
     });
 
@@ -445,7 +453,10 @@ void main() {
         }
       };
 
-      await firestore.doc('test/retry').set({'value': 1});
+      await runZoned(
+        () => firestore.doc('test/retry').set({'value': 1}),
+        zoneValues: zoneValues,
+      );
       expect(callCount, 4);
     });
 
@@ -459,15 +470,18 @@ void main() {
         );
       };
 
-      await expectLater(
-        () => firestore.doc('test/retry').set({'value': 1}),
-        throwsA(
-          isA<FirestoreException>().having(
-            (e) => e.errorCode,
-            'errorCode',
-            FirestoreClientErrorCode.permissionDenied,
+      await runZoned(
+        () => expectLater(
+          () => firestore.doc('test/retry').set({'value': 1}),
+          throwsA(
+            isA<FirestoreException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              FirestoreClientErrorCode.permissionDenied,
+            ),
           ),
         ),
+        zoneValues: zoneValues,
       );
       expect(callCount, 1);
     });
@@ -477,15 +491,18 @@ void main() {
         _writeRetryError(request, 400, 'INVALID_ARGUMENT', 'Invalid field');
       };
 
-      await expectLater(
-        () => firestore.doc('test/retry').set({'value': 1}),
-        throwsA(
-          isA<FirestoreException>().having(
-            (e) => e.errorCode,
-            'errorCode',
-            FirestoreClientErrorCode.invalidArgument,
+      await runZoned(
+        () => expectLater(
+          () => firestore.doc('test/retry').set({'value': 1}),
+          throwsA(
+            isA<FirestoreException>().having(
+              (e) => e.errorCode,
+              'errorCode',
+              FirestoreClientErrorCode.invalidArgument,
+            ),
           ),
         ),
+        zoneValues: zoneValues,
       );
       expect(callCount, 1);
     });
