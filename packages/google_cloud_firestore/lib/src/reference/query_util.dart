@@ -44,14 +44,12 @@ bool _valueEqual(firestore_v1.Value a, firestore_v1.Value b) {
       return integerValue == b.integerValue;
     case firestore_v1.Value(:final mapValue?):
       final bMap = b.mapValue;
-      if (bMap == null || bMap.fields?.length != mapValue.fields?.length) {
+      if (bMap == null || bMap.fields.length != mapValue.fields.length) {
         return false;
       }
 
-      for (final MapEntry(:key, :value)
-          in mapValue.fields?.entries ??
-              const <MapEntry<String, firestore_v1.Value>>[]) {
-        final bValue = bMap.fields?[key];
+      for (final MapEntry(:key, :value) in mapValue.fields.entries) {
+        final bValue = bMap.fields[key];
         if (bValue == null) return false;
         if (!_valueEqual(value, bValue)) return false;
       }
