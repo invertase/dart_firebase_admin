@@ -172,8 +172,10 @@ class Settings {
 
   /// Environment variable overrides for testing.
   ///
-  /// This allows tests to inject environment variables (like FIRESTORE_EMULATOR_HOST)
-  /// without modifying the actual process environment.
+  /// Allows cross-package tests to inject environment variables (such as
+  /// `FIRESTORE_EMULATOR_HOST`) without modifying the actual process
+  /// environment. Within `google_cloud_firestore` itself, prefer using
+  /// `runZoned` with `envSymbol` instead.
   ///
   /// Example:
   /// ```dart
@@ -342,6 +344,12 @@ class Firestore {
     // Fall back to explicitly set project ID
     final explicit = _settings.projectId;
     if (explicit != null) return explicit;
+
+    // Check environment variables and credentials file synchronously.
+    // Async strategies (gcloud CLI, metadata server) are handled by _run()
+    // and cached in cachedProjectId after the first API call.
+    final discovered = _firestoreClient.getProjectId();
+    if (discovered != null) return discovered;
 
     throw StateError(
       'Project ID has not been discovered yet. '
