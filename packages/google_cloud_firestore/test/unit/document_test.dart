@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:typed_data';
+
 import 'package:google_cloud_firestore/google_cloud_firestore.dart';
 import 'package:test/test.dart' hide throwsArgumentError;
 
@@ -230,6 +232,38 @@ void main() {
               'or contain a cycle',
         ),
       );
+    });
+
+    group('bytes', () {
+      test('empty', () async {
+        final doc = firestore.doc('collectionId/bytes');
+        addTearDown(doc.delete);
+
+        await doc.set({'bytes': Uint8List(0)});
+        final data = await firestore
+            .doc('collectionId/bytes')
+            .get()
+            .then((snapshot) => snapshot.data());
+
+        expect(data, {'bytes': Uint8List(0)});
+      });
+
+      test('non-empty', () async {
+        final doc = firestore.doc('collectionId/bytes');
+        addTearDown(doc.delete);
+
+        await doc.set({
+          'bytes': Uint8List.fromList([0, 1, 127, 128, 255]),
+        });
+        final data = await firestore
+            .doc('collectionId/bytes')
+            .get()
+            .then((snapshot) => snapshot.data());
+
+        expect(data, {
+          'bytes': Uint8List.fromList([0, 1, 127, 128, 255]),
+        });
+      });
     });
   });
 
