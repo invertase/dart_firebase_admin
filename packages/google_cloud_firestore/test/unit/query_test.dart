@@ -72,6 +72,16 @@ void main() {
       );
 
       queryEquals(
+        [
+          queryA.orderBy('foo').startAt([{'b': 1}]),
+          queryB.orderBy('foo').startAt([{'b': 1}]),
+        ],
+        [
+          queryA.orderBy('foo').startAt([{'b': 2}]),
+        ],
+      );
+
+      queryEquals(
         [queryA.limit(0), queryB.limit(0).limit(0)],
         [queryA, queryB.limit(10)],
       );
