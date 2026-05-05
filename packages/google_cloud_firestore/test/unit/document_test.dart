@@ -234,6 +234,28 @@ void main() {
       );
     });
 
+    group('boolean', () {
+      test('true', () async {
+        final doc = firestore.doc('collectionId/bool');
+        addTearDown(doc.delete);
+
+        await doc.set({'bool': true});
+        final data = await doc.get().then((snapshot) => snapshot.data());
+
+        expect(data, {'bool': true});
+      });
+
+      test('false', () async {
+        final doc = firestore.doc('collectionId/bool');
+        addTearDown(doc.delete);
+
+        await doc.set({'bool': false});
+        final data = await doc.get().then((snapshot) => snapshot.data());
+
+        expect(data, {'bool': false});
+      });
+    });
+
     group('bytes', () {
       test('empty', () async {
         final doc = firestore.doc('collectionId/bytes');
