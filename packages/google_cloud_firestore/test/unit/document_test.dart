@@ -240,10 +240,7 @@ void main() {
         addTearDown(doc.delete);
 
         await doc.set({'bytes': Uint8List(0)});
-        final data = await firestore
-            .doc('collectionId/bytes')
-            .get()
-            .then((snapshot) => snapshot.data());
+        final data = await doc.get().then((snapshot) => snapshot.data());
 
         expect(data, {'bytes': Uint8List(0)});
       });
