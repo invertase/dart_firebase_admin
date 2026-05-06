@@ -39,6 +39,7 @@ export 'src/firestore.dart'
         ExplainMetrics,
         ExplainOptions,
         ExplainResults,
+        FieldMask,
         FieldPath,
         FieldValue,
         Filter,
