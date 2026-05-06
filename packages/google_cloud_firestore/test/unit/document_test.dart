@@ -158,31 +158,25 @@ void main() {
       expect(data, {'😀': '😜'});
     });
 
-    test(
-      'Supports NaN and Infinity',
-      () async {
-        //
-        await firestore.doc('collectionId/nan').set({
-          'nan': double.nan,
-          'infinity': double.infinity,
-          'negativeInfinity': double.negativeInfinity,
-        });
+    test('Supports NaN and Infinity', () async {
+      //
+      await firestore.doc('collectionId/nan').set({
+        'nan': double.nan,
+        'infinity': double.infinity,
+        'negativeInfinity': double.negativeInfinity,
+      });
 
-        final data = await firestore
-            .doc('collectionId/nan')
-            .get()
-            .then((snapshot) => snapshot.data());
+      final data = await firestore
+          .doc('collectionId/nan')
+          .get()
+          .then((snapshot) => snapshot.data());
 
-        expect(data, {
-          'nan': double.nan,
-          'infinity': double.infinity,
-          'negativeInfinity': double.negativeInfinity,
-        });
-      },
-      skip:
-          'This fails because GRPC uses dart:convert.json.encode which does '
-          'not support NaN or Infinity',
-    );
+      expect(data, {
+        'nan': double.nan,
+        'infinity': double.infinity,
+        'negativeInfinity': double.negativeInfinity,
+      });
+    });
 
     test('with invalid geopoint', () {
       expect(
