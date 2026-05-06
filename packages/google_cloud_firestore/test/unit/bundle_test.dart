@@ -363,11 +363,11 @@ void main() {
       );
 
       expect(
-        elements[1]['documentMetadata']['name'],
+        (elements[1]['documentMetadata'] as Map<String, dynamic>)['name'],
         equals('$databaseRoot/documents/collectionId_A/doc1'),
       );
       expect(
-        elements[3]['documentMetadata']['name'],
+        (elements[3]['documentMetadata'] as Map<String, dynamic>)['name'],
         equals('$databaseRoot/documents/collectionId_B/doc1'),
       );
     });
