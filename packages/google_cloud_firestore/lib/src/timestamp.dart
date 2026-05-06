@@ -136,22 +136,6 @@ final class Timestamp implements _Serializable {
     return Timestamp(seconds: proto.seconds, nanoseconds: proto.nanos);
   }
 
-  factory Timestamp._fromString(String timestampValue) {
-    final date = DateTime.parse(timestampValue);
-    var nanos = 0;
-
-    if (timestampValue.length > 20) {
-      final nanoString = timestampValue.substring(
-        20,
-        timestampValue.length - 1,
-      );
-      final trailingZeroes = 9 - nanoString.length;
-      nanos = int.parse(nanoString) * (math.pow(10, trailingZeroes).toInt());
-    }
-
-    return Timestamp(seconds: (date.millisecondsSinceEpoch / 1000).floor(), nanoseconds: nanos);
-  }
-
   static const _msToNanos = 1000000;
   static const _usToNanos = 1000;
 
