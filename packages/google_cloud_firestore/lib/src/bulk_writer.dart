@@ -715,7 +715,7 @@ class BulkWriter {
     final userFuture = completer.future;
 
     // Advance the `_lastOperation` pointer. This ensures that `_lastOperation`
-    // only resolves when both the previous and the current write resolve.
+    // only completes when both the previous and the current write complete.
     // We use a helper to silently handle the future without propagating errors.
     _lastOperation = _lastOperation.then((_) {
       // Silently handle the user future (don't propagate errors to _lastOperation)

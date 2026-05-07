@@ -52,7 +52,7 @@ class VectorQuery<T> {
 
   /// Executes this vector search query.
   ///
-  /// Returns a promise that will be resolved with the results of the query.
+  /// Returns a [Future] that completes with the results of the query.
   Future<VectorQuerySnapshot<T>> get() async {
     final response = await _query.firestore._firestoreClient.v1((
       api,
