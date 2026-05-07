@@ -120,9 +120,7 @@ interface class CollectionReference<T> extends Query<T> {
 
     return [
       for (final document in response.documents)
-        doc(
-          _QualifiedResourcePath.fromSlashSeparatedString(document.name).id!,
-        ),
+        doc(_QualifiedResourcePath.fromSlashSeparatedString(document.name).id!),
     ];
   }
 

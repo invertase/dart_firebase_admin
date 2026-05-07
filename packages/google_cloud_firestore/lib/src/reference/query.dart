@@ -632,18 +632,16 @@ interface class Query<T> {
       ),
     ];
 
-    final where =
-        _queryOptions.filters.isNotEmpty
-            ? _CompositeFilterInternal(
-              filters: _queryOptions.filters,
-              op: _CompositeOperator.and,
-            ).toProto()
-            : null;
+    final where = _queryOptions.filters.isNotEmpty
+        ? _CompositeFilterInternal(
+            filters: _queryOptions.filters,
+            op: _CompositeOperator.and,
+          ).toProto()
+        : null;
 
-    final orderBy =
-        _queryOptions.hasFieldOrders
-            ? _queryOptions.fieldOrders.map((o) => o._toProto()).toList()
-            : const <firestore_v1.StructuredQuery_Order>[];
+    final orderBy = _queryOptions.hasFieldOrders
+        ? _queryOptions.fieldOrders.map((o) => o._toProto()).toList()
+        : const <firestore_v1.StructuredQuery_Order>[];
 
     return firestore_v1.StructuredQuery(
       select: _queryOptions.projection,
@@ -856,13 +854,17 @@ interface class Query<T> {
         )
       else
         for (final fieldPath in fieldPaths)
-          firestore_v1.StructuredQuery_FieldReference(fieldPath: fieldPath._formattedName),
+          firestore_v1.StructuredQuery_FieldReference(
+            fieldPath: fieldPath._formattedName,
+          ),
     ];
 
     return Query<DocumentData>._(
       firestore: firestore,
       queryOptions: _queryOptions
-          .copyWith(projection: firestore_v1.StructuredQuery_Projection(fields: fields))
+          .copyWith(
+            projection: firestore_v1.StructuredQuery_Projection(fields: fields),
+          )
           .withConverter(
             // By specifying a field mask, the query result no longer conforms to type
             // `T`. We there return `Query<DocumentData>`.

@@ -164,10 +164,9 @@ class FirestoreHttpClient {
     // Production: Create authenticated client.
     final serviceAccountCreds = credential.serviceAccountCredentials;
     if (serviceAccountCreds != null) {
-      return googleapis_auth.clientViaServiceAccount(
-        serviceAccountCreds,
-        ['https://www.googleapis.com/auth/cloud-platform'],
-      );
+      return googleapis_auth.clientViaServiceAccount(serviceAccountCreds, [
+        'https://www.googleapis.com/auth/cloud-platform',
+      ]);
     }
 
     // Fall back to Application Default Credentials

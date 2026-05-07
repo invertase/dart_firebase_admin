@@ -30,13 +30,11 @@ class _FieldOrder {
       field: firestore_v1.StructuredQuery_FieldReference(
         fieldPath: fieldPath._formattedName,
       ),
-      direction:
-          direction == _Direction.ascending
-              ? firestore_v1.StructuredQuery_Direction.ascending
-              : firestore_v1.StructuredQuery_Direction.descending,
+      direction: direction == _Direction.ascending
+          ? firestore_v1.StructuredQuery_Direction.ascending
+          : firestore_v1.StructuredQuery_Direction.descending,
     );
   }
-
 
   @override
   bool operator ==(Object other) {

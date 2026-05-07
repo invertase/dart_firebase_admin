@@ -30,7 +30,9 @@ class MockFirestoreHttpClient extends Mock implements FirestoreHttpClient {}
 
 // Helper to create a RunQueryResponse with a document
 firestore_v1.RunQueryResponse createDocumentResponse(String docId) {
-  final now = protobuf_v1.Timestamp(seconds: DateTime.now().millisecondsSinceEpoch ~/ 1000);
+  final now = protobuf_v1.Timestamp(
+    seconds: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+  );
   return firestore_v1.RunQueryResponse(
     document: firestore_v1.Document(
       name:
@@ -92,29 +94,34 @@ void main() {
         );
 
         when(() => mockClient.v1<void>(any())).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0]
-              as Future<void> Function(firestore_v1.Firestore, String);
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<void> Function(firestore_v1.Firestore, String);
           return fn(mockApi, projectId);
         });
 
         // Use a return type of Stream<firestore_v1.RunQueryResponse> for runQuery
-        when(() => mockClient.v1<Stream<firestore_v1.RunQueryResponse>>(any()))
-            .thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              Stream<firestore_v1.RunQueryResponse>> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+        when(
+          () => mockClient.v1<Stream<firestore_v1.RunQueryResponse>>(any()),
+        ).thenAnswer((invocation) async {
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<Stream<firestore_v1.RunQueryResponse>> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, projectId);
         });
-        
-         when(() => mockClient.v1<firestore_v1.BatchWriteResponse>(any()))
-            .thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.BatchWriteResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+
+        when(
+          () => mockClient.v1<firestore_v1.BatchWriteResponse>(any()),
+        ).thenAnswer((invocation) async {
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.BatchWriteResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, projectId);
         });
 
@@ -143,35 +150,42 @@ void main() {
             return firestore_v1.BatchWriteResponse(
               status: [rpc.Status(code: 0)],
               writeResults: [
-                firestore_v1.WriteResult(updateTime: protobuf_v1.Timestamp(seconds: 1)),
+                firestore_v1.WriteResult(
+                  updateTime: protobuf_v1.Timestamp(seconds: 1),
+                ),
               ],
             );
           },
         );
 
         when(() => mockClient.v1<void>(any())).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0]
-              as Future<void> Function(firestore_v1.Firestore, String);
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<void> Function(firestore_v1.Firestore, String);
           return fn(mockApi, projectId);
         });
 
-        when(() => mockClient.v1<Stream<firestore_v1.RunQueryResponse>>(any()))
-            .thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              Stream<firestore_v1.RunQueryResponse>> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+        when(
+          () => mockClient.v1<Stream<firestore_v1.RunQueryResponse>>(any()),
+        ).thenAnswer((invocation) async {
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<Stream<firestore_v1.RunQueryResponse>> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, projectId);
         });
-        
-        when(() => mockClient.v1<firestore_v1.BatchWriteResponse>(any()))
-            .thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.BatchWriteResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+
+        when(
+          () => mockClient.v1<firestore_v1.BatchWriteResponse>(any()),
+        ).thenAnswer((invocation) async {
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.BatchWriteResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, projectId);
         });
 
@@ -194,23 +208,27 @@ void main() {
           },
         );
 
-        when(() => mockClient.v1<Stream<firestore_v1.RunQueryResponse>>(any()))
-            .thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              Stream<firestore_v1.RunQueryResponse>> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+        when(
+          () => mockClient.v1<Stream<firestore_v1.RunQueryResponse>>(any()),
+        ).thenAnswer((invocation) async {
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<Stream<firestore_v1.RunQueryResponse>> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, projectId);
         });
-        
-        when(() => mockClient.v1<firestore_v1.BatchWriteResponse>(any()))
-            .thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.BatchWriteResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+
+        when(
+          () => mockClient.v1<firestore_v1.BatchWriteResponse>(any()),
+        ).thenAnswer((invocation) async {
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.BatchWriteResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, projectId);
         });
 

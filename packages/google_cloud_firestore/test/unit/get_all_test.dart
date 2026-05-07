@@ -29,7 +29,9 @@ firestore_v1.BatchGetDocumentsResponse createFoundResponse({
   required Map<String, Object?> fields,
   required Firestore firestore,
 }) {
-  final now = protobuf_v1.Timestamp(seconds: DateTime.now().millisecondsSinceEpoch ~/ 1000);
+  final now = protobuf_v1.Timestamp(
+    seconds: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+  );
   return firestore_v1.BatchGetDocumentsResponse(
     found: firestore_v1.Document(
       name: 'projects/$projectId/databases/(default)/documents/$documentPath',
@@ -48,7 +50,9 @@ firestore_v1.BatchGetDocumentsResponse createFoundResponse({
 firestore_v1.BatchGetDocumentsResponse createMissingResponse(
   String documentPath,
 ) {
-  final now = protobuf_v1.Timestamp(seconds: DateTime.now().millisecondsSinceEpoch ~/ 1000);
+  final now = protobuf_v1.Timestamp(
+    seconds: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+  );
   return firestore_v1.BatchGetDocumentsResponse(
     missing: 'projects/$projectId/databases/(default)/documents/$documentPath',
     readTime: now,
@@ -72,8 +76,9 @@ void main() {
 
     test('accepts single document', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         return Stream.fromIterable([
           createFoundResponse(
@@ -95,8 +100,9 @@ void main() {
 
     test('accepts multiple documents', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         return Stream.fromIterable([
           createFoundResponse(
@@ -127,8 +133,9 @@ void main() {
 
     test('returns missing documents', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         return Stream.fromIterable([createMissingResponse('col/missing')]);
       });
@@ -143,8 +150,9 @@ void main() {
 
     test('handles mix of found and missing documents', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         return Stream.fromIterable([
           createFoundResponse(
@@ -181,8 +189,9 @@ void main() {
 
     test('verifies document order is preserved', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         // Return in different order than requested
         return Stream.fromIterable([
@@ -218,8 +227,9 @@ void main() {
 
     test('accepts same document multiple times', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         // Only returns unique documents
         return Stream.fromIterable([
@@ -252,8 +262,9 @@ void main() {
 
     test('applies field mask with FieldPath', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         return Stream.fromIterable([
           createFoundResponse(
@@ -281,8 +292,9 @@ void main() {
 
     test('applies field mask with strings', () async {
       when(
-        () => mockClient
-            .v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(any()),
+        () => mockClient.v1<Stream<firestore_v1.BatchGetDocumentsResponse>>(
+          any(),
+        ),
       ).thenAnswer((_) async {
         return Stream.fromIterable([
           createFoundResponse(

@@ -73,11 +73,17 @@ void main() {
 
       queryEquals(
         [
-          queryA.orderBy('foo').startAt([{'b': 1}]),
-          queryB.orderBy('foo').startAt([{'b': 1}]),
+          queryA.orderBy('foo').startAt([
+            {'b': 1},
+          ]),
+          queryB.orderBy('foo').startAt([
+            {'b': 1},
+          ]),
         ],
         [
-          queryA.orderBy('foo').startAt([{'b': 2}]),
+          queryA.orderBy('foo').startAt([
+            {'b': 2},
+          ]),
         ],
       );
 

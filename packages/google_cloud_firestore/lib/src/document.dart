@@ -430,7 +430,9 @@ class _DocumentTransform<T> {
   }
 
   /// Converts a document transform to the Firestore 'FieldTransform' Proto.
-  List<firestore_v1.DocumentTransform_FieldTransform> toProto(Serializer serializer) {
+  List<firestore_v1.DocumentTransform_FieldTransform> toProto(
+    Serializer serializer,
+  ) {
     return [
       for (final entry in transforms.entries)
         entry.value._toProto(serializer, entry.key),

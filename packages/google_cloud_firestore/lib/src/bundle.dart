@@ -145,8 +145,7 @@ class BundledQuery {
 
     if (query.select != null) {
       json['select'] = {
-        'fields':
-            query.select!.fields
+        'fields': query.select!.fields
             .map((f) => {'fieldPath': f.fieldPath})
             .toList(),
       };
@@ -204,7 +203,9 @@ class BundledQuery {
   }
 
   /// Converts a Filter to JSON.
-  static Map<String, dynamic> _filterToJson(firestore_v1.StructuredQuery_Filter filter) {
+  static Map<String, dynamic> _filterToJson(
+    firestore_v1.StructuredQuery_Filter filter,
+  ) {
     if (filter.compositeFilter != null) {
       final composite = filter.compositeFilter!;
       return {
@@ -279,9 +280,7 @@ class BundledQuery {
     if (value.arrayValue != null) {
       final array = value.arrayValue!;
       return {
-        'arrayValue': {
-          'values': array.values.map(_valueToJson).toList(),
-        },
+        'arrayValue': {'values': array.values.map(_valueToJson).toList()},
       };
     }
     if (value.mapValue != null) {

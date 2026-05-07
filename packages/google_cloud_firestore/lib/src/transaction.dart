@@ -390,12 +390,11 @@ class Transaction {
         final firestore_v1.TransactionOptions opts;
         if (_writeBatch != null) {
           opts = firestore_v1.TransactionOptions(
-            readWrite:
-                _prevTransactionId == null
-                    ? firestore_v1.TransactionOptions_ReadWrite()
-                    : firestore_v1.TransactionOptions_ReadWrite(
-                      retryTransaction: base64Decode(_prevTransactionId!),
-                    ),
+            readWrite: _prevTransactionId == null
+                ? firestore_v1.TransactionOptions_ReadWrite()
+                : firestore_v1.TransactionOptions_ReadWrite(
+                    retryTransaction: base64Decode(_prevTransactionId!),
+                  ),
           );
         } else {
           opts = firestore_v1.TransactionOptions(
