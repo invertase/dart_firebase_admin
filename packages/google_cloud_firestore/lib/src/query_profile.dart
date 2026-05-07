@@ -20,7 +20,8 @@ class PlanSummary {
 
   factory PlanSummary._fromProto(firestore_v1.PlanSummary proto) {
     return PlanSummary._([
-      for (final index in proto.indexesUsed) index.toJson() as Map<String, Object?>,
+      for (final index in proto.indexesUsed)
+        index.toJson() as Map<String, Object?>,
     ]);
   }
 

@@ -74,14 +74,12 @@ class WriteBatch {
       final writeProto = document._toWriteProto();
       return firestore_v1.Write(
         update: writeProto.update,
-        updateTransforms:
-            transform.transforms.isNotEmpty
-                ? transform.toProto(firestore._serializer)
-                : const [],
+        updateTransforms: transform.transforms.isNotEmpty
+            ? transform.toProto(firestore._serializer)
+            : const [],
         currentDocument: firestore_v1.Precondition(exists: false),
       );
     }
-
 
     _operations.add((docPath: ref.path, op: op));
   }
@@ -227,10 +225,9 @@ class WriteBatch {
         return firestore_v1.Write(
           update: writeProto.update,
           updateMask: mask.toProto(),
-          updateTransforms:
-              transform.transforms.isNotEmpty
-                  ? transform.toProto(firestore._serializer)
-                  : const [],
+          updateTransforms: transform.transforms.isNotEmpty
+              ? transform.toProto(firestore._serializer)
+              : const [],
         );
       }
 
@@ -260,10 +257,9 @@ class WriteBatch {
         return firestore_v1.Write(
           update: writeProto.update,
           updateMask: updateMask,
-          updateTransforms:
-              transform.transforms.isNotEmpty
-                  ? transform.toProto(firestore._serializer)
-                  : const [],
+          updateTransforms: transform.transforms.isNotEmpty
+              ? transform.toProto(firestore._serializer)
+              : const [],
         );
       }
 
@@ -307,14 +303,12 @@ class WriteBatch {
       return firestore_v1.Write(
         update: writeProto.update,
         updateMask: documentMask.toProto(),
-        updateTransforms:
-            transform.transforms.isNotEmpty
-                ? transform.toProto(firestore._serializer)
-                : const [],
+        updateTransforms: transform.transforms.isNotEmpty
+            ? transform.toProto(firestore._serializer)
+            : const [],
         currentDocument: precondition?._toProto(),
       );
     }
-
 
     _operations.add((docPath: documentRef.path, op: op));
   }

@@ -167,7 +167,7 @@ interface class DocumentReference<T> implements _Serializable {
 
   /// Updates fields in the document referred to by this DocumentReference.
   /// If the document doesn't yet exist, the update fails and the returned
-  /// Promise will be rejected.
+  /// the returned [Future] will complete with an error.
   ///
   /// The update() method accepts either an object with field paths encoded as
   /// keys and field values encoded as values, or a variable number of arguments

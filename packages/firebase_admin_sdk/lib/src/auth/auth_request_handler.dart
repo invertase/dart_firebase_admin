@@ -54,7 +54,7 @@ abstract class _AbstractAuthRequestHandler {
   AuthHttpClient get httpClient => _httpClient;
 
   /// Generates the out of band email action link for the email specified using the action code settings provided.
-  /// Returns a promise that resolves with the generated link.
+  /// Returns a [Future] that completes with the generated link.
   Future<String> getEmailActionLink(
     String requestType,
     String email,

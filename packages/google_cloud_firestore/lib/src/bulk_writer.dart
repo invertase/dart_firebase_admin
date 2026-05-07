@@ -262,15 +262,16 @@ class _BulkCommitBatch extends WriteBatch {
           // Operation succeeded
           final updateTime =
               (i < response.writeResults.length &&
-                      response.writeResults[i].updateTime != null)
-                  ? Timestamp._fromProto(response.writeResults[i].updateTime!)
-                  : Timestamp.now();
+                  response.writeResults[i].updateTime != null)
+              ? Timestamp._fromProto(response.writeResults[i].updateTime!)
+              : Timestamp.now();
 
           pendingOps[i].onSuccess(WriteResult._(updateTime));
         } else {
           // Operation failed - create exception with status details
-          final errorMessage =
-              status.message.isEmpty ? 'Operation failed' : status.message;
+          final errorMessage = status.message.isEmpty
+              ? 'Operation failed'
+              : status.message;
           final errorCode = FirestoreClientErrorCode.fromStatusCode(
             status.code,
           );
@@ -715,7 +716,7 @@ class BulkWriter {
     final userFuture = completer.future;
 
     // Advance the `_lastOperation` pointer. This ensures that `_lastOperation`
-    // only resolves when both the previous and the current write resolve.
+    // only completes when both the previous and the current write complete.
     // We use a helper to silently handle the future without propagating errors.
     _lastOperation = _lastOperation.then((_) {
       // Silently handle the user future (don't propagate errors to _lastOperation)

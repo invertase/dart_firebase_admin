@@ -126,11 +126,12 @@ void main() {
         when(
           () => mockHttpClient.v1<firestore_v1.PartitionQueryResponse>(any()),
         ).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.PartitionQueryResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.PartitionQueryResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, 'test-project');
         });
 
@@ -218,11 +219,12 @@ void main() {
         when(
           () => mockHttpClient.v1<firestore_v1.PartitionQueryResponse>(any()),
         ).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.PartitionQueryResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.PartitionQueryResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, 'test-project');
         });
 
@@ -260,11 +262,12 @@ void main() {
         when(
           () => mockHttpClient.v1<firestore_v1.PartitionQueryResponse>(any()),
         ).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.PartitionQueryResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.PartitionQueryResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, 'test-project');
         });
 
@@ -287,11 +290,12 @@ void main() {
         when(
           () => mockHttpClient.v1<firestore_v1.PartitionQueryResponse>(any()),
         ).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.PartitionQueryResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.PartitionQueryResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, 'test-project');
         });
 
@@ -328,11 +332,12 @@ void main() {
         when(
           () => mockHttpClient.v1<firestore_v1.PartitionQueryResponse>(any()),
         ).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.PartitionQueryResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.PartitionQueryResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, 'test-project');
         });
 
@@ -405,11 +410,12 @@ void main() {
         when(
           () => mockHttpClient.v1<firestore_v1.PartitionQueryResponse>(any()),
         ).thenAnswer((invocation) async {
-          final fn = invocation.positionalArguments[0] as Future<
-              firestore_v1.PartitionQueryResponse> Function(
-            firestore_v1.Firestore,
-            String,
-          );
+          final fn =
+              invocation.positionalArguments[0]
+                  as Future<firestore_v1.PartitionQueryResponse> Function(
+                    firestore_v1.Firestore,
+                    String,
+                  );
           return fn(mockApi, 'test-project');
         });
 

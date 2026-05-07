@@ -52,7 +52,7 @@ class VectorQuery<T> {
 
   /// Executes this vector search query.
   ///
-  /// Returns a promise that will be resolved with the results of the query.
+  /// Returns a [Future] that completes with the results of the query.
   Future<VectorQuerySnapshot<T>> get() async {
     final response = await _query.firestore._firestoreClient.v1((
       api,
@@ -234,10 +234,9 @@ class VectorQuery<T> {
         queryVector: queryVector._toProto(_query.firestore._serializer),
         distanceMeasure: _distanceMeasureToProto(_options.distanceMeasure),
         limit: protobuf_v1.Int32Value(value: _options.limit),
-        distanceResultField:
-            _options.distanceResultField != null
-                ? FieldPath.from(_options.distanceResultField)._formattedName
-                : '',
+        distanceResultField: _options.distanceResultField != null
+            ? FieldPath.from(_options.distanceResultField)._formattedName
+            : '',
         distanceThreshold: _options.distanceThreshold?.let(
           (t) => protobuf_v1.DoubleValue(value: t),
         ),
@@ -256,11 +255,15 @@ class VectorQuery<T> {
   _distanceMeasureToProto(DistanceMeasure measure) {
     switch (measure) {
       case DistanceMeasure.euclidean:
-        return firestore_v1.StructuredQuery_FindNearest_DistanceMeasure.euclidean;
+        return firestore_v1
+            .StructuredQuery_FindNearest_DistanceMeasure
+            .euclidean;
       case DistanceMeasure.cosine:
         return firestore_v1.StructuredQuery_FindNearest_DistanceMeasure.cosine;
       case DistanceMeasure.dotProduct:
-        return firestore_v1.StructuredQuery_FindNearest_DistanceMeasure.dotProduct;
+        return firestore_v1
+            .StructuredQuery_FindNearest_DistanceMeasure
+            .dotProduct;
     }
   }
 

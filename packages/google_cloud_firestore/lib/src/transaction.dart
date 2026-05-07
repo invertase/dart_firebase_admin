@@ -84,7 +84,7 @@ class Transaction {
   /// Future that resolves to the transaction ID of the current attempt.
   /// It is lazily initialised upon the first read. Upon retry, it is reset and
   /// [_prevTransactionId] is set
-  Future<String>? _transactionIdPromise;
+  Future<String>? _transactionIdFuture;
   String? _prevTransactionId;
 
   /// Retrieves a single document from the database. Holds a pessimistic lock on
@@ -300,8 +300,8 @@ class Transaction {
     String? transactionId;
     // If we have not performed any reads in this particular attempt
     // then the writes will be atomically committed without a transaction ID
-    if (_transactionIdPromise != null) {
-      transactionId = await _transactionIdPromise;
+    if (_transactionIdFuture != null) {
+      transactionId = await _transactionIdFuture;
     } else if (_writeBatch._operations.isEmpty) {
       // If we have not started a transaction (no reads) and we have no writes
       // then the commit is a no-op (success)
@@ -309,29 +309,29 @@ class Transaction {
     }
     await _writeBatch._commit(transactionId: transactionId);
 
-    _transactionIdPromise = null;
+    _transactionIdFuture = null;
     _prevTransactionId = transactionId;
   }
 
   Future<void> _rollback() async {
     // No need to roll back if we have not lazily started the transaction
     // or if we are read only
-    if (_transactionIdPromise == null || _writeBatch == null) {
+    if (_transactionIdFuture == null || _writeBatch == null) {
       return;
     }
 
     String? transactionId;
 
     try {
-      transactionId = await _transactionIdPromise;
+      transactionId = await _transactionIdFuture;
     } catch (e) {
       // This means the initial read operation rejected
       // and we do not have a transaction ID to roll back
-      _transactionIdPromise = null;
+      _transactionIdFuture = null;
       return;
     }
 
-    _transactionIdPromise = null;
+    _transactionIdFuture = null;
     _prevTransactionId = transactionId;
 
     // We don't need to wait for rollback to completed before continuing.
@@ -362,11 +362,11 @@ class Transaction {
     })
     resultFn,
   }) {
-    if (_transactionIdPromise != null) {
+    if (_transactionIdFuture != null) {
       // Simply queue this subsequent read operation after the first read
       // operation has resolved and we don't expect a transaction ID in the
       // response because we are not starting a new transaction
-      return _transactionIdPromise!
+      return _transactionIdFuture!
           .then(
             (transactionId) => resultFn(
               docRef,
@@ -390,12 +390,11 @@ class Transaction {
         final firestore_v1.TransactionOptions opts;
         if (_writeBatch != null) {
           opts = firestore_v1.TransactionOptions(
-            readWrite:
-                _prevTransactionId == null
-                    ? firestore_v1.TransactionOptions_ReadWrite()
-                    : firestore_v1.TransactionOptions_ReadWrite(
-                      retryTransaction: base64Decode(_prevTransactionId!),
-                    ),
+            readWrite: _prevTransactionId == null
+                ? firestore_v1.TransactionOptions_ReadWrite()
+                : firestore_v1.TransactionOptions_ReadWrite(
+                    retryTransaction: base64Decode(_prevTransactionId!),
+                  ),
           );
         } else {
           opts = firestore_v1.TransactionOptions(
@@ -403,21 +402,21 @@ class Transaction {
           );
         }
 
-        final resultPromise = resultFn(
+        final resultFuture = resultFn(
           docRef,
           transactionOptions: opts,
           fieldMask: fieldMask,
         );
 
-        // Ensure the _transactionIdPromise is set synchronously so that
+        // Ensure _transactionIdFuture is assigned synchronously so that
         // subsequent operations will not race to start another transaction
-        _transactionIdPromise = resultPromise.then((r) {
+        _transactionIdFuture = resultFuture.then((r) {
           if (r.transaction case final transaction?) {
             return transaction;
           } else {
             // Illegal state
             // The read operation was provided with new transaction options but did not return a transaction ID
-            // Rejecting here will cause all queued reads to reject
+            // Throwing here will cause all queued reads to fail
             throw FirestoreException(
               FirestoreClientErrorCode.internal,
               'Transaction ID was missing from server response.',
@@ -425,7 +424,7 @@ class Transaction {
           }
         });
 
-        return resultPromise.then((r) {
+        return resultFuture.then((r) {
           return r.result;
         });
       }
