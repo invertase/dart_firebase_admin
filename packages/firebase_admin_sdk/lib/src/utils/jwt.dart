@@ -59,10 +59,10 @@ abstract class KeyFetcher {
 
 class UrlKeyFetcher implements KeyFetcher {
   UrlKeyFetcher(this.clientCert, {http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+    : _httpClient = httpClient;
 
   final Uri clientCert;
-  final http.Client _httpClient;
+  final http.Client? _httpClient;
 
   Map<String, JWTKey>? _publicKeys;
   late DateTime _publicKeysExpireAt;
@@ -79,7 +79,8 @@ class UrlKeyFetcher implements KeyFetcher {
   }
 
   Future<Map<String, JWTKey>> refresh() async {
-    final response = await _httpClient.get(clientCert);
+    final response =
+        await (_httpClient?.get(clientCert) ?? http.get(clientCert));
     final json = jsonDecode(response.body) as Map<String, Object?>;
     final error = json['error'];
     if (error != null) {
