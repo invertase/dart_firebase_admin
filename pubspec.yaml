@@ -36,9 +36,3 @@ melos:
     version:
       hooks:
         post: ./scripts/gen-version.sh
-
-dependency_overrides:
-  google_cloud:
-    git:
-      url: https://github.com/googleapis/google-cloud-dart
-      path: pkgs/google_cloud
