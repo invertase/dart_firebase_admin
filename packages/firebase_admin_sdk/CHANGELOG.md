@@ -1,3 +1,7 @@
+## 0.5.3
+
+- Require `google_cloud: '>=0.4.0 <0.6.0'`
+
 ## 0.5.2
 
 - Remove dependency on `package:equatable`.

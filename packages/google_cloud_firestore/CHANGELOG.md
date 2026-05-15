@@ -1,7 +1,8 @@
-## 0.5.2-wip
+## 0.5.2
 
 - Fixed `Firestore.projectId` not reading `GOOGLE_CLOUD_PROJECT` when using Application Default Credentials locally.
 - Fixed `FieldMask` not available from export. (thanks to @OutdatedGuy)
+- Require `google_cloud: '>=0.4.0 <0.6.0'`
 
 ## 0.5.1
 
