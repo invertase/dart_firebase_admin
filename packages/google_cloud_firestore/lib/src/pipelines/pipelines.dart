@@ -472,37 +472,44 @@ final class Pipeline {
   /// ```
   Future<PipelineSnapshot> execute() async {
     final request = firestore_v1.ExecutePipelineRequest(
+      database: firestore._formattedDatabaseName,
       structuredPipeline: firestore_v1.StructuredPipeline(pipeline: _toProto()),
     );
 
-    final response = await firestore._firestoreClient.v1((api, projectId) {
-      return api.projects.databases.documents.executePipeline(
-        request,
-        firestore._formattedDatabaseName,
-      );
+    final stream = await firestore._firestoreClient.v1((api, projectId) async {
+      return api.executePipeline(request);
     });
 
-    // Parse the response
     final results = <PipelineResult>[];
-    if (response.results != null) {
-      for (final resultDoc in response.results!) {
-        final fields = resultDoc.fields;
-        final data = fields != null
-            ? <String, Object?>{
-                for (final prop in fields.entries)
-                  prop.key: firestore._serializer.decodeValue(prop.value),
-              }
-            : <String, Object?>{};
+    ExplainStats? explainStats;
+    Timestamp? executionTime;
+
+    await for (final response in stream) {
+      if (response.executionTime != null) {
+        executionTime = Timestamp._fromProto(response.executionTime!);
+      }
+      if (response.explainStats != null) {
+        explainStats = ExplainStats._fromProto(response.explainStats!);
+      }
+      for (final resultDoc in response.results) {
+        final data = <String, Object?>{
+          for (final prop in resultDoc.fields.entries)
+            prop.key: firestore._serializer.decodeValue(prop.value),
+        };
 
         results.add(
           PipelineResult._(
-            ref: resultDoc.name != null ? firestore.doc(resultDoc.name!) : null,
-            id: resultDoc.name?.split('/').last,
+            ref: resultDoc.name.isNotEmpty
+                ? firestore.doc(resultDoc.name)
+                : null,
+            id: resultDoc.name.isNotEmpty
+                ? resultDoc.name.split('/').last
+                : null,
             createTime: resultDoc.createTime != null
-                ? Timestamp._fromString(resultDoc.createTime!)
+                ? Timestamp._fromProto(resultDoc.createTime!)
                 : null,
             updateTime: resultDoc.updateTime != null
-                ? Timestamp._fromString(resultDoc.updateTime!)
+                ? Timestamp._fromProto(resultDoc.updateTime!)
                 : null,
             data: data,
           ),
@@ -513,10 +520,8 @@ final class Pipeline {
     return PipelineSnapshot._(
       pipeline: this,
       results: results,
-      executionTime: Timestamp.now(),
-      explainStats: response.explainStats != null
-          ? ExplainStats._fromProto(response.explainStats!)
-          : null,
+      executionTime: executionTime ?? Timestamp.now(),
+      explainStats: explainStats,
     );
   }
 
@@ -542,25 +547,25 @@ final class Pipeline {
   }
 
   /// Converts a stage to googleapis proto format.
-  firestore_v1.Stage _stageToProto(_Stage stage) {
+  firestore_v1.Pipeline_Stage _stageToProto(_Stage stage) {
     switch (stage) {
       case _CollectionStage(:final collectionId):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'collection',
           args: [_collectionReferenceValue(collectionId)],
         );
       case _CollectionGroupStage(:final collectionId):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'collection_group',
           args: [_collectionReferenceValue(collectionId)],
         );
       case _DatabaseStage(:final database):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'database',
           args: [_databaseReferenceValue(database)],
         );
       case _DocumentsStage(:final documents):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'documents',
           args: documents.map((doc) => _stringValue(doc.path)).toList(),
         );
@@ -579,7 +584,7 @@ final class Pipeline {
             );
           }
         }
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'select',
           args: [
             firestore_v1.Value(
@@ -588,31 +593,37 @@ final class Pipeline {
           ],
         );
       case _AddFieldsStage(:final fields):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'add_fields',
           options: fields.map((k, v) => MapEntry(k, _expressionToValue(v))),
         );
       case _RemoveFieldsStage(:final fields):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'remove_fields',
           args: fields
               .map((f) => firestore_v1.Value(fieldReferenceValue: f))
               .toList(),
         );
       case _WhereStage(:final condition):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'where',
           args: [_expressionToValue(condition)],
         );
       case _SortStage(:final orderings):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'sort',
           args: orderings.map(_orderingToValue).toList(),
         );
       case _LimitStage(:final limit):
-        return firestore_v1.Stage(name: 'limit', args: [_intValue(limit)]);
+        return firestore_v1.Pipeline_Stage(
+          name: 'limit',
+          args: [_intValue(limit)],
+        );
       case _OffsetStage(:final offset):
-        return firestore_v1.Stage(name: 'offset', args: [_intValue(offset)]);
+        return firestore_v1.Pipeline_Stage(
+          name: 'offset',
+          args: [_intValue(offset)],
+        );
       case _DistinctStage(:final fields):
         // Server expects a single map argument: Map<FieldName, Expr>
         final groupsMap = <String, firestore_v1.Value>{};
@@ -623,7 +634,7 @@ final class Pipeline {
               : 'field_$i';
           groupsMap[key] = _expressionToValue(fields[i]);
         }
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'distinct',
           args: [
             firestore_v1.Value(
@@ -649,7 +660,7 @@ final class Pipeline {
           }
         }
 
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'aggregate',
           args: [
             firestore_v1.Value(
@@ -667,7 +678,7 @@ final class Pipeline {
         :final distanceMeasure,
         :final distanceResultField,
       ):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'find_nearest',
           options: {
             'vector_field': _expressionToValue(vectorField),
@@ -681,14 +692,17 @@ final class Pipeline {
           },
         );
       case _ReplaceWithStage(:final expression):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'replace_with',
           args: [_expressionToValue(expression)],
         );
       case _SampleStage(:final size):
-        return firestore_v1.Stage(name: 'sample', args: [_intValue(size)]);
+        return firestore_v1.Pipeline_Stage(
+          name: 'sample',
+          args: [_intValue(size)],
+        );
       case _UnionStage(:final pipelines):
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'union',
           args: pipelines.map((p) => _pipelineValue(p._toProto())).toList(),
         );
@@ -700,7 +714,7 @@ final class Pipeline {
       ):
         // Server expects 2 args: (field Expr, alias FieldName)
         // Note: preserve_null_and_empty_arrays is not supported by the server
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: 'unnest',
           args: [
             _expressionToValue(field),
@@ -714,20 +728,20 @@ final class Pipeline {
                     fieldReferenceValue: indexField,
                   ),
                 }
-              : null,
+              : const {},
         );
       case _RawStage(:final data):
         // For raw stages, convert the data map directly
         final name = data.keys.first;
         final value = data[name];
-        return firestore_v1.Stage(
+        return firestore_v1.Pipeline_Stage(
           name: name,
-          args: value is List ? value.map(_anyToValue).toList() : null,
+          args: value is List ? value.map(_anyToValue).toList() : const [],
           options: value is Map
               ? (value as Map<String, dynamic>).map(
                   (k, v) => MapEntry(k, _anyToValue(v)),
                 )
-              : null,
+              : const {},
         );
       default:
         throw ArgumentError('Unknown stage type: ${stage.runtimeType}');
@@ -739,7 +753,7 @@ final class Pipeline {
       firestore_v1.Value(stringValue: value);
 
   firestore_v1.Value _intValue(int value) =>
-      firestore_v1.Value(integerValue: value.toString());
+      firestore_v1.Value(integerValue: value);
 
   firestore_v1.Value _boolValue(bool value) =>
       firestore_v1.Value(booleanValue: value);
@@ -763,18 +777,18 @@ final class Pipeline {
       firestore_v1.Value(
         mapValue: firestore_v1.MapValue(
           fields: {
-            'stages': _arrayValue(pipeline.stages!.map(_stageValue).toList()),
+            'stages': _arrayValue(pipeline.stages.map(_stageValue).toList()),
           },
         ),
       );
 
-  firestore_v1.Value _stageValue(firestore_v1.Stage stage) =>
+  firestore_v1.Value _stageValue(firestore_v1.Pipeline_Stage stage) =>
       firestore_v1.Value(
         mapValue: firestore_v1.MapValue(
           fields: {
-            'name': _stringValue(stage.name!),
-            if (stage.args != null) 'args': _arrayValue(stage.args!),
-            if (stage.options != null)
+            'name': _stringValue(stage.name),
+            if (stage.args.isNotEmpty) 'args': _arrayValue(stage.args),
+            if (stage.options.isNotEmpty)
               'options': firestore_v1.Value(
                 mapValue: firestore_v1.MapValue(fields: stage.options),
               ),
@@ -792,7 +806,7 @@ final class Pipeline {
 
   firestore_v1.Value _anyToValue(dynamic value) {
     if (value == null) {
-      return firestore_v1.Value(nullValue: 'NULL_VALUE');
+      return firestore_v1.Value(nullValue: protobuf_v1.NullValue.nullValue);
     } else if (value is String) {
       return _stringValue(value);
     } else if (value is int) {

@@ -521,7 +521,6 @@ class Transaction {
     );
   }
 
-<<<<<<< HEAD:packages/google_cloud_firestore/lib/src/transaction.dart
   Future<_TransactionResult<AggregateQuerySnapshot>> _getAggregateQueryFn(
     AggregateQuery aggregateQuery, {
     String? transactionId,
@@ -552,49 +551,58 @@ class Transaction {
     List<FieldPath>? fieldMask,
   }) async {
     final request = firestore_v1.ExecutePipelineRequest(
+      database: _firestore._formattedDatabaseName,
       structuredPipeline: firestore_v1.StructuredPipeline(
         pipeline: pipeline._toProto(),
       ),
-      transaction: transactionId,
+      transaction: transactionId != null ? base64Decode(transactionId) : null,
       readTime: readTime != null
-          ? _toGoogleDateTime(
+          ? protobuf_v1.Timestamp(
               seconds: readTime.seconds,
-              nanoseconds: readTime.nanoseconds,
+              nanos: readTime.nanoseconds,
             )
           : null,
       newTransaction: transactionOptions,
     );
 
-    final response = await _firestore._firestoreClient.v1((api, projectId) {
-      return api.projects.databases.documents.executePipeline(
-        request,
-        _firestore._formattedDatabaseName,
-      );
+    final stream = await _firestore._firestoreClient.v1((api, projectId) async {
+      return api.executePipeline(request);
     });
 
-    // Parse the response
+    Uint8List? responseTransaction;
     final results = <PipelineResult>[];
-    if (response.results != null) {
-      for (final resultDoc in response.results!) {
-        final fields = resultDoc.fields;
-        final data = fields != null
-            ? <String, Object?>{
-                for (final prop in fields.entries)
-                  prop.key: _firestore._serializer.decodeValue(prop.value),
-              }
-            : <String, Object?>{};
+    ExplainStats? explainStats;
+    Timestamp? executionTime;
+
+    await for (final response in stream) {
+      if (response.transaction.isNotEmpty) {
+        responseTransaction = response.transaction;
+      }
+      if (response.executionTime != null) {
+        executionTime = Timestamp._fromProto(response.executionTime!);
+      }
+      if (response.explainStats != null) {
+        explainStats = ExplainStats._fromProto(response.explainStats!);
+      }
+      for (final resultDoc in response.results) {
+        final data = <String, Object?>{
+          for (final prop in resultDoc.fields.entries)
+            prop.key: _firestore._serializer.decodeValue(prop.value),
+        };
 
         results.add(
           PipelineResult._(
-            ref: resultDoc.name != null
-                ? _firestore.doc(resultDoc.name!)
+            ref: resultDoc.name.isNotEmpty
+                ? _firestore.doc(resultDoc.name)
                 : null,
-            id: resultDoc.name?.split('/').last,
+            id: resultDoc.name.isNotEmpty
+                ? resultDoc.name.split('/').last
+                : null,
             createTime: resultDoc.createTime != null
-                ? Timestamp._fromString(resultDoc.createTime!)
+                ? Timestamp._fromProto(resultDoc.createTime!)
                 : null,
             updateTime: resultDoc.updateTime != null
-                ? Timestamp._fromString(resultDoc.updateTime!)
+                ? Timestamp._fromProto(resultDoc.updateTime!)
                 : null,
             data: data,
           ),
@@ -605,14 +613,14 @@ class Transaction {
     final snapshot = PipelineSnapshot._(
       pipeline: pipeline,
       results: results,
-      executionTime: Timestamp.now(),
-      explainStats: response.explainStats != null
-          ? ExplainStats._fromProto(response.explainStats!)
-          : null,
+      executionTime: executionTime ?? Timestamp.now(),
+      explainStats: explainStats,
     );
 
     return _TransactionResult(
-      transaction: response.transaction,
+      transaction: responseTransaction != null
+          ? base64Encode(responseTransaction)
+          : null,
       result: snapshot,
     );
   }

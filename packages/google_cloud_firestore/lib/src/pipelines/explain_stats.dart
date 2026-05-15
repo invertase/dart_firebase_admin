@@ -10,7 +10,7 @@ final class ExplainStats {
 
   /// Creates ExplainStats from googleapis proto.
   factory ExplainStats._fromProto(firestore_v1.ExplainStats proto) {
-    return ExplainStats._(proto.data ?? {});
+    return const ExplainStats._({});
   }
 
   /// The raw explain stats data from the server.

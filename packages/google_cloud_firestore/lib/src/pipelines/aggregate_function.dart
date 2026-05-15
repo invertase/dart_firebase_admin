@@ -78,9 +78,9 @@ abstract class AggregateFunction {
   /// Helper to convert field (String or FieldPath) to proto Value.
   static firestore_v1.Value _fieldOrPathValue(Object field) {
     if (field is String) {
-      return firestore_v1.Value(stringValue: field);
+      return firestore_v1.Value(fieldReferenceValue: field);
     } else if (field is FieldPath) {
-      return firestore_v1.Value(stringValue: field._formattedName);
+      return firestore_v1.Value(fieldReferenceValue: field._formattedName);
     }
     throw ArgumentError('field must be String or FieldPath');
   }
@@ -105,7 +105,7 @@ final class CountAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(name: 'count', args: []),
+      functionValue: firestore_v1.Function$(name: 'count', args: []),
     );
   }
 }
@@ -129,7 +129,7 @@ final class CountAllAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(name: 'count', args: []),
+      functionValue: firestore_v1.Function$(name: 'count', args: []),
     );
   }
 }
@@ -158,7 +158,7 @@ final class CountDistinctAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(
+      functionValue: firestore_v1.Function$(
         name: 'count_distinct',
         args: [AggregateFunction._fieldOrPathValue(field)],
       ),
@@ -190,7 +190,7 @@ final class CountIfAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(
+      functionValue: firestore_v1.Function$(
         name: 'count_if',
         args: [condition._toProto(firestore)],
       ),
@@ -222,7 +222,7 @@ final class SumAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(
+      functionValue: firestore_v1.Function$(
         name: 'sum',
         args: [AggregateFunction._fieldOrPathValue(field)],
       ),
@@ -254,7 +254,7 @@ final class AverageAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(
+      functionValue: firestore_v1.Function$(
         name: 'average',
         args: [AggregateFunction._fieldOrPathValue(field)],
       ),
@@ -286,7 +286,7 @@ final class MinimumAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(
+      functionValue: firestore_v1.Function$(
         name: 'minimum',
         args: [AggregateFunction._fieldOrPathValue(field)],
       ),
@@ -318,7 +318,7 @@ final class MaximumAggregate extends AggregateFunction {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      functionValue: firestore_v1.Function_(
+      functionValue: firestore_v1.Function$(
         name: 'maximum',
         args: [AggregateFunction._fieldOrPathValue(field)],
       ),

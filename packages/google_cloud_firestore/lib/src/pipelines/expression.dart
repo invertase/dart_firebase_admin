@@ -387,11 +387,7 @@ final class Field extends Expression implements Selectable {
 
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
-    return firestore_v1.Value(
-      mapValue: firestore_v1.MapValue(
-        fields: {'field': firestore_v1.Value(stringValue: fieldPath)},
-      ),
-    );
+    return firestore_v1.Value(fieldReferenceValue: fieldPath);
   }
 }
 
@@ -467,15 +463,9 @@ final class FunctionExpression extends Expression {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      mapValue: firestore_v1.MapValue(
-        fields: {
-          'function': firestore_v1.Value(stringValue: functionName),
-          'args': firestore_v1.Value(
-            arrayValue: firestore_v1.ArrayValue(
-              values: arguments.map((arg) => arg._toProto(firestore)).toList(),
-            ),
-          ),
-        },
+      functionValue: firestore_v1.Function$(
+        name: functionName,
+        args: arguments.map((arg) => arg._toProto(firestore)).toList(),
       ),
     );
   }
@@ -608,15 +598,9 @@ final class BooleanExpression extends Expression {
   @override
   firestore_v1.Value _toProto(Firestore firestore) {
     return firestore_v1.Value(
-      mapValue: firestore_v1.MapValue(
-        fields: {
-          'function': firestore_v1.Value(stringValue: functionName),
-          'args': firestore_v1.Value(
-            arrayValue: firestore_v1.ArrayValue(
-              values: arguments.map((arg) => arg._toProto(firestore)).toList(),
-            ),
-          ),
-        },
+      functionValue: firestore_v1.Function$(
+        name: functionName,
+        args: arguments.map((arg) => arg._toProto(firestore)).toList(),
       ),
     );
   }

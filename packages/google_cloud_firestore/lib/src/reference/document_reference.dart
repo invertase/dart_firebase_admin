@@ -80,7 +80,7 @@ interface class DocumentReference<T> implements _Serializable {
         pageSize: (math.pow(2, 16) - 1).toInt(),
       );
 
-      final result = await a.listCollectionIds(request);
+      final result = await api.listCollectionIds(request);
 
       final ids = result.collectionIds;
       ids.sort((a, b) => a.compareTo(b));

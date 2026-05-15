@@ -285,14 +285,14 @@ void main() {
       test('compares nested arrays', () {
         final partition1 = [
           firestore_v1.Value(
-          arrayValue: firestore_v1.ArrayValue(
+            arrayValue: firestore_v1.ArrayValue(
               values: [firestore_v1.Value(integerValue: 1)],
             ),
           ),
         ];
         final partition2 = [
           firestore_v1.Value(
-          arrayValue: firestore_v1.ArrayValue(
+            arrayValue: firestore_v1.ArrayValue(
               values: [firestore_v1.Value(integerValue: 2)],
             ),
           ),
