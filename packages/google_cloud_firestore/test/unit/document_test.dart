@@ -93,6 +93,10 @@ void main() {
   });
 
   group('serialize document', () {
+    // Tests that all Firestore data types can be stored and
+    // retrieved successfully.
+    //
+    // See https://firebase.google.com/docs/firestore/manage-data/data-types
     late Firestore firestore;
 
     setUp(() async => firestore = await createFirestore());
@@ -117,115 +121,8 @@ void main() {
       );
     });
 
-    test('serializes date before 1970', () async {
-      await firestore.doc('collectionId/before1970').set({
-        'moonLanding': DateTime(1960, 7, 20, 20, 18),
-      });
-
-      final data = await firestore
-          .doc('collectionId/before1970')
-          .get()
-          .then((snapshot) => snapshot.data()!['moonLanding']);
-
-      expect(data, Timestamp.fromDate(DateTime(1960, 7, 20, 20, 18)));
-    });
-
-    test('Supports BigInt', () async {
-      final firestore = await createFirestore(
-        settings: const Settings(useBigInt: true),
-      );
-
-      await firestore.doc('collectionId/bigInt').set({
-        'foo': BigInt.from(9223372036854775807),
-      });
-
-      final data = await firestore
-          .doc('collectionId/bigInt')
-          .get()
-          .then((snapshot) => snapshot.data()!['foo']);
-
-      expect(data, BigInt.from(9223372036854775807));
-    });
-
-    test('serializes unicode keys', () async {
-      await firestore.doc('collectionId/unicode').set({'😀': '😜'});
-
-      final data = await firestore
-          .doc('collectionId/unicode')
-          .get()
-          .then((snapshot) => snapshot.data());
-
-      expect(data, {'😀': '😜'});
-    });
-
-    test('Supports NaN and Infinity', () async {
-      //
-      await firestore.doc('collectionId/nan').set({
-        'nan': double.nan,
-        'infinity': double.infinity,
-        'negativeInfinity': double.negativeInfinity,
-      });
-
-      final data = await firestore
-          .doc('collectionId/nan')
-          .get()
-          .then((snapshot) => snapshot.data());
-
-      expect(data, {
-        'nan': double.nan,
-        'infinity': double.infinity,
-        'negativeInfinity': double.negativeInfinity,
-      });
-    });
-
-    test('with invalid geopoint', () {
-      expect(
-        () => GeoPoint(latitude: double.nan, longitude: 0),
-        throwsArgumentError(
-          message: 'Value for argument "latitude" is not a valid number',
-        ),
-      );
-
-      expect(
-        () => GeoPoint(latitude: 0, longitude: double.nan),
-        throwsArgumentError(
-          message: 'Value for argument "longitude" is not a valid number',
-        ),
-      );
-
-      expect(
-        () => GeoPoint(latitude: double.infinity, longitude: 0),
-        throwsArgumentError(
-          message: 'Latitude must be in the range of [-90, 90]',
-        ),
-      );
-      expect(
-        () => GeoPoint(latitude: 91, longitude: 0),
-        throwsArgumentError(
-          message: 'Latitude must be in the range of [-90, 90]',
-        ),
-      );
-
-      expect(
-        () => GeoPoint(latitude: 90, longitude: 181),
-        throwsArgumentError(
-          message: 'Longitude must be in the range of [-180, 180]',
-        ),
-      );
-    });
-
-    test('resolves infinite nesting', () {
-      final obj = <String, Object?>{};
-      obj['foo'] = obj;
-
-      expect(
-        () => firestore.doc('collectionId/nesting').set(obj),
-        throwsArgumentError(
-          message:
-              'Firestore objects may not contain more than 20 levels of nesting '
-              'or contain a cycle',
-        ),
-      );
+    group('array', () {
+      // TODO: Add array tests.
     });
 
     group('boolean', () {
@@ -274,6 +171,142 @@ void main() {
           'bytes': Uint8List.fromList([0, 1, 127, 128, 255]),
         });
       });
+    });
+
+    group('date and time', () {
+      test('serializes date before 1970', () async {
+        await firestore.doc('collectionId/before1970').set({
+          'moonLanding': DateTime(1960, 7, 20, 20, 18),
+        });
+
+        final data = await firestore
+            .doc('collectionId/before1970')
+            .get()
+            .then((snapshot) => snapshot.data()!['moonLanding']);
+
+        expect(data, Timestamp.fromDate(DateTime(1960, 7, 20, 20, 18)));
+      });
+    });
+
+    group('floating-point number', () {
+      test('Supports NaN and Infinity', () async {
+        //
+        await firestore.doc('collectionId/nan').set({
+          'nan': double.nan,
+          'infinity': double.infinity,
+          'negativeInfinity': double.negativeInfinity,
+        });
+
+        final data = await firestore
+            .doc('collectionId/nan')
+            .get()
+            .then((snapshot) => snapshot.data());
+
+        expect(data, {
+          'nan': double.nan,
+          'infinity': double.infinity,
+          'negativeInfinity': double.negativeInfinity,
+        });
+      });
+    });
+
+    group('geographical point', () {
+      test('with invalid geopoint', () {
+        expect(
+          () => GeoPoint(latitude: double.nan, longitude: 0),
+          throwsArgumentError(
+            message: 'Value for argument "latitude" is not a valid number',
+          ),
+        );
+
+        expect(
+          () => GeoPoint(latitude: 0, longitude: double.nan),
+          throwsArgumentError(
+            message: 'Value for argument "longitude" is not a valid number',
+          ),
+        );
+
+        expect(
+          () => GeoPoint(latitude: double.infinity, longitude: 0),
+          throwsArgumentError(
+            message: 'Latitude must be in the range of [-90, 90]',
+          ),
+        );
+        expect(
+          () => GeoPoint(latitude: 91, longitude: 0),
+          throwsArgumentError(
+            message: 'Latitude must be in the range of [-90, 90]',
+          ),
+        );
+
+        expect(
+          () => GeoPoint(latitude: 90, longitude: 181),
+          throwsArgumentError(
+            message: 'Longitude must be in the range of [-180, 180]',
+          ),
+        );
+      });
+    });
+
+    group('integer', () {
+      test('Supports BigInt', () async {
+        final firestore = await createFirestore(
+          settings: const Settings(useBigInt: true),
+        );
+
+        await firestore.doc('collectionId/bigInt').set({
+          'foo': BigInt.from(9223372036854775807),
+        });
+
+        final data = await firestore
+            .doc('collectionId/bigInt')
+            .get()
+            .then((snapshot) => snapshot.data()!['foo']);
+
+        expect(data, BigInt.from(9223372036854775807));
+      });
+    });
+
+    group('map', () {
+      test('resolves infinite nesting', () {
+        final obj = <String, Object?>{};
+        obj['foo'] = obj;
+
+        expect(
+          () => firestore.doc('collectionId/nesting').set(obj),
+          throwsArgumentError(
+            message:
+                'Firestore objects may not contain more than 20 levels of nesting '
+                'or contain a cycle',
+          ),
+        );
+      });
+    });
+
+    group('null', () {
+      // TODO: Add null tests.
+    });
+
+    group('reference', () {
+      // TODO: Add reference tests.
+    });
+
+
+    group('text string', () {
+      test('serializes unicode keys', () async {
+        await firestore.doc('collectionId/unicode').set({'😀': '😜'});
+
+        final data = await firestore
+            .doc('collectionId/unicode')
+            .get()
+            .then((snapshot) => snapshot.data());
+
+        expect(data, {'😀': '😜'});
+      });
+    });
+
+    group('vector', () {
+      // TODO: Add vector tests.
     });
   });
 
