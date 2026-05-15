@@ -20,16 +20,17 @@ import 'package:google_cloud_firestore/google_cloud_firestore.dart';
 Future<void> firestoreExample(FirebaseApp admin) async {
   print('\n### Firestore Examples ###\n');
 
-  await basicFirestoreExample(admin);
-  await multiDatabaseExample(admin);
-  await batchExample(admin);
-  await transactionExample(admin);
-  await collectionGroupExample(admin);
-  await getAllExample(admin);
-  await listCollectionsExample(admin);
-  await recursiveDeleteExample(admin);
-  await bulkWriterExamples(admin);
-  await bundleBuilderExample(admin);
+  //await basicFirestoreExample(admin);
+  //await multiDatabaseExample(admin);
+  //await batchExample(admin);
+  //await transactionExample(admin);
+  //await collectionGroupExample(admin);
+  //await getAllExample(admin);
+  //await listCollectionsExample(admin);
+  //await recursiveDeleteExample(admin);
+  //await bulkWriterExamples(admin);
+  //await bundleBuilderExample(admin);
+  await pipelineExample(admin);
 }
 
 /// Example 1: Basic Firestore operations with default database
@@ -479,5 +480,76 @@ Future<void> recursiveDeleteExample(FirebaseApp admin) async {
     print('Recursive delete complete\n');
   } catch (e) {
     print('> Error: $e');
+  }
+}
+
+/// Pipeline example demonstrating the Firestore Pipelines API.
+///
+/// Pipelines offer a composable, stage-based alternative to structured queries.
+/// Each stage transforms the stream of documents: filter, project, sort,
+/// aggregate, and more — all in a single server-side execution.
+Future<void> pipelineExample(FirebaseApp admin) async {
+  print('### Pipeline Example ###\n');
+
+  final firestore = admin.firestore(databaseId: 'dart-admin-enterprise');
+  final col = firestore.collection('pipeline-demo');
+
+  // Seed some product data.
+  await Future.wait([
+    col.doc('p1').set({'name': 'Widget', 'category': 'hardware', 'price': 9.99, 'stock': 100}),
+    col.doc('p2').set({'name': 'Gadget', 'category': 'electronics', 'price': 49.99, 'stock': 25}),
+    col.doc('p3').set({'name': 'Doohickey', 'category': 'hardware', 'price': 4.99, 'stock': 200}),
+    col.doc('p4').set({'name': 'Thingamajig', 'category': 'electronics', 'price': 99.99, 'stock': 10}),
+    col.doc('p5').set({'name': 'Whatsit', 'category': 'hardware', 'price': 14.99, 'stock': 75}),
+  ]);
+
+  try {
+    // --- Stage 1: filter → select → sort ---
+    print('> Hardware products (name + price, cheapest first):\n');
+
+    final filtered = await firestore
+        .pipeline()
+        .collection('pipeline-demo')
+        .where(
+          Expression.field('category').equal(Expression.constant('hardware')),
+        )
+        .select(['name', 'price'])
+        .sort([Ordering.ascending(Expression.field('price'))])
+        .execute();
+
+    for (final result in filtered.results) {
+      print('  - ${result.data()['name']}: \$${result.data()['price']}');
+    }
+    print('');
+
+    // --- Stage 2: aggregate — count + average price per category ---
+    print('> Count and average price per category:\n');
+
+    final aggregated = await firestore
+        .pipeline()
+        .collection('pipeline-demo')
+        .aggregate(
+          accumulators: [
+            AggregateFunction.countAll().as('count'),
+            AggregateFunction.average('price').as('avg_price'),
+          ],
+          groupBy: [Expression.field('category')],
+        )
+        .sort([Ordering.ascending(Expression.field('category'))])
+        .execute();
+
+    for (final result in aggregated.results) {
+      final d = result.data();
+      final avg = (d['avg_price'] as num?)?.toStringAsFixed(2) ?? 'n/a';
+      print('  - ${d['category']}: ${d['count']} product(s), avg \$$avg');
+    }
+    print('');
+  } catch (e) {
+    print('> Error: $e');
+  } finally {
+    // Clean up seeded data.
+    await Future.wait([
+      for (final id in ['p1', 'p2', 'p3', 'p4', 'p5']) col.doc(id).delete(),
+    ]);
   }
 }
